@@ -193,7 +193,7 @@ it works when <a href="objects/defining_objects.html">defining objects</a>:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span>#[derive(juniper::GraphQLEnum)]
 enum Episode {
-    #[graphql(name=&quot;NEW_HOPE&quot;)]
+    #[graphql(name="NEW_HOPE")]
     NewHope,
     Empire,
     Jedi,
@@ -205,15 +205,15 @@ enum Episode {
 while individual enum variants can be renamed, documented, and deprecated:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span>#[derive(juniper::GraphQLEnum)]
-#[graphql(name=&quot;Episode&quot;, description=&quot;An episode of Star Wars&quot;)]
+#[graphql(name="Episode", description="An episode of Star Wars")]
 enum StarWarsEpisode {
-    #[graphql(deprecated=&quot;We don't really talk about this one&quot;)]
+    #[graphql(deprecated="We don't really talk about this one")]
     ThePhantomMenace,
 
-    #[graphql(name=&quot;NEW_HOPE&quot;)]
+    #[graphql(name="NEW_HOPE")]
     NewHope,
 
-    #[graphql(description=&quot;Arguably the best one in the trilogy&quot;)]
+    #[graphql(description="Arguably the best one in the trilogy")]
     Empire,
     Jedi,
 }

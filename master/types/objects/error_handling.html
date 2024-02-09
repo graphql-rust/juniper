@@ -241,15 +241,15 @@ query:</p>
 returned:</p>
 <p>!FILENAME Response for nullable field with error</p>
 <pre><code class="language-json">{
-  &quot;data&quot;: {
-    &quot;example&quot;: {
-      contents: &quot;&lt;Contents of the file&gt;&quot;,
+  "data": {
+    "example": {
+      contents: "&lt;Contents of the file&gt;",
       foo: null
     }
   },
-  &quot;errors&quot;: [
-    &quot;message&quot;: &quot;invalid utf-8 sequence of 2 bytes from index 0&quot;,
-    &quot;locations&quot;: [{ &quot;line&quot;: 2, &quot;column&quot;: 4 }])
+  "errors": [
+    "message": "invalid utf-8 sequence of 2 bytes from index 0",
+    "locations": [{ "line": 2, "column": 4 }])
   ]
 }
 </code></pre>
@@ -267,9 +267,9 @@ field, or the root <code>data</code> object if there are no nullable fields.</p>
 following would be returned:</p>
 <p>!FILENAME Response for non-null field with error and no nullable parent</p>
 <pre><code class="language-json">{
-  &quot;errors&quot;: [
-    &quot;message&quot;: &quot;Permission denied (os error 13)&quot;,
-    &quot;locations&quot;: [{ &quot;line&quot;: 2, &quot;column&quot;: 4 }])
+  "errors": [
+    "message": "Permission denied (os error 13)",
+    "locations": [{ "line": 2, "column": 4 }])
   ]
 }
 </code></pre>
@@ -287,9 +287,9 @@ impl&lt;S: ScalarValue&gt; IntoFieldError&lt;S&gt; for CustomError {
     fn into_field_error(self) -&gt; FieldError&lt;S&gt; {
         match self {
             CustomError::WhateverNotSet =&gt; FieldError::new(
-                &quot;Whatever does not exist&quot;,
+                "Whatever does not exist",
                 graphql_value!({
-                    &quot;type&quot;: &quot;NO_WHATEVER&quot;
+                    "type": "NO_WHATEVER"
                 }),
             ),
         }
@@ -313,11 +313,11 @@ impl Example {
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>The specified structured error information is included in the <a href="https://spec.graphql.org/October2021#sec-Errors"><code>extensions</code></a> key:</p>
 <pre><code class="language-json">{
-  &quot;errors&quot;: [{
-    &quot;message&quot;: &quot;Whatever does not exist&quot;,
-    &quot;locations&quot;: [{&quot;line&quot;: 2, &quot;column&quot;: 4}],
-    &quot;extensions&quot;: {
-      &quot;type&quot;: &quot;NO_WHATEVER&quot;
+  "errors": [{
+    "message": "Whatever does not exist",
+    "locations": [{"line": 2, "column": 4}],
+    "extensions": {
+      "type": "NO_WHATEVER"
     }
   }]
 }
@@ -375,15 +375,15 @@ impl Mutation {
 
         if !(10 &lt;= name.len() &amp;&amp; name.len() &lt;= 100) {
             errors.push(ValidationError {
-                field: &quot;name&quot;.into(),
-                message: &quot;between 10 and 100&quot;.into(),
+                field: "name".into(),
+                message: "between 10 and 100".into(),
             });
         }
 
         if !(1 &lt;= quantity &amp;&amp; quantity &lt;= 10) {
             errors.push(ValidationError {
-                field: &quot;quantity&quot;.into(),
-                message: &quot;between 1 and 10&quot;.into(),
+                field: "quantity".into(),
+                message: "between 1 and 10".into(),
             });
         }
 
@@ -404,7 +404,7 @@ instead of <code>Ok(Item)</code>.</p>
 resulting errors as shown in the following example:</p>
 <pre><code class="language-graphql">{
   mutation {
-    addItem(name: &quot;&quot;, quantity: 0) {
+    addItem(name: "", quantity: 0) {
       ... on Item {
         name
       }
@@ -460,11 +460,11 @@ impl Mutation {
         };
 
         if !(10 &lt;= name.len() &amp;&amp; name.len() &lt;= 100) {
-            error.name = Some(&quot;between 10 and 100&quot;.into());
+            error.name = Some("between 10 and 100".into());
         }
 
         if !(1 &lt;= quantity &amp;&amp; quantity &lt;= 10) {
-            error.quantity = Some(&quot;between 1 and 10&quot;.into());
+            error.quantity = Some("between 1 and 10".into());
         }
 
         if error.name.is_none() &amp;&amp; error.quantity.is_none() {
@@ -529,9 +529,9 @@ impl&lt;S: ScalarValue&gt; juniper::IntoFieldError&lt;S&gt; for ApiError {
     fn into_field_error(self) -&gt; FieldError&lt;S&gt; {
         match self {
             ApiError::Database =&gt; FieldError::new(
-                &quot;Internal database error&quot;,
+                "Internal database error",
                 graphql_value!({
-                    &quot;type&quot;: &quot;DATABASE&quot;
+                    "type": "DATABASE"
                 }),
             ),
         }
@@ -549,11 +549,11 @@ impl Mutation {
         };
 
         if !(10 &lt;= name.len() &amp;&amp; name.len() &lt;= 100) {
-            error.name = Some(&quot;between 10 and 100&quot;.into());
+            error.name = Some("between 10 and 100".into());
         }
 
         if !(1 &lt;= quantity &amp;&amp; quantity &lt;= 10) {
-            error.quantity = Some(&quot;between 1 and 10&quot;.into());
+            error.quantity = Some("between 1 and 10".into());
         }
 
         if error.name.is_none() &amp;&amp; error.quantity.is_none() {

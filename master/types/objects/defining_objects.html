@@ -216,11 +216,11 @@ via the <code>graphql</code> attribute. The following example is equivalent to t
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLObject;
 </span>#[derive(GraphQLObject)]
-#[graphql(description = &quot;Information about a person&quot;)]
+#[graphql(description = "Information about a person")]
 struct Person {
-    #[graphql(description = &quot;The person's full name, including both first and last names&quot;)]
+    #[graphql(description = "The person's full name, including both first and last names")]
     name: String,
-    #[graphql(description = &quot;The person's age in years, rounded down&quot;)]
+    #[graphql(description = "The person's age in years, rounded down")]
     age: i32,
 }
 <span class="boring">
@@ -231,10 +231,10 @@ documentation to differ:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLObject;
 </span>#[derive(GraphQLObject)]
-#[graphql(description = &quot;This description shows up in GraphQL&quot;)]
+#[graphql(description = "This description shows up in GraphQL")]
 /// This description shows up in RustDoc
 struct Person {
-    #[graphql(description = &quot;This description shows up in GraphQL&quot;)]
+    #[graphql(description = "This description shows up in GraphQL")]
     /// This description shows up in RustDoc
     name: String,
     /// This description shows up in both RustDoc and GraphQL
@@ -295,7 +295,7 @@ fields:</p>
 struct Person {
     name: String,
     age: i32,
-    #[graphql(name = &quot;websiteURL&quot;)]
+    #[graphql(name = "websiteURL")]
     website_url: Option&lt;String&gt;, // now exposed as `websiteURL` in the schema
 }
 <span class="boring">
@@ -304,7 +304,7 @@ struct Person {
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLObject;
 </span>#[derive(GraphQLObject)]
-#[graphql(rename_all = &quot;none&quot;)] // disables any renaming
+#[graphql(rename_all = "none")] // disables any renaming
 struct Person {
     name: String,
     age: i32,
@@ -321,7 +321,7 @@ attribute:</p>
 struct Person {
     name: String,
     age: i32,
-    #[graphql(deprecated = &quot;Please use the name field instead&quot;)]
+    #[graphql(deprecated = "Please use the name field instead")]
     first_name: String,
 }
 <span class="boring">

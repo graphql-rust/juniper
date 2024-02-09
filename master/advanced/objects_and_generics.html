@@ -197,7 +197,7 @@ struct ValidationError {
 </span>struct MutationResult&lt;T&gt;(Result&lt;T, Vec&lt;ValidationError&gt;&gt;);
 
 #[juniper::graphql_object(
-    name = &quot;UserResult&quot;,
+    name = "UserResult",
 )]
 impl MutationResult&lt;User&gt; {
     fn user(&amp;self) -&gt; Option&lt;&amp;User&gt; {
@@ -210,7 +210,7 @@ impl MutationResult&lt;User&gt; {
 }
 
 #[juniper::graphql_object(
-    name = &quot;ForumPostResult&quot;,
+    name = "ForumPostResult",
 )]
 impl MutationResult&lt;ForumPost&gt; {
     fn forum_post(&amp;self) -&gt; Option&lt;&amp;ForumPost&gt; {

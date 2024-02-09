@@ -198,8 +198,8 @@ struct User {
 <p>We would like a <code>friends</code> field on <code>User</code> that returns a list of <code>User</code> objects.
 In order to write such a field though, the database must be queried.</p>
 <p>To solve this, we mark the <code>Database</code> as a valid context type and assign it to
-the user object. </p>
-<p>To gain access to the context, we need to specify an argument with the same 
+the user object.</p>
+<p>To gain access to the context, we need to specify an argument with the same
 type as the specified <code>Context</code> for the type:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use std::collections::HashMap;
@@ -229,7 +229,7 @@ impl User {
     fn friends&lt;'db&gt;(&amp;self, context: &amp;'db Database) -&gt; Vec&lt;&amp;'db User&gt; {
         // Use the database to lookup users
         self.friend_ids.iter()
-            .map(|id| context.users.get(id).expect(&quot;Could not find user with ID&quot;))
+            .map(|id| context.users.get(id).expect("Could not find user with ID"))
             .collect()
     }
 

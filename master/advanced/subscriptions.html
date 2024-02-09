@@ -175,23 +175,23 @@
                     <main>
                         <h1 id="subscriptions"><a class="header" href="#subscriptions">Subscriptions</a></h1>
 <h3 id="how-to-achieve-realtime-data-with-graphql-subscriptions"><a class="header" href="#how-to-achieve-realtime-data-with-graphql-subscriptions">How to achieve realtime data with GraphQL subscriptions</a></h3>
-<p>GraphQL subscriptions are a way to push data from the server to clients requesting real-time messages 
+<p>GraphQL subscriptions are a way to push data from the server to clients requesting real-time messages
 from the server. Subscriptions are similar to queries in that they specify a set of fields to be delivered to the client,
-but instead of immediately returning a single answer a result is sent every time a particular event happens on the 
-server. </p>
-<p>In order to execute subscriptions you need a coordinator (that spawns connections) 
-and a GraphQL object that can be resolved into a stream--elements of which will then 
-be returned to the end user. The <a href="https://github.com/graphql-rust/juniper/tree/master/juniper_subscriptions"><code>juniper_subscriptions</code></a> crate 
+but instead of immediately returning a single answer a result is sent every time a particular event happens on the
+server.</p>
+<p>In order to execute subscriptions you need a coordinator (that spawns connections)
+and a GraphQL object that can be resolved into a stream--elements of which will then
+be returned to the end user. The <a href="https://github.com/graphql-rust/juniper/tree/master/juniper_subscriptions"><code>juniper_subscriptions</code></a> crate
 provides a default connection implementation. Currently subscriptions are only supported on the <code>master</code> branch. Add the following to your <code>Cargo.toml</code>:</p>
 <pre><code class="language-toml">[dependencies]
-juniper = &quot;0.16.0&quot;
-juniper_subscriptions = &quot;0.17.0&quot;
+juniper = "0.16.0"
+juniper_subscriptions = "0.17.0"
 </code></pre>
 <h3 id="schema-definition"><a class="header" href="#schema-definition">Schema Definition</a></h3>
-<p>The <code>Subscription</code> is just a GraphQL object, similar to the query root and mutations object that you defined for the 
+<p>The <code>Subscription</code> is just a GraphQL object, similar to the query root and mutations object that you defined for the
 operations in your <a href="../schema/schemas_and_mutations.html">Schema</a>. For subscriptions all fields/operations should be async and should return a <a href="https://docs.rs/futures/0.3.4/futures/stream/trait.Stream.html">Stream</a>.</p>
 <p>This example shows a subscription operation that returns two events, the strings <code>Hello</code> and <code>World!</code>
-sequentially: </p>
+sequentially:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate futures;
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">use std::pin::Pin;
@@ -206,7 +206,7 @@ sequentially: </p>
 </span><span class="boring">#[graphql_object(context = Database)]
 </span><span class="boring">impl Query {
 </span><span class="boring">   fn hello_world() -&gt; &amp;'static str {
-</span><span class="boring">       &quot;Hello World!&quot;
+</span><span class="boring">       "Hello World!"
 </span><span class="boring">   }
 </span><span class="boring">}
 </span>pub struct Subscription;
@@ -217,8 +217,8 @@ type StringStream = Pin&lt;Box&lt;dyn Stream&lt;Item = Result&lt;String, FieldEr
 impl Subscription {
     async fn hello_world() -&gt; StringStream {
         let stream = futures::stream::iter(vec![
-            Ok(String::from(&quot;Hello&quot;)),
-            Ok(String::from(&quot;World!&quot;))
+            Ok(String::from("Hello")),
+            Ok(String::from("World!"))
         ]);
         Box::pin(stream)
     }
@@ -227,11 +227,11 @@ impl Subscription {
 </span><span class="boring">fn main () {}</span></code></pre></pre>
 <h3 id="coordinator"><a class="header" href="#coordinator">Coordinator</a></h3>
 <p>Subscriptions require a bit more resources than regular queries and provide a great vector for DOS attacks. This can can bring down a server easily if not handled correctly. The <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> trait provides coordination logic to enable functionality like DOS attack mitigation and resource limits.</p>
-<p>The <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> contains the schema and can keep track of opened connections, handle subscription 
+<p>The <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> contains the schema and can keep track of opened connections, handle subscription
 start and end, and maintain a global subscription id for each subscription. Each time a connection is established,<br />
-the <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> spawns a <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionConnection.html"><code>SubscriptionConnection</code></a>. The <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionConnection.html"><code>SubscriptionConnection</code></a> handles a single connection, providing resolver logic for a client stream as well as reconnection 
+the <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> spawns a <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionConnection.html"><code>SubscriptionConnection</code></a>. The <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionConnection.html"><code>SubscriptionConnection</code></a> handles a single connection, providing resolver logic for a client stream as well as reconnection
 and shutdown logic.</p>
-<p>While you can implement <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> yourself, Juniper contains a simple and generic implementation called <a href="https://docs.rs/juniper_subscriptions/0.15.0/struct.Coordinator.html"><code>Coordinator</code></a>.  The <code>subscribe</code> 
+<p>While you can implement <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> yourself, Juniper contains a simple and generic implementation called <a href="https://docs.rs/juniper_subscriptions/0.15.0/struct.Coordinator.html"><code>Coordinator</code></a>.  The <code>subscribe</code>
 operation returns a <a href="https://docs.rs/futures/0.3.4/futures/future/trait.Future.html"><code>Future</code></a> with an <code>Item</code> value of a <code>Result&lt;Connection, GraphQLError&gt;</code>,
 where <a href="https://docs.rs/juniper_subscriptions/0.15.0/struct.Connection.html"><code>Connection</code></a> is a <code>Stream</code> of values returned by the operation and <a href="https://docs.rs/juniper/0.14.2/juniper/enum.GraphQLError.html"><code>GraphQLError</code></a> is the error when the subscription fails.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(dead_code)]
@@ -265,7 +265,7 @@ where <a href="https://docs.rs/juniper_subscriptions/0.15.0/struct.Connection.ht
 </span><span class="boring">#[graphql_object(context = Database)]
 </span><span class="boring">impl Query {
 </span><span class="boring">    fn hello_world() -&gt; &amp;'static str {
-</span><span class="boring">        &quot;Hello World!&quot;
+</span><span class="boring">        "Hello World!"
 </span><span class="boring">    }
 </span><span class="boring">}
 </span><span class="boring">
@@ -277,7 +277,7 @@ where <a href="https://docs.rs/juniper_subscriptions/0.15.0/struct.Connection.ht
 </span><span class="boring">impl Subscription {
 </span><span class="boring">    async fn hello_world() -&gt; StringStream {
 </span><span class="boring">        let stream =
-</span><span class="boring">            futures::stream::iter(vec![Ok(String::from(&quot;Hello&quot;)), Ok(String::from(&quot;World!&quot;))]);
+</span><span class="boring">            futures::stream::iter(vec![Ok(String::from("Hello")), Ok(String::from("World!"))]);
 </span><span class="boring">        Box::pin(stream)
 </span><span class="boring">    }
 </span><span class="boring">}
@@ -291,15 +291,15 @@ async fn run_subscription() {
     let schema = schema();
     let coordinator = Coordinator::new(schema);
     let req: GraphQLRequest&lt;DefaultScalarValue&gt; = serde_json::from_str(
-        r#&quot;{
-            &quot;query&quot;: &quot;subscription { helloWorld }&quot;
-        }&quot;#,
+        r#"{
+            "query": "subscription { helloWorld }"
+        }"#,
     )
         .unwrap();
     let ctx = Database::new();
     let mut conn = coordinator.subscribe(&amp;req, &amp;ctx).await.unwrap();
     while let Some(result) = conn.next().await {
-        println!(&quot;{}&quot;, serde_json::to_string(&amp;result).unwrap());
+        println!("{}", serde_json::to_string(&amp;result).unwrap());
     }
 }
 <span class="boring">
@@ -311,7 +311,7 @@ GraphQL over <a href="https://github.com/apollographql/subscriptions-transport-w
 <li><a href="https://github.com/graphql-rust/juniper/tree/master/juniper_warp/examples/subscription.rs">Warp Subscription Example</a></li>
 <li><a href="https://github.com/graphql-rust/juniper/tree/master/juniper_subscriptions/examples/basic.rs">Small Example</a></li>
 </ul>
-<!-- TODO: Fix these links when the documentation for the `juniper_subscriptions` are defined in the docs. --->
+ <!-- TODO: Fix these links when the documentation for the `juniper_subscriptions` are defined in the docs. --->
 <!--- --->
 
                     </main>

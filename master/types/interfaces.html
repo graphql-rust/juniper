@@ -259,7 +259,7 @@ impl Luke {
     // Same is applied for `Cow&lt;'a, str&gt;`.
     //                  ⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄
     fn home_planet() -&gt; &amp;'static str {
-        &quot;Tatooine&quot;
+        "Tatooine"
     }
 }
 <span class="boring">
@@ -285,8 +285,8 @@ struct Character {
 fn main() {}
 </code></pre>
 <h3 id="graphql-subtyping-and-additional-nullable-fields"><a class="header" href="#graphql-subtyping-and-additional-nullable-fields">GraphQL subtyping and additional <code>null</code>able fields</a></h3>
-<p>GraphQL allows implementers (both objects and other interfaces) to return &quot;subtypes&quot; instead of an original value. Basically, this allows you to impose additional bounds on the implementation.</p>
-<p>Valid &quot;subtypes&quot; are:</p>
+<p>GraphQL allows implementers (both objects and other interfaces) to return "subtypes" instead of an original value. Basically, this allows you to impose additional bounds on the implementation.</p>
+<p>Valid "subtypes" are:</p>
 <ul>
 <li>interface implementer instead of an interface itself:
 <ul>
@@ -301,7 +301,7 @@ fn main() {}
 </ul>
 </li>
 </ul>
-<p>These rules are recursively applied, so <code>Vec&lt;Vec&lt;I implements T&gt;&gt;</code> is a valid &quot;subtype&quot; of a <code>Option&lt;Vec&lt;Option&lt;Vec&lt;Option&lt;T&gt;&gt;&gt;&gt;&gt;</code>.</p>
+<p>These rules are recursively applied, so <code>Vec&lt;Vec&lt;I implements T&gt;&gt;</code> is a valid "subtype" of a <code>Option&lt;Vec&lt;Option&lt;Vec&lt;Option&lt;T&gt;&gt;&gt;&gt;&gt;</code>.</p>
 <p>Also, GraphQL allows implementers to add <code>null</code>able fields, which aren't present on an original interface.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span>use juniper::{graphql_interface, graphql_object, ID};
@@ -347,15 +347,15 @@ impl Luke {
         // Resolving `...on Human { homePlanet }` will provide `None` for this
         // argument.
         match language.as_deref() {
-            None | Some(&quot;en&quot;) =&gt; &quot;Tatooine&quot;,
-            Some(&quot;ko&quot;) =&gt; &quot;타투인&quot;,
+            None | Some("en") =&gt; "Tatooine",
+            Some("ko") =&gt; "타투인",
             _ =&gt; todo!(),
         }
     }
 }
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
-<p>Violating GraphQL &quot;subtyping&quot; or additional nullable field rules is a compile-time error.</p>
+<p>Violating GraphQL "subtyping" or additional nullable field rules is a compile-time error.</p>
 <pre><code class="language-compile_fail"># extern crate juniper;
 use juniper::{graphql_interface, graphql_object};
 
@@ -369,7 +369,7 @@ impl ObjA {
 //     ^^ the evaluated program panicked at 
 //        'Failed to implement interface `Character` on `ObjA`: Field `id`: Argument `isPresent` of type `Boolean!` 
 //         isn't present on the interface and so has to be nullable.'        
-        is_present.then_some(&amp;self.id).unwrap_or(&quot;missing&quot;)
+        is_present.then_some(&amp;self.id).unwrap_or("missing")
     }
 }
 
@@ -426,30 +426,30 @@ struct Human {
 </span>use juniper::graphql_interface;
 
 // Renames the interface in GraphQL schema.
-#[graphql_interface(name = &quot;MyCharacter&quot;)] 
+#[graphql_interface(name = "MyCharacter")] 
 // Describes the interface in GraphQL schema.
-#[graphql_interface(description = &quot;My own character.&quot;)]
+#[graphql_interface(description = "My own character.")]
 // Usual Rust docs are supported too as GraphQL interface description, 
 // but `description` attribute argument takes precedence over them, if specified.
 /// This doc is absent in GraphQL schema.  
 trait Character {
     // Renames the field in GraphQL schema.
-    #[graphql(name = &quot;myId&quot;)]
+    #[graphql(name = "myId")]
     // Deprecates the field in GraphQL schema.
     // Usual Rust `#[deprecated]` attribute is supported too as field deprecation,
     // but `deprecated` attribute argument takes precedence over it, if specified.
-    #[graphql(deprecated = &quot;Do not use it.&quot;)]
+    #[graphql(deprecated = "Do not use it.")]
     // Describes the field in GraphQL schema.
-    #[graphql(description = &quot;ID of my own character.&quot;)]
+    #[graphql(description = "ID of my own character.")]
     // Usual Rust docs are supported too as field description, 
     // but `description` attribute argument takes precedence over them, if specified.
     /// This description is absent in GraphQL schema.  
     fn id(
         &amp;self,
         // Renames the argument in GraphQL schema.
-        #[graphql(name = &quot;myNum&quot;)]
+        #[graphql(name = "myNum")]
         // Describes the argument in GraphQL schema.
-        #[graphql(description = &quot;ID number of my own character.&quot;)]
+        #[graphql(description = "ID number of my own character.")]
         // Specifies the default value for the argument.
         // The concrete value may be omitted, and the `Default::default` one 
         // will be used in such case.
@@ -464,7 +464,7 @@ trait Character {
 </span><span class="boring">extern crate juniper;
 </span>use juniper::graphql_interface;
 
-#[graphql_interface(rename_all = &quot;none&quot;)] // disables any renaming
+#[graphql_interface(rename_all = "none")] // disables any renaming
 trait Character {
     // Now exposed as `my_id` and `my_num` in the schema
     fn my_id(&amp;self, my_num: i32) -&gt; &amp;str;
@@ -502,7 +502,7 @@ struct Human {
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="using-executor-and-explicit-generic-scalar"><a class="header" href="#using-executor-and-explicit-generic-scalar">Using executor and explicit generic scalar</a></h3>
 <p>If an <a href="https://docs.rs/juniper/latest/juniper/struct.Executor.html"><code>Executor</code></a> is required in a trait method to resolve a <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interface</a> field, specify it as an argument.</p>
-<p>This requires to explicitly parametrize over <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a>, as <a href="https://docs.rs/juniper/latest/juniper/struct.Executor.html"><code>Executor</code></a> does so. </p>
+<p>This requires to explicitly parametrize over <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a>, as <a href="https://docs.rs/juniper/latest/juniper/struct.Executor.html"><code>Executor</code></a> does so.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span>use juniper::{graphql_interface, graphql_object, Executor, ScalarValue};
 

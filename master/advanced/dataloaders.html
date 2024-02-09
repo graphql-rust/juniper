@@ -209,14 +209,14 @@ This can be done with Juniper using the crate <a href="https://github.com/cksac/
 <h3 id="what-does-it-look-like"><a class="header" href="#what-does-it-look-like">What does it look like?</a></h3>
 <p>!FILENAME Cargo.toml</p>
 <pre><code class="language-toml">[dependencies]
-actix-identity = &quot;0.4.0-beta.4&quot;
-actix-rt = &quot;1.0&quot;
-actix-web = &quot;2.0&quot;
-async-trait = &quot;0.1.30&quot;
-dataloader = &quot;0.12.0&quot;
-futures = &quot;0.3&quot;
-juniper = &quot;0.16.0&quot;
-postgres = &quot;0.15.2&quot;
+actix-identity = "0.4.0-beta.4"
+actix-rt = "1.0"
+actix-web = "2.0"
+async-trait = "0.1.30"
+dataloader = "0.12.0"
+futures = "0.3"
+juniper = "0.16.0"
+postgres = "0.15.2"
 </code></pre>
 <pre><code class="language-rust  ignore">// use dataloader::cached::Loader;
 use dataloader::non_cached::Loader;
@@ -226,10 +226,10 @@ use postgres::{Connection, TlsMode};
 use std::env;
 
 pub fn get_db_conn() -&gt; Connection {
-    let pg_connection_string = env::var(&quot;DATABASE_URI&quot;).expect(&quot;need a db uri&quot;);
-    println!(&quot;Connecting to {pg_connection_string}&quot;);
+    let pg_connection_string = env::var("DATABASE_URI").expect("need a db uri");
+    println!("Connecting to {pg_connection_string}");
     let conn = Connection::connect(&amp;pg_connection_string[..], TlsMode::None).unwrap();
-    println!(&quot;Connection is fine&quot;);
+    println!("Connection is fine");
     conn
 }
 
@@ -242,7 +242,7 @@ pub struct Cult {
 pub fn get_cult_by_ids(hashmap: &amp;mut HashMap&lt;i32, Cult&gt;, ids: Vec&lt;i32&gt;) {
   let conn = get_db_conn();
   for row in &amp;conn
-    .query(&quot;SELECT id, name FROM cults WHERE id = ANY($1)&quot;, &amp;[&amp;ids])
+    .query("SELECT id, name FROM cults WHERE id = ANY($1)", &amp;[&amp;ids])
     .unwrap()
   {
     let cult = Cult {
@@ -260,7 +260,7 @@ impl BatchFn&lt;i32, Cult&gt; for CultBatcher {
 
     // A hashmap is used, as we need to return an array which maps each original key to a Cult.
     async fn load(&amp;self, keys: &amp;[i32]) -&gt; HashMap&lt;i32, Cult&gt; {
-        println!(&quot;load cult batch {keys:?}&quot;);
+        println!("load cult batch {keys:?}");
         let mut cult_hashmap = HashMap::new();
         get_cult_by_ids(&amp;mut cult_hashmap, keys.to_vec());
         cult_hashmap
@@ -331,7 +331,7 @@ impl Context {
     let json = serde_json::to_string(&amp;res).map_err(error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok()
-        .content_type(&quot;application/json&quot;)
+        .content_type("application/json")
         .body(json))
 }</code></pre>
 <h3 id="further-example"><a class="header" href="#further-example">Further Example:</a></h3>

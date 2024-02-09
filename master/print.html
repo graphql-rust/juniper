@@ -223,7 +223,7 @@ your Schemas automatically.</p>
 <p>Juniper follows a <a href="https://blog.logrocket.com/code-first-vs-schema-first-development-graphql/">code-first approach</a> to defining GraphQL schemas. If you would like to use a <a href="https://blog.logrocket.com/code-first-vs-schema-first-development-graphql/">schema-first approach</a> instead, consider <a href="https://github.com/davidpdrsn/juniper-from-schema">juniper-from-schema</a> for generating code from a schema file.</p>
 <h2 id="installation"><a class="header" href="#installation">Installation</a></h2>
 <pre><code class="language-toml">[dependencies]
-juniper = &quot;0.16.0&quot;
+juniper = "0.16.0"
 </code></pre>
 <h2 id="schema-example"><a class="header" href="#schema-example">Schema example</a></h2>
 <p>Exposing simple enums and structs as GraphQL is just a matter of adding a custom
@@ -245,8 +245,8 @@ resolvers, which you will use for the <code>Query</code> and <code>Mutation</cod
 </span><span class="boring">struct DatabasePool;
 </span><span class="boring">impl DatabasePool {
 </span><span class="boring">    fn get_connection(&amp;self) -&gt; FieldResult&lt;DatabasePool&gt; { Ok(DatabasePool) }
-</span><span class="boring">    fn find_human(&amp;self, _id: &amp;str) -&gt; FieldResult&lt;Human&gt; { Err(&quot;&quot;)? }
-</span><span class="boring">    fn insert_human(&amp;self, _human: &amp;NewHuman) -&gt; FieldResult&lt;Human&gt; { Err(&quot;&quot;)? }
+</span><span class="boring">    fn find_human(&amp;self, _id: &amp;str) -&gt; FieldResult&lt;Human&gt; { Err("")? }
+</span><span class="boring">    fn insert_human(&amp;self, _human: &amp;NewHuman) -&gt; FieldResult&lt;Human&gt; { Err("")? }
 </span><span class="boring">}
 </span>
 #[derive(GraphQLEnum)]
@@ -257,7 +257,7 @@ enum Episode {
 }
 
 #[derive(GraphQLObject)]
-#[graphql(description = &quot;A humanoid creature in the Star Wars universe&quot;)]
+#[graphql(description = "A humanoid creature in the Star Wars universe")]
 struct Human {
     id: String,
     name: String,
@@ -268,7 +268,7 @@ struct Human {
 // There is also a custom derive for mapping GraphQL input objects.
 
 #[derive(GraphQLInputObject)]
-#[graphql(description = &quot;A humanoid creature in the Star Wars universe&quot;)]
+#[graphql(description = "A humanoid creature in the Star Wars universe")]
 struct NewHuman {
     name: String,
     appears_in: Vec&lt;Episode&gt;,
@@ -298,7 +298,7 @@ struct Query;
 )]
 impl Query {
     fn apiVersion() -&gt; &amp;'static str {
-        &quot;1.0&quot;
+        "1.0"
     }
 
     // Arguments to resolvers can either be simple types or input objects.
@@ -385,7 +385,7 @@ fn main() {
 
     // Run the executor.
     let (res, _errors) = juniper::execute_sync(
-        &quot;query { favoriteEpisode }&quot;,
+        "query { favoriteEpisode }",
         None,
         &amp;Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
         &amp;Variables::new(),
@@ -396,12 +396,12 @@ fn main() {
     assert_eq!(
         res,
         graphql_value!({
-            &quot;favoriteEpisode&quot;: &quot;NEW_HOPE&quot;,
+            "favoriteEpisode": "NEW_HOPE",
         })
     );
 }</code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="type-system"><a class="header" href="#type-system">Type System</a></h1>
-<p>Most of the work in working with juniper consists of mapping the 
+<p>Most of the work in working with juniper consists of mapping the
 GraphQL type system to the Rust types your application uses.</p>
 <p>Juniper provides some convenient abstractions that try to make this process
 as painless as possible.</p>
@@ -467,11 +467,11 @@ via the <code>graphql</code> attribute. The following example is equivalent to t
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLObject;
 </span>#[derive(GraphQLObject)]
-#[graphql(description = &quot;Information about a person&quot;)]
+#[graphql(description = "Information about a person")]
 struct Person {
-    #[graphql(description = &quot;The person's full name, including both first and last names&quot;)]
+    #[graphql(description = "The person's full name, including both first and last names")]
     name: String,
-    #[graphql(description = &quot;The person's age in years, rounded down&quot;)]
+    #[graphql(description = "The person's age in years, rounded down")]
     age: i32,
 }
 <span class="boring">
@@ -482,10 +482,10 @@ documentation to differ:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLObject;
 </span>#[derive(GraphQLObject)]
-#[graphql(description = &quot;This description shows up in GraphQL&quot;)]
+#[graphql(description = "This description shows up in GraphQL")]
 /// This description shows up in RustDoc
 struct Person {
-    #[graphql(description = &quot;This description shows up in GraphQL&quot;)]
+    #[graphql(description = "This description shows up in GraphQL")]
     /// This description shows up in RustDoc
     name: String,
     /// This description shows up in both RustDoc and GraphQL
@@ -546,7 +546,7 @@ fields:</p>
 struct Person {
     name: String,
     age: i32,
-    #[graphql(name = &quot;websiteURL&quot;)]
+    #[graphql(name = "websiteURL")]
     website_url: Option&lt;String&gt;, // now exposed as `websiteURL` in the schema
 }
 <span class="boring">
@@ -555,7 +555,7 @@ struct Person {
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLObject;
 </span>#[derive(GraphQLObject)]
-#[graphql(rename_all = &quot;none&quot;)] // disables any renaming
+#[graphql(rename_all = "none")] // disables any renaming
 struct Person {
     name: String,
     age: i32,
@@ -572,7 +572,7 @@ attribute:</p>
 struct Person {
     name: String,
     age: i32,
-    #[graphql(deprecated = &quot;Please use the name field instead&quot;)]
+    #[graphql(deprecated = "Please use the name field instead")]
     first_name: String,
 }
 <span class="boring">
@@ -598,9 +598,9 @@ struct Person {
 <p>If you've got a struct that can't be mapped directly to GraphQL, that contains
 computed fields or circular structures, you have to use a more powerful tool:
 the <code>#[graphql_object]</code> procedural macro. This macro lets you define GraphQL object
-fields in a Rust <code>impl</code> block for a type. Note, that GraphQL fields are defined in 
+fields in a Rust <code>impl</code> block for a type. Note, that GraphQL fields are defined in
 this <code>impl</code> block by default. If you want to define normal methods on the struct,
-you have to do so either in a separate &quot;normal&quot; <code>impl</code> block, or mark them with
+you have to do so either in a separate "normal" <code>impl</code> block, or mark them with
 <code>#[graphql(ignore)]</code> attribute to be omitted by the macro. Continuing with the
 example from the last chapter, this is how you would define <code>Person</code> using the
 macro:</p>
@@ -675,36 +675,36 @@ the field. Also, the type name can be changed with an alias:</p>
 /// Doc comments are used as descriptions for GraphQL.
 #[graphql_object(
     // With this attribute you can change the public GraphQL name of the type.
-    name = &quot;PersonObject&quot;,
+    name = "PersonObject",
 
     // You can also specify a description here, which will overwrite 
     // a doc comment description.
-    description = &quot;...&quot;,
+    description = "...",
 )]
 impl Person {
     /// A doc comment on the field will also be used for GraphQL.
     #[graphql(
         // Or provide a description here.
-        description = &quot;...&quot;,
+        description = "...",
     )]
     fn doc_comment(&amp;self) -&gt; &amp;str {
-        &quot;&quot;
+        ""
     }
 
     // Fields can also be renamed if required.
-    #[graphql(name = &quot;myCustomFieldName&quot;)]
+    #[graphql(name = "myCustomFieldName")]
     fn renamed_field() -&gt; bool {
         true
     }
 
     // Deprecations also work as you'd expect.
     // Both the standard Rust syntax and a custom attribute is accepted.
-    #[deprecated(note = &quot;...&quot;)]
+    #[deprecated(note = "...")]
     fn deprecated_standard() -&gt; bool {
         false
     }
 
-    #[graphql(deprecated = &quot;...&quot;)]
+    #[graphql(deprecated = "...")]
     fn deprecated_graphql() -&gt; bool {
         true
     }
@@ -716,7 +716,7 @@ impl Person {
 </span><span class="boring">use juniper::graphql_object;
 </span>struct Person;
 
-#[graphql_object(rename_all = &quot;none&quot;)] // disables any renaming
+#[graphql_object(rename_all = "none")] // disables any renaming
 impl Person {
     // Now exposed as `renamed_field` in the schema
     fn renamed_field() -&gt; bool {
@@ -739,19 +739,19 @@ impl Person {
         &amp;self,
         #[graphql(
             // Arguments can also be renamed if required.
-            name = &quot;arg&quot;,
+            name = "arg",
             // Set a default value which will be injected if not present.
             // The default can be any valid Rust expression, including a function call, etc.
             default = true,
             // Set a description.
-            description = &quot;The first argument...&quot;
+            description = "The first argument..."
         )]
         arg1: bool,
         // If default expression is not specified then `Default::default()` value is used.
         #[graphql(default)]
         arg2: i32,
     ) -&gt; String {
-        format!(&quot;{arg1} {arg2}&quot;)
+        format!("{arg1} {arg2}")
     }
 }
 <span class="boring">
@@ -761,7 +761,7 @@ impl Person {
 </span><span class="boring">use juniper::graphql_object;
 </span>struct Person;
 
-#[graphql_object(rename_all = &quot;none&quot;)] // disables any renaming
+#[graphql_object(rename_all = "none")] // disables any renaming
 impl Person {
     // Now exposed as `my_arg` in the schema
     fn field(my_arg: bool) -&gt; bool {
@@ -797,8 +797,8 @@ struct User {
 <p>We would like a <code>friends</code> field on <code>User</code> that returns a list of <code>User</code> objects.
 In order to write such a field though, the database must be queried.</p>
 <p>To solve this, we mark the <code>Database</code> as a valid context type and assign it to
-the user object. </p>
-<p>To gain access to the context, we need to specify an argument with the same 
+the user object.</p>
+<p>To gain access to the context, we need to specify an argument with the same
 type as the specified <code>Context</code> for the type:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use std::collections::HashMap;
@@ -828,7 +828,7 @@ impl User {
     fn friends&lt;'db&gt;(&amp;self, context: &amp;'db Database) -&gt; Vec&lt;&amp;'db User&gt; {
         // Use the database to lookup users
         self.friend_ids.iter()
-            .map(|id| context.users.get(id).expect(&quot;Could not find user with ID&quot;))
+            .map(|id| context.users.get(id).expect("Could not find user with ID"))
             .collect()
     }
 
@@ -963,15 +963,15 @@ query:</p>
 returned:</p>
 <p>!FILENAME Response for nullable field with error</p>
 <pre><code class="language-json">{
-  &quot;data&quot;: {
-    &quot;example&quot;: {
-      contents: &quot;&lt;Contents of the file&gt;&quot;,
+  "data": {
+    "example": {
+      contents: "&lt;Contents of the file&gt;",
       foo: null
     }
   },
-  &quot;errors&quot;: [
-    &quot;message&quot;: &quot;invalid utf-8 sequence of 2 bytes from index 0&quot;,
-    &quot;locations&quot;: [{ &quot;line&quot;: 2, &quot;column&quot;: 4 }])
+  "errors": [
+    "message": "invalid utf-8 sequence of 2 bytes from index 0",
+    "locations": [{ "line": 2, "column": 4 }])
   ]
 }
 </code></pre>
@@ -989,9 +989,9 @@ field, or the root <code>data</code> object if there are no nullable fields.</p>
 following would be returned:</p>
 <p>!FILENAME Response for non-null field with error and no nullable parent</p>
 <pre><code class="language-json">{
-  &quot;errors&quot;: [
-    &quot;message&quot;: &quot;Permission denied (os error 13)&quot;,
-    &quot;locations&quot;: [{ &quot;line&quot;: 2, &quot;column&quot;: 4 }])
+  "errors": [
+    "message": "Permission denied (os error 13)",
+    "locations": [{ "line": 2, "column": 4 }])
   ]
 }
 </code></pre>
@@ -1009,9 +1009,9 @@ impl&lt;S: ScalarValue&gt; IntoFieldError&lt;S&gt; for CustomError {
     fn into_field_error(self) -&gt; FieldError&lt;S&gt; {
         match self {
             CustomError::WhateverNotSet =&gt; FieldError::new(
-                &quot;Whatever does not exist&quot;,
+                "Whatever does not exist",
                 graphql_value!({
-                    &quot;type&quot;: &quot;NO_WHATEVER&quot;
+                    "type": "NO_WHATEVER"
                 }),
             ),
         }
@@ -1035,11 +1035,11 @@ impl Example {
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>The specified structured error information is included in the <a href="https://spec.graphql.org/October2021#sec-Errors"><code>extensions</code></a> key:</p>
 <pre><code class="language-json">{
-  &quot;errors&quot;: [{
-    &quot;message&quot;: &quot;Whatever does not exist&quot;,
-    &quot;locations&quot;: [{&quot;line&quot;: 2, &quot;column&quot;: 4}],
-    &quot;extensions&quot;: {
-      &quot;type&quot;: &quot;NO_WHATEVER&quot;
+  "errors": [{
+    "message": "Whatever does not exist",
+    "locations": [{"line": 2, "column": 4}],
+    "extensions": {
+      "type": "NO_WHATEVER"
     }
   }]
 }
@@ -1097,15 +1097,15 @@ impl Mutation {
 
         if !(10 &lt;= name.len() &amp;&amp; name.len() &lt;= 100) {
             errors.push(ValidationError {
-                field: &quot;name&quot;.into(),
-                message: &quot;between 10 and 100&quot;.into(),
+                field: "name".into(),
+                message: "between 10 and 100".into(),
             });
         }
 
         if !(1 &lt;= quantity &amp;&amp; quantity &lt;= 10) {
             errors.push(ValidationError {
-                field: &quot;quantity&quot;.into(),
-                message: &quot;between 1 and 10&quot;.into(),
+                field: "quantity".into(),
+                message: "between 1 and 10".into(),
             });
         }
 
@@ -1126,7 +1126,7 @@ instead of <code>Ok(Item)</code>.</p>
 resulting errors as shown in the following example:</p>
 <pre><code class="language-graphql">{
   mutation {
-    addItem(name: &quot;&quot;, quantity: 0) {
+    addItem(name: "", quantity: 0) {
       ... on Item {
         name
       }
@@ -1182,11 +1182,11 @@ impl Mutation {
         };
 
         if !(10 &lt;= name.len() &amp;&amp; name.len() &lt;= 100) {
-            error.name = Some(&quot;between 10 and 100&quot;.into());
+            error.name = Some("between 10 and 100".into());
         }
 
         if !(1 &lt;= quantity &amp;&amp; quantity &lt;= 10) {
-            error.quantity = Some(&quot;between 1 and 10&quot;.into());
+            error.quantity = Some("between 1 and 10".into());
         }
 
         if error.name.is_none() &amp;&amp; error.quantity.is_none() {
@@ -1251,9 +1251,9 @@ impl&lt;S: ScalarValue&gt; juniper::IntoFieldError&lt;S&gt; for ApiError {
     fn into_field_error(self) -&gt; FieldError&lt;S&gt; {
         match self {
             ApiError::Database =&gt; FieldError::new(
-                &quot;Internal database error&quot;,
+                "Internal database error",
                 graphql_value!({
-                    &quot;type&quot;: &quot;DATABASE&quot;
+                    "type": "DATABASE"
                 }),
             ),
         }
@@ -1271,11 +1271,11 @@ impl Mutation {
         };
 
         if !(10 &lt;= name.len() &amp;&amp; name.len() &lt;= 100) {
-            error.name = Some(&quot;between 10 and 100&quot;.into());
+            error.name = Some("between 10 and 100".into());
         }
 
         if !(1 &lt;= quantity &amp;&amp; quantity &lt;= 10) {
-            error.quantity = Some(&quot;between 1 and 10&quot;.into());
+            error.quantity = Some("between 1 and 10".into());
         }
 
         if error.name.is_none() &amp;&amp; error.quantity.is_none() {
@@ -1324,7 +1324,7 @@ it works when <a href="types/objects/defining_objects.html">defining objects</a>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span>#[derive(juniper::GraphQLEnum)]
 enum Episode {
-    #[graphql(name=&quot;NEW_HOPE&quot;)]
+    #[graphql(name="NEW_HOPE")]
     NewHope,
     Empire,
     Jedi,
@@ -1336,15 +1336,15 @@ enum Episode {
 while individual enum variants can be renamed, documented, and deprecated:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span>#[derive(juniper::GraphQLEnum)]
-#[graphql(name=&quot;Episode&quot;, description=&quot;An episode of Star Wars&quot;)]
+#[graphql(name="Episode", description="An episode of Star Wars")]
 enum StarWarsEpisode {
-    #[graphql(deprecated=&quot;We don't really talk about this one&quot;)]
+    #[graphql(deprecated="We don't really talk about this one")]
     ThePhantomMenace,
 
-    #[graphql(name=&quot;NEW_HOPE&quot;)]
+    #[graphql(name="NEW_HOPE")]
     NewHope,
 
-    #[graphql(description=&quot;Arguably the best one in the trilogy&quot;)]
+    #[graphql(description="Arguably the best one in the trilogy")]
     Empire,
     Jedi,
 }
@@ -1448,7 +1448,7 @@ impl Luke {
     // Same is applied for `Cow&lt;'a, str&gt;`.
     //                  ⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄
     fn home_planet() -&gt; &amp;'static str {
-        &quot;Tatooine&quot;
+        "Tatooine"
     }
 }
 <span class="boring">
@@ -1474,8 +1474,8 @@ struct Character {
 fn main() {}
 </code></pre>
 <h3 id="graphql-subtyping-and-additional-nullable-fields"><a class="header" href="#graphql-subtyping-and-additional-nullable-fields">GraphQL subtyping and additional <code>null</code>able fields</a></h3>
-<p>GraphQL allows implementers (both objects and other interfaces) to return &quot;subtypes&quot; instead of an original value. Basically, this allows you to impose additional bounds on the implementation.</p>
-<p>Valid &quot;subtypes&quot; are:</p>
+<p>GraphQL allows implementers (both objects and other interfaces) to return "subtypes" instead of an original value. Basically, this allows you to impose additional bounds on the implementation.</p>
+<p>Valid "subtypes" are:</p>
 <ul>
 <li>interface implementer instead of an interface itself:
 <ul>
@@ -1490,7 +1490,7 @@ fn main() {}
 </ul>
 </li>
 </ul>
-<p>These rules are recursively applied, so <code>Vec&lt;Vec&lt;I implements T&gt;&gt;</code> is a valid &quot;subtype&quot; of a <code>Option&lt;Vec&lt;Option&lt;Vec&lt;Option&lt;T&gt;&gt;&gt;&gt;&gt;</code>.</p>
+<p>These rules are recursively applied, so <code>Vec&lt;Vec&lt;I implements T&gt;&gt;</code> is a valid "subtype" of a <code>Option&lt;Vec&lt;Option&lt;Vec&lt;Option&lt;T&gt;&gt;&gt;&gt;&gt;</code>.</p>
 <p>Also, GraphQL allows implementers to add <code>null</code>able fields, which aren't present on an original interface.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span>use juniper::{graphql_interface, graphql_object, ID};
@@ -1536,15 +1536,15 @@ impl Luke {
         // Resolving `...on Human { homePlanet }` will provide `None` for this
         // argument.
         match language.as_deref() {
-            None | Some(&quot;en&quot;) =&gt; &quot;Tatooine&quot;,
-            Some(&quot;ko&quot;) =&gt; &quot;타투인&quot;,
+            None | Some("en") =&gt; "Tatooine",
+            Some("ko") =&gt; "타투인",
             _ =&gt; todo!(),
         }
     }
 }
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
-<p>Violating GraphQL &quot;subtyping&quot; or additional nullable field rules is a compile-time error.</p>
+<p>Violating GraphQL "subtyping" or additional nullable field rules is a compile-time error.</p>
 <pre><code class="language-compile_fail"># extern crate juniper;
 use juniper::{graphql_interface, graphql_object};
 
@@ -1558,7 +1558,7 @@ impl ObjA {
 //     ^^ the evaluated program panicked at 
 //        'Failed to implement interface `Character` on `ObjA`: Field `id`: Argument `isPresent` of type `Boolean!` 
 //         isn't present on the interface and so has to be nullable.'        
-        is_present.then_some(&amp;self.id).unwrap_or(&quot;missing&quot;)
+        is_present.then_some(&amp;self.id).unwrap_or("missing")
     }
 }
 
@@ -1615,30 +1615,30 @@ struct Human {
 </span>use juniper::graphql_interface;
 
 // Renames the interface in GraphQL schema.
-#[graphql_interface(name = &quot;MyCharacter&quot;)] 
+#[graphql_interface(name = "MyCharacter")] 
 // Describes the interface in GraphQL schema.
-#[graphql_interface(description = &quot;My own character.&quot;)]
+#[graphql_interface(description = "My own character.")]
 // Usual Rust docs are supported too as GraphQL interface description, 
 // but `description` attribute argument takes precedence over them, if specified.
 /// This doc is absent in GraphQL schema.  
 trait Character {
     // Renames the field in GraphQL schema.
-    #[graphql(name = &quot;myId&quot;)]
+    #[graphql(name = "myId")]
     // Deprecates the field in GraphQL schema.
     // Usual Rust `#[deprecated]` attribute is supported too as field deprecation,
     // but `deprecated` attribute argument takes precedence over it, if specified.
-    #[graphql(deprecated = &quot;Do not use it.&quot;)]
+    #[graphql(deprecated = "Do not use it.")]
     // Describes the field in GraphQL schema.
-    #[graphql(description = &quot;ID of my own character.&quot;)]
+    #[graphql(description = "ID of my own character.")]
     // Usual Rust docs are supported too as field description, 
     // but `description` attribute argument takes precedence over them, if specified.
     /// This description is absent in GraphQL schema.  
     fn id(
         &amp;self,
         // Renames the argument in GraphQL schema.
-        #[graphql(name = &quot;myNum&quot;)]
+        #[graphql(name = "myNum")]
         // Describes the argument in GraphQL schema.
-        #[graphql(description = &quot;ID number of my own character.&quot;)]
+        #[graphql(description = "ID number of my own character.")]
         // Specifies the default value for the argument.
         // The concrete value may be omitted, and the `Default::default` one 
         // will be used in such case.
@@ -1653,7 +1653,7 @@ trait Character {
 </span><span class="boring">extern crate juniper;
 </span>use juniper::graphql_interface;
 
-#[graphql_interface(rename_all = &quot;none&quot;)] // disables any renaming
+#[graphql_interface(rename_all = "none")] // disables any renaming
 trait Character {
     // Now exposed as `my_id` and `my_num` in the schema
     fn my_id(&amp;self, my_num: i32) -&gt; &amp;str;
@@ -1691,7 +1691,7 @@ struct Human {
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="using-executor-and-explicit-generic-scalar"><a class="header" href="#using-executor-and-explicit-generic-scalar">Using executor and explicit generic scalar</a></h3>
 <p>If an <a href="https://docs.rs/juniper/latest/juniper/struct.Executor.html"><code>Executor</code></a> is required in a trait method to resolve a <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interface</a> field, specify it as an argument.</p>
-<p>This requires to explicitly parametrize over <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a>, as <a href="https://docs.rs/juniper/latest/juniper/struct.Executor.html"><code>Executor</code></a> does so. </p>
+<p>This requires to explicitly parametrize over <a href="https://docs.rs/juniper/latest/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a>, as <a href="https://docs.rs/juniper/latest/juniper/struct.Executor.html"><code>Executor</code></a> does so.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span>use juniper::{graphql_interface, graphql_object, Executor, ScalarValue};
 
@@ -1792,12 +1792,12 @@ and add documentation to both the type and the fields:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused_variables)]
 </span><span class="boring">extern crate juniper;
 </span>#[derive(juniper::GraphQLInputObject)]
-#[graphql(name=&quot;Coordinate&quot;, description=&quot;A position on the globe&quot;)]
+#[graphql(name="Coordinate", description="A position on the globe")]
 struct WorldCoordinate {
-    #[graphql(name=&quot;lat&quot;, description=&quot;The latitude&quot;)]
+    #[graphql(name="lat", description="The latitude")]
     latitude: f64,
 
-    #[graphql(name=&quot;long&quot;, description=&quot;The longitude&quot;)]
+    #[graphql(name="long", description="The longitude")]
     longitude: f64
 }
 
@@ -1868,7 +1868,7 @@ struct User {
 }
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
-<p><code>#[derive(GraphQLScalar)]</code> is mostly interchangeable with <code>#[graphql_scalar]</code> 
+<p><code>#[derive(GraphQLScalar)]</code> is mostly interchangeable with <code>#[graphql_scalar]</code>
 attribute:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::graphql_scalar;
@@ -1892,10 +1892,10 @@ struct User {
 #[graphql(
     transparent,
     // Overwrite the GraphQL type name.
-    name = &quot;MyUserId&quot;,
+    name = "MyUserId",
     // Specify a custom description.
     // A description in the attribute will overwrite a doc comment.
-    description = &quot;My user id description&quot;,
+    description = "My user id description",
 )]
 pub struct UserId(i32);
 <span class="boring">
@@ -1931,13 +1931,13 @@ impl UserId {
         S: ScalarValue
     {
         input.as_string_value()
-            .ok_or_else(|| format!(&quot;Expected `String`, found: {input}&quot;))
+            .ok_or_else(|| format!("Expected `String`, found: {input}"))
             .and_then(|str| {
-                str.strip_prefix(&quot;id: &quot;)
+                str.strip_prefix("id: ")
                     .ok_or_else(|| {
                         format!(
-                            &quot;Expected `UserId` to begin with `id: `, \
-                             found: {input}&quot;,
+                            "Expected `UserId` to begin with `id: `, \
+                             found: {input}",
                         )
                     })
             })
@@ -1984,7 +1984,7 @@ where
     v.as_string_value()
         .map(|s| StringOrInt::String(s.into()))
         .or_else(|| v.as_int_value().map(|i| StringOrInt::Int(i)))
-        .ok_or_else(|| format!(&quot;Expected `String` or `Int`, found: {v}&quot;))
+        .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
 }
 
 fn parse_token&lt;S: ScalarValue&gt;(value: ScalarToken&lt;'_&gt;) -&gt; ParseScalarResult&lt;S&gt; {
@@ -1998,9 +1998,9 @@ fn parse_token&lt;S: ScalarValue&gt;(value: ScalarToken&lt;'_&gt;) -&gt; ParseSc
 is no need to follow <code>newtype</code> pattern.</p>
 </blockquote>
 <h3 id="graphqlwith--path-attribute"><a class="header" href="#graphqlwith--path-attribute"><code>#[graphql(with = &lt;path&gt;)]</code> attribute</a></h3>
-<p>Instead of providing all custom resolvers, you can provide path to the <code>to_output</code>, 
+<p>Instead of providing all custom resolvers, you can provide path to the <code>to_output</code>,
 <code>from_input</code>, <code>parse_token</code> functions.</p>
-<p>Path can be simply <code>with = Self</code> (default path where macro expects resolvers to be), 
+<p>Path can be simply <code>with = Self</code> (default path where macro expects resolvers to be),
 in case there is an impl block with custom resolvers:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
@@ -2030,7 +2030,7 @@ impl StringOrInt {
         v.as_string_value()
             .map(|s| Self::String(s.into()))
             .or_else(|| v.as_int_value().map(Self::Int))
-            .ok_or_else(|| format!(&quot;Expected `String` or `Int`, found: {v}&quot;))
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
     }
   
     fn parse_token&lt;S&gt;(value: ScalarToken&lt;'_&gt;) -&gt; ParseScalarResult&lt;S&gt;
@@ -2077,7 +2077,7 @@ mod string_or_int {
         v.as_string_value()
             .map(|s| StringOrInt::String(s.into()))
             .or_else(|| v.as_int_value().map(StringOrInt::Int))
-            .ok_or_else(|| format!(&quot;Expected `String` or `Int`, found: {v}&quot;))
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
     }
   
     pub(super) fn parse_token&lt;S&gt;(value: ScalarToken&lt;'_&gt;) -&gt; ParseScalarResult&lt;S&gt;
@@ -2119,7 +2119,7 @@ impl StringOrInt {
         v.as_string_value()
             .map(|s| Self::String(s.into()))
             .or_else(|| v.as_int_value().map(Self::Int))
-            .ok_or_else(|| format!(&quot;Expected `String` or `Int`, found: {v}&quot;))
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
     }
 }
 <span class="boring">
@@ -2168,8 +2168,8 @@ mod date_scalar {
 
     pub(super) fn from_input(v: &amp;InputValue&lt;CustomScalarValue&gt;) -&gt; Result&lt;Date, String&gt; {
       v.as_string_value()
-          .ok_or_else(|| format!(&quot;Expected `String`, found: {v}&quot;))
-          .and_then(|s| s.parse().map_err(|e| format!(&quot;Failed to parse `Date`: {e}&quot;)))
+          .ok_or_else(|| format!("Expected `String`, found: {v}"))
+          .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {e}")))
     }
 }
 <span class="boring">
@@ -2650,7 +2650,7 @@ struct Query;
 #[graphql_object]
 impl Query {
     fn hello(&amp;self) -&gt; FieldResult&lt;&amp;str&gt; {
-        Ok(&quot;hello world&quot;)
+        Ok("hello world")
     }
 }
 
@@ -2665,7 +2665,7 @@ fn main() {
     // Convert the Rust schema into the GraphQL Schema Definition Language.
     let result = schema.as_sdl();
 
-    let expected = &quot;\
+    let expected = "\
 schema {
   query: Query
 }
@@ -2673,8 +2673,8 @@ schema {
 type Query {
   hello: String!
 }
-&quot;;
-<span class="boring">  #[cfg(not(target_os = &quot;windows&quot;))]
+";
+<span class="boring">  #[cfg(not(target_os = "windows"))]
 </span>    assert_eq!(result, expected);
 }</code></pre></pre>
 <p>Note the <code>schema-language</code> feature may be turned off if you do not need this functionality to reduce dependencies and speed up
@@ -2683,7 +2683,7 @@ compile times.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="adding-a-server"><a class="header" href="#adding-a-server">Adding A Server</a></h1>
 <p>To allow using Juniper with the HTTP server of your choice,
 it does <strong>not</strong> come with a built in HTTP server.</p>
-<p>To actually get a server up and running, there are multiple official and 
+<p>To actually get a server up and running, there are multiple official and
 third-party integration crates that will get you there.</p>
 <ul>
 <li><a href="servers/official.html">Official Server Integrations</a>
@@ -2716,8 +2716,8 @@ Rust's stable channel.</p>
 <p>Juniper's Warp integration is contained in the <a href="https://github.com/graphql-rust/juniper/tree/master/juniper_warp"><code>juniper_warp</code></a> crate:</p>
 <p>!FILENAME Cargo.toml</p>
 <pre><code class="language-toml">[dependencies]
-juniper = &quot;0.16.0&quot;
-juniper_warp = &quot;0.8.0&quot;
+juniper = "0.16.0"
+juniper_warp = "0.8.0"
 </code></pre>
 <p>Included in the source is a <a href="https://github.com/graphql-rust/juniper/blob/master/juniper_warp/examples/subscription.rs">small example</a> which sets up a basic GraphQL and <a href="https://github.com/graphql/graphiql">GraphiQL</a>/<a href="https://github.com/prisma/graphql-playground">GraphQL Playground</a> handlers with subscriptions support.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="integrating-with-rocket"><a class="header" href="#integrating-with-rocket">Integrating with Rocket</a></h1>
@@ -2727,8 +2727,8 @@ channel.</p>
 <p>Juniper's Rocket integration is contained in the <a href="https://github.com/graphql-rust/juniper/tree/master/juniper_rocket"><code>juniper_rocket</code></a> crate:</p>
 <p>!FILENAME Cargo.toml</p>
 <pre><code class="language-toml">[dependencies]
-juniper = &quot;0.16.0&quot;
-juniper_rocket = &quot;0.9.0&quot;
+juniper = "0.16.0"
+juniper_rocket = "0.9.0"
 </code></pre>
 <p>Included in the source is a <a href="https://github.com/graphql-rust/juniper/blob/master/juniper_rocket/examples/simple.rs">small example</a> which sets up a basic GraphQL and <a href="https://github.com/graphql/graphiql">GraphiQL</a> handler.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="integrating-with-hyper"><a class="header" href="#integrating-with-hyper">Integrating with Hyper</a></h1>
@@ -2743,8 +2743,8 @@ a few clearly-defined response payloads.</p>
 <p>Juniper's Hyper integration is contained in the <a href="https://github.com/graphql-rust/juniper/tree/master/juniper_hyper"><code>juniper_hyper</code></a> crate:</p>
 <p>!FILENAME Cargo.toml</p>
 <pre><code class="language-toml">[dependencies]
-juniper = &quot;0.16.0&quot;
-juniper_hyper = &quot;0.9.0&quot;
+juniper = "0.16.0"
+juniper_hyper = "0.9.0"
 </code></pre>
 <p>Included in the source is a <a href="https://github.com/graphql-rust/juniper/blob/master/juniper_hyper/examples/hyper_server.rs">small example</a> which sets up a basic GraphQL and <a href="https://github.com/graphql/graphiql">GraphiQL</a> handler.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="other-examples"><a class="header" href="#other-examples">Other Examples</a></h1>
@@ -2880,11 +2880,11 @@ impl SignUpResult {
 it could be used as the result of e.g. a sign up mutation.</p>
 <p>While this is an example of how you could use something other than a struct to
 represent a GraphQL object, it's also an example on how you could implement
-error handling for &quot;expected&quot; errors - errors like validation errors. There are
+error handling for "expected" errors - errors like validation errors. There are
 no hard rules on how to represent errors in GraphQL, but there are
 <a href="https://github.com/facebook/graphql/issues/117#issuecomment-170180628">some</a>
 <a href="https://github.com/graphql/graphql-js/issues/560#issuecomment-259508214">comments</a>
-from one of the authors of GraphQL on how they intended &quot;hard&quot; field errors to
+from one of the authors of GraphQL on how they intended "hard" field errors to
 be used, and how to model expected errors.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="implicit-and-explicit-null"><a class="header" href="#implicit-and-explicit-null">Implicit and explicit null</a></h1>
 <p>There are two ways that a client can submit a null argument or field in a query.</p>
@@ -2901,7 +2901,7 @@ be used, and how to model expected errors.</p>
 <p>The former is an explicit null and the latter is an implicit null.</p>
 <p>There are some situations where it's useful to know which one the user provided.</p>
 <p>For example, let's say your business logic has a function that allows users to
-perform a &quot;patch&quot; operation on themselves. Let's say your users can optionally
+perform a "patch" operation on themselves. Let's say your users can optionally
 have favorite and least favorite numbers, and the input for that might look
 like this:</p>
 <pre><pre class="playground"><code class="language-rust edition2021">/// Updates user attributes. Fields that are `None` are left as-is.
@@ -2999,7 +2999,7 @@ struct ValidationError {
 </span>struct MutationResult&lt;T&gt;(Result&lt;T, Vec&lt;ValidationError&gt;&gt;);
 
 #[juniper::graphql_object(
-    name = &quot;UserResult&quot;,
+    name = "UserResult",
 )]
 impl MutationResult&lt;User&gt; {
     fn user(&amp;self) -&gt; Option&lt;&amp;User&gt; {
@@ -3012,7 +3012,7 @@ impl MutationResult&lt;User&gt; {
 }
 
 #[juniper::graphql_object(
-    name = &quot;ForumPostResult&quot;,
+    name = "ForumPostResult",
 )]
 impl MutationResult&lt;ForumPost&gt; {
     fn forum_post(&amp;self) -&gt; Option&lt;&amp;ForumPost&gt; {
@@ -3047,14 +3047,14 @@ instantiated types. Even if Juniper <em>could</em> figure out the name,
 </code></pre>
 <p>The json data to POST to the server for an individual request would be:</p>
 <pre><code class="language-json">{
-  &quot;query&quot;: &quot;{hero{name}}&quot;
+  "query": "{hero{name}}"
 }
 </code></pre>
 <p>And the response would be of the form:</p>
 <pre><code class="language-json">{
-  &quot;data&quot;: {
-    &quot;hero&quot;: {
-      &quot;name&quot;: &quot;R2-D2&quot;
+  "data": {
+    "hero": {
+      "name": "R2-D2"
     }
   }
 }
@@ -3062,26 +3062,26 @@ instantiated types. Even if Juniper <em>could</em> figure out the name,
 <p>If you wanted to run the same query twice in a single HTTP request, the batched json data to POST to the server would be:</p>
 <pre><code class="language-json">[
   {
-    &quot;query&quot;: &quot;{hero{name}}&quot;
+    "query": "{hero{name}}"
   },
   {
-    &quot;query&quot;: &quot;{hero{name}}&quot;
+    "query": "{hero{name}}"
   }
 ]
 </code></pre>
 <p>And the response would be of the form:</p>
 <pre><code class="language-json">[
   {
-    &quot;data&quot;: {
-      &quot;hero&quot;: {
-        &quot;name&quot;: &quot;R2-D2&quot;
+    "data": {
+      "hero": {
+        "name": "R2-D2"
       }
     }
   },
   {
-    &quot;data&quot;: {
-      &quot;hero&quot;: {
-        &quot;name&quot;: &quot;R2-D2&quot;
+    "data": {
+      "hero": {
+        "name": "R2-D2"
       }
     }
   }
@@ -3123,14 +3123,14 @@ This can be done with Juniper using the crate <a href="https://github.com/cksac/
 <h3 id="what-does-it-look-like"><a class="header" href="#what-does-it-look-like">What does it look like?</a></h3>
 <p>!FILENAME Cargo.toml</p>
 <pre><code class="language-toml">[dependencies]
-actix-identity = &quot;0.4.0-beta.4&quot;
-actix-rt = &quot;1.0&quot;
-actix-web = &quot;2.0&quot;
-async-trait = &quot;0.1.30&quot;
-dataloader = &quot;0.12.0&quot;
-futures = &quot;0.3&quot;
-juniper = &quot;0.16.0&quot;
-postgres = &quot;0.15.2&quot;
+actix-identity = "0.4.0-beta.4"
+actix-rt = "1.0"
+actix-web = "2.0"
+async-trait = "0.1.30"
+dataloader = "0.12.0"
+futures = "0.3"
+juniper = "0.16.0"
+postgres = "0.15.2"
 </code></pre>
 <pre><code class="language-rust  ignore">// use dataloader::cached::Loader;
 use dataloader::non_cached::Loader;
@@ -3140,10 +3140,10 @@ use postgres::{Connection, TlsMode};
 use std::env;
 
 pub fn get_db_conn() -&gt; Connection {
-    let pg_connection_string = env::var(&quot;DATABASE_URI&quot;).expect(&quot;need a db uri&quot;);
-    println!(&quot;Connecting to {pg_connection_string}&quot;);
+    let pg_connection_string = env::var("DATABASE_URI").expect("need a db uri");
+    println!("Connecting to {pg_connection_string}");
     let conn = Connection::connect(&amp;pg_connection_string[..], TlsMode::None).unwrap();
-    println!(&quot;Connection is fine&quot;);
+    println!("Connection is fine");
     conn
 }
 
@@ -3156,7 +3156,7 @@ pub struct Cult {
 pub fn get_cult_by_ids(hashmap: &amp;mut HashMap&lt;i32, Cult&gt;, ids: Vec&lt;i32&gt;) {
   let conn = get_db_conn();
   for row in &amp;conn
-    .query(&quot;SELECT id, name FROM cults WHERE id = ANY($1)&quot;, &amp;[&amp;ids])
+    .query("SELECT id, name FROM cults WHERE id = ANY($1)", &amp;[&amp;ids])
     .unwrap()
   {
     let cult = Cult {
@@ -3174,7 +3174,7 @@ impl BatchFn&lt;i32, Cult&gt; for CultBatcher {
 
     // A hashmap is used, as we need to return an array which maps each original key to a Cult.
     async fn load(&amp;self, keys: &amp;[i32]) -&gt; HashMap&lt;i32, Cult&gt; {
-        println!(&quot;load cult batch {keys:?}&quot;);
+        println!("load cult batch {keys:?}");
         let mut cult_hashmap = HashMap::new();
         get_cult_by_ids(&amp;mut cult_hashmap, keys.to_vec());
         cult_hashmap
@@ -3245,30 +3245,30 @@ impl Context {
     let json = serde_json::to_string(&amp;res).map_err(error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok()
-        .content_type(&quot;application/json&quot;)
+        .content_type("application/json")
         .body(json))
 }</code></pre>
 <h3 id="further-example"><a class="header" href="#further-example">Further Example:</a></h3>
 <p>For a full example using Dataloaders and Context check out <a href="https://github.com/jayy-lmao/rust-graphql-docker">jayy-lmao/rust-graphql-docker</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="subscriptions"><a class="header" href="#subscriptions">Subscriptions</a></h1>
 <h3 id="how-to-achieve-realtime-data-with-graphql-subscriptions"><a class="header" href="#how-to-achieve-realtime-data-with-graphql-subscriptions">How to achieve realtime data with GraphQL subscriptions</a></h3>
-<p>GraphQL subscriptions are a way to push data from the server to clients requesting real-time messages 
+<p>GraphQL subscriptions are a way to push data from the server to clients requesting real-time messages
 from the server. Subscriptions are similar to queries in that they specify a set of fields to be delivered to the client,
-but instead of immediately returning a single answer a result is sent every time a particular event happens on the 
-server. </p>
-<p>In order to execute subscriptions you need a coordinator (that spawns connections) 
-and a GraphQL object that can be resolved into a stream--elements of which will then 
-be returned to the end user. The <a href="https://github.com/graphql-rust/juniper/tree/master/juniper_subscriptions"><code>juniper_subscriptions</code></a> crate 
+but instead of immediately returning a single answer a result is sent every time a particular event happens on the
+server.</p>
+<p>In order to execute subscriptions you need a coordinator (that spawns connections)
+and a GraphQL object that can be resolved into a stream--elements of which will then
+be returned to the end user. The <a href="https://github.com/graphql-rust/juniper/tree/master/juniper_subscriptions"><code>juniper_subscriptions</code></a> crate
 provides a default connection implementation. Currently subscriptions are only supported on the <code>master</code> branch. Add the following to your <code>Cargo.toml</code>:</p>
 <pre><code class="language-toml">[dependencies]
-juniper = &quot;0.16.0&quot;
-juniper_subscriptions = &quot;0.17.0&quot;
+juniper = "0.16.0"
+juniper_subscriptions = "0.17.0"
 </code></pre>
 <h3 id="schema-definition"><a class="header" href="#schema-definition">Schema Definition</a></h3>
-<p>The <code>Subscription</code> is just a GraphQL object, similar to the query root and mutations object that you defined for the 
+<p>The <code>Subscription</code> is just a GraphQL object, similar to the query root and mutations object that you defined for the
 operations in your <a href="advanced/../schema/schemas_and_mutations.html">Schema</a>. For subscriptions all fields/operations should be async and should return a <a href="https://docs.rs/futures/0.3.4/futures/stream/trait.Stream.html">Stream</a>.</p>
 <p>This example shows a subscription operation that returns two events, the strings <code>Hello</code> and <code>World!</code>
-sequentially: </p>
+sequentially:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate futures;
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">use std::pin::Pin;
@@ -3283,7 +3283,7 @@ sequentially: </p>
 </span><span class="boring">#[graphql_object(context = Database)]
 </span><span class="boring">impl Query {
 </span><span class="boring">   fn hello_world() -&gt; &amp;'static str {
-</span><span class="boring">       &quot;Hello World!&quot;
+</span><span class="boring">       "Hello World!"
 </span><span class="boring">   }
 </span><span class="boring">}
 </span>pub struct Subscription;
@@ -3294,8 +3294,8 @@ type StringStream = Pin&lt;Box&lt;dyn Stream&lt;Item = Result&lt;String, FieldEr
 impl Subscription {
     async fn hello_world() -&gt; StringStream {
         let stream = futures::stream::iter(vec![
-            Ok(String::from(&quot;Hello&quot;)),
-            Ok(String::from(&quot;World!&quot;))
+            Ok(String::from("Hello")),
+            Ok(String::from("World!"))
         ]);
         Box::pin(stream)
     }
@@ -3304,11 +3304,11 @@ impl Subscription {
 </span><span class="boring">fn main () {}</span></code></pre></pre>
 <h3 id="coordinator"><a class="header" href="#coordinator">Coordinator</a></h3>
 <p>Subscriptions require a bit more resources than regular queries and provide a great vector for DOS attacks. This can can bring down a server easily if not handled correctly. The <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> trait provides coordination logic to enable functionality like DOS attack mitigation and resource limits.</p>
-<p>The <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> contains the schema and can keep track of opened connections, handle subscription 
+<p>The <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> contains the schema and can keep track of opened connections, handle subscription
 start and end, and maintain a global subscription id for each subscription. Each time a connection is established,<br />
-the <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> spawns a <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionConnection.html"><code>SubscriptionConnection</code></a>. The <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionConnection.html"><code>SubscriptionConnection</code></a> handles a single connection, providing resolver logic for a client stream as well as reconnection 
+the <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> spawns a <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionConnection.html"><code>SubscriptionConnection</code></a>. The <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionConnection.html"><code>SubscriptionConnection</code></a> handles a single connection, providing resolver logic for a client stream as well as reconnection
 and shutdown logic.</p>
-<p>While you can implement <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> yourself, Juniper contains a simple and generic implementation called <a href="https://docs.rs/juniper_subscriptions/0.15.0/struct.Coordinator.html"><code>Coordinator</code></a>.  The <code>subscribe</code> 
+<p>While you can implement <a href="https://docs.rs/juniper_subscriptions/0.15.0/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> yourself, Juniper contains a simple and generic implementation called <a href="https://docs.rs/juniper_subscriptions/0.15.0/struct.Coordinator.html"><code>Coordinator</code></a>.  The <code>subscribe</code>
 operation returns a <a href="https://docs.rs/futures/0.3.4/futures/future/trait.Future.html"><code>Future</code></a> with an <code>Item</code> value of a <code>Result&lt;Connection, GraphQLError&gt;</code>,
 where <a href="https://docs.rs/juniper_subscriptions/0.15.0/struct.Connection.html"><code>Connection</code></a> is a <code>Stream</code> of values returned by the operation and <a href="https://docs.rs/juniper/0.14.2/juniper/enum.GraphQLError.html"><code>GraphQLError</code></a> is the error when the subscription fails.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(dead_code)]
@@ -3342,7 +3342,7 @@ where <a href="https://docs.rs/juniper_subscriptions/0.15.0/struct.Connection.ht
 </span><span class="boring">#[graphql_object(context = Database)]
 </span><span class="boring">impl Query {
 </span><span class="boring">    fn hello_world() -&gt; &amp;'static str {
-</span><span class="boring">        &quot;Hello World!&quot;
+</span><span class="boring">        "Hello World!"
 </span><span class="boring">    }
 </span><span class="boring">}
 </span><span class="boring">
@@ -3354,7 +3354,7 @@ where <a href="https://docs.rs/juniper_subscriptions/0.15.0/struct.Connection.ht
 </span><span class="boring">impl Subscription {
 </span><span class="boring">    async fn hello_world() -&gt; StringStream {
 </span><span class="boring">        let stream =
-</span><span class="boring">            futures::stream::iter(vec![Ok(String::from(&quot;Hello&quot;)), Ok(String::from(&quot;World!&quot;))]);
+</span><span class="boring">            futures::stream::iter(vec![Ok(String::from("Hello")), Ok(String::from("World!"))]);
 </span><span class="boring">        Box::pin(stream)
 </span><span class="boring">    }
 </span><span class="boring">}
@@ -3368,15 +3368,15 @@ async fn run_subscription() {
     let schema = schema();
     let coordinator = Coordinator::new(schema);
     let req: GraphQLRequest&lt;DefaultScalarValue&gt; = serde_json::from_str(
-        r#&quot;{
-            &quot;query&quot;: &quot;subscription { helloWorld }&quot;
-        }&quot;#,
+        r#"{
+            "query": "subscription { helloWorld }"
+        }"#,
     )
         .unwrap();
     let ctx = Database::new();
     let mut conn = coordinator.subscribe(&amp;req, &amp;ctx).await.unwrap();
     while let Some(result) = conn.next().await {
-        println!(&quot;{}&quot;, serde_json::to_string(&amp;result).unwrap());
+        println!("{}", serde_json::to_string(&amp;result).unwrap());
     }
 }
 <span class="boring">
@@ -3388,7 +3388,7 @@ GraphQL over <a href="https://github.com/apollographql/subscriptions-transport-w
 <li><a href="https://github.com/graphql-rust/juniper/tree/master/juniper_warp/examples/subscription.rs">Warp Subscription Example</a></li>
 <li><a href="https://github.com/graphql-rust/juniper/tree/master/juniper_subscriptions/examples/basic.rs">Small Example</a></li>
 </ul>
-<!-- TODO: Fix these links when the documentation for the `juniper_subscriptions` are defined in the docs. --->
+ <!-- TODO: Fix these links when the documentation for the `juniper_subscriptions` are defined in the docs. --->
 <!--- --->
 
                     </main>

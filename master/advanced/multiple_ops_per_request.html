@@ -187,14 +187,14 @@
 </code></pre>
 <p>The json data to POST to the server for an individual request would be:</p>
 <pre><code class="language-json">{
-  &quot;query&quot;: &quot;{hero{name}}&quot;
+  "query": "{hero{name}}"
 }
 </code></pre>
 <p>And the response would be of the form:</p>
 <pre><code class="language-json">{
-  &quot;data&quot;: {
-    &quot;hero&quot;: {
-      &quot;name&quot;: &quot;R2-D2&quot;
+  "data": {
+    "hero": {
+      "name": "R2-D2"
     }
   }
 }
@@ -202,26 +202,26 @@
 <p>If you wanted to run the same query twice in a single HTTP request, the batched json data to POST to the server would be:</p>
 <pre><code class="language-json">[
   {
-    &quot;query&quot;: &quot;{hero{name}}&quot;
+    "query": "{hero{name}}"
   },
   {
-    &quot;query&quot;: &quot;{hero{name}}&quot;
+    "query": "{hero{name}}"
   }
 ]
 </code></pre>
 <p>And the response would be of the form:</p>
 <pre><code class="language-json">[
   {
-    &quot;data&quot;: {
-      &quot;hero&quot;: {
-        &quot;name&quot;: &quot;R2-D2&quot;
+    "data": {
+      "hero": {
+        "name": "R2-D2"
       }
     }
   },
   {
-    &quot;data&quot;: {
-      &quot;hero&quot;: {
-        &quot;name&quot;: &quot;R2-D2&quot;
+    "data": {
+      "hero": {
+        "name": "R2-D2"
       }
     }
   }

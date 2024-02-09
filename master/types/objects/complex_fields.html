@@ -177,9 +177,9 @@
 <p>If you've got a struct that can't be mapped directly to GraphQL, that contains
 computed fields or circular structures, you have to use a more powerful tool:
 the <code>#[graphql_object]</code> procedural macro. This macro lets you define GraphQL object
-fields in a Rust <code>impl</code> block for a type. Note, that GraphQL fields are defined in 
+fields in a Rust <code>impl</code> block for a type. Note, that GraphQL fields are defined in
 this <code>impl</code> block by default. If you want to define normal methods on the struct,
-you have to do so either in a separate &quot;normal&quot; <code>impl</code> block, or mark them with
+you have to do so either in a separate "normal" <code>impl</code> block, or mark them with
 <code>#[graphql(ignore)]</code> attribute to be omitted by the macro. Continuing with the
 example from the last chapter, this is how you would define <code>Person</code> using the
 macro:</p>
@@ -254,36 +254,36 @@ the field. Also, the type name can be changed with an alias:</p>
 /// Doc comments are used as descriptions for GraphQL.
 #[graphql_object(
     // With this attribute you can change the public GraphQL name of the type.
-    name = &quot;PersonObject&quot;,
+    name = "PersonObject",
 
     // You can also specify a description here, which will overwrite 
     // a doc comment description.
-    description = &quot;...&quot;,
+    description = "...",
 )]
 impl Person {
     /// A doc comment on the field will also be used for GraphQL.
     #[graphql(
         // Or provide a description here.
-        description = &quot;...&quot;,
+        description = "...",
     )]
     fn doc_comment(&amp;self) -&gt; &amp;str {
-        &quot;&quot;
+        ""
     }
 
     // Fields can also be renamed if required.
-    #[graphql(name = &quot;myCustomFieldName&quot;)]
+    #[graphql(name = "myCustomFieldName")]
     fn renamed_field() -&gt; bool {
         true
     }
 
     // Deprecations also work as you'd expect.
     // Both the standard Rust syntax and a custom attribute is accepted.
-    #[deprecated(note = &quot;...&quot;)]
+    #[deprecated(note = "...")]
     fn deprecated_standard() -&gt; bool {
         false
     }
 
-    #[graphql(deprecated = &quot;...&quot;)]
+    #[graphql(deprecated = "...")]
     fn deprecated_graphql() -&gt; bool {
         true
     }
@@ -295,7 +295,7 @@ impl Person {
 </span><span class="boring">use juniper::graphql_object;
 </span>struct Person;
 
-#[graphql_object(rename_all = &quot;none&quot;)] // disables any renaming
+#[graphql_object(rename_all = "none")] // disables any renaming
 impl Person {
     // Now exposed as `renamed_field` in the schema
     fn renamed_field() -&gt; bool {
@@ -318,19 +318,19 @@ impl Person {
         &amp;self,
         #[graphql(
             // Arguments can also be renamed if required.
-            name = &quot;arg&quot;,
+            name = "arg",
             // Set a default value which will be injected if not present.
             // The default can be any valid Rust expression, including a function call, etc.
             default = true,
             // Set a description.
-            description = &quot;The first argument...&quot;
+            description = "The first argument..."
         )]
         arg1: bool,
         // If default expression is not specified then `Default::default()` value is used.
         #[graphql(default)]
         arg2: i32,
     ) -&gt; String {
-        format!(&quot;{arg1} {arg2}&quot;)
+        format!("{arg1} {arg2}")
     }
 }
 <span class="boring">
@@ -340,7 +340,7 @@ impl Person {
 </span><span class="boring">use juniper::graphql_object;
 </span>struct Person;
 
-#[graphql_object(rename_all = &quot;none&quot;)] // disables any renaming
+#[graphql_object(rename_all = "none")] // disables any renaming
 impl Person {
     // Now exposed as `my_arg` in the schema
     fn field(my_arg: bool) -&gt; bool {

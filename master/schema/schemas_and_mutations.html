@@ -233,7 +233,7 @@ struct Query;
 #[graphql_object]
 impl Query {
     fn hello(&amp;self) -&gt; FieldResult&lt;&amp;str&gt; {
-        Ok(&quot;hello world&quot;)
+        Ok("hello world")
     }
 }
 
@@ -248,7 +248,7 @@ fn main() {
     // Convert the Rust schema into the GraphQL Schema Definition Language.
     let result = schema.as_sdl();
 
-    let expected = &quot;\
+    let expected = "\
 schema {
   query: Query
 }
@@ -256,8 +256,8 @@ schema {
 type Query {
   hello: String!
 }
-&quot;;
-<span class="boring">  #[cfg(not(target_os = &quot;windows&quot;))]
+";
+<span class="boring">  #[cfg(not(target_os = "windows"))]
 </span>    assert_eq!(result, expected);
 }</code></pre></pre>
 <p>Note the <code>schema-language</code> feature may be turned off if you do not need this functionality to reduce dependencies and speed up

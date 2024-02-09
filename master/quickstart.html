@@ -178,7 +178,7 @@
 <p>Juniper follows a <a href="https://blog.logrocket.com/code-first-vs-schema-first-development-graphql/">code-first approach</a> to defining GraphQL schemas. If you would like to use a <a href="https://blog.logrocket.com/code-first-vs-schema-first-development-graphql/">schema-first approach</a> instead, consider <a href="https://github.com/davidpdrsn/juniper-from-schema">juniper-from-schema</a> for generating code from a schema file.</p>
 <h2 id="installation"><a class="header" href="#installation">Installation</a></h2>
 <pre><code class="language-toml">[dependencies]
-juniper = &quot;0.16.0&quot;
+juniper = "0.16.0"
 </code></pre>
 <h2 id="schema-example"><a class="header" href="#schema-example">Schema example</a></h2>
 <p>Exposing simple enums and structs as GraphQL is just a matter of adding a custom
@@ -200,8 +200,8 @@ resolvers, which you will use for the <code>Query</code> and <code>Mutation</cod
 </span><span class="boring">struct DatabasePool;
 </span><span class="boring">impl DatabasePool {
 </span><span class="boring">    fn get_connection(&amp;self) -&gt; FieldResult&lt;DatabasePool&gt; { Ok(DatabasePool) }
-</span><span class="boring">    fn find_human(&amp;self, _id: &amp;str) -&gt; FieldResult&lt;Human&gt; { Err(&quot;&quot;)? }
-</span><span class="boring">    fn insert_human(&amp;self, _human: &amp;NewHuman) -&gt; FieldResult&lt;Human&gt; { Err(&quot;&quot;)? }
+</span><span class="boring">    fn find_human(&amp;self, _id: &amp;str) -&gt; FieldResult&lt;Human&gt; { Err("")? }
+</span><span class="boring">    fn insert_human(&amp;self, _human: &amp;NewHuman) -&gt; FieldResult&lt;Human&gt; { Err("")? }
 </span><span class="boring">}
 </span>
 #[derive(GraphQLEnum)]
@@ -212,7 +212,7 @@ enum Episode {
 }
 
 #[derive(GraphQLObject)]
-#[graphql(description = &quot;A humanoid creature in the Star Wars universe&quot;)]
+#[graphql(description = "A humanoid creature in the Star Wars universe")]
 struct Human {
     id: String,
     name: String,
@@ -223,7 +223,7 @@ struct Human {
 // There is also a custom derive for mapping GraphQL input objects.
 
 #[derive(GraphQLInputObject)]
-#[graphql(description = &quot;A humanoid creature in the Star Wars universe&quot;)]
+#[graphql(description = "A humanoid creature in the Star Wars universe")]
 struct NewHuman {
     name: String,
     appears_in: Vec&lt;Episode&gt;,
@@ -253,7 +253,7 @@ struct Query;
 )]
 impl Query {
     fn apiVersion() -&gt; &amp;'static str {
-        &quot;1.0&quot;
+        "1.0"
     }
 
     // Arguments to resolvers can either be simple types or input objects.
@@ -340,7 +340,7 @@ fn main() {
 
     // Run the executor.
     let (res, _errors) = juniper::execute_sync(
-        &quot;query { favoriteEpisode }&quot;,
+        "query { favoriteEpisode }",
         None,
         &amp;Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
         &amp;Variables::new(),
@@ -351,7 +351,7 @@ fn main() {
     assert_eq!(
         res,
         graphql_value!({
-            &quot;favoriteEpisode&quot;: &quot;NEW_HOPE&quot;,
+            "favoriteEpisode": "NEW_HOPE",
         })
     );
 }</code></pre></pre>
