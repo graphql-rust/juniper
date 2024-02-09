@@ -12,4 +12,4 @@ error[E0609]: no field `self` on type `&MyObject`
 10 |         self.self.my_field
    |              ^^^^ unknown field
    |
-   = note: available fields are: `my_field`
+   = note: available field is: `my_field`
