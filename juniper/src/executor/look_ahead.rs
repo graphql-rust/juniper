@@ -443,14 +443,12 @@ impl<'a, S> LookAheadChildren<'a, S> {
     /// Returns the possibly aliased names of the top-level children from the current [selection].
     ///
     /// [selection]: https://spec.graphql.org/October2021#sec-Selection-Sets
-    pub fn names(&self) -> impl Iterator<Item = &'a str> + DoubleEndedIterator + '_ {
+    pub fn names(&self) -> impl DoubleEndedIterator<Item = &'a str> + '_ {
         self.children.iter().map(|sel| sel.field_name())
     }
 
     /// Returns an [`Iterator`] over these children, by reference.
-    pub fn iter(
-        &self,
-    ) -> impl Iterator<Item = &LookAheadSelection<'a, S>> + DoubleEndedIterator + '_ {
+    pub fn iter(&self) -> impl DoubleEndedIterator<Item = &LookAheadSelection<'a, S>> + '_ {
         self.children.iter()
     }
 }
@@ -483,7 +481,7 @@ impl<'a, S> Clone for SelectionSource<'a, S> {
 // Implemented manually to omit redundant `S: Copy` trait bound, imposed by `#[derive(Copy)]`.
 impl<'a, S> Copy for SelectionSource<'a, S> {}
 
-/// [Selection] of an an executed GraphQL query, used in [look-ahead][0] operations.
+/// [Selection] of an executed GraphQL query, used in [look-ahead][0] operations.
 ///
 /// [0]: https://en.wikipedia.org/wiki/Look-ahead_(backtracking)
 /// [2]: https://en.wikipedia.org/wiki/Lazy_evaluation
@@ -576,9 +574,7 @@ impl<'a, S> LookAheadSelection<'a, S> {
     ///
     /// [arguments]: https://spec.graphql.org/October2021#sec-Language.Arguments
     /// [selection]: https://spec.graphql.org/October2021#sec-Selection-Sets
-    pub fn arguments(
-        &self,
-    ) -> impl Iterator<Item = LookAheadArgument<'a, S>> + DoubleEndedIterator {
+    pub fn arguments(&self) -> impl DoubleEndedIterator<Item = LookAheadArgument<'a, S>> {
         let opt_arguments = match self.source {
             SelectionSource::Field(f) => f.arguments.as_ref(),
             _ => None,

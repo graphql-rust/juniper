@@ -19,4 +19,4 @@ error[E0609]: no field `self` on type `&Self`
   | --------------- type parameter 'Self' declared here
 ...
 9 |         self.self.id()
-  |              ^^^^
+  |              ^^^^ unknown field

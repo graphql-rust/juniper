@@ -12,4 +12,4 @@ error[E0609]: no field `self` on type `&ObjA`
 15 |         Box::pin(stream::once(future::ready(self.self.field)))
    |                                                  ^^^^ unknown field
    |
-   = note: available fields are: `field`
+   = note: available field is: `field`
