@@ -386,7 +386,7 @@ jobs:
              >> $GITHUB_OUTPUT
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           name: ${{ steps.tag.outputs.group2 }} ${{ steps.tag.outputs.group3 }}
           body: |
