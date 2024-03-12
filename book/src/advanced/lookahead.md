@@ -71,8 +71,9 @@ impl Query {
 ```rust
 # extern crate anyhow;
 # extern crate juniper;
+# use std::collections::HashMap;
 # use anyhow::anyhow;
-# use juniper::{graphql_object, GraphQLObject};
+# use juniper::{graphql_object, Executor, GraphQLObject, ScalarValue};
 #
 # type CultId = i32;
 # type UserId = i32;
@@ -92,7 +93,7 @@ impl Query {
 #     Loaded(R),  
 # }
 #
-#[derive(GraphQLObject)]
+#[derive(Clone, GraphQLObject)]
 struct Cult {
     id: CultId,
     name: String,
@@ -115,15 +116,15 @@ impl Person {
         self.name.as_str()
     }
     
-    async fn cult(&self, #[graphql(ctx)] repo: &Repository) -> anyhow::Result<&Cult> {
+    async fn cult(&self, #[graphql(ctx)] repo: &Repository) -> anyhow::Result<Cult> {
         match &self.cult {
-            Either::Loaded(cult) => Ok(cult),
+            Either::Loaded(cult) => Ok(cult.clone()),
             Either::Absent(cult_id) => {
                 // Effectively performs the following SQL query:
                 // SELECT id, name FROM cults WHERE id = ${cult_id} LIMIT 1
                 repo.load_cult_by_id(*cult_id)
                     .await?
-                    .ok_or_else(|| anyhow!("No cult exists for ID `{}`", self.cult_id))
+                    .ok_or_else(|| anyhow!("No cult exists for ID `{cult_id}`"))
             }
         }
     }
@@ -134,9 +135,9 @@ struct Query;
 #[graphql_object]
 #[graphql(context = Repository, scalar = S: ScalarValue)]
 impl Query {
-    async fn persons(
+    async fn persons<S: ScalarValue>(
         #[graphql(ctx)] repo: &Repository,
-        executor: &Executor<'_, '_, (), S>,
+        executor: &Executor<'_, '_, Repository, S>,
     ) -> anyhow::Result<Vec<Person>> {
         // Effectively performs the following SQL query:
         // SELECT id, name, cult_id FROM persons
@@ -165,14 +166,16 @@ impl Query {
             let cults = repo.load_cults_by_ids(&cult_ids).await?;
             
             for p in &mut persons {
-                if matches!(&p.cult, Either::Absent(_)) {
-                    p.cult = cults
-                        .get(cult_id)
+                let Either::Absent(cult_id) = &p.cult else { continue; };
+                p.cult = Either::Loaded(
+                    cults.get(cult_id)
                         .ok_or_else(|| anyhow!("No cult exists for ID `{cult_id}`"))?
-                        .clone()
-                }
+                        .clone(),
+                );
             }
         }
+        
+        Ok(persons)
     }
 }
 ```
