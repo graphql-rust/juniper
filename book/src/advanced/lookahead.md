@@ -68,6 +68,7 @@ impl Query {
 
 ## N+1 problem
 
+Naturally, look-ahead machinery allows us to solve [the N+1 problem](n_plus_1.md) by introspecting the requested fields and performing loading in batches eagerly, before actual resolving of those fields:
 ```rust
 # extern crate anyhow;
 # extern crate juniper;
@@ -163,8 +164,12 @@ impl Query {
                 .collect::<Vec<_>>();
             
             // Load the necessary `Cult`s eagerly.
+            // Effectively performs the following SQL query:
+            // SELECT id, name FROM cults WHERE id IN (${cult_id1}, ${cult_id2}, ...)
             let cults = repo.load_cults_by_ids(&cult_ids).await?;
             
+            // Populate `persons` with the loaded `Cult`s, so they do not perform
+            // any SQL queries on resolving.
             for p in &mut persons {
                 let Either::Absent(cult_id) = &p.cult else { continue; };
                 p.cult = Either::Loaded(
@@ -179,6 +184,31 @@ impl Query {
     }
 }
 ```
+And so, performing a [GraphQL query which lead to N+1 problem](n_plus_1.md)
+```graphql
+query {
+  persons {
+    id
+    name
+    cult {
+      id
+      name
+    }
+  }
+}
+```
+will lead to efficient [SQL] queries, just as expected:
+```sql
+SELECT id, name, cult_id FROM persons;
+SELECT id, name FROM cults WHERE id IN (1, 2, 3, 4);
+```
+
+
+
+
+## More features
+
+See more available look-ahead features in the API docs of the [`LookAheadSelection`][21] and the [`LookAheadChildren`][22].
 
 
 
@@ -189,8 +219,11 @@ impl Query {
 [GraphQL]: https://graphql.org
 [Juniper]: https://docs.rs/juniper
 [Rust]: https://www.rust-lang.org
+[SQL]: https://en.wikipedia.org/wiki/SQL
 
 [1]: https://spec.graphql.org/October2021#sec-Execution
 [2]: https://spec.graphql.org/October2021#sec-Language.Operations\
 [3]: https://spec.graphql.org/October2021#sec-Language.Fields
 [20]: https://docs.rs/juniper/latest/juniper/executor/struct.Executor.html#method.look_ahead
+[21]: https://docs.rs/juniper/latest/juniper/executor/struct.LookAheadSelection.html
+[22]: https://docs.rs/juniper/latest/juniper/executor/struct.LookAheadChildren.html
