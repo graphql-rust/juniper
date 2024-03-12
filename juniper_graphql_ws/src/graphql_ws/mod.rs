@@ -23,8 +23,8 @@ use std::{
 use juniper::{
     futures::{
         channel::oneshot,
-        future::{self, BoxFuture, Either, Future, FutureExt, TryFutureExt},
-        stream::{self, BoxStream, SelectAll, StreamExt},
+        future::{self, BoxFuture, Either, Future, FutureExt as _, TryFutureExt as _},
+        stream::{self, BoxStream, SelectAll, StreamExt as _},
         task::{Context, Poll, Waker},
         Sink, Stream,
     },
@@ -547,16 +547,21 @@ where
 
 #[cfg(test)]
 mod test {
-    use std::{convert::Infallible, io};
+    use std::{convert::Infallible, io, sync::Arc, time::Duration};
 
     use juniper::{
-        futures::sink::SinkExt,
+        futures::{
+            future::{self, FutureExt as _},
+            sink::SinkExt,
+            stream::{self, BoxStream, StreamExt as _},
+        },
         graphql_input_value, graphql_object, graphql_subscription, graphql_value, graphql_vars,
         parser::{ParseError, Spanning},
-        DefaultScalarValue, EmptyMutation, FieldError, FieldResult, RootNode, Variables,
+        DefaultScalarValue, EmptyMutation, FieldError, FieldResult, GraphQLError, RootNode,
+        Variables,
     };
 
-    use super::*;
+    use super::{Connection, ConnectionConfig, ConnectionErrorPayload, DataPayload, StartPayload};
 
     struct Context(i32);
 

@@ -242,10 +242,15 @@ where
 
 #[cfg(test)]
 mod whole_responses_stream {
-    use futures::{stream, StreamExt as _};
-    use juniper::{graphql_value, DefaultScalarValue, ExecutionError, FieldError};
+    use std::task::Poll;
 
-    use super::*;
+    use futures::{stream, StreamExt as _};
+    use juniper::{
+        graphql_value, DefaultScalarValue, ExecutionError, ExecutionOutput, FieldError, Object,
+        Value, ValuesStream,
+    };
+
+    use super::whole_responses_stream;
 
     #[tokio::test]
     async fn with_error() {

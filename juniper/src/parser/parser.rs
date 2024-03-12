@@ -1,4 +1,4 @@
-use std::{error::Error, fmt, result::Result};
+use std::{error::Error, fmt};
 
 use smartstring::alias::String;
 
