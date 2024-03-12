@@ -1,4 +1,4 @@
-use std::{collections::HashSet, iter::Iterator};
+use std::collections::HashSet;
 
 use crate::{
     ast::InputValue,

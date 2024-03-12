@@ -1,10 +1,7 @@
 //! Types used to describe a `GraphQL` schema
 
 use juniper::IntoFieldError;
-use std::{
-    borrow::{Cow, ToOwned},
-    fmt,
-};
+use std::{borrow::Cow, fmt};
 
 use crate::{
     ast::{FromInputValue, InputValue, Type},

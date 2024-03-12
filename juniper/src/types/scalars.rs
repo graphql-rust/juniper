@@ -1,6 +1,4 @@
-use std::{
-    char, convert::From, fmt, marker::PhantomData, ops::Deref, rc::Rc, thread::JoinHandle, u32,
-};
+use std::{char, fmt, marker::PhantomData, ops::Deref, rc::Rc, thread::JoinHandle, u32};
 
 use serde::{Deserialize, Serialize};
 
