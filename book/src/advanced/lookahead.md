@@ -25,7 +25,7 @@ struct Query;
 //         so its name is similar to the one used in methods.
 #[graphql(scalar = S: ScalarValue)]
 impl Query {
-    fn persons<S: ScalarValue>(executor: &Executor<'_, '_, (), S>,) -> Vec<Person> {
+    fn persons<S: ScalarValue>(executor: &Executor<'_, '_, (), S>) -> Vec<Person> {
         // Let's see which `Person`'s fields were selected in the client query. 
         for field_name in executor.look_ahead().children().names() {
             dbg!(field_name);
@@ -53,7 +53,7 @@ impl Query {
 > #[graphql_object]
 > #[graphql(scalar = DefaultScalarValue)]
 > impl Query {
->     fn persons(executor: &Executor<'_, '_, ()>,) -> Vec<Person> {
+>     fn persons(executor: &Executor<'_, '_, ()>) -> Vec<Person> {
 >         for field_name in executor.look_ahead().children().names() {
 >             dbg!(field_name);
 >         }
@@ -62,6 +62,120 @@ impl Query {
 >     }
 > }
 > ```
+
+
+
+
+## N+1 problem
+
+```rust
+# extern crate anyhow;
+# extern crate juniper;
+# use anyhow::anyhow;
+# use juniper::{graphql_object, GraphQLObject};
+#
+# type CultId = i32;
+# type UserId = i32;
+#
+# struct Repository;
+#
+# impl juniper::Context for Repository {}
+#
+# impl Repository {
+#     async fn load_cult_by_id(&self, cult_id: CultId) -> anyhow::Result<Option<Cult>> { unimplemented!() }
+#     async fn load_cults_by_ids(&self, cult_ids: &[CultId]) -> anyhow::Result<HashMap<CultId, Cult>> { unimplemented!() }
+#     async fn load_all_persons(&self) -> anyhow::Result<Vec<Person>> { unimplemented!() }
+# }
+# 
+# enum Either<L, R> {
+#     Absent(L),
+#     Loaded(R),  
+# }
+#
+#[derive(GraphQLObject)]
+struct Cult {
+    id: CultId,
+    name: String,
+}
+
+struct Person {
+    id: UserId,
+    name: String,
+    cult: Either<CultId, Cult>,
+}
+
+#[graphql_object]
+#[graphql(context = Repository)]
+impl Person {
+    fn id(&self) -> CultId {
+        self.id
+    }
+    
+    fn name(&self) -> &str {
+        self.name.as_str()
+    }
+    
+    async fn cult(&self, #[graphql(ctx)] repo: &Repository) -> anyhow::Result<&Cult> {
+        match &self.cult {
+            Either::Loaded(cult) => Ok(cult),
+            Either::Absent(cult_id) => {
+                // Effectively performs the following SQL query:
+                // SELECT id, name FROM cults WHERE id = ${cult_id} LIMIT 1
+                repo.load_cult_by_id(*cult_id)
+                    .await?
+                    .ok_or_else(|| anyhow!("No cult exists for ID `{}`", self.cult_id))
+            }
+        }
+    }
+}
+
+struct Query;
+
+#[graphql_object]
+#[graphql(context = Repository, scalar = S: ScalarValue)]
+impl Query {
+    async fn persons(
+        #[graphql(ctx)] repo: &Repository,
+        executor: &Executor<'_, '_, (), S>,
+    ) -> anyhow::Result<Vec<Person>> {
+        // Effectively performs the following SQL query:
+        // SELECT id, name, cult_id FROM persons
+        let mut persons = repo.load_all_persons().await?;
+        
+        // If the `Person.cult` field has been requested.
+        if executor.look_ahead()
+            .children()
+            .iter()
+            .any(|sel| sel.field_original_name() == "cult") 
+        {
+            // Gather `Cult.id`s to load eagerly.
+            let cult_ids = persons
+                .iter()
+                .filter_map(|p| {
+                    match &p.cult {
+                        Either::Absent(cult_id) => Some(*cult_id),
+                        // If for some reason a `Cult` is already loaded,
+                        // then just skip it.
+                        Either::Loaded(_) => None,
+                    }
+                })
+                .collect::<Vec<_>>();
+            
+            // Load the necessary `Cult`s eagerly.
+            let cults = repo.load_cults_by_ids(&cult_ids).await?;
+            
+            for p in &mut persons {
+                if matches!(&p.cult, Either::Absent(_)) {
+                    p.cult = cults
+                        .get(cult_id)
+                        .ok_or_else(|| anyhow!("No cult exists for ID `{cult_id}`"))?
+                        .clone()
+                }
+            }
+        }
+    }
+}
+```
 
 
 
