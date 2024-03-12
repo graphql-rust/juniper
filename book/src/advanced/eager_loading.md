@@ -1,7 +1,7 @@
 Eager loading
 =============
 
-Another approach to deal with the [N+1 problem](n_plus_1.md) is to remodel [Rust] types mapping to [GraphQL] ones in the way to encourage doing eager preloading of data for its [fields][0] and using the already preloaded data when resolving a particular [field][0].
+As a further evolution of the [dealing with the N+1 problem via look-ahead](lookahead.md#n1-problem), we may systematically remodel [Rust] types mapping to [GraphQL] ones in the way to encourage doing eager preloading of data for its [fields][0] and using the already preloaded data when resolving a particular [field][0].
 
 At the moment, this approach is represented with the [`juniper-eager-loading`] crate for [Juniper].
 

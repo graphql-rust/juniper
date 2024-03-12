@@ -7,4 +7,4 @@ The chapters below cover some more advanced topics.
 - [N+1 problem](n_plus_1.md)
     - [DataLoader](dataloader.md)
     - [Look-ahead](lookahead.md)
-    - [Eager loading](eager_loading.md)
+        - [Eager loading](eager_loading.md)
