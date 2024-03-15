@@ -85,6 +85,3 @@ error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
              <Vec<T> as FromInputValue<S>>
              <TypeKind as FromInputValue<__S>>
            and $N others
-┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-note: If the actual output is the correct output you can bless it by rerunning
-      your test with the environment variable TRYBUILD=overwrite
