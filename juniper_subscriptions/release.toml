@@ -1,10 +1,4 @@
 [[pre-release-replacements]]
-file = "../book/src/schema/subscriptions.md"
-exactly = 1
-search = "juniper_subscriptions = \"[^\"]+\""
-replace = "juniper_subscriptions = \"{{version}}\""
-
-[[pre-release-replacements]]
 file = "../juniper_graphql_ws/Cargo.toml"
 exactly = 1
 search = "juniper_subscriptions = \\{ version = \"[^\"]+\""
@@ -22,3 +16,9 @@ file = "README.md"
 exactly = 3
 search = "graphql-rust/juniper/blob/[^/]+/"
 replace = "graphql-rust/juniper/blob/{{crate_name}}-v{{version}}/"
+
+[[pre-release-replacements]]
+file = "../book/src/schema/subscriptions.md"
+exactly = 2
+search = "docs.rs/juniper_subscriptions/[^/]+/"
+replace = "docs.rs/juniper_subscriptions/{{version}}/"
