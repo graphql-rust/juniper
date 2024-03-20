@@ -178,7 +178,7 @@
 <p><a href="https://spec.graphql.org/October2021#sec-Unions">GraphQL unions</a> represent an object that could be one of a list of <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a> types, but provides for no guaranteed fields between those types. They also differ from <a href="https://spec.graphql.org/October2021#sec-Interfaces">interfaces</a> in that <a href="https://spec.graphql.org/October2021#sec-Objects">object</a> types declare what <a href="https://spec.graphql.org/October2021#sec-Interfaces">interfaces</a> they implement, but are not aware of what <a href="https://spec.graphql.org/October2021#sec-Unions">unions</a> contain them.</p>
 </blockquote>
 <p>From the server's point of view, <a href="https://spec.graphql.org/October2021#sec-Unions">GraphQL unions</a> are somewhat similar to <a href="https://spec.graphql.org/October2021#sec-Interfaces">interfaces</a>: the main difference is that they don't contain fields on their own, and so, we only need to represent a value, <em>dispatchable</em> into concrete <a href="https://spec.graphql.org/October2021#sec-Objects">objects</a>.</p>
-<p>Obviously, the most straightforward approach to express <a href="https://spec.graphql.org/October2021#sec-Unions">GraphQL unions</a> in <a href="https://www.rust-lang.org">Rust</a> is to use <a href="https://doc.rust-lang.org/reference/items/enumerations.html#enumerations">enums</a>. In <a href="https://docs.rs/juniper">Juniper</a> this may be done by using <a href="https://docs.rs/juniper/latest/juniper/derive.GraphQLUnion.html"><code>#[derive(GraphQLInterface)]</code></a> attribute on them:</p>
+<p>Obviously, the most straightforward approach to express <a href="https://spec.graphql.org/October2021#sec-Unions">GraphQL unions</a> in <a href="https://www.rust-lang.org">Rust</a> is to use <a href="https://doc.rust-lang.org/reference/items/enumerations.html#enumerations">enums</a>. In <a href="https://docs.rs/juniper">Juniper</a> this may be done by using <a href="https://docs.rs/juniper/0.16.0/juniper/derive.GraphQLUnion.html"><code>#[derive(GraphQLInterface)]</code></a> attribute on them:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate derive_more;
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">use derive_more::From;
@@ -308,7 +308,7 @@ enum Character&lt;S&gt; {
 <p><strong>WARNING</strong>: It's the <em>library user's responsibility</em> to ensure that ignored <a href="https://doc.rust-lang.org/reference/items/enumerations.html#enumerations">enum</a> variant is <strong>never</strong> returned from resolvers, otherwise resolving the <a href="https://graphql.org">GraphQL</a> query will <strong>panic in runtime</strong>.</p>
 </blockquote>
 <blockquote>
-<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/latest/juniper/derive.GraphQLUnion.html"><code>#[derive(GraphQLUnion)]</code></a> attribute.</p>
+<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.0/juniper/derive.GraphQLUnion.html"><code>#[derive(GraphQLUnion)]</code></a> attribute.</p>
 </blockquote>
 
                     </main>
