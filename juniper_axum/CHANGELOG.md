@@ -6,7 +6,8 @@ All user visible changes to `juniper_axum` crate will be documented in this file
 
 
 
-## master
+## [0.1.0] · 2024-03-20
+[0.1.0]: /../../tree/juniper_axum-v0.1.0/juniper_axum
 
 ### Initialized
 
