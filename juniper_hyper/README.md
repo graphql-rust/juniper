@@ -40,7 +40,7 @@ This project is licensed under [BSD 2-Clause License](https://github.com/graphql
 [`juniper`]: https://docs.rs/juniper
 [`juniper_hyper`]: https://docs.rs/juniper_hyper
 [GraphQL]: http://graphql.org
-[Juniper Book]: https://graphql-rust.github.io
+[Juniper Book]: https://graphql-rust.github.io/juniper
 [Rust]: https://www.rust-lang.org
 
 [1]: https://github.com/graphql-rust/juniper/blob/master/juniper_hyper/examples/hyper_server.rs

@@ -13,7 +13,7 @@ authors = [
     "Kai Ren <tyranron@gmail.com>",
 ]
 documentation = "https://docs.rs/juniper"
-homepage = "https://graphql-rust.github.io"
+homepage = "https://graphql-rust.github.io/juniper"
 repository = "https://github.com/graphql-rust/juniper"
 readme = "README.md"
 categories = ["asynchronous", "web-programming", "web-programming::http-server"]

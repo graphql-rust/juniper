@@ -47,7 +47,6 @@ In the [Juniper] ecosystem, both implementations are provided by the [`juniper_g
 [`juniper_actix`]: https://docs.rs/juniper_actix
 [`juniper_axum`]: https://docs.rs/juniper_axum
 [`juniper_graphql_ws`]: https://docs.rs/juniper_graphql_ws
-[`juniper_hyper`]: https://docs.rs/juniper_hyper
 [`juniper_rocket`]: https://docs.rs/juniper_rocket
 [`juniper_warp`]: https://docs.rs/juniper_warp
 [`hyper`]: https://docs.rs/hyper

@@ -43,7 +43,7 @@ This project is licensed under [BSD 2-Clause License](https://github.com/graphql
 [`juniper_actix`]: https://docs.rs/juniper_actix
 [`juniper_warp`]: https://docs.rs/juniper_warp
 [GraphQL]: http://graphql.org
-[Juniper Book]: https://graphql-rust.github.io
+[Juniper Book]: https://graphql-rust.github.io/juniper
 [Rust]: https://www.rust-lang.org
 
 [1]: https://github.com/graphql-rust/juniper/blob/master/juniper_actix/examples/subscription.rs

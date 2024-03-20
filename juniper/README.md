@@ -103,8 +103,8 @@ This project is licensed under [BSD 2-Clause License](https://github.com/graphql
 [GraphQL]: http://graphql.org
 [GraphQL Playground]: https://github.com/graphql/graphql-playground
 [Juniper]: https://docs.rs/juniper
-[Juniper Book]: https://graphql-rust.github.io
+[Juniper Book]: https://graphql-rust.github.io/juniper
 [Juniper Book edge]: https://graphql-rust.github.io/juniper/master
 [Rust]: https://www.rust-lang.org
 
-[1]: https://graphql-rust.github.io/quickstart.html
+[1]: https://graphql-rust.github.io/juniper/quickstart.html
