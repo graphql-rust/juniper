@@ -229,4 +229,4 @@ fn main() {
 [schema-first]: https://www.apollographql.com/blog/backend/architecture/schema-first-vs-code-only-graphql#schema-first
 
 [1]: https://spec.graphql.org/October2021#sec-Root-Operation-Types
-[2]: https://docs.rs/juniper/latest/juniper/macro.graphql_object.html
+[2]: https://docs.rs/juniper/0.16.0/juniper/macro.graphql_object.html

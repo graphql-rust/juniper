@@ -6,9 +6,10 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 
 
-## master
+## [0.16.0] · 2024-03-20
+[0.16.0]: /../../tree/juniper-v0.16.0/juniper
 
-[Diff](/../../compare/juniper-v0.15.9...master)
+[Diff](/../../compare/juniper-v0.15.12...juniper-v0.16.0)
 
 ### BC Breaks
 
@@ -177,7 +178,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 ## Previous releases
 
-See [old CHANGELOG](/../../blob/juniper-v0.15.9/juniper/CHANGELOG.md).
+See [old CHANGELOG](/../../blob/juniper-v0.15.12/juniper/CHANGELOG.md).
 
 
 
