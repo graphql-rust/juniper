@@ -6,7 +6,8 @@ All user visible changes to `juniper_warp` crate will be documented in this file
 
 
 
-## master
+## [0.8.0] · 2024-03-20
+[0.8.0]: /../../tree/juniper_warp-v0.8.0/juniper_warp
 
 ### BC Breaks
 
