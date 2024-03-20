@@ -10,7 +10,7 @@ error[E0277]: the trait bound `ObjB: IsOutputType<__S>` is not satisfied
             <f64 as IsOutputType<__S>>
             <ObjA as IsOutputType<__S>>
             <Box<T> as IsOutputType<S>>
-            <uuid::Uuid as IsOutputType<__S>>
-            <url::Url as IsOutputType<__S>>
-            <bson::datetime::DateTime as IsOutputType<__S>>
+            <juniper::meta::Field<'a, S> as IsOutputType<S>>
+            <Argument<'a, S> as IsOutputType<S>>
+            <EnumValue as IsOutputType<__S>>
           and $N others

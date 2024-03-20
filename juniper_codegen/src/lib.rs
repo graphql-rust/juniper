@@ -200,13 +200,17 @@ use self::common::diagnostic::{self, ResultExt as _};
 /// struct Point2D {
 ///     x: f64,
 ///     y: f64,
-///     #[graphql(ignore)]
-///     shift: f64, // `Default::default()` impl is used.
-///     #[graphql(skip, default = System::Cartesian)]
-///     //              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-///     // This attribute is required, as we need to be to construct `Point2D`
-///     // from `{ x: 0.0, y: 0.0 }` GraphQL input.
+///     #[graphql(ignore, default = System::Cartesian)]
+///     //                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+///     // This attribute is required, as we need to be able to construct
+///     // a `Point2D` value from the `{ x: 0.0, y: 0.0 }` GraphQL input value,
+///     // received from client-side.
 ///     system: System,
+///     // `Default::default()` value is used, if no
+///     // `#[graphql(default = <expression>)]` is specified.
+///     #[graphql(skip)]
+///     //        ^^^^ alternative naming, up to your preference
+///     shift: f64,
 /// }
 /// ```
 ///
@@ -320,6 +324,9 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 ///     Jedi,
 ///     #[graphql(ignore)]
 ///     Legends(T),
+///     #[graphql(skip)]
+///     //        ^^^^ alternative naming, up to your preference
+///     CloneWars(T),
 /// }
 /// ```
 ///
@@ -358,10 +365,10 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///
 /// # Transparent delegation
 ///
-/// Sometimes, you want to create a custom [GraphQL scalar][0] type by just
+/// Quite often we want to create a custom [GraphQL scalar][0] type by just
 /// wrapping an existing one, inheriting all its behavior. In Rust, this is
-/// often called as ["`Newtype` pattern"][1]. This may be achieved by providing
-/// a `#[graphql(transparent)]` attribute to the definition:
+/// often called as ["newtype pattern"][1]. This is achieved by annotating
+/// the definition with the `#[graphql(transparent)]` attribute:
 /// ```rust
 /// # use juniper::{GraphQLObject, GraphQLScalar};
 /// #
@@ -502,10 +509,10 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///         .or_else(|_| <i32 as ParseScalarValue<S>>::from_str(value))
 /// }
 /// ```
-/// > __NOTE:__ Once we provide all 3 custom functions, there is no sense to
-/// >           follow [`Newtype` pattern][1] anymore.
+/// > __NOTE:__ Once we provide all 3 custom functions, there is no sense in
+/// >           following the [newtype pattern][1] anymore.
 ///
-/// # All at once
+/// # Full behavior
 ///
 /// Instead of providing all custom functions separately, it's possible to
 /// provide a module holding the appropriate `to_output()`, `from_input()` and
@@ -693,7 +700,7 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 /// # Foreign types
 ///
 /// Additionally, `#[graphql_scalar]` can be used directly on foreign types via
-/// type alias, without using [`Newtype` pattern][1].
+/// type alias, without using the [newtype pattern][1].
 ///
 /// > __NOTE:__ To satisfy [orphan rules] you should provide local
 /// >           [`ScalarValue`] implementation.
@@ -746,7 +753,7 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 ///     }
 /// }
 /// #
-/// # fn main() { }
+/// # fn main() {}
 /// ```
 ///
 /// [0]: https://spec.graphql.org/October2021#sec-Scalars
@@ -1350,9 +1357,9 @@ pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// }
 /// ```
 ///
-/// For more info and possibilities see [`#[graphql_interface]`] macro.
+/// For more info and possibilities see [`#[graphql_interface]`][0] macro.
 ///
-/// [`#[graphql_interface]`]: crate::graphql_interface
+/// [0]: crate::graphql_interface
 /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
 #[proc_macro_derive(GraphQLInterface, attributes(graphql))]
 pub fn derive_interface(body: TokenStream) -> TokenStream {
@@ -1461,6 +1468,9 @@ pub fn derive_interface(body: TokenStream) -> TokenStream {
 ///     id: String,
 ///     #[graphql(ignore)]
 ///     home_planet: String,
+///     #[graphql(skip)]
+///     //        ^^^^ alternative naming, up to your preference
+///     password_hash: String,
 /// }
 /// ```
 ///
@@ -1576,7 +1586,7 @@ pub fn derive_object(body: TokenStream) -> TokenStream {
 ///
 ///     // This method is useful only to define GraphQL fields, but is not
 ///     // a field itself, so we ignore it in schema.
-///     #[graphql(ignore)]
+///     #[graphql(ignore)] // or `#[graphql(skip)]`, up to your preference
 ///     fn build_full_name(&self) -> String {
 ///         format!("{} {}", self.first_name, self.last_name)
 ///     }

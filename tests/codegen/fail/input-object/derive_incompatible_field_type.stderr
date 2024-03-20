@@ -10,9 +10,9 @@ error[E0277]: the trait bound `ObjectA: IsInputType<__S>` is not satisfied
              <f64 as IsInputType<__S>>
              <Object as IsInputType<__S>>
              <Box<T> as IsInputType<S>>
-             <uuid::Uuid as IsInputType<__S>>
-             <url::Url as IsInputType<__S>>
-             <bson::datetime::DateTime as IsInputType<__S>>
+             <juniper::schema::model::DirectiveLocation as IsInputType<__S>>
+             <Arc<T> as IsInputType<S>>
+             <Vec<T> as IsInputType<S>>
            and $N others
 
 error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
@@ -30,9 +30,9 @@ error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
              <f64 as FromInputValue<__S>>
              <Object as FromInputValue<__S>>
              <Box<T> as FromInputValue<S>>
-             <uuid::Uuid as FromInputValue<__S>>
-             <url::Url as FromInputValue<__S>>
-             <bson::datetime::DateTime as FromInputValue<__S>>
+             <juniper::schema::model::DirectiveLocation as FromInputValue<__S>>
+             <Arc<T> as FromInputValue<S>>
+             <Vec<T> as FromInputValue<S>>
            and $N others
 note: required by a bound in `Registry::<'r, S>::arg`
   --> $WORKSPACE/juniper/src/executor/mod.rs
@@ -55,9 +55,9 @@ error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
             <f64 as FromInputValue<__S>>
             <Object as FromInputValue<__S>>
             <Box<T> as FromInputValue<S>>
-            <uuid::Uuid as FromInputValue<__S>>
-            <url::Url as FromInputValue<__S>>
-            <bson::datetime::DateTime as FromInputValue<__S>>
+            <juniper::schema::model::DirectiveLocation as FromInputValue<__S>>
+            <Arc<T> as FromInputValue<S>>
+            <Vec<T> as FromInputValue<S>>
           and $N others
   = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -73,8 +73,8 @@ error[E0277]: the trait bound `ObjectA: ToInputValue<_>` is not satisfied
             <f64 as ToInputValue<__S>>
             <Object as ToInputValue<__S>>
             <Box<T> as ToInputValue<S>>
-            <uuid::Uuid as ToInputValue<__S>>
-            <url::Url as ToInputValue<__S>>
-            <bson::datetime::DateTime as ToInputValue<__S>>
+            <juniper::schema::model::DirectiveLocation as ToInputValue<__S>>
+            <Arc<T> as ToInputValue<S>>
+            <Vec<T> as ToInputValue<S>>
           and $N others
   = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -1,8 +1,14 @@
-# Quickstart
+Quickstart
+==========
 
-This page will give you a short introduction to the concepts in Juniper.
+This page will give you a short introduction to the concepts in [Juniper].
 
-Juniper follows a [code-first approach][schema_approach] to defining GraphQL schemas. If you would like to use a [schema-first approach][schema_approach] instead, consider [juniper-from-schema][] for generating code from a schema file.
+**[Juniper] follows a [code-first] approach to define a [GraphQL] schema.**
+
+> **TIP**: For a [schema-first] approach, consider using a [`juniper-from-schema`] crate for generating a [`juniper`]-based code from a [schema] file.
+
+
+
 
 ## Installation
 
@@ -11,24 +17,23 @@ Juniper follows a [code-first approach][schema_approach] to defining GraphQL sch
 juniper = "0.16.0"
 ```
 
-## Schema example
 
-Exposing simple enums and structs as GraphQL is just a matter of adding a custom
-derive attribute to them. Juniper includes support for basic Rust types that
-naturally map to GraphQL features, such as `Option<T>`, `Vec<T>`, `Box<T>`,
-`String`, `f64`, and `i32`, references, and slices.
 
-For more advanced mappings, Juniper provides multiple macros to map your Rust
-types to a GraphQL schema. The most important one is the
-[graphql_object][graphql_object] procedural macro that is used for declaring an object with
-resolvers, which you will use for the `Query` and `Mutation` roots.
+
+## Schema
+
+Exposing simple enums and structs as [GraphQL] types is just a matter of adding a custom [derive attribute] to them. [Juniper] includes support for basic [Rust] types that naturally map to [GraphQL] features, such as `Option<T>`, `Vec<T>`, `Box<T>`, `Arc<T>`, `String`, `f64`, `i32`, references, slices and arrays.
+
+For more advanced mappings, [Juniper] provides multiple macros to map your [Rust] types to a [GraphQL schema][schema]. The most important one is the [`#[graphql_object]` attribute][2] that is used for declaring a [GraphQL object] with resolvers (typically used for declaring [`Query` and `Mutation` roots][1]).
 
 ```rust
-# #![allow(unused_variables)]
+# # ![allow(unused_variables)]
 # extern crate juniper;
+#
 # use std::fmt::Display;
+#
 use juniper::{
-    graphql_object, EmptySubscription, FieldResult, GraphQLEnum, 
+    graphql_object, EmptySubscription, FieldResult, GraphQLEnum,
     GraphQLInputObject, GraphQLObject, ScalarValue,
 };
 #
@@ -56,7 +61,6 @@ struct Human {
 }
 
 // There is also a custom derive for mapping GraphQL input objects.
-
 #[derive(GraphQLInputObject)]
 #[graphql(description = "A humanoid creature in the Star Wars universe")]
 struct NewHuman {
@@ -65,52 +69,58 @@ struct NewHuman {
     home_planet: String,
 }
 
-// Now, we create our root Query and Mutation types with resolvers by using the
-// object macro.
-// Objects can have contexts that allow accessing shared state like a database
-// pool.
+// Now, we create our root `Query` and `Mutation` types with resolvers by using 
+// the `#[graphql_object]` attribute.
 
+// Resolvers can have a context that allows accessing shared state like a 
+// database pool.
 struct Context {
     // Use your real database pool here.
-    pool: DatabasePool,
+    db: DatabasePool,
 }
 
-// To make our context usable by Juniper, we have to implement a marker trait.
+// To make our `Context` usable by `juniper`, we have to implement a marker 
+// trait.
 impl juniper::Context for Context {}
 
 struct Query;
 
-#[graphql_object(
-    // Here we specify the context type for the object.
-    // We need to do this in every type that
-    // needs access to the context.
-    context = Context,
-)]
+// Here we specify the context type for the object.
+// We need to do this in every type that needs access to the `Context`.
+#[graphql_object]
+#[graphql(context = Context)]
 impl Query {
-    fn apiVersion() -> &'static str {
+    // Note, that the field name will be automatically converted to the
+    // `camelCased` variant, just as GraphQL conventions imply.
+    fn api_version() -> &'static str {
         "1.0"
     }
 
-    // Arguments to resolvers can either be simple types or input objects.
-    // To gain access to the context, we specify a argument
-    // that is a reference to the Context type.
-    // Juniper automatically injects the correct context here.
-    fn human(context: &Context, id: String) -> FieldResult<Human> {
-        // Get a db connection.
-        let connection = context.pool.get_connection()?;
-        // Execute a db query.
+    fn human(
+        // Arguments to resolvers can either be simple scalar types, enums or 
+        // input objects.
+        id: String,
+        // To gain access to the `Context`, we specify a `context`-named 
+        // argument referring the correspondent `Context` type, and `juniper`
+        // will inject it automatically.
+        context: &Context,
+    ) -> FieldResult<Human> {
+        // Get a `db` connection.
+        let conn = context.db.get_connection()?;
+        // Execute a `db` query.
         // Note the use of `?` to propagate errors.
-        let human = connection.find_human(&id)?;
+        let human = conn.find_human(&id)?;
         // Return the result.
         Ok(human)
     }
 }
 
-// Now, we do the same for our Mutation type.
+// Now, we do the same for our `Mutation` type.
 
 struct Mutation;
 
-#[graphql_object(
+#[graphql_object]
+#[graphql(
     context = Context,
     // If we need to use `ScalarValue` parametrization explicitly somewhere
     // in the object definition (like here in `FieldResult`), we could
@@ -118,42 +128,48 @@ struct Mutation;
     scalar = S: ScalarValue + Display,
 )]
 impl Mutation {
-    fn createHuman<S: ScalarValue + Display>(context: &Context, new_human: NewHuman) -> FieldResult<Human, S> {
-        let db = context.pool.get_connection().map_err(|e| e.map_scalar_value())?;
+    fn create_human<S: ScalarValue + Display>(
+        new_human: NewHuman,
+        context: &Context,
+    ) -> FieldResult<Human, S> {
+        let db = context.db.get_connection().map_err(|e| e.map_scalar_value())?;
         let human: Human = db.insert_human(&new_human).map_err(|e| e.map_scalar_value())?;
         Ok(human)
     }
 }
 
-// A root schema consists of a query, a mutation, and a subscription.
-// Request queries can be executed against a RootNode.
+// Root schema consists of a query, a mutation, and a subscription.
+// Request queries can be executed against a `RootNode`.
 type Schema = juniper::RootNode<'static, Query, Mutation, EmptySubscription<Context>>;
 #
 # fn main() {
-#   let _ = Schema::new(Query, Mutation, EmptySubscription::new());
+#     _ = Schema::new(Query, Mutation, EmptySubscription::new());
 # }
 ```
 
-We now have a very simple but functional schema for a GraphQL server!
+Now we have a very simple but functional schema for a [GraphQL] server!
 
-To actually serve the schema, see the guides for our various [server integrations](./servers/index.md).
+To actually serve the [schema], see the guides for our various [server integrations](serve/index.md).
 
-Juniper is a library that can be used in many contexts--it does not require a server and it does not have a dependency on a particular transport or serialization format. You can invoke the executor directly to get a result for a query:
 
-## Executor
 
-You can invoke `juniper::execute` directly to run a GraphQL query:
+
+## Execution
+
+[Juniper] is a library that can be used in many contexts: it doesn't require a server, nor it has a dependency on a particular transport or serialization format. You can invoke the `juniper::execute()` directly to get a result for a [GraphQL] query:
 
 ```rust
 # // Only needed due to 2018 edition because the macro is not accessible.
 # #[macro_use] extern crate juniper;
 use juniper::{
-    graphql_object, EmptyMutation, EmptySubscription, FieldResult, 
-    GraphQLEnum, Variables, graphql_value,
+    graphql_object, graphql_value, EmptyMutation, EmptySubscription, 
+    GraphQLEnum, Variables, 
 };
 
 #[derive(GraphQLEnum, Clone, Copy)]
 enum Episode {
+    // Note, that the enum value will be automatically converted to the
+    // `SCREAMING_SNAKE_CASE` variant, just as GraphQL conventions imply.
     NewHope,
     Empire,
     Jedi,
@@ -166,22 +182,21 @@ impl juniper::Context for Ctx {}
 
 struct Query;
 
-#[graphql_object(context = Ctx)]
+#[graphql_object]
+#[graphql(context = Ctx)]
 impl Query {
-    fn favoriteEpisode(context: &Ctx) -> FieldResult<Episode> {
-        Ok(context.0)
+    fn favorite_episode(context: &Ctx) -> Episode {
+        context.0
     }
 }
 
-// A root schema consists of a query, a mutation, and a subscription.
-// Request queries can be executed against a RootNode.
 type Schema = juniper::RootNode<'static, Query, EmptyMutation<Ctx>, EmptySubscription<Ctx>>;
 
 fn main() {
-    // Create a context object.
+    // Create a context.
     let ctx = Ctx(Episode::NewHope);
 
-    // Run the executor.
+    // Run the execution.
     let (res, _errors) = juniper::execute_sync(
         "query { favoriteEpisode }",
         None,
@@ -190,20 +205,28 @@ fn main() {
         &ctx,
     ).unwrap();
 
-    // Ensure the value matches.
     assert_eq!(
         res,
         graphql_value!({
             "favoriteEpisode": "NEW_HOPE",
-        })
+        }),
     );
 }
 ```
 
-[juniper-from-schema]: https://github.com/davidpdrsn/juniper-from-schema
-[schema_approach]: https://blog.logrocket.com/code-first-vs-schema-first-development-graphql/
-[hyper]: servers/hyper.md
-[warp]: servers/warp.md
-[rocket]: servers/rocket.md
-[tutorial]: ./tutorial.html
-[graphql_object]: https://docs.rs/juniper/latest/juniper/macro.graphql_object.html
+
+
+
+[`juniper`]: https://docs.rs/juniper
+[`juniper-from-schema`]: https://docs.rs/juniper-from-schema
+[code-first]: https://www.apollographql.com/blog/backend/architecture/schema-first-vs-code-only-graphql#code-only
+[derive attribute]: https://doc.rust-lang.org/stable/reference/attributes/derive.html#derive
+[GraphQL]: https://graphql.org
+[GraphQL object]: https://spec.graphql.org/October2021#sec-Objects
+[Juniper]: https://docs.rs/juniper
+[Rust]: https://www.rust-lang.org
+[schema]: https://graphql.org/learn/schema
+[schema-first]: https://www.apollographql.com/blog/backend/architecture/schema-first-vs-code-only-graphql#schema-first
+
+[1]: https://spec.graphql.org/October2021#sec-Root-Operation-Types
+[2]: https://docs.rs/juniper/latest/juniper/macro.graphql_object.html

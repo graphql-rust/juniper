@@ -1,11 +1,10 @@
-# Advanced Topics
+Advanced topics
+===============
 
-The chapters below cover some more advanced scenarios.
+The chapters below cover some more advanced topics.
 
-- [Introspection](introspection.md)
-- [Non-struct objects](non_struct_objects.md)
-- [Implicit and explicit null](implicit_and_explicit_null.md)
-- [Objects and generics](objects_and_generics.md)
-- [Multiple operations per request](multiple_ops_per_request.md)
-- [Dataloaders](dataloaders.md)
-- [Subscriptions](subscriptions.md)
+- [Implicit and explicit `null`](implicit_and_explicit_null.md)
+- [N+1 problem](n_plus_1.md)
+    - [DataLoader](dataloader.md)
+    - [Look-ahead](lookahead.md)
+        - [Eager loading](eager_loading.md)

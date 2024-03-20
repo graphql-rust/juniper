@@ -404,7 +404,7 @@ jobs:
   deploy-book:
     name: deploy (Book)
     if: ${{ github.ref == 'refs/heads/master'
-         || startsWith(github.ref, 'refs/tags/juniper@') }}
+         || startsWith(github.ref, 'refs/tags/juniper') }}
     needs: ["codespell", "test", "test-book"]
     runs-on: ubuntu-latest
     steps:

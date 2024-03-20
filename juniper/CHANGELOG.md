@@ -68,6 +68,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
         - Made `LookAheadSelection::arguments()` returning iterator over `LookAheadArgument`.
         - Made `LookAheadSelection::children()` returning `LookAheadChildren`.
     - Added `Span` to `Arguments` and `LookAheadArguments`. ([#1206], [#1209])
+- Disabled `bson`, `url`, `uuid` and `schema-language` [Cargo feature]s by default. ([#1230])
 
 ### Added
 
@@ -164,6 +165,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1215]: /../../pull/1215
 [#1227]: /../../pull/1227
 [#1228]: /../../pull/1228
+[#1230]: /../../pull/1230
 [#1237]: /../../pull/1237
 [#1239]: /../../pull/1239
 [#1246]: /../../pull/1246

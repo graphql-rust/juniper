@@ -1,35 +1,4 @@
 [[pre-release-replacements]]
-file = "../book/src/advanced/dataloaders.md"
-exactly = 1
-search = "juniper = \"[^\"]+\""
-replace = "juniper = \"{{version}}\""
-[[pre-release-replacements]]
-file = "../book/src/advanced/subscriptions.md"
-exactly = 1
-search = "juniper = \"[^\"]+\""
-replace = "juniper = \"{{version}}\""
-[[pre-release-replacements]]
-file = "../book/src/quickstart.md"
-exactly = 1
-search = "juniper = \"[^\"]+\""
-replace = "juniper = \"{{version}}\""
-[[pre-release-replacements]]
-file = "../book/src/servers/hyper.md"
-exactly = 1
-search = "juniper = \"[^\"]+\""
-replace = "juniper = \"{{version}}\""
-[[pre-release-replacements]]
-file = "../book/src/servers/rocket.md"
-exactly = 1
-search = "juniper = \"[^\"]+\""
-replace = "juniper = \"{{version}}\""
-[[pre-release-replacements]]
-file = "../book/src/servers/warp.md"
-exactly = 1
-search = "juniper = \"[^\"]+\""
-replace = "juniper = \"{{version}}\""
-
-[[pre-release-replacements]]
 file = "../juniper_actix/Cargo.toml"
 exactly = 2
 search = "juniper = \\{ version = \"[^\"]+\""
@@ -89,3 +58,79 @@ file = "README.md"
 exactly = 2
 search = "graphql-rust/juniper/blob/[^/]+/"
 replace = "graphql-rust/juniper/blob/{{crate_name}}-v{{version}}/"
+
+[[pre-release-replacements]]
+file = "../book/src/quickstart.md"
+exactly = 1
+search = "juniper = \"[^\"]+\""
+replace = "juniper = \"{{version}}\""
+[[pre-release-replacements]]
+file = "../book/src/quickstart.md"
+exactly = 1
+search = "docs.rs/juniper/[^/]+/"
+replace = "docs.rs/juniper/{{version}}/"
+[[pre-release-replacements]]
+file = "../book/src/advanced/implicit_and_explicit_null.md"
+exactly = 1
+search = "docs.rs/juniper/[^/]+/"
+replace = "docs.rs/juniper/{{version}}/"
+[[pre-release-replacements]]
+file = "../book/src/advanced/lookahead.md"
+exactly = 6
+search = "docs.rs/juniper/[^/]+/"
+replace = "docs.rs/juniper/{{version}}/"
+[[pre-release-replacements]]
+file = "../book/src/schema/index.md"
+exactly = 5
+search = "docs.rs/juniper/[^/]+/"
+replace = "docs.rs/juniper/{{version}}/"
+[[pre-release-replacements]]
+file = "../book/src/schema/introspection.md"
+exactly = 1
+search = "docs.rs/juniper/[^/]+/"
+replace = "docs.rs/juniper/{{version}}/"
+[[pre-release-replacements]]
+file = "../book/src/schema/subscriptions.md"
+exactly = 3
+search = "docs.rs/juniper/[^/]+/"
+replace = "docs.rs/juniper/{{version}}/"
+[[pre-release-replacements]]
+file = "../book/src/types/enums.md"
+exactly = 1
+search = "docs.rs/juniper/[^/]+/"
+replace = "docs.rs/juniper/{{version}}/"
+[[pre-release-replacements]]
+file = "../book/src/types/input_objects.md"
+exactly = 1
+search = "docs.rs/juniper/[^/]+/"
+replace = "docs.rs/juniper/{{version}}/"
+[[pre-release-replacements]]
+file = "../book/src/types/interfaces.md"
+exactly = 2
+search = "docs.rs/juniper/[^/]+/"
+replace = "docs.rs/juniper/{{version}}/"
+[[pre-release-replacements]]
+file = "../book/src/types/scalars.md"
+exactly = 3
+search = "docs.rs/juniper/[^/]+/"
+replace = "docs.rs/juniper/{{version}}/"
+[[pre-release-replacements]]
+file = "../book/src/types/unions.md"
+exactly = 1
+search = "docs.rs/juniper/[^/]+/"
+replace = "docs.rs/juniper/{{version}}/"
+[[pre-release-replacements]]
+file = "../book/src/types/objects/complex_fields.md"
+exactly = 2
+search = "docs.rs/juniper/[^/]+/"
+replace = "docs.rs/juniper/{{version}}/"
+[[pre-release-replacements]]
+file = "../book/src/types/objects/index.md"
+exactly = 3
+search = "docs.rs/juniper/[^/]+/"
+replace = "docs.rs/juniper/{{version}}/"
+[[pre-release-replacements]]
+file = "../book/src/types/objects/error/field.md"
+exactly = 3
+search = "docs.rs/juniper/[^/]+/"
+replace = "docs.rs/juniper/{{version}}/"

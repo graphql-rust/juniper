@@ -441,6 +441,8 @@ impl<'a, S> LookAheadChildren<'a, S> {
     }
 
     /// Returns the possibly aliased names of the top-level children from the current [selection].
+    ///
+    /// [selection]: https://spec.graphql.org/October2021#sec-Selection-Sets
     pub fn names(&self) -> impl DoubleEndedIterator<Item = &'a str> + '_ {
         self.children.iter().map(|sel| sel.field_name())
     }
