@@ -194,7 +194,7 @@ jobs:
           text: ${{ github.ref }}
           regex: '^refs/tags/(([a-z_]+)-v([0-9]+\.[0-9]+\.[0-9]+(-.+)?))$'
 
-      - run: cargo package -p ${{ steps.tag.outputs.group2 }}
+      - run: cargo package -p ${{ steps.tag.outputs.group2 }} --all-features
 
   test:
     strategy:
