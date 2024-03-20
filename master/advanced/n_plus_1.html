@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Type system - Juniper Book</title>
+        <title>N+1 problem - Juniper Book</title>
 
 
         <!-- Custom HTML head -->
@@ -88,7 +88,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../quickstart.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li class="chapter-item expanded "><a href="../types/index.html" class="active"><strong aria-hidden="true">3.</strong> Type system</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/index.html"><strong aria-hidden="true">3.1.</strong> Objects</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">3.1.1.</strong> Complex fields</a></li><li class="chapter-item expanded "><a href="../types/objects/context.html"><strong aria-hidden="true">3.1.2.</strong> Context</a></li><li class="chapter-item expanded "><a href="../types/objects/error/index.html"><strong aria-hidden="true">3.1.3.</strong> Error handling</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/error/field.html"><strong aria-hidden="true">3.1.3.1.</strong> Field errors</a></li><li class="chapter-item expanded "><a href="../types/objects/error/schema.html"><strong aria-hidden="true">3.1.3.2.</strong> Schema errors</a></li></ol></li><li class="chapter-item expanded "><a href="../types/objects/generics.html"><strong aria-hidden="true">3.1.4.</strong> Generics</a></li></ol></li><li class="chapter-item expanded "><a href="../types/interfaces.html"><strong aria-hidden="true">3.2.</strong> Interfaces</a></li><li class="chapter-item expanded "><a href="../types/unions.html"><strong aria-hidden="true">3.3.</strong> Unions</a></li><li class="chapter-item expanded "><a href="../types/enums.html"><strong aria-hidden="true">3.4.</strong> Enums</a></li><li class="chapter-item expanded "><a href="../types/input_objects.html"><strong aria-hidden="true">3.5.</strong> Input objects</a></li><li class="chapter-item expanded "><a href="../types/scalars.html"><strong aria-hidden="true">3.6.</strong> Scalars</a></li></ol></li><li class="chapter-item expanded "><a href="../schema/index.html"><strong aria-hidden="true">4.</strong> Schema</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../schema/subscriptions.html"><strong aria-hidden="true">4.1.</strong> Subscriptions</a></li><li class="chapter-item expanded "><a href="../schema/introspection.html"><strong aria-hidden="true">4.2.</strong> Introspection</a></li></ol></li><li class="chapter-item expanded "><a href="../serve/index.html"><strong aria-hidden="true">5.</strong> Serving</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../serve/batching.html"><strong aria-hidden="true">5.1.</strong> Batching</a></li></ol></li><li class="chapter-item expanded "><a href="../advanced/index.html"><strong aria-hidden="true">6.</strong> Advanced Topics</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/implicit_and_explicit_null.html"><strong aria-hidden="true">6.1.</strong> Implicit and explicit null</a></li><li class="chapter-item expanded "><a href="../advanced/n_plus_1.html"><strong aria-hidden="true">6.2.</strong> N+1 problem</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/dataloader.html"><strong aria-hidden="true">6.2.1.</strong> DataLoader</a></li><li class="chapter-item expanded "><a href="../advanced/lookahead.html"><strong aria-hidden="true">6.2.2.</strong> Look-ahead</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/eager_loading.html"><strong aria-hidden="true">6.2.2.1.</strong> Eager loading</a></li></ol></li></ol></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../quickstart.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li class="chapter-item expanded "><a href="../types/index.html"><strong aria-hidden="true">3.</strong> Type system</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/index.html"><strong aria-hidden="true">3.1.</strong> Objects</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">3.1.1.</strong> Complex fields</a></li><li class="chapter-item expanded "><a href="../types/objects/context.html"><strong aria-hidden="true">3.1.2.</strong> Context</a></li><li class="chapter-item expanded "><a href="../types/objects/error/index.html"><strong aria-hidden="true">3.1.3.</strong> Error handling</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/error/field.html"><strong aria-hidden="true">3.1.3.1.</strong> Field errors</a></li><li class="chapter-item expanded "><a href="../types/objects/error/schema.html"><strong aria-hidden="true">3.1.3.2.</strong> Schema errors</a></li></ol></li><li class="chapter-item expanded "><a href="../types/objects/generics.html"><strong aria-hidden="true">3.1.4.</strong> Generics</a></li></ol></li><li class="chapter-item expanded "><a href="../types/interfaces.html"><strong aria-hidden="true">3.2.</strong> Interfaces</a></li><li class="chapter-item expanded "><a href="../types/unions.html"><strong aria-hidden="true">3.3.</strong> Unions</a></li><li class="chapter-item expanded "><a href="../types/enums.html"><strong aria-hidden="true">3.4.</strong> Enums</a></li><li class="chapter-item expanded "><a href="../types/input_objects.html"><strong aria-hidden="true">3.5.</strong> Input objects</a></li><li class="chapter-item expanded "><a href="../types/scalars.html"><strong aria-hidden="true">3.6.</strong> Scalars</a></li></ol></li><li class="chapter-item expanded "><a href="../schema/index.html"><strong aria-hidden="true">4.</strong> Schema</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../schema/subscriptions.html"><strong aria-hidden="true">4.1.</strong> Subscriptions</a></li><li class="chapter-item expanded "><a href="../schema/introspection.html"><strong aria-hidden="true">4.2.</strong> Introspection</a></li></ol></li><li class="chapter-item expanded "><a href="../serve/index.html"><strong aria-hidden="true">5.</strong> Serving</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../serve/batching.html"><strong aria-hidden="true">5.1.</strong> Batching</a></li></ol></li><li class="chapter-item expanded "><a href="../advanced/index.html"><strong aria-hidden="true">6.</strong> Advanced Topics</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/implicit_and_explicit_null.html"><strong aria-hidden="true">6.1.</strong> Implicit and explicit null</a></li><li class="chapter-item expanded "><a href="../advanced/n_plus_1.html" class="active"><strong aria-hidden="true">6.2.</strong> N+1 problem</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/dataloader.html"><strong aria-hidden="true">6.2.1.</strong> DataLoader</a></li><li class="chapter-item expanded "><a href="../advanced/lookahead.html"><strong aria-hidden="true">6.2.2.</strong> Look-ahead</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/eager_loading.html"><strong aria-hidden="true">6.2.2.1.</strong> Eager loading</a></li></ol></li></ol></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -173,40 +173,113 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="type-system"><a class="header" href="#type-system">Type system</a></h1>
-<p>Most of the work in working with <a href="https://docs.rs/juniper">Juniper</a> consists of mapping the <a href="https://spec.graphql.org/October2021#sec-Type-System">GraphQL type system</a> to the <a href="https://www.rust-lang.org">Rust</a> types our application uses.</p>
-<p><a href="https://docs.rs/juniper">Juniper</a> provides some convenient abstractions making this process as painless as possible.</p>
-<p>Find out more in the individual chapters below:</p>
+                        <h1 id="n1-problem"><a class="header" href="#n1-problem">N+1 problem</a></h1>
+<p>A common issue with <a href="https://graphql.org">GraphQL</a> server implementations is how the <a href="https://spec.graphql.org/October2021#sec-Executing-Fields">resolvers</a> query their datasource. With a naive and straightforward approach we quickly run into the N+1 problem, resulting in a large number of unnecessary database queries or <a href="https://en.wikipedia.org/wiki/HTTP">HTTP</a> requests.</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate anyhow;
+</span><span class="boring">extern crate juniper;
+</span><span class="boring">use anyhow::anyhow;
+</span><span class="boring">use juniper::{graphql_object, GraphQLObject};
+</span><span class="boring">
+</span><span class="boring">type CultId = i32;
+</span><span class="boring">type UserId = i32;
+</span><span class="boring">
+</span><span class="boring">struct Repository;
+</span><span class="boring">
+</span><span class="boring">impl juniper::Context for Repository {}
+</span><span class="boring">
+</span><span class="boring">impl Repository {
+</span><span class="boring">    async fn load_cult_by_id(&amp;self, cult_id: CultId) -&gt; anyhow::Result&lt;Option&lt;Cult&gt;&gt; { unimplemented!() }
+</span><span class="boring">    async fn load_all_persons(&amp;self) -&gt; anyhow::Result&lt;Vec&lt;Person&gt;&gt; { unimplemented!() }
+</span><span class="boring">}
+</span><span class="boring">
+</span>#[derive(GraphQLObject)]
+struct Cult {
+    id: CultId,
+    name: String,
+}
+
+struct Person {
+    id: UserId,
+    name: String,
+    cult_id: CultId,
+}
+
+#[graphql_object]
+#[graphql(context = Repository)]
+impl Person {
+    fn id(&amp;self) -&gt; CultId {
+        self.id
+    }
+    
+    fn name(&amp;self) -&gt; &amp;str {
+        self.name.as_str()
+    }
+    
+    async fn cult(&amp;self, #[graphql(ctx)] repo: &amp;Repository) -&gt; anyhow::Result&lt;Cult&gt; {
+        // Effectively performs the following SQL query:
+        // SELECT id, name FROM cults WHERE id = ${cult_id} LIMIT 1
+        repo.load_cult_by_id(self.cult_id)
+            .await?
+            .ok_or_else(|| anyhow!("No cult exists for ID `{}`", self.cult_id))
+    }
+}
+
+struct Query;
+
+#[graphql_object]
+#[graphql(context = Repository)]
+impl Query {
+    async fn persons(#[graphql(ctx)] repo: &amp;Repository) -&gt; anyhow::Result&lt;Vec&lt;Person&gt;&gt; {
+        // Effectively performs the following SQL query:
+        // SELECT id, name, cult_id FROM persons
+        repo.load_all_persons().await
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Let's say we want to list a bunch of <code>cult</code>s <code>persons</code> were in:</p>
+<pre><code class="language-graphql">query {
+  persons {
+    id
+    name
+    cult {
+      id
+      name
+    }
+  }
+}
+</code></pre>
+<p>Once the <code>persons</code> <a href="https://spec.graphql.org/October2021#sec-List">list</a> has been <a href="https://spec.graphql.org/October2021#sec-Executing-Fields">resolved</a>, a separate <a href="https://en.wikipedia.org/wiki/SQL">SQL</a> query is run to find the <code>cult</code> of each <code>Person</code>. We can see how this could quickly become a problem.</p>
+<pre><code class="language-sql">SELECT id, name, cult_id FROM persons;
+SELECT id, name FROM cults WHERE id = 1;
+SELECT id, name FROM cults WHERE id = 2;
+SELECT id, name FROM cults WHERE id = 1;
+SELECT id, name FROM cults WHERE id = 3;
+SELECT id, name FROM cults WHERE id = 4;
+SELECT id, name FROM cults WHERE id = 1;
+SELECT id, name FROM cults WHERE id = 2;
+-- and so on...
+</code></pre>
+<p>There are several ways how this problem may be resolved in <a href="https://docs.rs/juniper">Juniper</a>. The most common ones are:</p>
 <ul>
-<li><a href="objects/index.html">Objects</a>
+<li><a href="dataloader.html">DataLoader</a></li>
+<li><a href="lookahead.html">Look-ahead machinery</a>
 <ul>
-<li><a href="objects/complex_fields.html">Complex fields</a></li>
-<li><a href="objects/Context.html">Context</a></li>
-<li><a href="objects/error/index.html">Error handling</a>
-<ul>
-<li><a href="objects/error/field.html">Field errors</a></li>
-<li><a href="objects/error/schema.html">Schema errors</a></li>
+<li><a href="eager_loading.html">Eager loading</a></li>
 </ul>
 </li>
-<li><a href="objects/generics.html">Generics</a></li>
-</ul>
-</li>
-<li><a href="interfaces.html">Interfaces</a></li>
-<li><a href="unions.html">Unions</a></li>
-<li><a href="enums.html">Enums</a></li>
-<li><a href="input_objects.html">Input objects</a></li>
-<li><a href="scalars.html">Scalars</a></li>
 </ul>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../quickstart.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../advanced/implicit_and_explicit_null.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../types/objects/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../advanced/dataloader.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -216,11 +289,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../quickstart.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../advanced/implicit_and_explicit_null.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../types/objects/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../advanced/dataloader.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

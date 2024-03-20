@@ -1,0 +1,463 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Eager loading - Juniper Book</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="User guide for Juniper (GraphQL server library for Rust).">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../quickstart.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li class="chapter-item expanded "><a href="../types/index.html"><strong aria-hidden="true">3.</strong> Type system</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/index.html"><strong aria-hidden="true">3.1.</strong> Objects</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">3.1.1.</strong> Complex fields</a></li><li class="chapter-item expanded "><a href="../types/objects/context.html"><strong aria-hidden="true">3.1.2.</strong> Context</a></li><li class="chapter-item expanded "><a href="../types/objects/error/index.html"><strong aria-hidden="true">3.1.3.</strong> Error handling</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/error/field.html"><strong aria-hidden="true">3.1.3.1.</strong> Field errors</a></li><li class="chapter-item expanded "><a href="../types/objects/error/schema.html"><strong aria-hidden="true">3.1.3.2.</strong> Schema errors</a></li></ol></li><li class="chapter-item expanded "><a href="../types/objects/generics.html"><strong aria-hidden="true">3.1.4.</strong> Generics</a></li></ol></li><li class="chapter-item expanded "><a href="../types/interfaces.html"><strong aria-hidden="true">3.2.</strong> Interfaces</a></li><li class="chapter-item expanded "><a href="../types/unions.html"><strong aria-hidden="true">3.3.</strong> Unions</a></li><li class="chapter-item expanded "><a href="../types/enums.html"><strong aria-hidden="true">3.4.</strong> Enums</a></li><li class="chapter-item expanded "><a href="../types/input_objects.html"><strong aria-hidden="true">3.5.</strong> Input objects</a></li><li class="chapter-item expanded "><a href="../types/scalars.html"><strong aria-hidden="true">3.6.</strong> Scalars</a></li></ol></li><li class="chapter-item expanded "><a href="../schema/index.html"><strong aria-hidden="true">4.</strong> Schema</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../schema/subscriptions.html"><strong aria-hidden="true">4.1.</strong> Subscriptions</a></li><li class="chapter-item expanded "><a href="../schema/introspection.html"><strong aria-hidden="true">4.2.</strong> Introspection</a></li></ol></li><li class="chapter-item expanded "><a href="../serve/index.html"><strong aria-hidden="true">5.</strong> Serving</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../serve/batching.html"><strong aria-hidden="true">5.1.</strong> Batching</a></li></ol></li><li class="chapter-item expanded "><a href="../advanced/index.html"><strong aria-hidden="true">6.</strong> Advanced Topics</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/implicit_and_explicit_null.html"><strong aria-hidden="true">6.1.</strong> Implicit and explicit null</a></li><li class="chapter-item expanded "><a href="../advanced/n_plus_1.html"><strong aria-hidden="true">6.2.</strong> N+1 problem</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/dataloader.html"><strong aria-hidden="true">6.2.1.</strong> DataLoader</a></li><li class="chapter-item expanded "><a href="../advanced/lookahead.html"><strong aria-hidden="true">6.2.2.</strong> Look-ahead</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/eager_loading.html" class="active"><strong aria-hidden="true">6.2.2.1.</strong> Eager loading</a></li></ol></li></ol></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Juniper Book</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="eager-loading"><a class="header" href="#eager-loading">Eager loading</a></h1>
+<p>As a further evolution of the <a href="lookahead.html#n1-problem">dealing with the N+1 problem via look-ahead</a>, we may systematically remodel <a href="https://www.rust-lang.org">Rust</a> types mapping to <a href="https://graphql.org">GraphQL</a> ones in the way to encourage doing eager preloading of data for its <a href="https://spec.graphql.org/October2021#sec-Language.Fields">fields</a> and using the already preloaded data when resolving a particular <a href="https://spec.graphql.org/October2021#sec-Language.Fields">field</a>.</p>
+<p>At the moment, this approach is represented with the <a href="https://docs.rs/juniper-eager-loading"><code>juniper-eager-loading</code></a> crate for <a href="https://docs.rs/juniper">Juniper</a>.</p>
+<blockquote>
+<p><strong>NOTE</strong>: Since this library requires <a href="https://docs.rs/juniper-from-schema"><code>juniper-from-schema</code></a>, it's best first to become familiar with it.</p>
+</blockquote>
+<!-- TODO: Provide example of solving the problem from "N+1 chapter" once `juniper-eager-loading` support the latest `juniper`. -->
+<p>From <a href="https://docs.rs/juniper-eager-loading/latest/juniper_eager_loading#how-this-library-works-at-a-high-level">"How this library works at a high level"</a> and <a href="https://docs.rs/juniper-eager-loading/latest/juniper_eager_loading#a-real-example">"A real example"</a> sections of <a href="https://docs.rs/juniper-eager-loading"><code>juniper-eager-loading</code></a> documentation:</p>
+<blockquote>
+<h3 id="how-this-library-works-at-a-high-level"><a class="header" href="#how-this-library-works-at-a-high-level">How this library works at a high level</a></h3>
+<p>If you have a GraphQL type like this</p>
+<pre><code class="language-graphql">type User {
+    id: Int!
+    country: Country!
+}
+</code></pre>
+<p>You might create the corresponding Rust model type like this:</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct User {
+    id: i32,
+    country_id: i32,
+}
+<span class="boring">}</span></code></pre></pre>
+<p>However this approach has one big issue. How are you going to resolve the field <code>User.country</code>
+without doing a database query? All the resolver has access to is a <code>User</code> with a <code>country_id</code>
+field. It can't get the country without loading it from the database...</p>
+<p>Fundamentally these kinds of model structs don't work for eager loading with GraphQL. So
+this library takes a different approach.</p>
+<p>What if we created separate structs for the database models and the GraphQL models? Something
+like this:</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">fn main() {}
+</span><span class="boring">
+</span>mod models {
+    pub struct User {
+        id: i32,
+        country_id: i32
+    }
+
+    pub struct Country {
+        id: i32,
+    }
+}
+
+struct User {
+    user: models::User,
+    country: HasOne&lt;Country&gt;,
+}
+
+struct Country {
+    country: models::Country
+}
+
+enum HasOne&lt;T&gt; {
+    Loaded(T),
+    NotLoaded,
+}</code></pre></pre>
+<p>Now we're able to resolve the query with code like this:</p>
+<ol>
+<li>Load all the users (first query).</li>
+<li>Map the users to a list of country ids.</li>
+<li>Load all the countries with those ids (second query).</li>
+<li>Pair up the users with the country with the correct id, so change <code>User.country</code> from
+<code>HasOne::NotLoaded</code> to <code>HasOne::Loaded(matching_country)</code>.</li>
+<li>When resolving the GraphQL field <code>User.country</code> simply return the loaded country.</li>
+</ol>
+<h3 id="a-real-example"><a class="header" href="#a-real-example">A real example</a></h3>
+<pre><code class="language-rust ignore">use juniper::{Executor, FieldResult};
+use juniper_eager_loading::{prelude::*, EagerLoading, HasOne};
+use juniper_from_schema::graphql_schema;
+use std::error::Error;
+
+// Define our GraphQL schema.
+graphql_schema! {
+    schema {
+        query: Query
+    }
+
+    type Query {
+        allUsers: [User!]! @juniper(ownership: "owned")
+    }
+
+    type User {
+        id: Int!
+        country: Country!
+    }
+
+    type Country {
+        id: Int!
+    }
+}
+
+// Our model types.
+mod models {
+    use std::error::Error;
+    use juniper_eager_loading::LoadFrom;
+
+    #[derive(Clone)]
+    pub struct User {
+        pub id: i32,
+        pub country_id: i32
+    }
+
+    #[derive(Clone)]
+    pub struct Country {
+        pub id: i32,
+    }
+
+    // This trait is required for eager loading countries.
+    // It defines how to load a list of countries from a list of ids.
+    // Notice that `Context` is generic and can be whatever you want.
+    // It will normally be your Juniper context which would contain
+    // a database connection.
+    impl LoadFrom&lt;i32&gt; for Country {
+        type Error = Box&lt;dyn Error&gt;;
+        type Context = super::Context;
+
+        fn load(
+            employments: &amp;[i32],
+            field_args: &amp;(),
+            ctx: &amp;Self::Context,
+        ) -&gt; Result&lt;Vec&lt;Self&gt;, Self::Error&gt; {
+            // ...
+<span class="boring">            unimplemented!()
+</span>        }
+    }
+}
+
+// Our sample database connection type.
+pub struct DbConnection;
+
+impl DbConnection {
+    // Function that will load all the users.
+    fn load_all_users(&amp;self) -&gt; Vec&lt;models::User&gt; {
+        // ...
+<span class="boring">        unimplemented!()
+</span>    }
+}
+
+// Our Juniper context type which contains a database connection.
+pub struct Context {
+    db: DbConnection,
+}
+
+impl juniper::Context for Context {}
+
+// Our GraphQL user type.
+// `#[derive(EagerLoading)]` takes care of generating all the boilerplate code.
+#[derive(Clone, EagerLoading)]
+// You need to set the context and error type.
+#[eager_loading(
+    context = Context,
+    error = Box&lt;dyn Error&gt;,
+
+    // These match the default so you wouldn't have to specify them
+    model = models::User,
+    id = i32,
+    root_model_field = user,
+)]
+pub struct User {
+    // This user model is used to resolve `User.id`
+    user: models::User,
+
+    // Setup a "has one" association between a user and a country.
+    //
+    // We could also have used `#[has_one(default)]` here.
+    #[has_one(
+        foreign_key_field = country_id,
+        root_model_field = country,
+        graphql_field = country,
+    )]
+    country: HasOne&lt;Country&gt;,
+}
+
+// And the GraphQL country type.
+#[derive(Clone, EagerLoading)]
+#[eager_loading(context = Context, error = Box&lt;dyn Error&gt;)]
+pub struct Country {
+    country: models::Country,
+}
+
+// The root query GraphQL type.
+pub struct Query;
+
+impl QueryFields for Query {
+    // The resolver for `Query.allUsers`.
+    fn field_all_users(
+        &amp;self,
+        executor: &amp;Executor&lt;'_, Context&gt;,
+        trail: &amp;QueryTrail&lt;'_, User, Walked&gt;,
+    ) -&gt; FieldResult&lt;Vec&lt;User&gt;&gt; {
+        let ctx = executor.context();
+
+        // Load the model users.
+        let user_models = ctx.db.load_all_users();
+
+        // Turn the model users into GraphQL users.
+        let mut users = User::from_db_models(&amp;user_models);
+
+        // Perform the eager loading.
+        // `trail` is used to only eager load the fields that are requested. Because
+        // we're using `QueryTrail`s from "juniper_from_schema" it would be a compile
+        // error if we eager loaded associations that aren't requested in the query.
+        User::eager_load_all_children_for_each(&amp;mut users, &amp;user_models, ctx, trail)?;
+
+        Ok(users)
+    }
+}
+
+impl UserFields for User {
+    fn field_id(
+        &amp;self,
+        executor: &amp;Executor&lt;'_, Context&gt;,
+    ) -&gt; FieldResult&lt;&amp;i32&gt; {
+        Ok(&amp;self.user.id)
+    }
+
+    fn field_country(
+        &amp;self,
+        executor: &amp;Executor&lt;'_, Context&gt;,
+        trail: &amp;QueryTrail&lt;'_, Country, Walked&gt;,
+    ) -&gt; FieldResult&lt;&amp;Country&gt; {
+        // This will unwrap the country from the `HasOne` or return an error if the
+        // country wasn't loaded, or wasn't found in the database.
+        Ok(self.country.try_unwrap()?)
+    }
+}
+
+impl CountryFields for Country {
+    fn field_id(
+        &amp;self,
+        executor: &amp;Executor&lt;'_, Context&gt;,
+    ) -&gt; FieldResult&lt;&amp;i32&gt; {
+        Ok(&amp;self.country.id)
+    }
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre>
+</blockquote>
+<p>For more details, check out the <a href="https://docs.rs/juniper-eager-loading"><code>juniper-eager-loading</code> documentation</a>.</p>
+<h2 id="full-example"><a class="header" href="#full-example">Full example</a></h2>
+<p>For a full example using eager loading in <a href="https://docs.rs/juniper">Juniper</a> check out the <a href="https://github.com/davidpdrsn/graphql-app-example"><code>davidpdrsn/graphql-app-example</code> repository</a>.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../advanced/lookahead.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../advanced/lookahead.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

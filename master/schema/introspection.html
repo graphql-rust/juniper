@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Type system - Juniper Book</title>
+        <title>Introspection - Juniper Book</title>
 
 
         <!-- Custom HTML head -->
@@ -88,7 +88,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../quickstart.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li class="chapter-item expanded "><a href="../types/index.html" class="active"><strong aria-hidden="true">3.</strong> Type system</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/index.html"><strong aria-hidden="true">3.1.</strong> Objects</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">3.1.1.</strong> Complex fields</a></li><li class="chapter-item expanded "><a href="../types/objects/context.html"><strong aria-hidden="true">3.1.2.</strong> Context</a></li><li class="chapter-item expanded "><a href="../types/objects/error/index.html"><strong aria-hidden="true">3.1.3.</strong> Error handling</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/error/field.html"><strong aria-hidden="true">3.1.3.1.</strong> Field errors</a></li><li class="chapter-item expanded "><a href="../types/objects/error/schema.html"><strong aria-hidden="true">3.1.3.2.</strong> Schema errors</a></li></ol></li><li class="chapter-item expanded "><a href="../types/objects/generics.html"><strong aria-hidden="true">3.1.4.</strong> Generics</a></li></ol></li><li class="chapter-item expanded "><a href="../types/interfaces.html"><strong aria-hidden="true">3.2.</strong> Interfaces</a></li><li class="chapter-item expanded "><a href="../types/unions.html"><strong aria-hidden="true">3.3.</strong> Unions</a></li><li class="chapter-item expanded "><a href="../types/enums.html"><strong aria-hidden="true">3.4.</strong> Enums</a></li><li class="chapter-item expanded "><a href="../types/input_objects.html"><strong aria-hidden="true">3.5.</strong> Input objects</a></li><li class="chapter-item expanded "><a href="../types/scalars.html"><strong aria-hidden="true">3.6.</strong> Scalars</a></li></ol></li><li class="chapter-item expanded "><a href="../schema/index.html"><strong aria-hidden="true">4.</strong> Schema</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../schema/subscriptions.html"><strong aria-hidden="true">4.1.</strong> Subscriptions</a></li><li class="chapter-item expanded "><a href="../schema/introspection.html"><strong aria-hidden="true">4.2.</strong> Introspection</a></li></ol></li><li class="chapter-item expanded "><a href="../serve/index.html"><strong aria-hidden="true">5.</strong> Serving</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../serve/batching.html"><strong aria-hidden="true">5.1.</strong> Batching</a></li></ol></li><li class="chapter-item expanded "><a href="../advanced/index.html"><strong aria-hidden="true">6.</strong> Advanced Topics</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/implicit_and_explicit_null.html"><strong aria-hidden="true">6.1.</strong> Implicit and explicit null</a></li><li class="chapter-item expanded "><a href="../advanced/n_plus_1.html"><strong aria-hidden="true">6.2.</strong> N+1 problem</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/dataloader.html"><strong aria-hidden="true">6.2.1.</strong> DataLoader</a></li><li class="chapter-item expanded "><a href="../advanced/lookahead.html"><strong aria-hidden="true">6.2.2.</strong> Look-ahead</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/eager_loading.html"><strong aria-hidden="true">6.2.2.1.</strong> Eager loading</a></li></ol></li></ol></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../quickstart.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li class="chapter-item expanded "><a href="../types/index.html"><strong aria-hidden="true">3.</strong> Type system</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/index.html"><strong aria-hidden="true">3.1.</strong> Objects</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">3.1.1.</strong> Complex fields</a></li><li class="chapter-item expanded "><a href="../types/objects/context.html"><strong aria-hidden="true">3.1.2.</strong> Context</a></li><li class="chapter-item expanded "><a href="../types/objects/error/index.html"><strong aria-hidden="true">3.1.3.</strong> Error handling</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/error/field.html"><strong aria-hidden="true">3.1.3.1.</strong> Field errors</a></li><li class="chapter-item expanded "><a href="../types/objects/error/schema.html"><strong aria-hidden="true">3.1.3.2.</strong> Schema errors</a></li></ol></li><li class="chapter-item expanded "><a href="../types/objects/generics.html"><strong aria-hidden="true">3.1.4.</strong> Generics</a></li></ol></li><li class="chapter-item expanded "><a href="../types/interfaces.html"><strong aria-hidden="true">3.2.</strong> Interfaces</a></li><li class="chapter-item expanded "><a href="../types/unions.html"><strong aria-hidden="true">3.3.</strong> Unions</a></li><li class="chapter-item expanded "><a href="../types/enums.html"><strong aria-hidden="true">3.4.</strong> Enums</a></li><li class="chapter-item expanded "><a href="../types/input_objects.html"><strong aria-hidden="true">3.5.</strong> Input objects</a></li><li class="chapter-item expanded "><a href="../types/scalars.html"><strong aria-hidden="true">3.6.</strong> Scalars</a></li></ol></li><li class="chapter-item expanded "><a href="../schema/index.html"><strong aria-hidden="true">4.</strong> Schema</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../schema/subscriptions.html"><strong aria-hidden="true">4.1.</strong> Subscriptions</a></li><li class="chapter-item expanded "><a href="../schema/introspection.html" class="active"><strong aria-hidden="true">4.2.</strong> Introspection</a></li></ol></li><li class="chapter-item expanded "><a href="../serve/index.html"><strong aria-hidden="true">5.</strong> Serving</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../serve/batching.html"><strong aria-hidden="true">5.1.</strong> Batching</a></li></ol></li><li class="chapter-item expanded "><a href="../advanced/index.html"><strong aria-hidden="true">6.</strong> Advanced Topics</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/implicit_and_explicit_null.html"><strong aria-hidden="true">6.1.</strong> Implicit and explicit null</a></li><li class="chapter-item expanded "><a href="../advanced/n_plus_1.html"><strong aria-hidden="true">6.2.</strong> N+1 problem</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/dataloader.html"><strong aria-hidden="true">6.2.1.</strong> DataLoader</a></li><li class="chapter-item expanded "><a href="../advanced/lookahead.html"><strong aria-hidden="true">6.2.2.</strong> Look-ahead</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/eager_loading.html"><strong aria-hidden="true">6.2.2.1.</strong> Eager loading</a></li></ol></li></ol></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -173,40 +173,75 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="type-system"><a class="header" href="#type-system">Type system</a></h1>
-<p>Most of the work in working with <a href="https://docs.rs/juniper">Juniper</a> consists of mapping the <a href="https://spec.graphql.org/October2021#sec-Type-System">GraphQL type system</a> to the <a href="https://www.rust-lang.org">Rust</a> types our application uses.</p>
-<p><a href="https://docs.rs/juniper">Juniper</a> provides some convenient abstractions making this process as painless as possible.</p>
-<p>Find out more in the individual chapters below:</p>
-<ul>
-<li><a href="objects/index.html">Objects</a>
-<ul>
-<li><a href="objects/complex_fields.html">Complex fields</a></li>
-<li><a href="objects/Context.html">Context</a></li>
-<li><a href="objects/error/index.html">Error handling</a>
-<ul>
-<li><a href="objects/error/field.html">Field errors</a></li>
-<li><a href="objects/error/schema.html">Schema errors</a></li>
-</ul>
-</li>
-<li><a href="objects/generics.html">Generics</a></li>
-</ul>
-</li>
-<li><a href="interfaces.html">Interfaces</a></li>
-<li><a href="unions.html">Unions</a></li>
-<li><a href="enums.html">Enums</a></li>
-<li><a href="input_objects.html">Input objects</a></li>
-<li><a href="scalars.html">Scalars</a></li>
-</ul>
+                        <h1 id="introspection"><a class="header" href="#introspection">Introspection</a></h1>
+<blockquote>
+<p>The <a href="https://spec.graphql.org/October2021#sec-Schema-Introspection">schema introspection</a> system is accessible from the meta-fields <code>__schema</code> and <code>__type</code> which are accessible from the type of the root of a query operation.</p>
+<pre><code class="language-graphql">__schema: __Schema!
+__type(name: String!): __Type
+</code></pre>
+<p>Like all meta-fields, these are implicit and do not appear in the fields list in the root type of the query operation.</p>
+</blockquote>
+<p><a href="https://graphql.org">GraphQL</a> provides <a href="https://spec.graphql.org/October2021#sec-Introspection">introspection</a>, allowing to see what <a href="https://spec.graphql.org/October2021#sel-GAFRJBABABF_jB">queries</a>, <a href="https://spec.graphql.org/October2021#sel-GAFRJDABABI5C">mutations</a> and <a href="https://spec.graphql.org/October2021#sel-GAFRJFABABMvpN">subscriptions</a> a <a href="https://graphql.org">GraphQL</a> server supports at runtime.</p>
+<p>Because <a href="https://spec.graphql.org/October2021#sec-Introspection">introspection</a> queries are just regular <a href="https://spec.graphql.org/October2021#sel-GAFRJBABABF_jB">GraphQL queries</a>, <a href="https://docs.rs/juniper">Juniper</a> supports them natively. For example, to get all the names of the types supported, we could <a href="https://spec.graphql.org/October2021#sec-Execution">execute</a> the following <a href="https://spec.graphql.org/October2021#sel-GAFRJBABABF_jB">query</a> against <a href="https://docs.rs/juniper">Juniper</a>:</p>
+<pre><code class="language-graphql">{
+  __schema {
+    types {
+      name
+    }
+  }
+}
+</code></pre>
+<h2 id="disabling"><a class="header" href="#disabling">Disabling</a></h2>
+<blockquote>
+<p>Disabling introspection in production is a widely debated topic, but we believe it’s one of the first things you can do to harden your GraphQL API in production.</p>
+</blockquote>
+<p><a href="https://www.apollographql.com/blog/why-you-should-disable-graphql-introspection-in-production">Some security requirements and considerations</a> may mandate to disable <a href="https://spec.graphql.org/October2021#sec-Schema-Introspection">GraphQL schema introspection</a> in production environments. In <a href="https://docs.rs/juniper">Juniper</a> this can be achieved by using the <a href="https://docs.rs/juniper/latest/juniper/struct.RootNode.html#method.disable_introspection"><code>RootNode::disable_introspection()</code></a> method:</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{
+</span><span class="boring">    graphql_object, graphql_vars, EmptyMutation, EmptySubscription, GraphQLError,
+</span><span class="boring">    RootNode,
+</span><span class="boring">};
+</span><span class="boring">
+</span>pub struct Query;
+
+#[graphql_object]
+impl Query {
+    fn some() -&gt; bool {
+        true
+    }
+}
+
+type Schema = RootNode&lt;'static, Query, EmptyMutation, EmptySubscription&gt;;
+
+fn main() {
+    let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new())
+        .disable_introspection();
+
+    let query = "query { __schema { queryType { name } } }";
+
+    match juniper::execute_sync(query, None, &amp;schema, &amp;graphql_vars! {}, &amp;()) {
+        Err(GraphQLError::ValidationError(errs)) =&gt; {
+            assert_eq!(
+                errs.first().unwrap().message(),
+                "GraphQL introspection is not allowed, but the operation contained `__schema`",
+            );
+        }
+        res =&gt; panic!("expected `ValidationError`, returned: {res:#?}"),
+    }
+}</code></pre></pre>
+<blockquote>
+<p><strong>NOTE</strong>: Attempt to execute an <a href="https://spec.graphql.org/October2021#sec-Schema-Introspection">introspection query</a> results in <a href="https://spec.graphql.org/October2021#sec-Validation">validation</a> error, rather than <a href="https://spec.graphql.org/October2021#sec-Execution">execution</a> error.</p>
+</blockquote>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../quickstart.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../schema/subscriptions.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../types/objects/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../serve/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -216,11 +251,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../quickstart.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../schema/subscriptions.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../types/objects/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../serve/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

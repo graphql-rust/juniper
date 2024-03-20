@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Type system - Juniper Book</title>
+        <title>Batching - Juniper Book</title>
 
 
         <!-- Custom HTML head -->
@@ -88,7 +88,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../quickstart.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li class="chapter-item expanded "><a href="../types/index.html" class="active"><strong aria-hidden="true">3.</strong> Type system</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/index.html"><strong aria-hidden="true">3.1.</strong> Objects</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">3.1.1.</strong> Complex fields</a></li><li class="chapter-item expanded "><a href="../types/objects/context.html"><strong aria-hidden="true">3.1.2.</strong> Context</a></li><li class="chapter-item expanded "><a href="../types/objects/error/index.html"><strong aria-hidden="true">3.1.3.</strong> Error handling</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/error/field.html"><strong aria-hidden="true">3.1.3.1.</strong> Field errors</a></li><li class="chapter-item expanded "><a href="../types/objects/error/schema.html"><strong aria-hidden="true">3.1.3.2.</strong> Schema errors</a></li></ol></li><li class="chapter-item expanded "><a href="../types/objects/generics.html"><strong aria-hidden="true">3.1.4.</strong> Generics</a></li></ol></li><li class="chapter-item expanded "><a href="../types/interfaces.html"><strong aria-hidden="true">3.2.</strong> Interfaces</a></li><li class="chapter-item expanded "><a href="../types/unions.html"><strong aria-hidden="true">3.3.</strong> Unions</a></li><li class="chapter-item expanded "><a href="../types/enums.html"><strong aria-hidden="true">3.4.</strong> Enums</a></li><li class="chapter-item expanded "><a href="../types/input_objects.html"><strong aria-hidden="true">3.5.</strong> Input objects</a></li><li class="chapter-item expanded "><a href="../types/scalars.html"><strong aria-hidden="true">3.6.</strong> Scalars</a></li></ol></li><li class="chapter-item expanded "><a href="../schema/index.html"><strong aria-hidden="true">4.</strong> Schema</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../schema/subscriptions.html"><strong aria-hidden="true">4.1.</strong> Subscriptions</a></li><li class="chapter-item expanded "><a href="../schema/introspection.html"><strong aria-hidden="true">4.2.</strong> Introspection</a></li></ol></li><li class="chapter-item expanded "><a href="../serve/index.html"><strong aria-hidden="true">5.</strong> Serving</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../serve/batching.html"><strong aria-hidden="true">5.1.</strong> Batching</a></li></ol></li><li class="chapter-item expanded "><a href="../advanced/index.html"><strong aria-hidden="true">6.</strong> Advanced Topics</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/implicit_and_explicit_null.html"><strong aria-hidden="true">6.1.</strong> Implicit and explicit null</a></li><li class="chapter-item expanded "><a href="../advanced/n_plus_1.html"><strong aria-hidden="true">6.2.</strong> N+1 problem</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/dataloader.html"><strong aria-hidden="true">6.2.1.</strong> DataLoader</a></li><li class="chapter-item expanded "><a href="../advanced/lookahead.html"><strong aria-hidden="true">6.2.2.</strong> Look-ahead</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/eager_loading.html"><strong aria-hidden="true">6.2.2.1.</strong> Eager loading</a></li></ol></li></ol></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../quickstart.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li class="chapter-item expanded "><a href="../types/index.html"><strong aria-hidden="true">3.</strong> Type system</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/index.html"><strong aria-hidden="true">3.1.</strong> Objects</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">3.1.1.</strong> Complex fields</a></li><li class="chapter-item expanded "><a href="../types/objects/context.html"><strong aria-hidden="true">3.1.2.</strong> Context</a></li><li class="chapter-item expanded "><a href="../types/objects/error/index.html"><strong aria-hidden="true">3.1.3.</strong> Error handling</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/error/field.html"><strong aria-hidden="true">3.1.3.1.</strong> Field errors</a></li><li class="chapter-item expanded "><a href="../types/objects/error/schema.html"><strong aria-hidden="true">3.1.3.2.</strong> Schema errors</a></li></ol></li><li class="chapter-item expanded "><a href="../types/objects/generics.html"><strong aria-hidden="true">3.1.4.</strong> Generics</a></li></ol></li><li class="chapter-item expanded "><a href="../types/interfaces.html"><strong aria-hidden="true">3.2.</strong> Interfaces</a></li><li class="chapter-item expanded "><a href="../types/unions.html"><strong aria-hidden="true">3.3.</strong> Unions</a></li><li class="chapter-item expanded "><a href="../types/enums.html"><strong aria-hidden="true">3.4.</strong> Enums</a></li><li class="chapter-item expanded "><a href="../types/input_objects.html"><strong aria-hidden="true">3.5.</strong> Input objects</a></li><li class="chapter-item expanded "><a href="../types/scalars.html"><strong aria-hidden="true">3.6.</strong> Scalars</a></li></ol></li><li class="chapter-item expanded "><a href="../schema/index.html"><strong aria-hidden="true">4.</strong> Schema</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../schema/subscriptions.html"><strong aria-hidden="true">4.1.</strong> Subscriptions</a></li><li class="chapter-item expanded "><a href="../schema/introspection.html"><strong aria-hidden="true">4.2.</strong> Introspection</a></li></ol></li><li class="chapter-item expanded "><a href="../serve/index.html"><strong aria-hidden="true">5.</strong> Serving</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../serve/batching.html" class="active"><strong aria-hidden="true">5.1.</strong> Batching</a></li></ol></li><li class="chapter-item expanded "><a href="../advanced/index.html"><strong aria-hidden="true">6.</strong> Advanced Topics</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/implicit_and_explicit_null.html"><strong aria-hidden="true">6.1.</strong> Implicit and explicit null</a></li><li class="chapter-item expanded "><a href="../advanced/n_plus_1.html"><strong aria-hidden="true">6.2.</strong> N+1 problem</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/dataloader.html"><strong aria-hidden="true">6.2.1.</strong> DataLoader</a></li><li class="chapter-item expanded "><a href="../advanced/lookahead.html"><strong aria-hidden="true">6.2.2.</strong> Look-ahead</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/eager_loading.html"><strong aria-hidden="true">6.2.2.1.</strong> Eager loading</a></li></ol></li></ol></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -173,40 +173,72 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="type-system"><a class="header" href="#type-system">Type system</a></h1>
-<p>Most of the work in working with <a href="https://docs.rs/juniper">Juniper</a> consists of mapping the <a href="https://spec.graphql.org/October2021#sec-Type-System">GraphQL type system</a> to the <a href="https://www.rust-lang.org">Rust</a> types our application uses.</p>
-<p><a href="https://docs.rs/juniper">Juniper</a> provides some convenient abstractions making this process as painless as possible.</p>
-<p>Find out more in the individual chapters below:</p>
-<ul>
-<li><a href="objects/index.html">Objects</a>
-<ul>
-<li><a href="objects/complex_fields.html">Complex fields</a></li>
-<li><a href="objects/Context.html">Context</a></li>
-<li><a href="objects/error/index.html">Error handling</a>
-<ul>
-<li><a href="objects/error/field.html">Field errors</a></li>
-<li><a href="objects/error/schema.html">Schema errors</a></li>
-</ul>
-</li>
-<li><a href="objects/generics.html">Generics</a></li>
-</ul>
-</li>
-<li><a href="interfaces.html">Interfaces</a></li>
-<li><a href="unions.html">Unions</a></li>
-<li><a href="enums.html">Enums</a></li>
-<li><a href="input_objects.html">Input objects</a></li>
-<li><a href="scalars.html">Scalars</a></li>
-</ul>
+                        <h1 id="batching"><a class="header" href="#batching">Batching</a></h1>
+<p>The <a href="https://graphql.org">GraphQL</a> standard generally assumes that there will be one server request per each client operation to perform (such as a query or mutation). This is conceptually simple but potentially inefficient.</p>
+<p>Some client libraries (such as <a href="https://www.apollographql.com/docs/link/links/batch-http.html"><code>apollo-link-batch-http</code></a>) have the ability to batch operations in a single <a href="https://en.wikipedia.org/wiki/HTTP">HTTP</a> request to save network round-trips and potentially increase performance. There are <a href="https://www.apollographql.com/blog/batching-client-graphql-queries#what-are-the-tradeoffs-with-batching">some tradeoffs</a>, though, that should be considered before <a href="https://www.apollographql.com/blog/batching-client-graphql-queries">batching operations</a>.</p>
+<p><a href="https://docs.rs/juniper">Juniper</a>'s <a href="index.html#officially-supported">server integration crates</a> support <a href="https://www.apollographql.com/blog/batching-client-graphql-queries">batching multiple operations</a> in a single <a href="https://en.wikipedia.org/wiki/HTTP">HTTP</a> request out-of-the-box via <a href="https://www.json.org">JSON</a> arrays. This makes them compatible with client libraries that support <a href="https://www.apollographql.com/blog/batching-client-graphql-queries">batch operations</a> without any special configuration.</p>
+<blockquote>
+<p><strong>NOTE</strong>: If you use a custom server integration, it's <strong>not a hard requirement</strong> to support <a href="https://www.apollographql.com/blog/batching-client-graphql-queries">batching</a>, as it's not a part of the <a href="https://spec.graphql.org/October2021">official GraphQL specification</a>.</p>
+</blockquote>
+<p>Assuming an integration supports <a href="https://www.apollographql.com/blog/batching-client-graphql-queries">operations batching</a>, for the following GraphQL query:</p>
+<pre><code class="language-graphql">{
+  hero {
+    name
+  }
+}
+</code></pre>
+<p>The <a href="https://www.json.org">JSON</a> <code>data</code> to <a href="https://en.wikipedia.org/wiki/POST_(HTTP)">POST</a> for an individual request would be:</p>
+<pre><code class="language-json">{
+  "query": "{hero{name}}"
+}
+</code></pre>
+<p>And the response would be in the form:</p>
+<pre><code class="language-json">{
+  "data": {
+    "hero": {
+      "name": "R2-D2"
+    }
+  }
+}
+</code></pre>
+<p>However, if we want to run the same query twice in a single <a href="https://en.wikipedia.org/wiki/HTTP">HTTP</a> request, the batched <a href="https://www.json.org">JSON</a> <code>data</code> to <a href="https://en.wikipedia.org/wiki/POST_(HTTP)">POST</a> would be:</p>
+<pre><code class="language-json">[
+  {
+    "query": "{hero{name}}"
+  },
+  {
+    "query": "{hero{name}}"
+  }
+]
+</code></pre>
+<p>And then, the response would be in the following array form:</p>
+<pre><code class="language-json">[
+  {
+    "data": {
+      "hero": {
+        "name": "R2-D2"
+      }
+    }
+  },
+  {
+    "data": {
+      "hero": {
+        "name": "R2-D2"
+      }
+    }
+  }
+]
+</code></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../quickstart.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../serve/index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../types/objects/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../advanced/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -216,11 +248,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../quickstart.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../serve/index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../types/objects/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../advanced/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
