@@ -6,7 +6,7 @@
 [![CI](https://github.com/graphql-rust/juniper/workflows/CI/badge.svg?branch=master "CI")](https://github.com/graphql-rust/juniper/actions?query=workflow%3ACI+branch%3Amaster)
 [![Rust 1.73+](https://img.shields.io/badge/rustc-1.73+-lightgray.svg "Rust 1.73+")](https://blog.rust-lang.org/2023/10/05/Rust-1.73.0.html)
 
-- [Changelog](https://github.com/graphql-rust/juniper/blob/master/juniper_graphql_ws/CHANGELOG.md)
+- [Changelog](https://github.com/graphql-rust/juniper/blob/juniper_graphql_ws-v0.4.0/juniper_graphql_ws/CHANGELOG.md)
 
 This crate contains implementations of 2 protocols:
 
@@ -19,7 +19,7 @@ This crate contains implementations of 2 protocols:
 
 ## License
 
-This project is licensed under [BSD 2-Clause License](https://github.com/graphql-rust/juniper/blob/master/juniper_graphql_ws/LICENSE).
+This project is licensed under [BSD 2-Clause License](https://github.com/graphql-rust/juniper/blob/juniper_graphql_ws-v0.4.0/juniper_graphql_ws/LICENSE).
 
 
 
