@@ -1,4 +1,5 @@
 allow-branch = ["*"]
+consolidate-commits = false
 pre-release-commit-message = "Prepare {{version}} release of `{{crate_name}}` crate"
 tag-message = "{{version}} version of `{{crate_name}}` crate"
 tag-name = "{{crate_name}}-v{{version}}"
