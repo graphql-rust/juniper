@@ -1,0 +1,390 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Objects - Juniper Book</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="User guide for Juniper (GraphQL server library for Rust).">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../highlight.css">
+        <link rel="stylesheet" href="../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../../quickstart.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li class="chapter-item expanded "><a href="../../types/index.html"><strong aria-hidden="true">3.</strong> Type system</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../types/objects/index.html" class="active"><strong aria-hidden="true">3.1.</strong> Objects</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../types/objects/complex_fields.html"><strong aria-hidden="true">3.1.1.</strong> Complex fields</a></li><li class="chapter-item expanded "><a href="../../types/objects/context.html"><strong aria-hidden="true">3.1.2.</strong> Context</a></li><li class="chapter-item expanded "><a href="../../types/objects/error/index.html"><strong aria-hidden="true">3.1.3.</strong> Error handling</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../types/objects/error/field.html"><strong aria-hidden="true">3.1.3.1.</strong> Field errors</a></li><li class="chapter-item expanded "><a href="../../types/objects/error/schema.html"><strong aria-hidden="true">3.1.3.2.</strong> Schema errors</a></li></ol></li><li class="chapter-item expanded "><a href="../../types/objects/generics.html"><strong aria-hidden="true">3.1.4.</strong> Generics</a></li></ol></li><li class="chapter-item expanded "><a href="../../types/interfaces.html"><strong aria-hidden="true">3.2.</strong> Interfaces</a></li><li class="chapter-item expanded "><a href="../../types/unions.html"><strong aria-hidden="true">3.3.</strong> Unions</a></li><li class="chapter-item expanded "><a href="../../types/enums.html"><strong aria-hidden="true">3.4.</strong> Enums</a></li><li class="chapter-item expanded "><a href="../../types/input_objects.html"><strong aria-hidden="true">3.5.</strong> Input objects</a></li><li class="chapter-item expanded "><a href="../../types/scalars.html"><strong aria-hidden="true">3.6.</strong> Scalars</a></li></ol></li><li class="chapter-item expanded "><a href="../../schema/index.html"><strong aria-hidden="true">4.</strong> Schema</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../schema/subscriptions.html"><strong aria-hidden="true">4.1.</strong> Subscriptions</a></li><li class="chapter-item expanded "><a href="../../schema/introspection.html"><strong aria-hidden="true">4.2.</strong> Introspection</a></li></ol></li><li class="chapter-item expanded "><a href="../../serve/index.html"><strong aria-hidden="true">5.</strong> Serving</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../serve/batching.html"><strong aria-hidden="true">5.1.</strong> Batching</a></li></ol></li><li class="chapter-item expanded "><a href="../../advanced/index.html"><strong aria-hidden="true">6.</strong> Advanced Topics</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../advanced/implicit_and_explicit_null.html"><strong aria-hidden="true">6.1.</strong> Implicit and explicit null</a></li><li class="chapter-item expanded "><a href="../../advanced/n_plus_1.html"><strong aria-hidden="true">6.2.</strong> N+1 problem</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../advanced/dataloader.html"><strong aria-hidden="true">6.2.1.</strong> DataLoader</a></li><li class="chapter-item expanded "><a href="../../advanced/lookahead.html"><strong aria-hidden="true">6.2.2.</strong> Look-ahead</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../advanced/eager_loading.html"><strong aria-hidden="true">6.2.2.1.</strong> Eager loading</a></li></ol></li></ol></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Juniper Book</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="objects"><a class="header" href="#objects">Objects</a></h1>
+<blockquote>
+<p><a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL objects</a> represent a list of named fields, each of which yield a value of a specific type.</p>
+</blockquote>
+<p>When declaring a <a href="https://graphql.org/learn/schema">GraphQL schema</a>, most of the time we deal with <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL objects</a>, because they are the only place where we actually define the behavior once <a href="https://graphql.org/learn/schema">schema</a> gets <a href="https://spec.graphql.org/October2021#sec-Execution">executed</a>.</p>
+<p>There are two ways to define a <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a> in <a href="https://docs.rs/juniper">Juniper</a>:</p>
+<ol>
+<li>The easiest way, suitable for trivial cases, is to use the <a href="https://docs.rs/juniper/latest/juniper/derive.GraphQLObject.html"><code>#[derive(GraphQLObject)]</code> attribute</a> on a <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a>, as described below.</li>
+<li>The other way, using the <a href="https://docs.rs/juniper/latest/juniper/attr.graphql_object.html"><code>#[graphql_object]</code> attribute</a>, is described in the <a href="complex_fields.html">"Complex fields" chapter</a>.</li>
+</ol>
+<h2 id="trivial"><a class="header" href="#trivial">Trivial</a></h2>
+<p>While any type in <a href="https://www.rust-lang.org">Rust</a> can be exposed as a <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a>, the most common one is a <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a>:</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::GraphQLObject;
+</span><span class="boring">
+</span>#[derive(GraphQLObject)]
+struct Person {
+    name: String,
+    age: i32,
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre></pre>
+<p>This creates a <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a> type called <code>Person</code>, with two fields: <code>name</code> of type <code>String!</code>, and <code>age</code> of type <code>Int!</code>. Because of <a href="https://www.rust-lang.org">Rust</a>'s type system, everything is exported as <a href="https://spec.graphql.org/October2021#sec-Non-Null">non-<code>null</code></a> by default.</p>
+<blockquote>
+<p><strong>TIP</strong>: If a <code>null</code>able field is required, the most obvious way is to use <code>Option</code>. Or <a href="https://docs.rs/juniper/latest/juniper/enum.Nullable.html"><code>Nullable</code></a> for distinguishing between <a href="https://spec.graphql.org/October2021#sel-EAFdRDHAAEJDAoBxzT">explicit and implicit <code>null</code>s</a>.</p>
+</blockquote>
+<h3 id="documentation"><a class="header" href="#documentation">Documentation</a></h3>
+<p>We should take advantage of the fact that <a href="https://graphql.org">GraphQL</a> is <a href="https://spec.graphql.org/October2021#sec-Introspection">self-documenting</a> and add descriptions to the defined <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a> type and its fields. <a href="https://docs.rs/juniper">Juniper</a> will automatically use associated <a href="https://doc.rust-lang.org/reference/comments.html#doc-comments">Rust doc comments</a> as <a href="https://spec.graphql.org/October2021#sec-Descriptions">GraphQL descriptions</a>:</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::GraphQLObject;
+</span><span class="boring">
+</span>/// Information about a person.
+#[derive(GraphQLObject)]
+struct Person {
+    /// The person's full name, including both first and last names.
+    name: String,
+
+    /// The person's age in years, rounded down.
+    age: i32,
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre></pre>
+<p>If using <a href="https://doc.rust-lang.org/reference/comments.html#doc-comments">Rust doc comments</a> is not desired (for example, when we want to keep <a href="https://www.rust-lang.org">Rust</a> API docs and GraphQL schema descriptions different), the <code>#[graphql(description = "...")]</code> attribute can be used instead, which takes precedence over <a href="https://doc.rust-lang.org/reference/comments.html#doc-comments">Rust doc comments</a>:</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::GraphQLObject;
+</span><span class="boring">
+</span>/// This doc comment is visible only in Rust API docs.
+#[derive(GraphQLObject)]
+#[graphql(description = "This description is visible only in GraphQL schema.")]
+struct Person {
+    /// This doc comment is visible only in Rust API docs.
+    #[graphql(desc = "This description is visible only in GraphQL schema.")]
+    //        ^^^^ shortcut for a `description` argument
+    name: String,
+
+    /// This doc comment is visible in both Rust API docs and GraphQL schema 
+    /// descriptions.
+    age: i32,
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre></pre>
+<h3 id="renaming"><a class="header" href="#renaming">Renaming</a></h3>
+<p>By default, <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a> fields are converted from <a href="https://www.rust-lang.org">Rust</a>'s standard <code>snake_case</code> naming convention into <a href="https://graphql.org">GraphQL</a>'s <code>camelCase</code> convention:</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::GraphQLObject;
+</span><span class="boring">
+</span>#[derive(GraphQLObject)]
+struct Person {
+    first_name: String, // exposed as `firstName` in GraphQL schema
+    last_name: String,  // exposed as `lastName` in GraphQL schema
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre></pre>
+<p>We can override the name by using the <code>#[graphql(name = "...")]</code> attribute:</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::GraphQLObject;
+</span><span class="boring">
+</span>#[derive(GraphQLObject)]
+#[graphql(name = "WebPerson")] // now exposed as `WebPerson` in GraphQL schema
+struct Person {
+    name: String,
+    age: i32,
+    #[graphql(name = "websiteURL")]
+    website_url: Option&lt;String&gt;, // now exposed as `websiteURL` in GraphQL schema
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre></pre>
+<p>Or provide a different renaming policy for all the <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a> fields:</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::GraphQLObject;
+</span><span class="boring">
+</span>#[derive(GraphQLObject)]
+#[graphql(rename_all = "none")] // disables any renaming
+struct Person {
+    name: String,
+    age: i32,
+    website_url: Option&lt;String&gt;, // exposed as `website_url` in GraphQL schema
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre></pre>
+<blockquote>
+<p><strong>TIP</strong>: Supported policies are: <code>SCREAMING_SNAKE_CASE</code>, <code>camelCase</code> and <code>none</code> (disables any renaming).</p>
+</blockquote>
+<h3 id="deprecation"><a class="header" href="#deprecation">Deprecation</a></h3>
+<p>To <a href="https://spec.graphql.org/October2021#sec--deprecated">deprecate</a> a <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a> field, either the <code>#[graphql(deprecated = "...")]</code> attribute, or <a href="https://doc.rust-lang.org/reference/attributes/diagnostics.html#the-deprecated-attribute">Rust's <code>#[deprecated]</code> attribute</a>, should be used:</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::GraphQLObject;
+</span><span class="boring">
+</span>#[derive(GraphQLObject)]
+struct Person {
+    name: String,
+    age: i32,
+    #[graphql(deprecated = "Please use the `name` field instead.")]
+    first_name: String,
+    #[deprecated(note = "Please use the `name` field instead.")]
+    last_name: String,
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre></pre>
+<blockquote>
+<p><strong>NOTE</strong>: Only <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a>/<a href="https://spec.graphql.org/October2021#sec-Interfaces">interface</a> fields and <a href="https://spec.graphql.org/October2021#sec-Enums">GraphQL enum</a> values can be <a href="https://spec.graphql.org/October2021#sec--deprecated">deprecated</a>.</p>
+</blockquote>
+<h3 id="ignoring"><a class="header" href="#ignoring">Ignoring</a></h3>
+<p>By default, all <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a> fields are included into the generated <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a> type. To prevent inclusion of a specific field annotate it with the <code>#[graphql(ignore)]</code> attribute:</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(dead_code)]
+</span><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::GraphQLObject;
+</span><span class="boring">
+</span>#[derive(GraphQLObject)]
+struct Person {
+    name: String,
+    age: i32,
+    #[graphql(ignore)]
+    password_hash: String, // cannot be queried from GraphQL
+    #[graphql(skip)]
+    //        ^^^^ alternative naming, up to your preference
+    is_banned: bool,       // cannot be queried from GraphQL
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre></pre>
+<blockquote>
+<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/latest/juniper/derive.GraphQLObject.html"><code>#[derive(GraphQLObject)]</code></a> attribute.</p>
+</blockquote>
+<h2 id="relationships"><a class="header" href="#relationships">Relationships</a></h2>
+<p><a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a> fields can be of any <a href="https://graphql.org">GraphQL</a> type, except <a href="https://spec.graphql.org/October2021#sec-Input-Objects">input objects</a>.</p>
+<p>Let's see what it means to build relationships between <a href="https://spec.graphql.org/October2021#sec-Objects">objects</a>:</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::GraphQLObject;
+</span><span class="boring">
+</span>#[derive(GraphQLObject)]
+struct Person {
+    name: String,
+    age: i32,
+}
+
+#[derive(GraphQLObject)]
+struct House {
+    address: Option&lt;String&gt;,  // converted into `String` (`null`able)
+    inhabitants: Vec&lt;Person&gt;, // converted into `[Person!]!`
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre></pre>
+<p>Because <code>Person</code> is a valid <a href="https://graphql.org">GraphQL</a> type, we can have a <code>Vec&lt;Person&gt;</code> in a <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a>, and it'll be automatically converted into a <a href="https://spec.graphql.org/October2021#sec-List">list</a> of <a href="https://spec.graphql.org/October2021#sec-Non-Null">non-<code>null</code>able</a> <code>Person</code> <a href="https://spec.graphql.org/October2021#sec-Objects">objects</a>.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../types/index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../types/objects/complex_fields.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../types/index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../types/objects/complex_fields.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr.min.js"></script>
+        <script src="../../mark.min.js"></script>
+        <script src="../../searcher.js"></script>
+
+        <script src="../../clipboard.min.js"></script>
+        <script src="../../highlight.js"></script>
+        <script src="../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
