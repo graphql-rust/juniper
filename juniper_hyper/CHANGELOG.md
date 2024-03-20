@@ -6,7 +6,8 @@ All user visible changes to `juniper_hyper` crate will be documented in this fil
 
 
 
-## master
+## [0.9.0] · 2024-03-20
+[0.9.0]: /../../tree/juniper_hyper-v0.9.0/juniper_hyper
 
 ### BC Breaks
 

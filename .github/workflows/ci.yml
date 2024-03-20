@@ -318,7 +318,7 @@ jobs:
           text: ${{ github.ref }}
           regex: '^refs/tags/(([a-z_]+)-v([0-9]+\.[0-9]+\.[0-9]+(-.+)?))$'
 
-      - run: cargo publish -p ${{ steps.tag.outputs.group2 }}
+      - run: cargo publish -p ${{ steps.tag.outputs.group2 }} --all-features
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATESIO_TOKEN }}
 
