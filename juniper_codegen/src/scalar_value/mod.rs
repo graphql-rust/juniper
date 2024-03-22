@@ -450,14 +450,14 @@ enum Field {
     Named(syn::Field),
 
     /// Unnamed [`Field`].
-    Unnamed(syn::Field),
+    Unnamed,
 }
 
 impl ToTokens for Field {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         match self {
             Self::Named(f) => f.ident.to_tokens(tokens),
-            Self::Unnamed(_) => tokens.append(Literal::u8_unsuffixed(0)),
+            Self::Unnamed => tokens.append(Literal::u8_unsuffixed(0)),
         }
     }
 }
@@ -470,9 +470,7 @@ impl TryFrom<syn::Fields> for Field {
             syn::Fields::Named(mut f) if f.named.len() == 1 => {
                 Ok(Self::Named(f.named.pop().unwrap().into_value()))
             }
-            syn::Fields::Unnamed(mut f) if f.unnamed.len() == 1 => {
-                Ok(Self::Unnamed(f.unnamed.pop().unwrap().into_value()))
-            }
+            syn::Fields::Unnamed(f) if f.unnamed.len() == 1 => Ok(Self::Unnamed),
             _ => Err(ERR.custom_error(value.span(), "expected exactly 1 field")),
         }
     }
@@ -483,7 +481,7 @@ impl Field {
     fn match_arg(&self) -> TokenStream {
         match self {
             Self::Named(_) => quote! { { #self: v } },
-            Self::Unnamed(_) => quote! { (v) },
+            Self::Unnamed => quote! { (v) },
         }
     }
 }

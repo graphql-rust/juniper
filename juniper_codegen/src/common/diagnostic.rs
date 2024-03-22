@@ -255,7 +255,7 @@ mod polyfill {
     }
 
     thread_local! {
-        static ENTERED_ENTRY_POINT: Cell<usize> = Cell::new(0);
+        static ENTERED_ENTRY_POINT: Cell<usize> = const { Cell::new(0) };
     }
 
     /// This is the entry point for a macro to support [`Diagnostic`]s.
@@ -312,7 +312,7 @@ mod polyfill {
     }
 
     thread_local! {
-        static ERR_STORAGE: RefCell<Vec<Diagnostic>> = RefCell::new(Vec::new());
+        static ERR_STORAGE: RefCell<Vec<Diagnostic>> = const { RefCell::new(Vec::new()) };
     }
 
     /// Emits the provided [`Diagnostic`], while not aborting macro execution.
