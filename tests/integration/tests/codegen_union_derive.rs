@@ -1097,7 +1097,7 @@ mod external_resolver_enum_variant {
     enum Character {
         A(Human),
         #[graphql(with = Character::as_droid)]
-        B(Droid),
+        B(#[allow(dead_code)] Droid),
     }
 
     impl Character {

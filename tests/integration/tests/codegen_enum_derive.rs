@@ -900,7 +900,7 @@ mod bounded_generic_scalar {
 mod explicit_custom_context {
     use super::*;
 
-    struct CustomContext(prelude::String);
+    struct CustomContext(#[allow(dead_code)] prelude::String);
 
     impl juniper::Context for CustomContext {}
 
