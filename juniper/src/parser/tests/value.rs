@@ -1,6 +1,6 @@
 use crate::{
     ast::{FromInputValue, InputValue, Type},
-    graphql_input_value,
+    graphql_input_value, literal,
     parser::{value::parse_value_literal, Lexer, Parser, SourcePosition, Spanning},
     schema::{
         meta::{Argument, EnumMeta, EnumValue, InputObjectMeta, MetaType, ScalarMeta},
@@ -115,7 +115,7 @@ fn input_value_literals() {
             graphql_input_value!("test"),
         ),
     );
-    let values = &[EnumValue::new("enum_value")];
+    let values = &[EnumValue::new(literal!("enum_value"))];
     let e: EnumMeta<DefaultScalarValue> = EnumMeta::new::<Enum>("TestEnum".into(), values);
 
     assert_eq!(
@@ -173,8 +173,8 @@ fn input_value_literals() {
         ),
     );
     let fields = [
-        Argument::new("key", Type::NonNullNamed("Int".into())),
-        Argument::new("other", Type::NonNullNamed("Bar".into())),
+        Argument::new(literal!("key"), Type::NonNullNamed("Int".into())),
+        Argument::new(literal!("other"), Type::NonNullNamed("Bar".into())),
     ];
     let meta = &MetaType::InputObject(InputObjectMeta::new::<Foo>("foo".into(), &fields));
     assert_eq!(

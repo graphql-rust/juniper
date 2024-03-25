@@ -63,7 +63,7 @@ impl Country {
     }
 }
 
-type Schema = juniper::RootNode<'static, Query, EmptyMutation<()>, EmptySubscription<()>>;
+type Schema = juniper::RootNode<Query, EmptyMutation<()>, EmptySubscription<()>>;
 
 #[tokio::test]
 async fn nested_fragments() {

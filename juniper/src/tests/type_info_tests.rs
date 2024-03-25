@@ -1,3 +1,4 @@
+use arcstr::ArcStr;
 use indexmap::IndexMap;
 
 use crate::{
@@ -12,8 +13,8 @@ use crate::{
 };
 
 pub struct NodeTypeInfo {
-    name: String,
-    attribute_names: Vec<String>,
+    name: ArcStr,
+    attribute_names: Vec<ArcStr>,
 }
 
 pub struct Node {
@@ -24,18 +25,15 @@ impl<S> GraphQLType<S> for Node
 where
     S: ScalarValue,
 {
-    fn name(info: &Self::TypeInfo) -> Option<&str> {
-        Some(&info.name)
+    fn name(info: &Self::TypeInfo) -> Option<ArcStr> {
+        Some(info.name.clone())
     }
 
-    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(info: &Self::TypeInfo, registry: &mut Registry<S>) -> MetaType<S> {
         let fields = info
             .attribute_names
             .iter()
-            .map(|name| registry.field::<String>(name, &()))
+            .map(|name| registry.field::<String>(name.clone(), &()))
             .collect::<Vec<_>>();
 
         registry
@@ -51,7 +49,7 @@ where
     type Context = ();
     type TypeInfo = NodeTypeInfo;
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType<S>>::name(info)
     }
 

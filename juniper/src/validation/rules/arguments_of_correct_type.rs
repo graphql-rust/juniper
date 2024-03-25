@@ -3,14 +3,14 @@ use std::fmt;
 use crate::{
     ast::{Directive, Field, InputValue},
     parser::Spanning,
-    schema::meta::Argument,
+    schema::{meta::Argument, model::AsDynType},
     types::utilities::validate_literal_value,
     validation::{ValidatorContext, Visitor},
     value::ScalarValue,
 };
 
 pub struct ArgumentsOfCorrectType<'a, S: fmt::Debug + 'a> {
-    current_args: Option<&'a Vec<Argument<'a, S>>>,
+    current_args: Option<&'a Vec<Argument<S>>>,
 }
 
 pub fn factory<'a, S: fmt::Debug>() -> ArgumentsOfCorrectType<'a, S> {
@@ -56,7 +56,7 @@ where
             .current_args
             .and_then(|args| args.iter().find(|a| a.name == arg_name.item))
         {
-            let meta_type = ctx.schema.make_type(&argument_meta.arg_type);
+            let meta_type = ctx.schema.make_type(argument_meta.arg_type.as_dyn_type());
 
             if let Some(err) = validate_literal_value(ctx.schema, &meta_type, &arg_value.item) {
                 ctx.report_error(&error_message(arg_name.item, err), &[arg_value.span.start]);

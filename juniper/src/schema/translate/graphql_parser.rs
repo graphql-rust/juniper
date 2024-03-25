@@ -25,12 +25,12 @@ use crate::{
 
 pub struct GraphQLParserTranslator;
 
-impl<'a, S: 'a, T> From<&'a SchemaType<'a, S>> for Document<'a, T>
+impl<'a, S: 'a, T> From<&'a SchemaType<S>> for Document<'a, T>
 where
     S: ScalarValue,
     T: Text<'a> + Default,
 {
-    fn from(input: &'a SchemaType<'a, S>) -> Document<'a, T> {
+    fn from(input: &'a SchemaType<S>) -> Document<'a, T> {
         GraphQLParserTranslator::translate_schema(input)
     }
 }
@@ -83,7 +83,7 @@ impl GraphQLParserTranslator {
     {
         ExternalInputValue {
             position: Pos::default(),
-            description: input.description.as_ref().map(From::from),
+            description: input.description.as_deref().map(From::from),
             name: From::from(input.name.as_str()),
             value_type: GraphQLParserTranslator::translate_type(&input.arg_type),
             default_value: input
@@ -134,7 +134,7 @@ impl GraphQLParserTranslator {
         }
     }
 
-    fn translate_type<'a, T>(input: &'a Type<'a>) -> ExternalType<'a, T>
+    fn translate_type<'a, T, N: AsRef<str>>(input: &'a Type<N>) -> ExternalType<'a, T>
     where
         T: Text<'a>,
     {
@@ -160,7 +160,7 @@ impl GraphQLParserTranslator {
         match input {
             MetaType::Scalar(x) => ExternalTypeDefinition::Scalar(ExternalScalarType {
                 position: Pos::default(),
-                description: x.description.as_ref().map(From::from),
+                description: x.description.as_ref().map(|s| s.to_string()),
                 name: From::from(x.name.as_ref()),
                 directives: vec![],
             }),
@@ -288,7 +288,12 @@ where
             name: "deprecated".into(),
             arguments: reason
                 .as_ref()
-                .map(|rsn| vec![(From::from("reason"), ExternalValue::String(rsn.into()))])
+                .map(|rsn| {
+                    vec![(
+                        From::from("reason"),
+                        ExternalValue::String(rsn.as_str().into()),
+                    )]
+                })
                 .unwrap_or_default(),
         }),
     }

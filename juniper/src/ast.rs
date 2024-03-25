@@ -6,6 +6,7 @@ use crate::{
     executor::Variables,
     parser::Spanning,
     value::{DefaultScalarValue, ScalarValue},
+    ArcStr,
 };
 
 /// A type literal in the syntax tree
@@ -13,19 +14,19 @@ use crate::{
 /// This enum carries no semantic information and might refer to types that do
 /// not exist.
 #[derive(Clone, Eq, PartialEq, Debug)]
-pub enum Type<'a> {
+pub enum Type<N = ArcStr> {
     /// A nullable named type, e.g. `String`
-    Named(Cow<'a, str>),
+    Named(N),
     /// A nullable list type, e.g. `[String]`
     ///
     /// The list itself is what's nullable, the containing type might be non-null.
-    List(Box<Type<'a>>, Option<usize>),
+    List(Box<Type<N>>, Option<usize>),
     /// A non-null named type, e.g. `String!`
-    NonNullNamed(Cow<'a, str>),
+    NonNullNamed(N),
     /// A non-null list type, e.g. `[String]!`.
     ///
     /// The list itself is what's non-null, the containing type might be null.
-    NonNullList(Box<Type<'a>>, Option<usize>),
+    NonNullList(Box<Type<N>>, Option<usize>),
 }
 
 /// A JSON-like value that can be passed into the query execution, either
@@ -47,7 +48,7 @@ pub enum InputValue<S = DefaultScalarValue> {
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct VariableDefinition<'a, S> {
-    pub var_type: Spanning<Type<'a>>,
+    pub var_type: Spanning<Type<&'a str>>,
     pub default_value: Option<Spanning<InputValue<S>>>,
     pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
 }
@@ -194,13 +195,13 @@ pub trait ToInputValue<S = DefaultScalarValue>: Sized {
     fn to_input_value(&self) -> InputValue<S>;
 }
 
-impl<'a> Type<'a> {
+impl<N: AsRef<str>> Type<N> {
     /// Get the name of a named type.
     ///
     /// Only applies to named types; lists will return `None`.
     pub fn name(&self) -> Option<&str> {
         match *self {
-            Type::Named(ref n) | Type::NonNullNamed(ref n) => Some(n),
+            Type::Named(ref n) | Type::NonNullNamed(ref n) => Some(n.as_ref()),
             _ => None,
         }
     }
@@ -210,7 +211,7 @@ impl<'a> Type<'a> {
     /// All type literals contain exactly one named type.
     pub fn innermost_name(&self) -> &str {
         match *self {
-            Type::Named(ref n) | Type::NonNullNamed(ref n) => n,
+            Type::Named(ref n) | Type::NonNullNamed(ref n) => n.as_ref(),
             Type::List(ref l, _) | Type::NonNullList(ref l, _) => l.innermost_name(),
         }
     }
@@ -221,7 +222,7 @@ impl<'a> Type<'a> {
     }
 }
 
-impl<'a> fmt::Display for Type<'a> {
+impl<N: fmt::Display> fmt::Display for Type<N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Named(n) => write!(f, "{n}"),

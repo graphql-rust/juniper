@@ -2,13 +2,24 @@ use std::{
     borrow::Borrow,
     error::Error,
     fmt::{Display, Formatter, Result as FmtResult},
-    str::FromStr,
 };
 
+use arcstr::ArcStr;
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Name(String);
+pub struct Name(ArcStr);
 
 impl Name {
+    pub fn new(input: ArcStr) -> Result<Self, NameParseError> {
+        if Self::is_valid(&input) {
+            Ok(Name(input))
+        } else {
+            Err(NameParseError(format!(
+                "Names must match /^[_a-zA-Z][_a-zA-Z0-9]*$/ but \"{input}\" does not",
+            )))
+        }
+    }
+
     pub fn is_valid(input: &str) -> bool {
         for (i, c) in input.chars().enumerate() {
             let is_valid = c.is_ascii_alphabetic() || c == '_' || (i > 0 && c.is_ascii_digit());
@@ -35,21 +46,8 @@ impl Error for NameParseError {
     }
 }
 
-impl FromStr for Name {
-    type Err = NameParseError;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if Name::is_valid(s) {
-            Ok(Name(s.into()))
-        } else {
-            Err(NameParseError(format!(
-                "Names must match /^[_a-zA-Z][_a-zA-Z0-9]*$/ but \"{s}\" does not",
-            )))
-        }
-    }
-}
-
-impl Borrow<String> for Name {
-    fn borrow(&self) -> &String {
+impl Borrow<ArcStr> for Name {
+    fn borrow(&self) -> &ArcStr {
         &self.0
     }
 }

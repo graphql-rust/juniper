@@ -1,5 +1,6 @@
 use std::{char, fmt, marker::PhantomData, ops::Deref, rc::Rc, thread::JoinHandle, u32};
 
+use arcstr::{literal, ArcStr};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -198,18 +199,27 @@ impl<S> reflect::BaseSubTypes<S> for str {
     const NAMES: reflect::Types = &[<Self as reflect::BaseType<S>>::NAME];
 }
 
+impl<S> reflect::WrappedType<S> for ArcStr {
+    const VALUE: reflect::WrappedValue = 1;
+}
+
+impl<S> reflect::BaseType<S> for ArcStr {
+    const NAME: reflect::Type = "String";
+}
+
+impl<S> reflect::BaseSubTypes<S> for ArcStr {
+    const NAMES: reflect::Types = &[<Self as reflect::BaseType<S>>::NAME];
+}
+
 impl<S> GraphQLType<S> for str
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&'static str> {
-        Some("String")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(literal!("String"))
     }
 
-    fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(_: &(), registry: &mut Registry<S>) -> MetaType<S> {
         registry.build_scalar_type::<String>(&()).into_meta()
     }
 }
@@ -221,7 +231,7 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType<S>>::name(info)
     }
 
@@ -236,6 +246,55 @@ where
 }
 
 impl<S> GraphQLValueAsync<S> for str
+where
+    S: ScalarValue + Send + Sync,
+{
+    fn resolve_async<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        selection_set: Option<&'a [Selection<S>]>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> crate::BoxFuture<'a, crate::ExecutionResult<S>> {
+        use futures::future;
+        Box::pin(future::ready(self.resolve(info, selection_set, executor)))
+    }
+}
+
+impl<S> GraphQLType<S> for ArcStr
+where
+    S: ScalarValue,
+{
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(literal!("String"))
+    }
+
+    fn meta(_: &(), registry: &mut Registry<S>) -> MetaType<S> {
+        registry.build_scalar_type::<String>(&()).into_meta()
+    }
+}
+
+impl<S> GraphQLValue<S> for ArcStr
+where
+    S: ScalarValue,
+{
+    type Context = ();
+    type TypeInfo = ();
+
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
+        <Self as GraphQLType<S>>::name(info)
+    }
+
+    fn resolve(
+        &self,
+        _: &(),
+        _: Option<&[Selection<S>]>,
+        _: &Executor<Self::Context, S>,
+    ) -> ExecutionResult<S> {
+        Ok(Value::scalar(String::from(self.as_str())))
+    }
+}
+
+impl<S> GraphQLValueAsync<S> for ArcStr
 where
     S: ScalarValue + Send + Sync,
 {
@@ -359,14 +418,11 @@ impl<S, T> GraphQLType<S> for EmptyMutation<T>
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&'static str> {
-        Some("_EmptyMutation")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(literal!("_EmptyMutation"))
     }
 
-    fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(_: &(), registry: &mut Registry<S>) -> MetaType<S> {
         registry.build_object_type::<Self>(&(), &[]).into_meta()
     }
 }
@@ -378,7 +434,7 @@ where
     type Context = T;
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType<S>>::name(info)
     }
 }
@@ -420,14 +476,11 @@ impl<S, T> GraphQLType<S> for EmptySubscription<T>
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&'static str> {
-        Some("_EmptySubscription")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(literal!("_EmptySubscription"))
     }
 
-    fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(_: &(), registry: &mut Registry<S>) -> MetaType<S> {
         registry.build_object_type::<Self>(&(), &[]).into_meta()
     }
 }
@@ -439,7 +492,7 @@ where
     type Context = T;
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType<S>>::name(info)
     }
 }

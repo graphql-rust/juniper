@@ -43,7 +43,7 @@ impl User {
     }
 }
 
-type Schema = RootNode<'static, Query, EmptyMutation<Context>, Subscription>;
+type Schema = RootNode<Query, EmptyMutation<Context>, Subscription>;
 
 #[tokio::test]
 async fn query_document_can_be_pre_parsed() {

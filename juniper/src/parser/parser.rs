@@ -1,7 +1,5 @@
 use std::{error::Error, fmt};
 
-use smartstring::alias::String;
-
 use crate::parser::{Lexer, LexerError, Spanning, Token};
 
 /// Error while parsing a GraphQL query

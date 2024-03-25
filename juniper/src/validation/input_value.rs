@@ -6,7 +6,7 @@ use crate::{
     parser::{SourcePosition, Spanning},
     schema::{
         meta::{EnumMeta, InputObjectMeta, MetaType, ScalarMeta},
-        model::{SchemaType, TypeType},
+        model::{AsDynType, SchemaType, TypeType},
     },
     validation::RuleError,
     value::ScalarValue,
@@ -50,7 +50,7 @@ fn validate_var_defs<S>(
         let raw_type_name = def.var_type.item.innermost_name();
         match schema.concrete_type_by_name(raw_type_name) {
             Some(t) if t.is_input() => {
-                let ct = schema.make_type(&def.var_type.item);
+                let ct = schema.make_type(def.var_type.item.as_dyn_type());
 
                 if def.var_type.item.is_non_null() && is_absent_or_null(values.get(name.item)) {
                     errors.push(RuleError::new(
@@ -305,7 +305,7 @@ where
                         var_name,
                         var_pos,
                         value,
-                        &schema.make_type(&input_field.arg_type),
+                        &schema.make_type(input_field.arg_type.as_dyn_type()),
                         schema,
                         Path::ObjectField(&input_field.name, path),
                     ));
