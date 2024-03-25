@@ -3,7 +3,10 @@ use std::{
     fmt::{self, Debug},
 };
 
-use crate::ast::{Definition, Document, Type};
+use crate::{
+    ast::{Definition, Document},
+    schema::model::DynType,
+};
 
 use crate::schema::{meta::MetaType, model::SchemaType};
 
@@ -18,13 +21,13 @@ pub struct RuleError {
 
 #[doc(hidden)]
 pub struct ValidatorContext<'a, S: Debug + 'a> {
-    pub schema: &'a SchemaType<'a, S>,
+    pub schema: &'a SchemaType<S>,
     errors: Vec<RuleError>,
-    type_stack: Vec<Option<&'a MetaType<'a, S>>>,
-    type_literal_stack: Vec<Option<Type<'a>>>,
-    input_type_stack: Vec<Option<&'a MetaType<'a, S>>>,
-    input_type_literal_stack: Vec<Option<Type<'a>>>,
-    parent_type_stack: Vec<Option<&'a MetaType<'a, S>>>,
+    type_stack: Vec<Option<&'a MetaType<S>>>,
+    type_literal_stack: Vec<Option<DynType<'a>>>,
+    input_type_stack: Vec<Option<&'a MetaType<S>>>,
+    input_type_literal_stack: Vec<Option<DynType<'a>>>,
+    parent_type_stack: Vec<Option<&'a MetaType<S>>>,
     fragment_names: HashSet<&'a str>,
 }
 
@@ -109,7 +112,7 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
     }
 
     #[doc(hidden)]
-    pub fn with_pushed_type<F, R>(&mut self, t: Option<&Type<'a>>, f: F) -> R
+    pub fn with_pushed_type<F, R>(&mut self, t: Option<DynType<'a>>, f: F) -> R
     where
         F: FnOnce(&mut ValidatorContext<'a, S>) -> R,
     {
@@ -120,7 +123,7 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
             self.type_stack.push(None);
         }
 
-        self.type_literal_stack.push(t.cloned());
+        self.type_literal_stack.push(t);
 
         let res = f(self);
 
@@ -144,7 +147,7 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
     }
 
     #[doc(hidden)]
-    pub fn with_pushed_input_type<F, R>(&mut self, t: Option<&Type<'a>>, f: F) -> R
+    pub fn with_pushed_input_type<F, R>(&mut self, t: Option<DynType<'a>>, f: F) -> R
     where
         F: FnOnce(&mut ValidatorContext<'a, S>) -> R,
     {
@@ -155,7 +158,7 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
             self.input_type_stack.push(None);
         }
 
-        self.input_type_literal_stack.push(t.cloned());
+        self.input_type_literal_stack.push(t);
 
         let res = f(self);
 
@@ -166,27 +169,27 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
     }
 
     #[doc(hidden)]
-    pub fn current_type(&self) -> Option<&'a MetaType<'a, S>> {
+    pub fn current_type(&self) -> Option<&'a MetaType<S>> {
         *self.type_stack.last().unwrap_or(&None)
     }
 
     #[doc(hidden)]
-    pub fn current_type_literal(&self) -> Option<&Type<'a>> {
+    pub fn current_type_literal(&self) -> Option<DynType<'a>> {
         match self.type_literal_stack.last() {
-            Some(Some(t)) => Some(t),
+            Some(Some(t)) => Some(*t),
             _ => None,
         }
     }
 
     #[doc(hidden)]
-    pub fn parent_type(&self) -> Option<&'a MetaType<'a, S>> {
+    pub fn parent_type(&self) -> Option<&'a MetaType<S>> {
         *self.parent_type_stack.last().unwrap_or(&None)
     }
 
     #[doc(hidden)]
-    pub fn current_input_type_literal(&self) -> Option<&Type<'a>> {
+    pub fn current_input_type_literal(&self) -> Option<DynType<'a>> {
         match self.input_type_literal_stack.last() {
-            Some(Some(t)) => Some(t),
+            Some(Some(t)) => Some(*t),
             _ => None,
         }
     }

@@ -11,7 +11,7 @@ use crate::{
 use std::collections::HashMap;
 
 pub struct PossibleFragmentSpreads<'a, S: Debug + 'a> {
-    fragment_types: HashMap<&'a str, &'a MetaType<'a, S>>,
+    fragment_types: HashMap<&'a str, &'a MetaType<S>>,
 }
 
 pub fn factory<'a, S: Debug>() -> PossibleFragmentSpreads<'a, S> {

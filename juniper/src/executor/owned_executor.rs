@@ -7,7 +7,7 @@ use crate::{
     ast::Fragment,
     executor::FieldPath,
     parser::SourcePosition,
-    schema::model::{SchemaType, TypeType},
+    schema::model::{AsDynType, SchemaType, TypeType},
     ExecutionError, Executor, Selection, Variables,
 };
 
@@ -19,7 +19,7 @@ pub struct OwnedExecutor<'a, CtxT, S> {
     pub(super) current_selection_set: Option<Vec<Selection<'a, S>>>,
     pub(super) parent_selection_set: Option<Vec<Selection<'a, S>>>,
     pub(super) current_type: TypeType<'a, S>,
-    pub(super) schema: &'a SchemaType<'a, S>,
+    pub(super) schema: &'a SchemaType<S>,
     pub(super) context: &'a CtxT,
     pub(super) errors: RwLock<Vec<ExecutionError<S>>>,
     pub(super) field_path: Arc<FieldPath<'a>>,
@@ -91,12 +91,12 @@ where
             current_selection_set: selection_set,
             parent_selection_set: self.current_selection_set.clone(),
             current_type: self.schema.make_type(
-                &self
-                    .current_type
+                self.current_type
                     .innermost_concrete()
                     .field_by_name(field_name)
                     .expect("Field not found on inner type")
-                    .field_type,
+                    .field_type
+                    .as_dyn_type(),
             ),
             schema: self.schema,
             context: self.context,

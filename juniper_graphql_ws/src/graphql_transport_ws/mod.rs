@@ -682,7 +682,7 @@ mod test {
     type ClientMessage = super::ClientMessage<DefaultScalarValue>;
     type ServerMessage = super::ServerMessage<DefaultScalarValue>;
 
-    fn new_test_schema() -> Arc<RootNode<'static, Query, EmptyMutation<Context>, Subscription>> {
+    fn new_test_schema() -> Arc<RootNode<Query, EmptyMutation<Context>, Subscription>> {
         Arc::new(RootNode::new(Query, EmptyMutation::new(), Subscription))
     }
 

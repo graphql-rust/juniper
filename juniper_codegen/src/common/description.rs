@@ -102,7 +102,7 @@ impl ToTokens for Description {
         let desc = &self.0;
 
         quote! {
-            .description(#desc)
+            .description(::juniper::literal!(#desc))
         }
         .to_tokens(into);
     }
@@ -123,7 +123,7 @@ mod parse_from_doc_attrs_test {
             .into_inner();
         assert_eq!(
             quote! { #desc }.to_string(),
-            quote! { .description("foo") }.to_string(),
+            quote! { .description(::juniper::literal!("foo")) }.to_string(),
         );
     }
 
@@ -139,7 +139,7 @@ mod parse_from_doc_attrs_test {
         .into_inner();
         assert_eq!(
             quote! { #desc }.to_string(),
-            quote! { .description("foo\n\nbar") }.to_string(),
+            quote! { .description(::juniper::literal!("foo\n\nbar")) }.to_string(),
         );
     }
 

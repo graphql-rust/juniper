@@ -16,7 +16,7 @@ use serde_json::error::Error as SerdeError;
 use url::form_urlencoded;
 
 pub async fn graphql_sync<CtxT, QueryT, MutationT, SubscriptionT, S>(
-    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
+    root_node: Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     req: Request<body::Incoming>,
 ) -> Response<String>
@@ -37,7 +37,7 @@ where
 }
 
 pub async fn graphql<CtxT, QueryT, MutationT, SubscriptionT, S>(
-    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
+    root_node: Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     req: Request<body::Incoming>,
 ) -> Response<String>
@@ -150,7 +150,7 @@ fn render_error(err: GraphQLRequestError) -> Response<String> {
 }
 
 async fn execute_request_sync<CtxT, QueryT, MutationT, SubscriptionT, S>(
-    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
+    root_node: Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     request: GraphQLBatchRequest<S>,
 ) -> Response<String>
@@ -181,7 +181,7 @@ where
 }
 
 async fn execute_request<CtxT, QueryT, MutationT, SubscriptionT, S>(
-    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
+    root_node: Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     request: GraphQLBatchRequest<S>,
 ) -> Response<String>

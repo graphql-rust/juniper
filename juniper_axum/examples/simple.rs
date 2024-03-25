@@ -43,7 +43,7 @@ impl Subscription {
     }
 }
 
-type Schema = RootNode<'static, Query, EmptyMutation, Subscription>;
+type Schema = RootNode<Query, EmptyMutation, Subscription>;
 
 async fn homepage() -> Html<&'static str> {
     "<html><h1>juniper_axum/simple example</h1>\

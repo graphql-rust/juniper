@@ -18,7 +18,7 @@ use juniper::{
 use juniper_actix::{graphiql_handler, graphql_handler, playground_handler, subscriptions};
 use juniper_graphql_ws::ConnectionConfig;
 
-type Schema = RootNode<'static, Query, EmptyMutation<Database>, Subscription>;
+type Schema = RootNode<Query, EmptyMutation<Database>, Subscription>;
 
 fn schema() -> Schema {
     Schema::new(Query, EmptyMutation::<Database>::new(), Subscription)

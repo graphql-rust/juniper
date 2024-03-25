@@ -11,11 +11,11 @@ use crate::{
 
 use super::utils::Span;
 
-pub fn parse_value_literal<'b, S>(
+pub fn parse_value_literal<S>(
     parser: &mut Parser<'_>,
     is_const: bool,
-    schema: &'b SchemaType<'b, S>,
-    tpe: Option<&MetaType<'b, S>>,
+    schema: &SchemaType<S>,
+    tpe: Option<&MetaType<S>>,
 ) -> ParseResult<InputValue<S>>
 where
     S: ScalarValue,
@@ -117,11 +117,11 @@ where
     }
 }
 
-fn parse_list_literal<'b, S>(
+fn parse_list_literal<S>(
     parser: &mut Parser<'_>,
     is_const: bool,
-    schema: &'b SchemaType<'b, S>,
-    tpe: Option<&MetaType<'b, S>>,
+    schema: &SchemaType<S>,
+    tpe: Option<&MetaType<S>>,
 ) -> ParseResult<InputValue<S>>
 where
     S: ScalarValue,
@@ -135,11 +135,11 @@ where
         .map(InputValue::parsed_list))
 }
 
-fn parse_object_literal<'b, S>(
+fn parse_object_literal<S>(
     parser: &mut Parser<'_>,
     is_const: bool,
-    schema: &'b SchemaType<'b, S>,
-    object_tpe: Option<&InputObjectMeta<'b, S>>,
+    schema: &SchemaType<S>,
+    object_tpe: Option<&InputObjectMeta<S>>,
 ) -> ParseResult<InputValue<S>>
 where
     S: ScalarValue,
@@ -153,11 +153,11 @@ where
         .map(|items| InputValue::parsed_object(items.into_iter().map(|s| s.item).collect())))
 }
 
-fn parse_object_field<'b, S>(
+fn parse_object_field<S>(
     parser: &mut Parser<'_>,
     is_const: bool,
-    schema: &'b SchemaType<'b, S>,
-    object_meta: Option<&InputObjectMeta<'b, S>>,
+    schema: &SchemaType<S>,
+    object_meta: Option<&InputObjectMeta<S>>,
 ) -> ParseResult<(Spanning<String>, Spanning<InputValue<S>>)>
 where
     S: ScalarValue,
@@ -197,10 +197,10 @@ where
     ))
 }
 
-fn parse_scalar_literal_by_infered_type<'b, S>(
+fn parse_scalar_literal_by_infered_type<S>(
     token: ScalarToken<'_>,
     span: Span,
-    schema: &'b SchemaType<'b, S>,
+    schema: &SchemaType<S>,
 ) -> ParseResult<InputValue<S>>
 where
     S: ScalarValue,

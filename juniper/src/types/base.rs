@@ -1,3 +1,4 @@
+use arcstr::ArcStr;
 use indexmap::IndexMap;
 
 use crate::{
@@ -187,7 +188,7 @@ where
     /// any calculation and _always_ return the same value.
     ///
     /// Usually, it should just call a [`GraphQLType::name`] inside.
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str>;
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr>;
 
     /// Resolves the value of a single field on this [`GraphQLValue`].
     ///
@@ -310,7 +311,7 @@ where
 /// ```
 /// # use std::collections::HashMap;
 /// use juniper::{
-///     meta::MetaType, Arguments, Context, DefaultScalarValue, Executor, ExecutionResult,
+///     literal, meta::MetaType, ArcStr, Arguments, Context, DefaultScalarValue, Executor, ExecutionResult,
 ///     FieldResult, GraphQLType, GraphQLValue, Registry,
 /// };
 ///
@@ -322,21 +323,19 @@ where
 /// struct User { id: String, name: String, friend_ids: Vec<String> }
 ///
 /// impl GraphQLType<DefaultScalarValue> for User {
-///    fn name(_: &()) -> Option<&'static str> {
-///        Some("User")
+///    fn name(_: &()) -> Option<ArcStr> {
+///        Some(literal!("User"))
 ///    }
 ///
-///    fn meta<'r>(_: &(), registry: &mut Registry<'r>) -> MetaType<'r>
-///    where DefaultScalarValue: 'r,
-///    {
+///    fn meta(_: &(), registry: &mut Registry) -> MetaType {
 ///        // First, we need to define all fields and their types on this type.
 ///        //
 ///        // If we need arguments, want to implement interfaces, or want to add documentation
 ///        // strings, we can do it here.
 ///        let fields = &[
-///            registry.field::<&String>("id", &()),
-///            registry.field::<&String>("name", &()),
-///            registry.field::<Vec<&User>>("friends", &()),
+///            registry.field::<&String>(literal!("id"), &()),
+///            registry.field::<&String>(literal!("name"), &()),
+///            registry.field::<Vec<&User>>(literal!("friends"), &()),
 ///        ];
 ///        registry.build_object_type::<User>(&(), fields).into_meta()
 ///    }
@@ -346,7 +345,7 @@ where
 ///     type Context = Database;
 ///     type TypeInfo = ();
 ///
-///     fn type_name(&self, _: &()) -> Option<&'static str> {
+///     fn type_name(&self, _: &()) -> Option<ArcStr> {
 ///         <User as GraphQLType>::name(&())
 ///     }
 ///
@@ -398,12 +397,10 @@ where
     ///
     /// This function will be called multiple times during schema construction. It must _not_
     /// perform any calculation and _always_ return the same value.
-    fn name(info: &Self::TypeInfo) -> Option<&str>;
+    fn name(info: &Self::TypeInfo) -> Option<ArcStr>;
 
     /// Returns [`MetaType`] representing this [`GraphQLType`].
-    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r;
+    fn meta(info: &Self::TypeInfo, registry: &mut Registry<S>) -> MetaType<S>;
 }
 
 /// Resolver logic for queries'/mutations' selection set.
@@ -524,7 +521,7 @@ where
                 if executor
                     .schema()
                     .is_named_subtype(&concrete_type_name, fragment.type_condition.item)
-                    || Some(fragment.type_condition.item) == type_name
+                    || Some(fragment.type_condition.item) == type_name.as_deref()
                 {
                     let sub_result = instance.resolve_into_type(
                         info,

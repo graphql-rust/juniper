@@ -6,11 +6,11 @@ error[E0277]: the trait bound `Test: GraphQLObject<__S>` is not satisfied
    |
    = help: the following other types implement trait `GraphQLObject<S>`:
              <Box<T> as GraphQLObject<S>>
-             <juniper::meta::Field<'a, S> as GraphQLObject<S>>
-             <Argument<'a, S> as GraphQLObject<S>>
+             <juniper::meta::Field<S> as GraphQLObject<S>>
+             <Argument<S> as GraphQLObject<S>>
              <EnumValue as GraphQLObject<__S>>
-             <SchemaType<'a, S> as GraphQLObject<S>>
+             <SchemaType<S> as GraphQLObject<S>>
              <juniper::schema::model::TypeType<'a, S> as GraphQLObject<S>>
-             <juniper::schema::model::DirectiveType<'a, S> as GraphQLObject<S>>
+             <juniper::schema::model::DirectiveType<S> as GraphQLObject<S>>
              <Arc<T> as GraphQLObject<S>>
              <&T as GraphQLObject<S>>

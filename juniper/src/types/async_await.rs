@@ -307,7 +307,7 @@ where
                 if executor
                     .schema()
                     .is_named_subtype(&concrete_type_name, fragment.type_condition.item)
-                    || Some(fragment.type_condition.item) == type_name
+                    || Some(fragment.type_condition.item) == type_name.as_deref()
                 {
                     let sub_result = instance
                         .resolve_into_type_async(
