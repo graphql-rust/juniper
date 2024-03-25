@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use crate::ast::{
     Arguments, Definition, Directive, Field, Fragment, FragmentSpread, InlineFragment, InputValue,
     Operation, OperationType, OwnedDocument, Selection, Type, VariableDefinition,
@@ -19,9 +17,9 @@ use crate::{
 };
 
 #[doc(hidden)]
-pub fn parse_document_source<'a, 'b, S>(
+pub fn parse_document_source<'a, S>(
     s: &'a str,
-    schema: &'b SchemaType<'b, S>,
+    schema: &SchemaType<S>,
 ) -> UnlocatedParseResult<OwnedDocument<'a, S>>
 where
     S: ScalarValue,
@@ -31,9 +29,9 @@ where
     parse_document(&mut parser, schema)
 }
 
-fn parse_document<'a, 'b, S>(
+fn parse_document<'a, S>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
+    schema: &SchemaType<S>,
 ) -> UnlocatedParseResult<OwnedDocument<'a, S>>
 where
     S: ScalarValue,
@@ -49,9 +47,9 @@ where
     }
 }
 
-fn parse_definition<'a, 'b, S>(
+fn parse_definition<'a, S>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
+    schema: &SchemaType<S>,
 ) -> UnlocatedParseResult<Definition<'a, S>>
 where
     S: ScalarValue,
@@ -70,9 +68,9 @@ where
     }
 }
 
-fn parse_operation_definition<'a, 'b, S>(
+fn parse_operation_definition<'a, S>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
+    schema: &SchemaType<S>,
 ) -> ParseResult<Operation<'a, S>>
 where
     S: ScalarValue,
@@ -125,9 +123,9 @@ where
     }
 }
 
-fn parse_fragment_definition<'a, 'b, S>(
+fn parse_fragment_definition<'a, S>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
+    schema: &SchemaType<S>,
 ) -> ParseResult<Fragment<'a, S>>
 where
     S: ScalarValue,
@@ -167,10 +165,10 @@ where
     ))
 }
 
-fn parse_optional_selection_set<'a, 'b, S>(
+fn parse_optional_selection_set<'a, S>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
-    fields: Option<&[&MetaField<'b, S>]>,
+    schema: &SchemaType<S>,
+    fields: Option<&[&MetaField<S>]>,
 ) -> OptionParseResult<Vec<Selection<'a, S>>>
 where
     S: ScalarValue,
@@ -182,10 +180,10 @@ where
     }
 }
 
-fn parse_selection_set<'a, 'b, S>(
+fn parse_selection_set<'a, S>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
-    fields: Option<&[&MetaField<'b, S>]>,
+    schema: &SchemaType<S>,
+    fields: Option<&[&MetaField<S>]>,
 ) -> ParseResult<Vec<Selection<'a, S>>>
 where
     S: ScalarValue,
@@ -197,10 +195,10 @@ where
     )
 }
 
-fn parse_selection<'a, 'b, S>(
+fn parse_selection<'a, S>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
-    fields: Option<&[&MetaField<'b, S>]>,
+    schema: &SchemaType<S>,
+    fields: Option<&[&MetaField<S>]>,
 ) -> UnlocatedParseResult<Selection<'a, S>>
 where
     S: ScalarValue,
@@ -211,10 +209,10 @@ where
     }
 }
 
-fn parse_fragment<'a, 'b, S>(
+fn parse_fragment<'a, S>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
-    fields: Option<&[&MetaField<'b, S>]>,
+    schema: &SchemaType<S>,
+    fields: Option<&[&MetaField<S>]>,
 ) -> UnlocatedParseResult<Selection<'a, S>>
 where
     S: ScalarValue,
@@ -290,10 +288,10 @@ where
     }
 }
 
-fn parse_field<'a, 'b, S>(
+fn parse_field<'a, S>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
-    fields: Option<&[&MetaField<'b, S>]>,
+    schema: &SchemaType<S>,
+    fields: Option<&[&MetaField<S>]>,
 ) -> ParseResult<Field<'a, S>>
 where
     S: ScalarValue,
@@ -341,10 +339,10 @@ where
     ))
 }
 
-fn parse_arguments<'a, 'b, S>(
+fn parse_arguments<'a, S>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
-    arguments: Option<&[Argument<'b, S>]>,
+    schema: &SchemaType<S>,
+    arguments: Option<&[Argument<S>]>,
 ) -> OptionParseResult<Arguments<'a, S>>
 where
     S: ScalarValue,
@@ -366,10 +364,10 @@ where
     }
 }
 
-fn parse_argument<'a, 'b, S>(
+fn parse_argument<'a, S>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
-    arguments: Option<&[Argument<'b, S>]>,
+    schema: &SchemaType<S>,
+    arguments: Option<&[Argument<S>]>,
 ) -> ParseResult<(Spanning<&'a str>, Spanning<InputValue<S>>)>
 where
     S: ScalarValue,
@@ -400,9 +398,9 @@ fn parse_operation_type(parser: &mut Parser<'_>) -> ParseResult<OperationType> {
     }
 }
 
-fn parse_variable_definitions<'a, 'b, S>(
+fn parse_variable_definitions<'a, S>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
+    schema: &SchemaType<S>,
 ) -> OptionParseResult<VariableDefinitions<'a, S>>
 where
     S: ScalarValue,
@@ -424,9 +422,9 @@ where
     }
 }
 
-fn parse_variable_definition<'a, 'b, S>(
+fn parse_variable_definition<'a, S>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
+    schema: &SchemaType<S>,
 ) -> ParseResult<(Spanning<&'a str>, VariableDefinition<'a, S>)>
 where
     S: ScalarValue,
@@ -462,9 +460,9 @@ where
     ))
 }
 
-fn parse_directives<'a, 'b, S>(
+fn parse_directives<'a, S>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
+    schema: &SchemaType<S>,
 ) -> OptionParseResult<Vec<Spanning<Directive<'a, S>>>>
 where
     S: ScalarValue,
@@ -481,9 +479,9 @@ where
     }
 }
 
-fn parse_directive<'a, 'b, S>(
+fn parse_directive<'a, S>(
     parser: &mut Parser<'a>,
-    schema: &'b SchemaType<'b, S>,
+    schema: &SchemaType<S>,
 ) -> ParseResult<Directive<'a, S>>
 where
     S: ScalarValue,
@@ -509,7 +507,7 @@ where
     ))
 }
 
-pub fn parse_type<'a>(parser: &mut Parser<'a>) -> ParseResult<Type<'a>> {
+pub fn parse_type<'a>(parser: &mut Parser<'a>) -> ParseResult<Type<&'a str>> {
     let parsed_type = if let Some(Spanning {
         span: ref start_span,
         ..
@@ -523,7 +521,7 @@ pub fn parse_type<'a>(parser: &mut Parser<'a>) -> ParseResult<Type<'a>> {
             Type::List(Box::new(inner_type.item), None),
         )
     } else {
-        parser.expect_name()?.map(|s| Type::Named(Cow::Borrowed(s)))
+        parser.expect_name()?.map(Type::Named)
     };
 
     Ok(match *parser.peek() {
@@ -535,7 +533,10 @@ pub fn parse_type<'a>(parser: &mut Parser<'a>) -> ParseResult<Type<'a>> {
     })
 }
 
-fn wrap_non_null<'a>(parser: &mut Parser<'a>, inner: Spanning<Type<'a>>) -> ParseResult<Type<'a>> {
+fn wrap_non_null<'a>(
+    parser: &mut Parser<'a>,
+    inner: Spanning<Type<&'a str>>,
+) -> ParseResult<Type<&'a str>> {
     let end_pos = &parser.expect(&Token::ExclamationMark)?.span.end;
 
     let wrapped = match inner.item {

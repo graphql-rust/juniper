@@ -11,11 +11,9 @@ pub mod util {
         GraphQLError, GraphQLType, RootNode, ScalarValue, Value, ValuesStream,
     };
 
-    pub fn schema<'q, C, Q>(
-        query_root: Q,
-    ) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>>
+    pub fn schema<C, Q>(query_root: Q) -> RootNode<Q, EmptyMutation<C>, EmptySubscription<C>>
     where
-        Q: GraphQLType<DefaultScalarValue, Context = C, TypeInfo = ()> + 'q,
+        Q: GraphQLType<DefaultScalarValue, Context = C, TypeInfo = ()>,
     {
         RootNode::new(
             query_root,
@@ -24,12 +22,12 @@ pub mod util {
         )
     }
 
-    pub fn schema_with_scalar<'q, S, C, Q>(
+    pub fn schema_with_scalar<S, C, Q>(
         query_root: Q,
-    ) -> RootNode<'q, Q, EmptyMutation<C>, EmptySubscription<C>, S>
+    ) -> RootNode<Q, EmptyMutation<C>, EmptySubscription<C>, S>
     where
-        Q: GraphQLType<S, Context = C, TypeInfo = ()> + 'q,
-        S: ScalarValue + 'q,
+        Q: GraphQLType<S, Context = C, TypeInfo = ()>,
+        S: ScalarValue,
     {
         RootNode::new_with_scalar_value(
             query_root,

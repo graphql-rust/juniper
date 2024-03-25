@@ -438,7 +438,7 @@ impl Definition {
             let v_deprecation = &v.deprecated;
 
             quote! {
-                ::juniper::meta::EnumValue::new(#v_name)
+                ::juniper::meta::EnumValue::new(::juniper::literal!(#v_name))
                     #v_description
                     #v_deprecation
             }
@@ -452,15 +452,14 @@ impl Definition {
             {
                 fn name(
                     _ : &Self::TypeInfo,
-                ) -> ::core::option::Option<&'static ::core::primitive::str> {
-                    ::core::option::Option::Some(#name)
+                ) -> ::core::option::Option<::juniper::ArcStr> {
+                    ::core::option::Option::Some(::juniper::literal!(#name))
                 }
 
-                fn meta<'r>(
+                fn meta(
                     info: &Self::TypeInfo,
-                    registry: &mut ::juniper::Registry<'r, #scalar>
-                ) -> ::juniper::meta::MetaType<'r, #scalar>
-                where #scalar: 'r,
+                    registry: &mut ::juniper::Registry<#scalar>
+                ) -> ::juniper::meta::MetaType<#scalar>
                 {
                     let variants = [#( #variants_meta ),*];
 
@@ -516,7 +515,7 @@ impl Definition {
                 fn type_name<'__i>(
                     &self,
                     info: &'__i Self::TypeInfo,
-                ) -> ::core::option::Option<&'__i ::core::primitive::str> {
+                ) -> ::core::option::Option<::juniper::ArcStr> {
                     <Self as ::juniper::GraphQLType<#scalar>>::name(info)
                 }
 

@@ -299,7 +299,7 @@ impl Definition {
             .flat_map(|args| args.iter().filter_map(MethodArgument::method_meta_tokens));
 
         quote! {
-            registry.field_convert::<#ty, _, Self::Context>(#name, info)
+            registry.field_convert::<#ty, _, Self::Context>(::juniper::literal!(#name), info)
                 #( #args )*
                 #description
                 #deprecated

@@ -1,5 +1,7 @@
 use std::{fmt, sync::Arc};
 
+use arcstr::ArcStr;
+
 use crate::{
     ast::{FromInputValue, InputValue, Selection, ToInputValue},
     executor::{ExecutionResult, Executor, Registry},
@@ -17,14 +19,11 @@ where
     T: GraphQLType<S> + ?Sized,
     S: ScalarValue,
 {
-    fn name(info: &Self::TypeInfo) -> Option<&str> {
+    fn name(info: &Self::TypeInfo) -> Option<ArcStr> {
         T::name(info)
     }
 
-    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(info: &Self::TypeInfo, registry: &mut Registry<S>) -> MetaType<S> {
         T::meta(info, registry)
     }
 }
@@ -37,7 +36,7 @@ where
     type Context = T::Context;
     type TypeInfo = T::TypeInfo;
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         (**self).type_name(info)
     }
 
@@ -115,14 +114,11 @@ where
     T: GraphQLType<S> + ?Sized,
     S: ScalarValue,
 {
-    fn name(info: &Self::TypeInfo) -> Option<&str> {
+    fn name(info: &Self::TypeInfo) -> Option<ArcStr> {
         T::name(info)
     }
 
-    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(info: &Self::TypeInfo, registry: &mut Registry<S>) -> MetaType<S> {
         T::meta(info, registry)
     }
 }
@@ -135,7 +131,7 @@ where
     type Context = T::Context;
     type TypeInfo = T::TypeInfo;
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         (**self).type_name(info)
     }
 
@@ -211,14 +207,11 @@ where
     S: ScalarValue,
     T: GraphQLType<S> + ?Sized,
 {
-    fn name(info: &Self::TypeInfo) -> Option<&str> {
+    fn name(info: &Self::TypeInfo) -> Option<ArcStr> {
         T::name(info)
     }
 
-    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(info: &Self::TypeInfo, registry: &mut Registry<S>) -> MetaType<S> {
         T::meta(info, registry)
     }
 }
@@ -231,7 +224,7 @@ where
     type Context = T::Context;
     type TypeInfo = T::TypeInfo;
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         (**self).type_name(info)
     }
 

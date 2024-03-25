@@ -89,8 +89,7 @@ impl Query {
     }
 }
 
-pub fn new_schema() -> RootNode<'static, Query, EmptyMutation<Context>, EmptySubscription<Context>>
-{
+pub fn new_schema() -> RootNode<Query, EmptyMutation<Context>, EmptySubscription<Context>> {
     RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new())
 }
 

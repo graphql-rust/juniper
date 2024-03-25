@@ -12,7 +12,7 @@ use rocket::{
     post, routes, Build, Rocket, State,
 };
 
-type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
+type Schema = RootNode<Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
 fn bootstrap_rocket() -> Rocket<Build> {
     Rocket::build().manage(Database::new()).manage(Schema::new(

@@ -107,10 +107,10 @@ impl Directive {
 
 impl ToTokens for Directive {
     fn to_tokens(&self, into: &mut TokenStream) {
-        let reason = self
-            .reason
-            .as_ref()
-            .map_or_else(|| quote! { None }, |text| quote! { Some(#text) });
+        let reason = self.reason.as_ref().map_or_else(
+            || quote! { None },
+            |text| quote! { Some(::juniper::literal!(#text)) },
+        );
         quote! {
             .deprecated(::core::option::Option::#reason)
         }
@@ -134,7 +134,8 @@ mod parse_from_deprecated_attr_test {
                 .into_inner();
         assert_eq!(
             quote! { #desc }.to_string(),
-            quote! { .deprecated(::core::option::Option::Some("foo")) }.to_string(),
+            quote! { .deprecated(::core::option::Option::Some(::juniper::literal!("foo"))) }
+                .to_string(),
         );
     }
 

@@ -17,7 +17,7 @@ use juniper::{
 /// Simple [`SubscriptionCoordinator`] implementation:
 /// - contains the schema
 /// - handles subscription start
-pub struct Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
+pub struct Coordinator<QueryT, MutationT, SubscriptionT, CtxT, S>
 where
     QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send,
     QueryT::TypeInfo: Send + Sync,
@@ -28,11 +28,11 @@ where
     CtxT: Sync,
     S: ScalarValue + Send + Sync,
 {
-    root_node: juniper::RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+    root_node: juniper::RootNode<QueryT, MutationT, SubscriptionT, S>,
 }
 
-impl<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
-    Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
+impl<QueryT, MutationT, SubscriptionT, CtxT, S>
+    Coordinator<QueryT, MutationT, SubscriptionT, CtxT, S>
 where
     QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send,
     QueryT::TypeInfo: Send + Sync,
@@ -44,13 +44,13 @@ where
     S: ScalarValue + Send + Sync,
 {
     /// Builds new [`Coordinator`] with specified `root_node`
-    pub fn new(root_node: juniper::RootNode<'a, QueryT, MutationT, SubscriptionT, S>) -> Self {
+    pub fn new(root_node: juniper::RootNode<QueryT, MutationT, SubscriptionT, S>) -> Self {
         Self { root_node }
     }
 }
 
 impl<'a, QueryT, MutationT, SubscriptionT, CtxT, S> SubscriptionCoordinator<'a, CtxT, S>
-    for Coordinator<'a, QueryT, MutationT, SubscriptionT, CtxT, S>
+    for Coordinator<QueryT, MutationT, SubscriptionT, CtxT, S>
 where
     QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send,
     QueryT::TypeInfo: Send + Sync,

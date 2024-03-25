@@ -188,7 +188,7 @@ where
         'res: 'f,
     {
         Box::pin(async move {
-            if self.type_name(info) == Some(type_name) {
+            if self.type_name(info).as_deref() == Some(type_name) {
                 self.resolve_into_stream(info, executor).await
             } else {
                 panic!("resolve_into_type_stream must be implemented");

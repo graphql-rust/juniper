@@ -26,6 +26,10 @@ pub use juniper_codegen::{
     GraphQLEnum, GraphQLInputObject, GraphQLInterface, GraphQLObject, GraphQLScalar, GraphQLUnion,
 };
 
+pub use arcstr::literal;
+
+pub use arcstr::ArcStr;
+
 #[doc(hidden)]
 #[macro_use]
 pub mod macros;
@@ -193,7 +197,7 @@ where
 pub async fn execute<'a, S, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
     operation_name: Option<&str>,
-    root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &QueryT::Context,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError>
@@ -244,7 +248,7 @@ where
 pub async fn resolve_into_stream<'a, S, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
     operation_name: Option<&str>,
-    root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &'a QueryT::Context,
 ) -> Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError>

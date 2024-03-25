@@ -47,7 +47,7 @@ use juniper_graphql_ws::{graphql_transport_ws, graphql_ws, Init, Schema};
 /// use tokio::time::interval;
 /// use tokio_stream::wrappers::IntervalStream;
 ///
-/// type Schema = RootNode<'static, Query, EmptyMutation, Subscription>;
+/// type Schema = RootNode<Query, EmptyMutation, Subscription>;
 ///
 /// #[derive(Clone, Copy, Debug)]
 /// pub struct Query;
@@ -133,7 +133,7 @@ pub fn ws<S: Schema>(
 /// use tokio::time::interval;
 /// use tokio_stream::wrappers::IntervalStream;
 ///
-/// type Schema = RootNode<'static, Query, EmptyMutation, Subscription>;
+/// type Schema = RootNode<Query, EmptyMutation, Subscription>;
 ///
 /// #[derive(Clone, Copy, Debug)]
 /// pub struct Query;
@@ -225,7 +225,7 @@ pub fn graphql_transport_ws<S: Schema>(
 /// use tokio::time::interval;
 /// use tokio_stream::wrappers::IntervalStream;
 ///
-/// type Schema = RootNode<'static, Query, EmptyMutation, Subscription>;
+/// type Schema = RootNode<Query, EmptyMutation, Subscription>;
 ///
 /// #[derive(Clone, Copy, Debug)]
 /// pub struct Query;
@@ -317,7 +317,7 @@ pub fn graphql_ws<S: Schema>(
 /// use tokio::time::interval;
 /// use tokio_stream::wrappers::IntervalStream;
 ///
-/// type Schema = RootNode<'static, Query, EmptyMutation, Subscription>;
+/// type Schema = RootNode<Query, EmptyMutation, Subscription>;
 ///
 /// #[derive(Clone, Copy, Debug)]
 /// pub struct Query;
@@ -419,7 +419,7 @@ where
 /// use tokio::time::interval;
 /// use tokio_stream::wrappers::IntervalStream;
 ///
-/// type Schema = RootNode<'static, Query, EmptyMutation, Subscription>;
+/// type Schema = RootNode<Query, EmptyMutation, Subscription>;
 ///
 /// #[derive(Clone, Copy, Debug)]
 /// pub struct Query;
@@ -550,7 +550,7 @@ where
 /// use tokio::time::interval;
 /// use tokio_stream::wrappers::IntervalStream;
 ///
-/// type Schema = RootNode<'static, Query, EmptyMutation, Subscription>;
+/// type Schema = RootNode<Query, EmptyMutation, Subscription>;
 ///
 /// #[derive(Clone, Copy, Debug)]
 /// pub struct Query;

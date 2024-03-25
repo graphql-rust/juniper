@@ -57,7 +57,7 @@ impl Country {
     }
 }
 
-type Schema = RootNode<'static, Query, EmptyMutation<Context>, EmptySubscription<Context>>;
+type Schema = RootNode<Query, EmptyMutation<Context>, EmptySubscription<Context>>;
 
 #[tokio::test]
 async fn users() {

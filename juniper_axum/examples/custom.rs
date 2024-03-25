@@ -21,7 +21,7 @@ use juniper_axum::{
 use juniper_graphql_ws::ConnectionConfig;
 use tokio::net::TcpListener;
 
-type Schema = RootNode<'static, Query, EmptyMutation<Database>, Subscription>;
+type Schema = RootNode<Query, EmptyMutation<Database>, Subscription>;
 
 async fn homepage() -> Html<&'static str> {
     "<html><h1>juniper_axum/custom example</h1>\

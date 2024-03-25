@@ -16,7 +16,7 @@ use juniper::{
 use juniper_axum::{extract::JuniperRequest, response::JuniperResponse};
 use tower_service::Service as _;
 
-type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
+type Schema = RootNode<Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
 struct TestApp(Router);
 

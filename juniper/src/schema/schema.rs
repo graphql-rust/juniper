@@ -1,3 +1,5 @@
+use arcstr::ArcStr;
+
 use crate::{
     ast::Selection,
     executor::{ExecutionResult, Executor, Registry},
@@ -17,28 +19,27 @@ use crate::schema::{
     model::{DirectiveLocation, DirectiveType, RootNode, SchemaType, TypeType},
 };
 
-impl<'a, S, QueryT, MutationT, SubscriptionT> GraphQLType<S>
-    for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
+use super::model::AsDynType;
+
+impl<S, QueryT, MutationT, SubscriptionT> GraphQLType<S>
+    for RootNode<QueryT, MutationT, SubscriptionT, S>
 where
     S: ScalarValue,
     QueryT: GraphQLType<S>,
     MutationT: GraphQLType<S, Context = QueryT::Context>,
     SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
 {
-    fn name(info: &Self::TypeInfo) -> Option<&str> {
+    fn name(info: &Self::TypeInfo) -> Option<ArcStr> {
         QueryT::name(info)
     }
 
-    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(info: &Self::TypeInfo, registry: &mut Registry<S>) -> MetaType<S> {
         QueryT::meta(info, registry)
     }
 }
 
-impl<'a, S, QueryT, MutationT, SubscriptionT> GraphQLValue<S>
-    for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
+impl<S, QueryT, MutationT, SubscriptionT> GraphQLValue<S>
+    for RootNode<QueryT, MutationT, SubscriptionT, S>
 where
     S: ScalarValue,
     QueryT: GraphQLType<S>,
@@ -48,7 +49,7 @@ where
     type Context = QueryT::Context;
     type TypeInfo = QueryT::TypeInfo;
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         QueryT::name(info)
     }
 
@@ -99,7 +100,7 @@ where
 }
 
 impl<'a, S, QueryT, MutationT, SubscriptionT> GraphQLValueAsync<S>
-    for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
+    for RootNode<QueryT, MutationT, SubscriptionT, S>
 where
     QueryT: GraphQLTypeAsync<S>,
     QueryT::TypeInfo: Sync,
@@ -132,11 +133,11 @@ where
 
 #[graphql_object(
     name = "__Schema"
-    context = SchemaType<'a, S>,
+    context = SchemaType<S>,
     scalar = S,
     internal,
 )]
-impl<'a, S: ScalarValue + 'a> SchemaType<'a, S> {
+impl<S: ScalarValue> SchemaType<S> {
     fn description(&self) -> Option<&str> {
         self.description.as_deref()
     }
@@ -177,7 +178,7 @@ impl<'a, S: ScalarValue + 'a> SchemaType<'a, S> {
 
 #[graphql_object(
     name = "__Type"
-    context = SchemaType<'a, S>,
+    context = SchemaType<S>,
     scalar = S,
     internal,
 )]
@@ -189,14 +190,14 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
         }
     }
 
-    fn description(&self) -> Option<&str> {
+    fn description(&self) -> Option<&ArcStr> {
         match self {
             TypeType::Concrete(t) => t.description(),
             _ => None,
         }
     }
 
-    fn specified_by_url(&self) -> Option<&str> {
+    fn specified_by_url(&self) -> Option<&ArcStr> {
         match self {
             Self::Concrete(t) => t.specified_by_url(),
             Self::NonNull(_) | Self::List(..) => None,
@@ -248,7 +249,7 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
         }
     }
 
-    fn interfaces<'s>(&self, context: &'s SchemaType<'a, S>) -> Option<Vec<TypeType<'s, S>>> {
+    fn interfaces<'s>(&self, context: &'s SchemaType<S>) -> Option<Vec<TypeType<'s, S>>> {
         match self {
             TypeType::Concrete(
                 &MetaType::Object(ObjectMeta {
@@ -269,7 +270,7 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
         }
     }
 
-    fn possible_types<'s>(&self, context: &'s SchemaType<'a, S>) -> Option<Vec<TypeType<'s, S>>> {
+    fn possible_types<'s>(&self, context: &'s SchemaType<S>) -> Option<Vec<TypeType<'s, S>>> {
         match self {
             TypeType::Concrete(&MetaType::Union(UnionMeta {
                 ref of_type_names, ..
@@ -335,13 +336,13 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
 
 #[graphql_object(
     name = "__Field",
-    context = SchemaType<'a, S>,
+    context = SchemaType<S>,
     scalar = S,
     internal,
 )]
-impl<'a, S: ScalarValue + 'a> Field<'a, S> {
-    fn name(&self) -> String {
-        self.name.clone().into()
+impl<S: ScalarValue> Field<S> {
+    fn name(&self) -> &ArcStr {
+        &self.name
     }
 
     #[graphql(name = "description")]
@@ -356,8 +357,8 @@ impl<'a, S: ScalarValue + 'a> Field<'a, S> {
     }
 
     #[graphql(name = "type")]
-    fn type_<'s>(&self, context: &'s SchemaType<'a, S>) -> TypeType<'s, S> {
-        context.make_type(&self.field_type)
+    fn type_<'s>(&self, context: &'s SchemaType<S>) -> TypeType<'s, S> {
+        context.make_type(self.field_type.as_dyn_type())
     }
 
     fn is_deprecated(&self) -> bool {
@@ -371,11 +372,11 @@ impl<'a, S: ScalarValue + 'a> Field<'a, S> {
 
 #[graphql_object(
     name = "__InputValue",
-    context = SchemaType<'a, S>,
+    context = SchemaType<S>,
     scalar = S,
     internal,
 )]
-impl<'a, S: ScalarValue + 'a> Argument<'a, S> {
+impl<S: ScalarValue> Argument<S> {
     fn name(&self) -> &str {
         &self.name
     }
@@ -386,8 +387,8 @@ impl<'a, S: ScalarValue + 'a> Argument<'a, S> {
     }
 
     #[graphql(name = "type")]
-    fn type_<'s>(&self, context: &'s SchemaType<'a, S>) -> TypeType<'s, S> {
-        context.make_type(&self.arg_type)
+    fn type_<'s>(&self, context: &'s SchemaType<S>) -> TypeType<'s, S> {
+        context.make_type(self.arg_type.as_dyn_type())
     }
 
     #[graphql(name = "defaultValue")]
@@ -418,11 +419,11 @@ impl EnumValue {
 
 #[graphql_object(
     name = "__Directive",
-    context = SchemaType<'a, S>,
+    context = SchemaType<S>,
     scalar = S,
     internal,
 )]
-impl<'a, S: ScalarValue + 'a> DirectiveType<'a, S> {
+impl<S: ScalarValue> DirectiveType<S> {
     fn name(&self) -> &str {
         &self.name
     }

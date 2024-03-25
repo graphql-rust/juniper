@@ -45,7 +45,7 @@ struct Droid {
     pub name: String,
 }
 
-type Schema = juniper::RootNode<'static, Query, EmptyMutation, EmptySubscription>;
+type Schema = juniper::RootNode<Query, EmptyMutation, EmptySubscription>;
 
 #[tokio::test]
 async fn object_fragment_on_interface() {

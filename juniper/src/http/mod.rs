@@ -110,7 +110,7 @@ where
     /// top level of this crate.
     pub async fn execute<'a, QueryT, MutationT, SubscriptionT>(
         &'a self,
-        root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &'a QueryT::Context,
     ) -> GraphQLResponse<S>
     where
@@ -136,7 +136,7 @@ where
 /// level of this crate.
 pub async fn resolve_into_stream<'req, 'rn, 'ctx, 'a, QueryT, MutationT, SubscriptionT, S>(
     req: &'req GraphQLRequest<S>,
-    root_node: &'rn RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+    root_node: &'rn RootNode<QueryT, MutationT, SubscriptionT, S>,
     context: &'ctx QueryT::Context,
 ) -> Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError>
 where
@@ -296,7 +296,7 @@ where
     /// GraphQLRequest
     pub async fn execute<'a, QueryT, MutationT, SubscriptionT>(
         &'a self,
-        root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &'a QueryT::Context,
     ) -> GraphQLBatchResponse<S>
     where

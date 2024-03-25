@@ -1,7 +1,8 @@
 //! Types used to describe a `GraphQL` schema
 
+use arcstr::ArcStr;
 use juniper::IntoFieldError;
-use std::{borrow::Cow, fmt};
+use std::{borrow::ToOwned, fmt};
 
 use crate::{
     ast::{FromInputValue, InputValue, Type},
@@ -18,7 +19,7 @@ pub enum DeprecationStatus {
     /// The field/variant is not deprecated.
     Current,
     /// The field/variant is deprecated, with an optional reason
-    Deprecated(Option<String>),
+    Deprecated(Option<ArcStr>),
 }
 
 impl DeprecationStatus {
@@ -40,13 +41,13 @@ impl DeprecationStatus {
 }
 
 /// Scalar type metadata
-pub struct ScalarMeta<'a, S> {
+pub struct ScalarMeta<S> {
     #[doc(hidden)]
-    pub name: Cow<'a, str>,
+    pub name: ArcStr,
     #[doc(hidden)]
-    pub description: Option<String>,
+    pub description: Option<ArcStr>,
     #[doc(hidden)]
-    pub specified_by_url: Option<Cow<'a, str>>,
+    pub specified_by_url: Option<ArcStr>,
     pub(crate) try_parse_fn: InputValueParseFn<S>,
     pub(crate) parse_fn: ScalarTokenParseFn<S>,
 }
@@ -59,9 +60,9 @@ pub type ScalarTokenParseFn<S> = for<'b> fn(ScalarToken<'b>) -> Result<S, ParseE
 
 /// List type metadata
 #[derive(Debug)]
-pub struct ListMeta<'a> {
+pub struct ListMeta {
     #[doc(hidden)]
-    pub of_type: Type<'a>,
+    pub of_type: Type,
 
     #[doc(hidden)]
     pub expected_size: Option<usize>,
@@ -69,30 +70,30 @@ pub struct ListMeta<'a> {
 
 /// Nullable type metadata
 #[derive(Debug)]
-pub struct NullableMeta<'a> {
+pub struct NullableMeta {
     #[doc(hidden)]
-    pub of_type: Type<'a>,
+    pub of_type: Type,
 }
 
 /// Object type metadata
 #[derive(Debug)]
-pub struct ObjectMeta<'a, S> {
+pub struct ObjectMeta<S> {
     #[doc(hidden)]
-    pub name: Cow<'a, str>,
+    pub name: ArcStr,
     #[doc(hidden)]
-    pub description: Option<String>,
+    pub description: Option<ArcStr>,
     #[doc(hidden)]
-    pub fields: Vec<Field<'a, S>>,
+    pub fields: Vec<Field<S>>,
     #[doc(hidden)]
-    pub interface_names: Vec<String>,
+    pub interface_names: Vec<ArcStr>,
 }
 
 /// Enum type metadata
-pub struct EnumMeta<'a, S> {
+pub struct EnumMeta<S> {
     #[doc(hidden)]
-    pub name: Cow<'a, str>,
+    pub name: ArcStr,
     #[doc(hidden)]
-    pub description: Option<String>,
+    pub description: Option<ArcStr>,
     #[doc(hidden)]
     pub values: Vec<EnumValue>,
     pub(crate) try_parse_fn: InputValueParseFn<S>,
@@ -100,36 +101,36 @@ pub struct EnumMeta<'a, S> {
 
 /// Interface type metadata
 #[derive(Debug)]
-pub struct InterfaceMeta<'a, S> {
+pub struct InterfaceMeta<S> {
     #[doc(hidden)]
-    pub name: Cow<'a, str>,
+    pub name: ArcStr,
     #[doc(hidden)]
-    pub description: Option<String>,
+    pub description: Option<ArcStr>,
     #[doc(hidden)]
-    pub fields: Vec<Field<'a, S>>,
+    pub fields: Vec<Field<S>>,
     #[doc(hidden)]
-    pub interface_names: Vec<String>,
+    pub interface_names: Vec<ArcStr>,
 }
 
 /// Union type metadata
 #[derive(Debug)]
-pub struct UnionMeta<'a> {
+pub struct UnionMeta {
     #[doc(hidden)]
-    pub name: Cow<'a, str>,
+    pub name: ArcStr,
     #[doc(hidden)]
-    pub description: Option<String>,
+    pub description: Option<ArcStr>,
     #[doc(hidden)]
-    pub of_type_names: Vec<String>,
+    pub of_type_names: Vec<ArcStr>,
 }
 
 /// Input object metadata
-pub struct InputObjectMeta<'a, S> {
+pub struct InputObjectMeta<S> {
     #[doc(hidden)]
-    pub name: Cow<'a, str>,
+    pub name: ArcStr,
     #[doc(hidden)]
-    pub description: Option<String>,
+    pub description: Option<ArcStr>,
     #[doc(hidden)]
-    pub input_fields: Vec<Argument<'a, S>>,
+    pub input_fields: Vec<Argument<S>>,
     pub(crate) try_parse_fn: InputValueParseFn<S>,
 }
 
@@ -138,50 +139,50 @@ pub struct InputObjectMeta<'a, S> {
 /// After a type's `meta` method has been called but before it has returned, a placeholder type
 /// is inserted into a registry to indicate existence.
 #[derive(Debug)]
-pub struct PlaceholderMeta<'a> {
+pub struct PlaceholderMeta {
     #[doc(hidden)]
-    pub of_type: Type<'a>,
+    pub of_type: Type,
 }
 
 /// Generic type metadata
 #[derive(Debug)]
-pub enum MetaType<'a, S = DefaultScalarValue> {
+pub enum MetaType<S = DefaultScalarValue> {
     #[doc(hidden)]
-    Scalar(ScalarMeta<'a, S>),
+    Scalar(ScalarMeta<S>),
     #[doc(hidden)]
-    List(ListMeta<'a>),
+    List(ListMeta),
     #[doc(hidden)]
-    Nullable(NullableMeta<'a>),
+    Nullable(NullableMeta),
     #[doc(hidden)]
-    Object(ObjectMeta<'a, S>),
+    Object(ObjectMeta<S>),
     #[doc(hidden)]
-    Enum(EnumMeta<'a, S>),
+    Enum(EnumMeta<S>),
     #[doc(hidden)]
-    Interface(InterfaceMeta<'a, S>),
+    Interface(InterfaceMeta<S>),
     #[doc(hidden)]
-    Union(UnionMeta<'a>),
+    Union(UnionMeta),
     #[doc(hidden)]
-    InputObject(InputObjectMeta<'a, S>),
+    InputObject(InputObjectMeta<S>),
     #[doc(hidden)]
-    Placeholder(PlaceholderMeta<'a>),
+    Placeholder(PlaceholderMeta),
 }
 
 /// Metadata for a field
 #[derive(Debug, Clone)]
-pub struct Field<'a, S> {
+pub struct Field<S> {
     #[doc(hidden)]
-    pub name: smartstring::alias::String,
+    pub name: ArcStr,
     #[doc(hidden)]
-    pub description: Option<String>,
+    pub description: Option<ArcStr>,
     #[doc(hidden)]
-    pub arguments: Option<Vec<Argument<'a, S>>>,
+    pub arguments: Option<Vec<Argument<S>>>,
     #[doc(hidden)]
-    pub field_type: Type<'a>,
+    pub field_type: Type,
     #[doc(hidden)]
     pub deprecation_status: DeprecationStatus,
 }
 
-impl<'a, S> Field<'a, S> {
+impl<S> Field<S> {
     /// Returns true if the type is built-in to GraphQL.
     pub fn is_builtin(&self) -> bool {
         // "used exclusively by GraphQL’s introspection system"
@@ -191,18 +192,18 @@ impl<'a, S> Field<'a, S> {
 
 /// Metadata for an argument to a field
 #[derive(Debug, Clone)]
-pub struct Argument<'a, S> {
+pub struct Argument<S> {
     #[doc(hidden)]
-    pub name: String,
+    pub name: ArcStr,
     #[doc(hidden)]
-    pub description: Option<String>,
+    pub description: Option<ArcStr>,
     #[doc(hidden)]
-    pub arg_type: Type<'a>,
+    pub arg_type: Type,
     #[doc(hidden)]
     pub default_value: Option<InputValue<S>>,
 }
 
-impl<'a, S> Argument<'a, S> {
+impl<S> Argument<S> {
     /// Returns true if the type is built-in to GraphQL.
     pub fn is_builtin(&self) -> bool {
         // "used exclusively by GraphQL’s introspection system"
@@ -216,17 +217,17 @@ pub struct EnumValue {
     /// The name of the enum value
     ///
     /// This is the string literal representation of the enum in responses.
-    pub name: String,
+    pub name: ArcStr,
     /// The optional description of the enum value.
     ///
     /// Note: this is not the description of the enum itself; it's the
     /// description of this enum _value_.
-    pub description: Option<String>,
+    pub description: Option<ArcStr>,
     /// Whether the field is deprecated or not, with an optional reason.
     pub deprecation_status: DeprecationStatus,
 }
 
-impl<'a, S> MetaType<'a, S> {
+impl<S> MetaType<S> {
     /// Access the name of the type, if applicable
     ///
     /// Lists, non-null wrappers, and placeholders don't have names.
@@ -245,14 +246,14 @@ impl<'a, S> MetaType<'a, S> {
     /// Access the description of the type, if applicable
     ///
     /// Lists, nullable wrappers, and placeholders don't have names.
-    pub fn description(&self) -> Option<&str> {
+    pub fn description(&self) -> Option<&ArcStr> {
         match self {
             MetaType::Scalar(ScalarMeta { description, .. })
             | MetaType::Object(ObjectMeta { description, .. })
             | MetaType::Enum(EnumMeta { description, .. })
             | MetaType::Interface(InterfaceMeta { description, .. })
             | MetaType::Union(UnionMeta { description, .. })
-            | MetaType::InputObject(InputObjectMeta { description, .. }) => description.as_deref(),
+            | MetaType::InputObject(InputObjectMeta { description, .. }) => description.as_ref(),
             _ => None,
         }
     }
@@ -262,11 +263,11 @@ impl<'a, S> MetaType<'a, S> {
     /// Only custom GraphQL scalars can have a [specification URL][0].
     ///
     /// [0]: https://spec.graphql.org/October2021#sec--specifiedBy
-    pub fn specified_by_url(&self) -> Option<&str> {
+    pub fn specified_by_url(&self) -> Option<&ArcStr> {
         match self {
             Self::Scalar(ScalarMeta {
                 specified_by_url, ..
-            }) => specified_by_url.as_deref(),
+            }) => specified_by_url.as_ref(),
             _ => None,
         }
     }
@@ -316,7 +317,7 @@ impl<'a, S> MetaType<'a, S> {
     }
 
     /// Construct a `Type` literal instance based on the metadata
-    pub fn as_type(&self) -> Type<'a> {
+    pub fn as_type(&self) -> Type {
         match *self {
             MetaType::Scalar(ScalarMeta { ref name, .. })
             | MetaType::Object(ObjectMeta { ref name, .. })
@@ -412,7 +413,7 @@ impl<'a, S> MetaType<'a, S> {
         }
     }
 
-    pub(crate) fn fields<'b>(&self, schema: &'b SchemaType<S>) -> Option<Vec<&'b Field<'b, S>>> {
+    pub(crate) fn fields<'b>(&self, schema: &'b SchemaType<S>) -> Option<Vec<&'b Field<S>>> {
         schema
             .lookup_type(&self.as_type())
             .and_then(|tpe| match *tpe {
@@ -431,9 +432,9 @@ impl<'a, S> MetaType<'a, S> {
     }
 }
 
-impl<'a, S> ScalarMeta<'a, S> {
+impl<S> ScalarMeta<S> {
     /// Builds a new [`ScalarMeta`] type with the specified `name`.
-    pub fn new<T>(name: Cow<'a, str>) -> Self
+    pub fn new<T>(name: ArcStr) -> Self
     where
         T: FromInputValue<S> + ParseScalarValue<S>,
         T::Error: IntoFieldError<S>,
@@ -451,8 +452,8 @@ impl<'a, S> ScalarMeta<'a, S> {
     ///
     /// Overwrites any previously set description.
     #[must_use]
-    pub fn description(mut self, description: &str) -> Self {
-        self.description = Some(description.into());
+    pub fn description(mut self, description: ArcStr) -> Self {
+        self.description = Some(description);
         self
     }
 
@@ -462,23 +463,23 @@ impl<'a, S> ScalarMeta<'a, S> {
     ///
     /// [0]: https://spec.graphql.org/October2021#sec--specifiedBy
     #[must_use]
-    pub fn specified_by_url(mut self, url: impl Into<Cow<'a, str>>) -> Self {
-        self.specified_by_url = Some(url.into());
+    pub fn specified_by_url(mut self, url: ArcStr) -> Self {
+        self.specified_by_url = Some(url);
         self
     }
 
     /// Wraps this [`ScalarMeta`] type into a generic [`MetaType`].
-    pub fn into_meta(self) -> MetaType<'a, S> {
+    pub fn into_meta(self) -> MetaType<S> {
         MetaType::Scalar(self)
     }
 }
 
-impl<'a> ListMeta<'a> {
+impl ListMeta {
     /// Build a new [`ListMeta`] type by wrapping the specified [`Type`].
     ///
     /// Specifying `expected_size` will be used to ensure that values of this
     /// type will always match it.
-    pub fn new(of_type: Type<'a>, expected_size: Option<usize>) -> Self {
+    pub fn new(of_type: Type, expected_size: Option<usize>) -> Self {
         Self {
             of_type,
             expected_size,
@@ -486,26 +487,26 @@ impl<'a> ListMeta<'a> {
     }
 
     /// Wraps this [`ListMeta`] type into a generic [`MetaType`].
-    pub fn into_meta<S>(self) -> MetaType<'a, S> {
+    pub fn into_meta<S>(self) -> MetaType<S> {
         MetaType::List(self)
     }
 }
 
-impl<'a> NullableMeta<'a> {
+impl NullableMeta {
     /// Build a new [`NullableMeta`] type by wrapping the specified [`Type`].
-    pub fn new(of_type: Type<'a>) -> Self {
+    pub fn new(of_type: Type) -> Self {
         Self { of_type }
     }
 
     /// Wraps this [`NullableMeta`] type into a generic [`MetaType`].
-    pub fn into_meta<S>(self) -> MetaType<'a, S> {
+    pub fn into_meta<S>(self) -> MetaType<S> {
         MetaType::Nullable(self)
     }
 }
 
-impl<'a, S> ObjectMeta<'a, S> {
+impl<S> ObjectMeta<S> {
     /// Build a new [`ObjectMeta`] type with the specified `name` and `fields`.
-    pub fn new(name: Cow<'a, str>, fields: &[Field<'a, S>]) -> Self
+    pub fn new(name: ArcStr, fields: &[Field<S>]) -> Self
     where
         S: Clone,
     {
@@ -521,8 +522,8 @@ impl<'a, S> ObjectMeta<'a, S> {
     ///
     /// Overwrites any previously set description.
     #[must_use]
-    pub fn description(mut self, description: &str) -> Self {
-        self.description = Some(description.into());
+    pub fn description(mut self, description: ArcStr) -> Self {
+        self.description = Some(description);
         self
     }
 
@@ -530,7 +531,7 @@ impl<'a, S> ObjectMeta<'a, S> {
     ///
     /// Overwrites any previously set list of interfaces.
     #[must_use]
-    pub fn interfaces(mut self, interfaces: &[Type<'a>]) -> Self {
+    pub fn interfaces(mut self, interfaces: &[Type]) -> Self {
         self.interface_names = interfaces
             .iter()
             .map(|t| t.innermost_name().into())
@@ -539,15 +540,15 @@ impl<'a, S> ObjectMeta<'a, S> {
     }
 
     /// Wraps this [`ObjectMeta`] type into a generic [`MetaType`].
-    pub fn into_meta(self) -> MetaType<'a, S> {
+    pub fn into_meta(self) -> MetaType<S> {
         MetaType::Object(self)
     }
 }
 
-impl<'a, S> EnumMeta<'a, S> {
+impl<S> EnumMeta<S> {
     /// Build a new [`EnumMeta`] type with the specified `name` and possible
     /// `values`.
-    pub fn new<T>(name: Cow<'a, str>, values: &[EnumValue]) -> Self
+    pub fn new<T>(name: ArcStr, values: &[EnumValue]) -> Self
     where
         T: FromInputValue<S>,
         T::Error: IntoFieldError<S>,
@@ -564,21 +565,21 @@ impl<'a, S> EnumMeta<'a, S> {
     ///
     /// Overwrites any previously set description.
     #[must_use]
-    pub fn description(mut self, description: &str) -> Self {
-        self.description = Some(description.into());
+    pub fn description(mut self, description: ArcStr) -> Self {
+        self.description = Some(description);
         self
     }
 
     /// Wraps this [`EnumMeta`] type into a generic [`MetaType`].
-    pub fn into_meta(self) -> MetaType<'a, S> {
+    pub fn into_meta(self) -> MetaType<S> {
         MetaType::Enum(self)
     }
 }
 
-impl<'a, S> InterfaceMeta<'a, S> {
+impl<S> InterfaceMeta<S> {
     /// Builds a new [`InterfaceMeta`] type with the specified `name` and
     /// `fields`.
-    pub fn new(name: Cow<'a, str>, fields: &[Field<'a, S>]) -> Self
+    pub fn new(name: ArcStr, fields: &[Field<S>]) -> Self
     where
         S: Clone,
     {
@@ -594,8 +595,8 @@ impl<'a, S> InterfaceMeta<'a, S> {
     ///
     /// Overwrites any previously set description.
     #[must_use]
-    pub fn description(mut self, description: &str) -> Self {
-        self.description = Some(description.into());
+    pub fn description(mut self, description: ArcStr) -> Self {
+        self.description = Some(description);
         self
     }
 
@@ -603,7 +604,7 @@ impl<'a, S> InterfaceMeta<'a, S> {
     ///
     /// Overwrites any previously set list of interfaces.
     #[must_use]
-    pub fn interfaces(mut self, interfaces: &[Type<'a>]) -> Self {
+    pub fn interfaces(mut self, interfaces: &[Type]) -> Self {
         self.interface_names = interfaces
             .iter()
             .map(|t| t.innermost_name().into())
@@ -612,15 +613,15 @@ impl<'a, S> InterfaceMeta<'a, S> {
     }
 
     /// Wraps this [`InterfaceMeta`] type into a generic [`MetaType`].
-    pub fn into_meta(self) -> MetaType<'a, S> {
+    pub fn into_meta(self) -> MetaType<S> {
         MetaType::Interface(self)
     }
 }
 
-impl<'a> UnionMeta<'a> {
+impl UnionMeta {
     /// Build a new [`UnionMeta`] type with the specified `name` and possible
     /// [`Type`]s.
-    pub fn new(name: Cow<'a, str>, of_types: &[Type]) -> Self {
+    pub fn new(name: ArcStr, of_types: &[Type]) -> Self {
         Self {
             name,
             description: None,
@@ -632,21 +633,21 @@ impl<'a> UnionMeta<'a> {
     ///
     /// Overwrites any previously set description.
     #[must_use]
-    pub fn description(mut self, description: &str) -> Self {
-        self.description = Some(description.into());
+    pub fn description(mut self, description: ArcStr) -> Self {
+        self.description = Some(description);
         self
     }
 
     /// Wraps this [`UnionMeta`] type into a generic [`MetaType`].
-    pub fn into_meta<S>(self) -> MetaType<'a, S> {
+    pub fn into_meta<S>(self) -> MetaType<S> {
         MetaType::Union(self)
     }
 }
 
-impl<'a, S> InputObjectMeta<'a, S> {
+impl<S> InputObjectMeta<S> {
     /// Builds a new [`InputObjectMeta`] type with the specified `name` and
     /// `input_fields`.
-    pub fn new<T>(name: Cow<'a, str>, input_fields: &[Argument<'a, S>]) -> Self
+    pub fn new<T>(name: ArcStr, input_fields: &[Argument<S>]) -> Self
     where
         T: FromInputValue<S>,
         T::Error: IntoFieldError<S>,
@@ -664,24 +665,24 @@ impl<'a, S> InputObjectMeta<'a, S> {
     ///
     /// Overwrites any previously set description.
     #[must_use]
-    pub fn description(mut self, description: &str) -> Self {
-        self.description = Some(description.into());
+    pub fn description(mut self, description: ArcStr) -> Self {
+        self.description = Some(description);
         self
     }
 
     /// Wraps this [`InputObjectMeta`] type into a generic [`MetaType`].
-    pub fn into_meta(self) -> MetaType<'a, S> {
+    pub fn into_meta(self) -> MetaType<S> {
         MetaType::InputObject(self)
     }
 }
 
-impl<'a, S> Field<'a, S> {
+impl<S> Field<S> {
     /// Set the `description` of this [`Field`].
     ///
     /// Overwrites any previously set description.
     #[must_use]
-    pub fn description(mut self, description: &str) -> Self {
-        self.description = Some(description.into());
+    pub fn description(mut self, description: ArcStr) -> Self {
+        self.description = Some(description);
         self
     }
 
@@ -689,7 +690,7 @@ impl<'a, S> Field<'a, S> {
     ///
     /// Arguments are unordered and can't contain duplicates by name.
     #[must_use]
-    pub fn argument(mut self, argument: Argument<'a, S>) -> Self {
+    pub fn argument(mut self, argument: Argument<S>) -> Self {
         match self.arguments {
             None => {
                 self.arguments = Some(vec![argument]);
@@ -705,17 +706,17 @@ impl<'a, S> Field<'a, S> {
     ///
     /// Overwrites any previously set deprecation reason.
     #[must_use]
-    pub fn deprecated(mut self, reason: Option<&str>) -> Self {
+    pub fn deprecated(mut self, reason: Option<ArcStr>) -> Self {
         self.deprecation_status = DeprecationStatus::Deprecated(reason.map(Into::into));
         self
     }
 }
 
-impl<'a, S> Argument<'a, S> {
+impl<S> Argument<S> {
     /// Builds a new [`Argument`] of the given [`Type`] with the given `name`.
-    pub fn new(name: &str, arg_type: Type<'a>) -> Self {
+    pub fn new(name: ArcStr, arg_type: Type) -> Self {
         Self {
-            name: name.into(),
+            name,
             description: None,
             arg_type,
             default_value: None,
@@ -726,8 +727,8 @@ impl<'a, S> Argument<'a, S> {
     ///
     /// Overwrites any previously set description.
     #[must_use]
-    pub fn description(mut self, description: &str) -> Self {
-        self.description = Some(description.into());
+    pub fn description(mut self, description: ArcStr) -> Self {
+        self.description = Some(description);
         self
     }
 
@@ -743,9 +744,9 @@ impl<'a, S> Argument<'a, S> {
 
 impl EnumValue {
     /// Constructs a new [`EnumValue`] with the provided `name`.
-    pub fn new(name: &str) -> Self {
+    pub fn new(name: ArcStr) -> Self {
         Self {
-            name: name.into(),
+            name,
             description: None,
             deprecation_status: DeprecationStatus::Current,
         }
@@ -755,8 +756,8 @@ impl EnumValue {
     ///
     /// Overwrites any previously set description.
     #[must_use]
-    pub fn description(mut self, description: &str) -> Self {
-        self.description = Some(description.into());
+    pub fn description(mut self, description: ArcStr) -> Self {
+        self.description = Some(description);
         self
     }
 
@@ -764,13 +765,13 @@ impl EnumValue {
     ///
     /// Overwrites any previously set deprecation reason.
     #[must_use]
-    pub fn deprecated(mut self, reason: Option<&str>) -> Self {
-        self.deprecation_status = DeprecationStatus::Deprecated(reason.map(Into::into));
+    pub fn deprecated(mut self, reason: Option<ArcStr>) -> Self {
+        self.deprecation_status = DeprecationStatus::Deprecated(reason);
         self
     }
 }
 
-impl<'a, S: fmt::Debug> fmt::Debug for ScalarMeta<'a, S> {
+impl<S: fmt::Debug> fmt::Debug for ScalarMeta<S> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("ScalarMeta")
             .field("name", &self.name)
@@ -779,7 +780,7 @@ impl<'a, S: fmt::Debug> fmt::Debug for ScalarMeta<'a, S> {
     }
 }
 
-impl<'a, S: fmt::Debug> fmt::Debug for EnumMeta<'a, S> {
+impl<S: fmt::Debug> fmt::Debug for EnumMeta<S> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("EnumMeta")
             .field("name", &self.name)
@@ -789,7 +790,7 @@ impl<'a, S: fmt::Debug> fmt::Debug for EnumMeta<'a, S> {
     }
 }
 
-impl<'a, S: fmt::Debug> fmt::Debug for InputObjectMeta<'a, S> {
+impl<S: fmt::Debug> fmt::Debug for InputObjectMeta<S> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("InputObjectMeta")
             .field("name", &self.name)

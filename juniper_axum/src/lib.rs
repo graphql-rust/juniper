@@ -52,7 +52,7 @@ pub use self::subscriptions::{graphql_transport_ws, graphql_ws, ws};
 ///     }
 /// }
 ///
-/// type Schema = RootNode<'static, Query, EmptyMutation<Context>, EmptySubscription<Context>>;
+/// type Schema = RootNode<Query, EmptyMutation<Context>, EmptySubscription<Context>>;
 ///
 /// let schema = Schema::new(
 ///    Query,

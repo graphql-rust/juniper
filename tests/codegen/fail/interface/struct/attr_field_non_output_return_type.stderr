@@ -8,9 +8,9 @@ error[E0277]: the trait bound `ObjB: IsOutputType<__S>` is not satisfied
             <bool as IsOutputType<__S>>
             <i32 as IsOutputType<__S>>
             <f64 as IsOutputType<__S>>
+            <ArcStr as IsOutputType<S>>
             <CharacterValueEnum as IsOutputType<__S>>
             <Box<T> as IsOutputType<S>>
-            <juniper::meta::Field<'a, S> as IsOutputType<S>>
-            <Argument<'a, S> as IsOutputType<S>>
-            <EnumValue as IsOutputType<__S>>
+            <juniper::meta::Field<S> as IsOutputType<S>>
+            <Argument<S> as IsOutputType<S>>
           and $N others

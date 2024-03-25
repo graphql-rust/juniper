@@ -52,7 +52,7 @@ impl Definition<Subscription> {
                 fn type_name<'__i>(
                     &self,
                     info: &'__i Self::TypeInfo,
-                ) -> ::core::option::Option<&'__i ::core::primitive::str> {
+                ) -> ::core::option::Option<::juniper::ArcStr> {
                     <Self as ::juniper::GraphQLType<#scalar>>::name(info)
                 }
 

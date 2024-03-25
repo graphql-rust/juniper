@@ -18,7 +18,7 @@ struct ConflictReason(String, ConflictReasonMessage);
 struct AstAndDef<'a, S: Debug + 'a>(
     Option<&'a str>,
     &'a Spanning<Field<'a, S>>,
-    Option<&'a FieldType<'a, S>>,
+    Option<&'a FieldType<S>>,
 );
 
 type AstAndDefCollection<'a, S> = OrderedMap<&'a str, Vec<AstAndDef<'a, S>>>;
@@ -554,7 +554,11 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
         ))
     }
 
-    fn is_type_conflict(ctx: &ValidatorContext<'a, S>, t1: &Type, t2: &Type) -> bool {
+    fn is_type_conflict<N: AsRef<str> + PartialEq>(
+        ctx: &ValidatorContext<'a, S>,
+        t1: &Type<N>,
+        t2: &Type<N>,
+    ) -> bool {
         match (t1, t2) {
             (&Type::List(ref inner1, expected_size1), &Type::List(ref inner2, expected_size2))
             | (
@@ -568,8 +572,8 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
             }
             (&Type::NonNullNamed(ref n1), &Type::NonNullNamed(ref n2))
             | (&Type::Named(ref n1), &Type::Named(ref n2)) => {
-                let ct1 = ctx.schema.concrete_type_by_name(n1);
-                let ct2 = ctx.schema.concrete_type_by_name(n2);
+                let ct1 = ctx.schema.concrete_type_by_name(n1.as_ref());
+                let ct2 = ctx.schema.concrete_type_by_name(n2.as_ref());
 
                 if ct1.map(MetaType::is_leaf).unwrap_or(false)
                     || ct2.map(MetaType::is_leaf).unwrap_or(false)
@@ -761,10 +765,13 @@ fn format_reason(reason: &ConflictReasonMessage) -> String {
 
 #[cfg(test)]
 mod tests {
+    use arcstr::ArcStr;
+
     use super::{error_message, factory, ConflictReason, ConflictReasonMessage::*};
 
     use crate::{
         executor::Registry,
+        literal,
         schema::meta::MetaType,
         types::{
             base::{GraphQLType, GraphQLValue},
@@ -1400,18 +1407,15 @@ mod tests {
     where
         S: ScalarValue,
     {
-        fn name(_: &()) -> Option<&'static str> {
-            Some("SomeBox")
+        fn name(_: &()) -> Option<ArcStr> {
+            Some(literal!("SomeBox"))
         }
 
-        fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-        where
-            S: 'r,
-        {
+        fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
             let fields = &[
-                registry.field::<Option<SomeBox>>("deepBox", i),
-                registry.field::<Option<String>>("unrelatedField", i),
-                registry.field::<Option<String>>("otherField", i),
+                registry.field::<Option<SomeBox>>(literal!("deepBox"), i),
+                registry.field::<Option<String>>(literal!("unrelatedField"), i),
+                registry.field::<Option<String>>(literal!("otherField"), i),
             ];
 
             registry.build_interface_type::<Self>(i, fields).into_meta()
@@ -1425,7 +1429,7 @@ mod tests {
         type Context = ();
         type TypeInfo = ();
 
-        fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
             <Self as GraphQLType>::name(info)
         }
     }
@@ -1434,21 +1438,18 @@ mod tests {
     where
         S: ScalarValue,
     {
-        fn name(_: &()) -> Option<&'static str> {
-            Some("StringBox")
+        fn name(_: &()) -> Option<ArcStr> {
+            Some(literal!("StringBox"))
         }
 
-        fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-        where
-            S: 'r,
-        {
+        fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
             let fields = &[
-                registry.field::<Option<String>>("scalar", i),
-                registry.field::<Option<StringBox>>("deepBox", i),
-                registry.field::<Option<String>>("unrelatedField", i),
-                registry.field::<Option<Vec<Option<StringBox>>>>("listStringBox", i),
-                registry.field::<Option<StringBox>>("stringBox", i),
-                registry.field::<Option<IntBox>>("intBox", i),
+                registry.field::<Option<String>>(literal!("scalar"), i),
+                registry.field::<Option<StringBox>>(literal!("deepBox"), i),
+                registry.field::<Option<String>>(literal!("unrelatedField"), i),
+                registry.field::<Option<Vec<Option<StringBox>>>>(literal!("listStringBox"), i),
+                registry.field::<Option<StringBox>>(literal!("stringBox"), i),
+                registry.field::<Option<IntBox>>(literal!("intBox"), i),
             ];
 
             registry
@@ -1465,7 +1466,7 @@ mod tests {
         type Context = ();
         type TypeInfo = ();
 
-        fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
             <Self as GraphQLType>::name(info)
         }
     }
@@ -1474,21 +1475,18 @@ mod tests {
     where
         S: ScalarValue,
     {
-        fn name(_: &()) -> Option<&'static str> {
-            Some("IntBox")
+        fn name(_: &()) -> Option<ArcStr> {
+            Some(literal!("IntBox"))
         }
 
-        fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-        where
-            S: 'r,
-        {
+        fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
             let fields = &[
-                registry.field::<Option<i32>>("scalar", i),
-                registry.field::<Option<IntBox>>("deepBox", i),
-                registry.field::<Option<String>>("unrelatedField", i),
-                registry.field::<Option<Vec<Option<StringBox>>>>("listStringBox", i),
-                registry.field::<Option<StringBox>>("stringBox", i),
-                registry.field::<Option<IntBox>>("intBox", i),
+                registry.field::<Option<i32>>(literal!("scalar"), i),
+                registry.field::<Option<IntBox>>(literal!("deepBox"), i),
+                registry.field::<Option<String>>(literal!("unrelatedField"), i),
+                registry.field::<Option<Vec<Option<StringBox>>>>(literal!("listStringBox"), i),
+                registry.field::<Option<StringBox>>(literal!("stringBox"), i),
+                registry.field::<Option<IntBox>>(literal!("intBox"), i),
             ];
 
             registry
@@ -1505,7 +1503,7 @@ mod tests {
         type Context = ();
         type TypeInfo = ();
 
-        fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
             <Self as GraphQLType>::name(info)
         }
     }
@@ -1514,15 +1512,12 @@ mod tests {
     where
         S: ScalarValue,
     {
-        fn name(_: &()) -> Option<&'static str> {
-            Some("NonNullStringBox1")
+        fn name(_: &()) -> Option<ArcStr> {
+            Some(literal!("NonNullStringBox1"))
         }
 
-        fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-        where
-            S: 'r,
-        {
-            let fields = &[registry.field::<String>("scalar", i)];
+        fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
+            let fields = &[registry.field::<String>(literal!("scalar"), i)];
 
             registry.build_interface_type::<Self>(i, fields).into_meta()
         }
@@ -1535,7 +1530,7 @@ mod tests {
         type Context = ();
         type TypeInfo = ();
 
-        fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
             <Self as GraphQLType>::name(info)
         }
     }
@@ -1544,18 +1539,15 @@ mod tests {
     where
         S: ScalarValue,
     {
-        fn name(_: &()) -> Option<&'static str> {
-            Some("NonNullStringBox1Impl")
+        fn name(_: &()) -> Option<ArcStr> {
+            Some(literal!("NonNullStringBox1Impl"))
         }
 
-        fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-        where
-            S: 'r,
-        {
+        fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
             let fields = &[
-                registry.field::<String>("scalar", i),
-                registry.field::<Option<SomeBox>>("deepBox", i),
-                registry.field::<Option<String>>("unrelatedField", i),
+                registry.field::<String>(literal!("scalar"), i),
+                registry.field::<Option<SomeBox>>(literal!("deepBox"), i),
+                registry.field::<Option<String>>(literal!("unrelatedField"), i),
             ];
 
             registry
@@ -1575,7 +1567,7 @@ mod tests {
         type Context = ();
         type TypeInfo = ();
 
-        fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
             <Self as GraphQLType>::name(info)
         }
     }
@@ -1584,15 +1576,12 @@ mod tests {
     where
         S: ScalarValue,
     {
-        fn name(_: &()) -> Option<&'static str> {
-            Some("NonNullStringBox2")
+        fn name(_: &()) -> Option<ArcStr> {
+            Some(literal!("NonNullStringBox2"))
         }
 
-        fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-        where
-            S: 'r,
-        {
-            let fields = &[registry.field::<String>("scalar", i)];
+        fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
+            let fields = &[registry.field::<String>(literal!("scalar"), i)];
 
             registry.build_interface_type::<Self>(i, fields).into_meta()
         }
@@ -1605,7 +1594,7 @@ mod tests {
         type Context = ();
         type TypeInfo = ();
 
-        fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
             <Self as GraphQLType>::name(info)
         }
     }
@@ -1614,18 +1603,15 @@ mod tests {
     where
         S: ScalarValue,
     {
-        fn name(_: &()) -> Option<&'static str> {
-            Some("NonNullStringBox2Impl")
+        fn name(_: &()) -> Option<ArcStr> {
+            Some(literal!("NonNullStringBox2Impl"))
         }
 
-        fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-        where
-            S: 'r,
-        {
+        fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
             let fields = &[
-                registry.field::<String>("scalar", i),
-                registry.field::<Option<SomeBox>>("deepBox", i),
-                registry.field::<Option<String>>("unrelatedField", i),
+                registry.field::<String>(literal!("scalar"), i),
+                registry.field::<Option<SomeBox>>(literal!("deepBox"), i),
+                registry.field::<Option<String>>(literal!("unrelatedField"), i),
             ];
 
             registry
@@ -1645,7 +1631,7 @@ mod tests {
         type Context = ();
         type TypeInfo = ();
 
-        fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
             <Self as GraphQLType>::name(info)
         }
     }
@@ -1654,17 +1640,14 @@ mod tests {
     where
         S: ScalarValue,
     {
-        fn name(_: &()) -> Option<&'static str> {
-            Some("Node")
+        fn name(_: &()) -> Option<ArcStr> {
+            Some(literal!("Node"))
         }
 
-        fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-        where
-            S: 'r,
-        {
+        fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
             let fields = &[
-                registry.field::<Option<ID>>("id", i),
-                registry.field::<Option<String>>("name", i),
+                registry.field::<Option<ID>>(literal!("id"), i),
+                registry.field::<Option<String>>(literal!("name"), i),
             ];
 
             registry.build_object_type::<Self>(i, fields).into_meta()
@@ -1678,7 +1661,7 @@ mod tests {
         type Context = ();
         type TypeInfo = ();
 
-        fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
             <Self as GraphQLType>::name(info)
         }
     }
@@ -1687,15 +1670,12 @@ mod tests {
     where
         S: ScalarValue,
     {
-        fn name(_: &()) -> Option<&'static str> {
-            Some("Edge")
+        fn name(_: &()) -> Option<ArcStr> {
+            Some(literal!("Edge"))
         }
 
-        fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-        where
-            S: 'r,
-        {
-            let fields = &[registry.field::<Option<Node>>("node", i)];
+        fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
+            let fields = &[registry.field::<Option<Node>>(literal!("node"), i)];
 
             registry.build_object_type::<Self>(i, fields).into_meta()
         }
@@ -1708,7 +1688,7 @@ mod tests {
         type Context = ();
         type TypeInfo = ();
 
-        fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
             <Self as GraphQLType>::name(info)
         }
     }
@@ -1717,15 +1697,12 @@ mod tests {
     where
         S: ScalarValue,
     {
-        fn name(_: &()) -> Option<&'static str> {
-            Some("Connection")
+        fn name(_: &()) -> Option<ArcStr> {
+            Some(literal!("Connection"))
         }
 
-        fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-        where
-            S: 'r,
-        {
-            let fields = &[registry.field::<Option<Vec<Option<Edge>>>>("edges", i)];
+        fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
+            let fields = &[registry.field::<Option<Vec<Option<Edge>>>>(literal!("edges"), i)];
 
             registry.build_object_type::<Self>(i, fields).into_meta()
         }
@@ -1738,7 +1715,7 @@ mod tests {
         type Context = ();
         type TypeInfo = ();
 
-        fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
             <Self as GraphQLType>::name(info)
         }
     }
@@ -1747,22 +1724,19 @@ mod tests {
     where
         S: ScalarValue,
     {
-        fn name(_: &()) -> Option<&'static str> {
-            Some("QueryRoot")
+        fn name(_: &()) -> Option<ArcStr> {
+            Some(literal!("QueryRoot"))
         }
 
-        fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-        where
-            S: 'r,
-        {
+        fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
             registry.get_type::<IntBox>(i);
             registry.get_type::<StringBox>(i);
             registry.get_type::<NonNullStringBox1Impl>(i);
             registry.get_type::<NonNullStringBox2Impl>(i);
 
             let fields = &[
-                registry.field::<Option<SomeBox>>("someBox", i),
-                registry.field::<Option<Connection>>("connection", i),
+                registry.field::<Option<SomeBox>>(literal!("someBox"), i),
+                registry.field::<Option<Connection>>(literal!("connection"), i),
             ];
             registry.build_object_type::<Self>(i, fields).into_meta()
         }
@@ -1775,7 +1749,7 @@ mod tests {
         type Context = ();
         type TypeInfo = ();
 
-        fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+        fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
             <Self as GraphQLType>::name(info)
         }
     }

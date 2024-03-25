@@ -34,14 +34,14 @@ error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
              <Arc<T> as FromInputValue<S>>
              <Vec<T> as FromInputValue<S>>
            and $N others
-note: required by a bound in `Registry::<'r, S>::arg`
+note: required by a bound in `Registry::<S>::arg`
   --> $WORKSPACE/juniper/src/executor/mod.rs
    |
-   |     pub fn arg<T>(&mut self, name: &str, info: &T::TypeInfo) -> Argument<'r, S>
+   |     pub fn arg<T>(&mut self, name: ArcStr, info: &T::TypeInfo) -> Argument<S>
    |            --- required by a bound in this associated function
    |     where
    |         T: GraphQLType<S> + FromInputValue<S>,
-   |                             ^^^^^^^^^^^^^^^^^ required by this bound in `Registry::<'r, S>::arg`
+   |                             ^^^^^^^^^^^^^^^^^ required by this bound in `Registry::<S>::arg`
 
 error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
  --> fail/input-object/derive_incompatible_field_type.rs:8:10

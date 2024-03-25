@@ -7,6 +7,8 @@
 
 use std::sync::Arc;
 
+use arcstr::ArcStr;
+
 use crate::{GraphQLType, ScalarValue};
 
 /// Maker trait for [GraphQL objects][1].
@@ -272,6 +274,7 @@ where
 }
 
 impl<S> IsOutputType<S> for str where S: ScalarValue {}
+impl<S> IsOutputType<S> for ArcStr where S: ScalarValue {}
 
 /// Marker trait for types which can be used as input types.
 ///

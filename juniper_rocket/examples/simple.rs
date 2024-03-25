@@ -4,7 +4,7 @@ use juniper::{
 };
 use rocket::{response::content::RawHtml, routes, State};
 
-type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
+type Schema = RootNode<Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
 #[rocket::get("/")]
 async fn homepage() -> RawHtml<&'static str> {

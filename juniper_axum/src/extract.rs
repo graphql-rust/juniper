@@ -44,7 +44,7 @@ use serde::Deserialize;
 ///     }
 /// }
 ///
-/// type Schema = RootNode<'static, Query, EmptyMutation<Context>, EmptySubscription<Context>>;
+/// type Schema = RootNode<Query, EmptyMutation<Context>, EmptySubscription<Context>>;
 ///
 /// let schema = Schema::new(
 ///    Query,

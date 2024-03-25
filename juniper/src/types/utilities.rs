@@ -4,7 +4,7 @@ use crate::{
     ast::InputValue,
     schema::{
         meta::{Argument, EnumMeta, InputObjectMeta, MetaType},
-        model::{SchemaType, TypeType},
+        model::{AsDynType, SchemaType, TypeType},
     },
     value::ScalarValue,
 };
@@ -73,7 +73,7 @@ where
     let field_type = object_fields
         .iter()
         .filter(|f| f.name == field_key)
-        .map(|f| schema.make_type(&f.arg_type))
+        .map(|f| schema.make_type(f.arg_type.as_dyn_type()))
         .next();
 
     if let Some(field_arg_type) = field_type {
@@ -155,12 +155,12 @@ where
                             .iter()
                             .filter_map(|f| {
                                 (f.arg_type.is_non_null() && f.default_value.is_none())
-                                    .then_some(&f.name)
+                                    .then_some(f.name.as_str())
                             })
                             .collect::<HashSet<_>>();
 
                         let error_message = obj.iter().find_map(|(key, value)| {
-                            remaining_required_fields.remove(&key.item);
+                            remaining_required_fields.remove(key.item.as_str());
                             validate_object_field(
                                 schema,
                                 arg_type,
@@ -179,7 +179,7 @@ where
                         } else {
                             let missing_fields = remaining_required_fields
                                 .into_iter()
-                                .map(|s| format!("\"{}\"", &**s))
+                                .map(|s| format!("\"{}\"", s))
                                 .collect::<Vec<_>>()
                                 .join(", ");
                             Some(error::missing_fields(arg_type, missing_fields))
