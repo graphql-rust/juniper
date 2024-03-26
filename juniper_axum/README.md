@@ -4,7 +4,8 @@
 [![Crates.io](https://img.shields.io/crates/v/juniper_axum.svg?maxAge=2592000)](https://crates.io/crates/juniper_axum)
 [![Documentation](https://docs.rs/juniper_axum/badge.svg)](https://docs.rs/juniper_axum)
 [![CI](https://github.com/graphql-rust/juniper/workflows/CI/badge.svg?branch=master "CI")](https://github.com/graphql-rust/juniper/actions?query=workflow%3ACI+branch%3Amaster)
-[![Rust 1.73+](https://img.shields.io/badge/rustc-1.73+-lightgray.svg "Rust 1.73+")](https://blog.rust-lang.org/2023/10/05/Rust-1.73.0.html)
+[![Rust 1.73+](https://img.shields.io/badge/rustc-1.73+-lightgray.svg "Rust 1.73+")](https://blog.rust-lang.org/2023/10/05/Rust-1.73.0.html)  
+[![HTTP-spec](https://img.shields.io/badge/compliant-GraphQL%20over%20HTTP%20(draft)-blue "compliant with GraphQL over HTTP (draft)")](https://graphql.github.io/graphql-over-http/draft)
 
 - [Changelog](https://github.com/graphql-rust/juniper/blob/juniper_axum-v0.1.0/juniper_axum/CHANGELOG.md)
 
