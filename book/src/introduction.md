@@ -3,7 +3,7 @@ Introduction
 
 > [GraphQL] is a query language for APIs and a runtime for fulfilling those queries with your existing data. [GraphQL] provides a complete and understandable description of the data in your API, gives clients the power to ask for exactly what they need and nothing more, makes it easier to evolve APIs over time, and enables powerful developer tools.
 
-[Juniper] is a library for creating [GraphQL] servers in [Rust]. Build type-safe and fast API servers with minimal boilerplate and configuration (we do try to make declaring and resolving [GraphQL] schemas as convenient as possible as [Rust] will allow).
+[Juniper] is a library for creating [GraphQL] servers in [Rust]. Build type-safe and fast API servers with minimal boilerplate and configuration (we do try to make declaring and resolving [GraphQL] schemas as convenient as [Rust] will allow).
 
 [Juniper] doesn't include a web server itself, instead, it provides building blocks to make integration with existing web servers straightforward. It optionally provides a pre-built integration for some widely used web server frameworks in [Rust] ecosystem.
 
