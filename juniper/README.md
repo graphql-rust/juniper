@@ -12,7 +12,7 @@ Juniper (GraphQL server library for Rust)
 
 [GraphQL] is a data query language developed by [Facebook] and intended to serve mobile and web application frontends.
 
-*[Juniper]* makes it possible to write [GraphQL] servers in [Rust] that are type-safe and blazingly fast. We also try to make declaring and resolving [GraphQL] schemas as convenient as possible as [Rust] will allow.
+*[Juniper]* makes it possible to write [GraphQL] servers in [Rust] that are type-safe and blazingly fast. We also try to make declaring and resolving [GraphQL] schemas as convenient as [Rust] will allow.
 
 [Juniper] doesn't include a web server - instead it provides building blocks to make integration with existing servers straightforward, including embedded [GraphiQL] and/or [GraphQL Playground] for easy debugging.
 
