@@ -178,7 +178,7 @@
 <p>In backtracking algorithms, <strong>look ahead</strong> is the generic term for a subprocedure that attempts to foresee the effects of choosing a branching variable to evaluate one of its values. The two main aims of look-ahead are to choose a variable to evaluate next and to choose the order of values to assign to it.</p>
 </blockquote>
 <p>In <a href="https://graphql.org">GraphQL</a>, look-ahead machinery allows us to introspect the currently <a href="https://spec.graphql.org/October2021#sec-Execution">executed</a> <a href="https://spec.graphql.org/October2021#sec-Language.Operations%5C">GraphQL operation</a> to see which <a href="https://spec.graphql.org/October2021#sec-Language.Fields">fields</a> has been actually selected by it.</p>
-<p>In <a href="https://docs.rs/juniper">Juniper</a>, it's represented by the <a href="https://docs.rs/juniper/0.16.0/juniper/executor/struct.Executor.html#method.look_ahead"><code>Executor::look_ahead()</code></a> method.</p>
+<p>In <a href="https://docs.rs/juniper">Juniper</a>, it's represented by the <a href="https://docs.rs/juniper/0.16.1/juniper/executor/struct.Executor.html#method.look_ahead"><code>Executor::look_ahead()</code></a> method.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate juniper;
@@ -210,7 +210,7 @@ impl Query {
 }
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
-<p><strong>TIP</strong>: <code>S: ScalarValue</code> type parameter on the method is required here to keep the <a href="https://docs.rs/juniper/0.16.0/juniper/executor/struct.Executor.html"><code>Executor</code></a> being generic over <a href="https://docs.rs/juniper/0.16.0/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> types. We, instead, could have used the <a href="https://docs.rs/juniper/0.16.0/juniper/enum.DefaultScalarValue.html"><code>DefaultScalarValue</code></a>, which is the default <a href="https://docs.rs/juniper/0.16.0/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type for the <a href="https://docs.rs/juniper/0.16.0/juniper/executor/struct.Executor.html"><code>Executor</code></a>, and make our code more ergonomic, but less flexible and generic.</p>
+<p><strong>TIP</strong>: <code>S: ScalarValue</code> type parameter on the method is required here to keep the <a href="https://docs.rs/juniper/0.16.1/juniper/executor/struct.Executor.html"><code>Executor</code></a> being generic over <a href="https://docs.rs/juniper/0.16.1/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> types. We, instead, could have used the <a href="https://docs.rs/juniper/0.16.1/juniper/enum.DefaultScalarValue.html"><code>DefaultScalarValue</code></a>, which is the default <a href="https://docs.rs/juniper/0.16.1/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type for the <a href="https://docs.rs/juniper/0.16.1/juniper/executor/struct.Executor.html"><code>Executor</code></a>, and make our code more ergonomic, but less flexible and generic.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate juniper;
@@ -374,7 +374,7 @@ impl Query {
 SELECT id, name FROM cults WHERE id IN (1, 2, 3, 4);
 </code></pre>
 <h2 id="more-features"><a class="header" href="#more-features">More features</a></h2>
-<p>See more available look-ahead features in the API docs of the <a href="https://docs.rs/juniper/0.16.0/juniper/executor/struct.LookAheadSelection.html"><code>LookAheadSelection</code></a> and the <a href="https://docs.rs/juniper/0.16.0/juniper/executor/struct.LookAheadChildren.html"><code>LookAheadChildren</code></a>.</p>
+<p>See more available look-ahead features in the API docs of the <a href="https://docs.rs/juniper/0.16.1/juniper/executor/struct.LookAheadSelection.html"><code>LookAheadSelection</code></a> and the <a href="https://docs.rs/juniper/0.16.1/juniper/executor/struct.LookAheadChildren.html"><code>LookAheadChildren</code></a>.</p>
 
                     </main>
 

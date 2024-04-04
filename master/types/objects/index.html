@@ -180,8 +180,8 @@
 <p>When declaring a <a href="https://graphql.org/learn/schema">GraphQL schema</a>, most of the time we deal with <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL objects</a>, because they are the only place where we actually define the behavior once <a href="https://graphql.org/learn/schema">schema</a> gets <a href="https://spec.graphql.org/October2021#sec-Execution">executed</a>.</p>
 <p>There are two ways to define a <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a> in <a href="https://docs.rs/juniper">Juniper</a>:</p>
 <ol>
-<li>The easiest way, suitable for trivial cases, is to use the <a href="https://docs.rs/juniper/0.16.0/juniper/derive.GraphQLObject.html"><code>#[derive(GraphQLObject)]</code> attribute</a> on a <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a>, as described below.</li>
-<li>The other way, using the <a href="https://docs.rs/juniper/0.16.0/juniper/attr.graphql_object.html"><code>#[graphql_object]</code> attribute</a>, is described in the <a href="complex_fields.html">"Complex fields" chapter</a>.</li>
+<li>The easiest way, suitable for trivial cases, is to use the <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLObject.html"><code>#[derive(GraphQLObject)]</code> attribute</a> on a <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a>, as described below.</li>
+<li>The other way, using the <a href="https://docs.rs/juniper/0.16.1/juniper/attr.graphql_object.html"><code>#[graphql_object]</code> attribute</a>, is described in the <a href="complex_fields.html">"Complex fields" chapter</a>.</li>
 </ol>
 <h2 id="trivial"><a class="header" href="#trivial">Trivial</a></h2>
 <p>While any type in <a href="https://www.rust-lang.org">Rust</a> can be exposed as a <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a>, the most common one is a <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a>:</p>
@@ -197,7 +197,7 @@ struct Person {
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>This creates a <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a> type called <code>Person</code>, with two fields: <code>name</code> of type <code>String!</code>, and <code>age</code> of type <code>Int!</code>. Because of <a href="https://www.rust-lang.org">Rust</a>'s type system, everything is exported as <a href="https://spec.graphql.org/October2021#sec-Non-Null">non-<code>null</code></a> by default.</p>
 <blockquote>
-<p><strong>TIP</strong>: If a <code>null</code>able field is required, the most obvious way is to use <code>Option</code>. Or <a href="https://docs.rs/juniper/0.16.0/juniper/enum.Nullable.html"><code>Nullable</code></a> for distinguishing between <a href="https://spec.graphql.org/October2021#sel-EAFdRDHAAEJDAoBxzT">explicit and implicit <code>null</code>s</a>.</p>
+<p><strong>TIP</strong>: If a <code>null</code>able field is required, the most obvious way is to use <code>Option</code>. Or <a href="https://docs.rs/juniper/0.16.1/juniper/enum.Nullable.html"><code>Nullable</code></a> for distinguishing between <a href="https://spec.graphql.org/October2021#sel-EAFdRDHAAEJDAoBxzT">explicit and implicit <code>null</code>s</a>.</p>
 </blockquote>
 <h3 id="documentation"><a class="header" href="#documentation">Documentation</a></h3>
 <p>We should take advantage of the fact that <a href="https://graphql.org">GraphQL</a> is <a href="https://spec.graphql.org/October2021#sec-Introspection">self-documenting</a> and add descriptions to the defined <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a> type and its fields. <a href="https://docs.rs/juniper">Juniper</a> will automatically use associated <a href="https://doc.rust-lang.org/reference/comments.html#doc-comments">Rust doc comments</a> as <a href="https://spec.graphql.org/October2021#sec-Descriptions">GraphQL descriptions</a>:</p>
@@ -314,7 +314,7 @@ struct Person {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
-<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.0/juniper/derive.GraphQLObject.html"><code>#[derive(GraphQLObject)]</code></a> attribute.</p>
+<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLObject.html"><code>#[derive(GraphQLObject)]</code></a> attribute.</p>
 </blockquote>
 <h2 id="relationships"><a class="header" href="#relationships">Relationships</a></h2>
 <p><a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a> fields can be of any <a href="https://graphql.org">GraphQL</a> type, except <a href="https://spec.graphql.org/October2021#sec-Input-Objects">input objects</a>.</p>
