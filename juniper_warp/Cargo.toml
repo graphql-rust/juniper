@@ -31,7 +31,7 @@ subscriptions = [
 
 [dependencies]
 futures = { version = "0.3.22", optional = true }
-juniper = { version = "0.16.0", path = "../juniper", default-features = false }
+juniper = { version = "0.16", path = "../juniper", default-features = false }
 juniper_graphql_ws = { version = "0.4.0", path = "../juniper_graphql_ws", features = ["graphql-transport-ws", "graphql-ws"], optional = true }
 log = { version = "0.4", optional = true }
 serde = { version = "1.0.122", features = ["derive"] }
@@ -48,7 +48,7 @@ headers = "0.3.8"
 async-stream = "0.3"
 env_logger = "0.11"
 futures = "0.3.22"
-juniper = { version = "0.16.0", path = "../juniper", features = ["expose-test-schema"] }
+juniper = { version = "0.16", path = "../juniper", features = ["expose-test-schema"] }
 log = "0.4"
 percent-encoding = "2.1"
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }

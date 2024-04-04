@@ -21,7 +21,7 @@ exclude = ["/examples/", "/release.toml"]
 futures = "0.3.22"
 http-body-util = "0.1"
 hyper = { version = "1.0", features = ["server"] }
-juniper = { version = "0.16.0", path = "../juniper", default-features = false }
+juniper = { version = "0.16", path = "../juniper", default-features = false }
 serde_json = "1.0.18"
 tokio = "1.0"
 url = "2.0"
@@ -29,7 +29,7 @@ url = "2.0"
 [dev-dependencies]
 hyper = { version = "1.0", features = ["http1"] }
 hyper-util = { version = "0.1", features = ["tokio"] }
-juniper = { version = "0.16.0", path = "../juniper", features = ["expose-test-schema"] }
+juniper = { version = "0.16", path = "../juniper", features = ["expose-test-schema"] }
 log = "0.4"
 pretty_env_logger = "0.5"
 reqwest = { version = "0.12", features = ["blocking", "rustls-tls"], default-features = false }
