@@ -178,7 +178,7 @@
 <p><a href="https://spec.graphql.org/October2021#sec-Language.Fields">Fields</a> may accept <a href="https://spec.graphql.org/October2021#sec-Language.Arguments">arguments</a> to configure their behavior. These inputs are often <a href="https://spec.graphql.org/October2021#sec-Scalars">scalars</a> or <a href="https://spec.graphql.org/October2021#sec-Enums">enums</a>, but they sometimes need to represent more complex values.</p>
 <p>A <a href="https://spec.graphql.org/October2021#sec-Input-Objects">GraphQL input object</a> defines a set of input fields; the input fields are either <a href="https://spec.graphql.org/October2021#sec-Scalars">scalars</a>, <a href="https://spec.graphql.org/October2021#sec-Enums">enums</a>, or other <a href="https://spec.graphql.org/October2021#sec-Input-Objects">input objects</a>. This allows <a href="https://spec.graphql.org/October2021#sec-Language.Arguments">arguments</a> to accept arbitrarily complex structs.</p>
 </blockquote>
-<p>In <a href="https://docs.rs/juniper">Juniper</a>, defining a <a href="https://spec.graphql.org/October2021#sec-Input-Objects">GraphQL input object</a> is quite straightforward and similar to how <a href="objects/index.html">trivial GraphQL objects are defined</a> - by using the <a href="https://docs.rs/juniper/0.16.0/juniper/derive.GraphQLInputObject.html"><code>#[derive(GraphQLInputObject)]</code> attribute</a> on a <a href="https://doc.rust-lang.org/reference/items/structs.html">Rust struct</a>:</p>
+<p>In <a href="https://docs.rs/juniper">Juniper</a>, defining a <a href="https://spec.graphql.org/October2021#sec-Input-Objects">GraphQL input object</a> is quite straightforward and similar to how <a href="objects/index.html">trivial GraphQL objects are defined</a> - by using the <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLInputObject.html"><code>#[derive(GraphQLInputObject)]</code> attribute</a> on a <a href="https://doc.rust-lang.org/reference/items/structs.html">Rust struct</a>:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused_variables)]
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{graphql_object, GraphQLInputObject, GraphQLObject};
@@ -298,7 +298,7 @@ struct Point2D {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
-<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.0/juniper/derive.GraphQLInputObject.html"><code>#[derive(GraphQLInputObject)]</code></a> attribute.</p>
+<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLInputObject.html"><code>#[derive(GraphQLInputObject)]</code></a> attribute.</p>
 </blockquote>
 
                     </main>

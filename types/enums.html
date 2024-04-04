@@ -178,7 +178,7 @@
 <p><a href="https://spec.graphql.org/October2021#sec-Enums">GraphQL enum</a> types, like <a href="https://spec.graphql.org/October2021#sec-Scalars">scalar</a> types, also represent leaf values in a GraphQL type system. However <a href="https://spec.graphql.org/October2021#sec-Enums">enum</a> types describe the set of possible values.</p>
 <p><a href="https://spec.graphql.org/October2021#sec-Enums">Enums</a> are not references for a numeric value, but are unique values in their own right. They may serialize as a string: the name of the represented value.</p>
 </blockquote>
-<p>With <a href="https://docs.rs/juniper">Juniper</a> a <a href="https://spec.graphql.org/October2021#sec-Enums">GraphQL enum</a> may be defined by using the <a href="https://docs.rs/juniper/0.16.0/juniper/derive.GraphQLEnum.html"><code>#[derive(GraphQLEnum)]</code></a> attribute on a <a href="https://doc.rust-lang.org/reference/items/enumerations.html">Rust enum</a> as long as its variants do not have any fields:</p>
+<p>With <a href="https://docs.rs/juniper">Juniper</a> a <a href="https://spec.graphql.org/October2021#sec-Enums">GraphQL enum</a> may be defined by using the <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLEnum.html"><code>#[derive(GraphQLEnum)]</code></a> attribute on a <a href="https://doc.rust-lang.org/reference/items/enumerations.html">Rust enum</a> as long as its variants do not have any fields:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLEnum;
 </span><span class="boring">
@@ -285,7 +285,7 @@ enum Episode&lt;T&gt; {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
-<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.0/juniper/derive.GraphQLEnum.html"><code>#[derive(GraphQLEnum)]</code></a> attribute.</p>
+<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLEnum.html"><code>#[derive(GraphQLEnum)]</code></a> attribute.</p>
 </blockquote>
 
                     </main>
