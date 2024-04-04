@@ -6,6 +6,19 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 
 
+## master
+
+[Diff](/../../compare/juniper-v0.16.0...master)
+
+### Changed
+
+- Updated [GraphiQL] to 3.1.2 version. ([#1251])
+
+[#1251]: /../../pull/1251
+
+
+
+
 ## [0.16.0] · 2024-03-20
 [0.16.0]: /../../tree/juniper-v0.16.0/juniper
 
