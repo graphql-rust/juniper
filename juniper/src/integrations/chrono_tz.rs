@@ -78,7 +78,7 @@ mod test {
             fn forward_slash() {
                 tz_input_test(
                     "Abc/Xyz",
-                    Err("Failed to parse `TimeZone`: received invalid timezone"),
+                    Err("Failed to parse `TimeZone`: failed to parse timezone"),
                 );
             }
 
@@ -86,7 +86,7 @@ mod test {
             fn number() {
                 tz_input_test(
                     "8086",
-                    Err("Failed to parse `TimeZone`: received invalid timezone"),
+                    Err("Failed to parse `TimeZone`: failed to parse timezone"),
                 );
             }
 
@@ -94,7 +94,7 @@ mod test {
             fn no_forward_slash() {
                 tz_input_test(
                     "AbcXyz",
-                    Err("Failed to parse `TimeZone`: received invalid timezone"),
+                    Err("Failed to parse `TimeZone`: failed to parse timezone"),
                 );
             }
         }
