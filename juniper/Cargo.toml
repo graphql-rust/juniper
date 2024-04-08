@@ -47,7 +47,7 @@ auto_enums = "0.8"
 bigdecimal = { version = "0.4", optional = true }
 bson = { version = "2.4", features = ["chrono-0_4"], optional = true }
 chrono = { version = "0.4.30", features = ["alloc"], default-features = false, optional = true }
-chrono-tz = { version = "0.8", default-features = false, optional = true }
+chrono-tz = { version = "0.9", default-features = false, optional = true }
 fnv = "1.0.5"
 futures = { version = "0.3.22", features = ["alloc"], default-features = false }
 graphql-parser = { version = "0.4", optional = true }
