@@ -6,6 +6,20 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 
 
+## [0.17.0] · 2024-04-?? (unreleased)
+[0.17.0]: /../../tree/juniper-v0.17.0/juniper
+
+[Diff](/../../compare/juniper-v0.16.1...juniper-v0.17.0) | [Milestone](/../../milestone/7)
+
+### BC Breaks
+
+- Upgraded [`chrono-tz` crate] integration to [0.9 version](https://github.com/chronotope/chrono-tz/releases/tag/v0.9.0). ([#1252])
+
+[#1252]: /../../pull/1252
+
+
+
+
 ## [0.16.1] · 2024-04-04
 [0.16.1]: /../../tree/juniper-v0.16.1/juniper
 
