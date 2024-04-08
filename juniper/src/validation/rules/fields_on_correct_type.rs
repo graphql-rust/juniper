@@ -1,3 +1,5 @@
+use arcstr::ArcStr;
+
 use crate::{
     ast::Field,
     parser::Spanning,
@@ -46,7 +48,7 @@ where
         {
             if let Some(parent_type) = context.parent_type() {
                 let field_name = &field.item.name;
-                let type_name = parent_type.name().unwrap_or("<unknown>");
+                let type_name = parent_type.name().map(ArcStr::as_str).unwrap_or("<unknown>");
 
                 if parent_type.field_by_name(field_name.item).is_none() {
                     if let MetaType::Union(..) = *parent_type {

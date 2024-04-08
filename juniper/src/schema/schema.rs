@@ -148,8 +148,8 @@ impl<S: ScalarValue> SchemaType<S> {
             .filter(|t| {
                 t.to_concrete()
                     .map(|t| {
-                        !(t.name() == Some("_EmptyMutation")
-                            || t.name() == Some("_EmptySubscription"))
+                        !(t.name().map(ArcStr::as_str) == Some("_EmptyMutation")
+                            || t.name().map(ArcStr::as_str) == Some("_EmptySubscription"))
                     })
                     .unwrap_or(false)
             })
@@ -185,7 +185,7 @@ impl<S: ScalarValue> SchemaType<S> {
 impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
     fn name(&self) -> Option<&str> {
         match self {
-            TypeType::Concrete(t) => t.name(),
+            TypeType::Concrete(t) => t.name().map(ArcStr::as_str),
             _ => None,
         }
     }

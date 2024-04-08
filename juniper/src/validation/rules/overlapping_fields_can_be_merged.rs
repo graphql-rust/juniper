@@ -1,5 +1,7 @@
 use std::{borrow::Borrow, cell::RefCell, collections::HashMap, fmt::Debug, hash::Hash};
 
+use arcstr::ArcStr;
+
 use crate::{
     ast::{Arguments, Definition, Document, Field, Fragment, FragmentSpread, Selection, Type},
     parser::{SourcePosition, Spanning},
@@ -678,7 +680,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
                     }
 
                     ast_and_defs.get_mut(response_name).unwrap().push(AstAndDef(
-                        parent_type.and_then(MetaType::name),
+                        parent_type.and_then(MetaType::name).map(ArcStr::as_str),
                         f,
                         field_def,
                     ));

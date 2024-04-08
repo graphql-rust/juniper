@@ -205,9 +205,9 @@ where
             .build_enum_type::<Self>(
                 i,
                 &[
-                    EnumValue::new(literal!("SIT")),
-                    EnumValue::new(literal!("HEEL")),
-                    EnumValue::new(literal!("DOWN")),
+                    EnumValue::new("SIT"),
+                    EnumValue::new("HEEL"),
+                    EnumValue::new("DOWN"),
                 ],
             )
             .into_meta()
@@ -306,10 +306,10 @@ where
             .build_enum_type::<Self>(
                 i,
                 &[
-                    EnumValue::new(literal!("BROWN")),
-                    EnumValue::new(literal!("BLACK")),
-                    EnumValue::new(literal!("TAN")),
-                    EnumValue::new(literal!("SPOTTED")),
+                    EnumValue::new("BROWN"),
+                    EnumValue::new("BLACK"),
+                    EnumValue::new("TAN"),
+                    EnumValue::new("SPOTTED"),
                 ],
             )
             .into_meta()

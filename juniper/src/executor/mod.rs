@@ -1204,7 +1204,7 @@ impl<'r, S: 'r> Registry<S> {
     }
 
     /// Creates an [`Argument`] with the provided `name`.
-    pub fn arg<T>(&mut self, name: ArcStr, info: &T::TypeInfo) -> Argument<S>
+    pub fn arg<T>(&mut self, name: impl Into<ArcStr>, info: &T::TypeInfo) -> Argument<S>
     where
         T: GraphQLType<S> + FromInputValue<S>,
         S: ScalarValue,
@@ -1215,7 +1215,7 @@ impl<'r, S: 'r> Registry<S> {
     /// Creates an [`Argument`] with the provided default `value`.
     pub fn arg_with_default<T>(
         &mut self,
-        name: ArcStr,
+        name: impl Into<ArcStr>,
         value: &T,
         info: &T::TypeInfo,
     ) -> Argument<S>

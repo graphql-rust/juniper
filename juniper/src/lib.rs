@@ -18,6 +18,8 @@ pub use {async_trait::async_trait, futures, serde, static_assertions as sa};
 #[doc(inline)]
 pub use futures::future::{BoxFuture, LocalBoxFuture};
 
+pub use arcstr::{literal, ArcStr};
+
 // Depend on juniper_codegen and re-export everything in it.
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
@@ -25,10 +27,6 @@ pub use juniper_codegen::{
     graphql_interface, graphql_object, graphql_scalar, graphql_subscription, graphql_union,
     GraphQLEnum, GraphQLInputObject, GraphQLInterface, GraphQLObject, GraphQLScalar, GraphQLUnion,
 };
-
-pub use arcstr::literal;
-
-pub use arcstr::ArcStr;
 
 #[doc(hidden)]
 #[macro_use]
