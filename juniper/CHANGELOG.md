@@ -15,7 +15,12 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 - Upgraded [`chrono-tz` crate] integration to [0.9 version](https://github.com/chronotope/chrono-tz/releases/tag/v0.9.0). ([#1252])
 
+### Changed
+
+- Updated [GraphiQL] to [3.2.0 version](https://github.com/graphql/graphiql/blob/graphiql%403.2.0/packages/graphiql/CHANGELOG.md#320). ([#1253])
+
 [#1252]: /../../pull/1252
+[#1253]: /../../pull/1253
 
 
 
