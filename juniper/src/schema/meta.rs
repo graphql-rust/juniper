@@ -121,7 +121,7 @@ pub struct ListMeta {
 }
 
 impl ListMeta {
-    /// Build a new [`ListMeta`] type by wrapping the specified [`Type`].
+    /// Builds a new [`ListMeta`] type by wrapping the specified [`Type`].
     ///
     /// Specifying `expected_size` will be used to ensure that values of this type will always match
     /// it.
@@ -146,7 +146,7 @@ pub struct NullableMeta {
 }
 
 impl NullableMeta {
-    /// Build a new [`NullableMeta`] type by wrapping the specified [`Type`].
+    /// Builds a new [`NullableMeta`] type by wrapping the specified [`Type`].
     pub fn new(of_type: Type) -> Self {
         Self { of_type }
     }
@@ -171,7 +171,7 @@ pub struct ObjectMeta<S> {
 }
 
 impl<S> ObjectMeta<S> {
-    /// Build a new [`ObjectMeta`] type with the specified `name` and `fields`.
+    /// Builds a new [`ObjectMeta`] type with the specified `name` and `fields`.
     pub fn new(name: impl Into<ArcStr>, fields: &[Field<S>]) -> Self
     where
         S: Clone,
@@ -193,7 +193,7 @@ impl<S> ObjectMeta<S> {
         self
     }
 
-    /// Set the `interfaces` this [`ObjectMeta`] type implements.
+    /// Sets the `interfaces` this [`ObjectMeta`] type implements.
     ///
     /// Overwrites any previously set list of interfaces.
     #[must_use]
@@ -233,8 +233,7 @@ impl<S: fmt::Debug> fmt::Debug for EnumMeta<S> {
 }
 
 impl<S> EnumMeta<S> {
-    /// Build a new [`EnumMeta`] type with the specified `name` and possible
-    /// `values`.
+    /// Builds a new [`EnumMeta`] type with the specified `name` and possible `values`.
     pub fn new<T>(name: impl Into<ArcStr>, values: &[EnumValue]) -> Self
     where
         T: FromInputValue<S>,
@@ -329,7 +328,7 @@ pub struct UnionMeta {
 }
 
 impl UnionMeta {
-    /// Build a new [`UnionMeta`] type with the specified `name` and possible [`Type`]s.
+    /// Builds a new [`UnionMeta`] type with the specified `name` and possible [`Type`]s.
     pub fn new(name: impl Into<ArcStr>, of_types: &[Type]) -> Self {
         Self {
             name: name.into(),
@@ -390,7 +389,7 @@ impl<S> InputObjectMeta<S> {
         }
     }
 
-    /// Set the `description` of this [`InputObjectMeta`] type.
+    /// Sets the `description` of this [`InputObjectMeta`] type.
     ///
     /// Overwrites any previously set description.
     #[must_use]
@@ -431,7 +430,7 @@ pub struct Field<S> {
 }
 
 impl<S> Field<S> {
-    /// Set the `description` of this [`Field`].
+    /// Sets the `description` of this [`Field`].
     ///
     /// Overwrites any previously set description.
     #[must_use]
@@ -513,7 +512,7 @@ impl<S> Argument<S> {
         self.name.starts_with("__")
     }
 
-    /// Set the default value of this [`Argument`].
+    /// Sets the default value of this [`Argument`].
     ///
     /// Overwrites any previously set default value.
     #[must_use]
@@ -789,7 +788,7 @@ impl<S> MetaType<S> {
         }
     }
 
-    pub(crate) fn fields<'b>(&self, schema: &'b SchemaType<S>) -> Option<Vec<&'b Field<S>>> {
+    pub(crate) fn fields<'s>(&self, schema: &'s SchemaType<S>) -> Option<Vec<&'s Field<S>>> {
         schema
             .lookup_type(&self.as_type())
             .and_then(|tpe| match tpe {

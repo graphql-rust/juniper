@@ -14,11 +14,16 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 ### BC Breaks
 
 - Upgraded [`chrono-tz` crate] integration to [0.9 version](https://github.com/chronotope/chrono-tz/releases/tag/v0.9.0). ([#1252])
+- Optimized schema implementation with [`arcstr` crate]: ([#1247], [#819])
+    - Removed lifetime parameters from `MetaType` and its members.
+    - Made `MetaType::name()`, `MetaType::description()` and `MetaType::specified_by_url()` returning `ArcStr`.
 
 ### Changed
 
 - Updated [GraphiQL] to [3.2.0 version](https://github.com/graphql/graphiql/blob/graphiql%403.2.0/packages/graphiql/CHANGELOG.md#320). ([#1253])
 
+[#819]: /../../issues/819
+[#1247]: /../../pull/1247
 [#1252]: /../../pull/1252
 [#1253]: /../../pull/1253
 
@@ -217,6 +222,7 @@ See [old CHANGELOG](/../../blob/juniper-v0.15.12/juniper/CHANGELOG.md).
 
 
 [`anyhow` crate]: https://docs.rs/anyhow
+[`arcstr` crate]: https://docs.rs/arcstr
 [`bigdecimal` crate]: https://docs.rs/bigdecimal
 [`bson` crate]: https://docs.rs/bson
 [`chrono` crate]: https://docs.rs/chrono
