@@ -17,6 +17,8 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Optimized schema implementation with [`arcstr` crate]: ([#1247], [#819])
     - Removed lifetime parameters from `MetaType` and its members.
     - Made `MetaType::name()`, `MetaType::description()` and `MetaType::specified_by_url()` returning `ArcStr`.
+    - Removed lifetime parameters from `DirectiveType`.
+    - Made `DirectiveType::name` and `DirectiveType::description` using `ArcStr`.
 
 ### Changed
 

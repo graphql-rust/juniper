@@ -8,7 +8,6 @@ use graphql_parser::schema::Document;
 use crate::{
     ast::Type,
     executor::{Context, Registry},
-    literal,
     schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta},
     types::{base::GraphQLType, name::Name},
     value::{DefaultScalarValue, ScalarValue},
@@ -44,104 +43,6 @@ pub struct RootNode<
     pub schema: SchemaType<S>,
     #[doc(hidden)]
     pub introspection_disabled: bool,
-}
-
-/// Metadata for a schema
-#[derive(Debug)]
-pub struct SchemaType<S> {
-    pub(crate) description: Option<ArcStr>,
-    pub(crate) types: FnvHashMap<Name, MetaType<S>>,
-    pub(crate) query_type_name: String,
-    pub(crate) mutation_type_name: Option<String>,
-    pub(crate) subscription_type_name: Option<String>,
-    directives: FnvHashMap<String, DirectiveType<S>>,
-}
-
-impl<S> Context for SchemaType<S> {}
-
-#[derive(Clone)]
-pub enum TypeType<'a, S: 'a> {
-    Concrete(&'a MetaType<S>),
-    NonNull(Box<TypeType<'a, S>>),
-    List(Box<TypeType<'a, S>>, Option<usize>),
-}
-
-#[derive(Debug)]
-pub struct DirectiveType<S> {
-    pub name: String,
-    pub description: Option<String>,
-    pub locations: Vec<DirectiveLocation>,
-    pub arguments: Vec<Argument<S>>,
-    pub is_repeatable: bool,
-}
-
-#[derive(Clone, PartialEq, Eq, Debug, GraphQLEnum)]
-#[graphql(name = "__DirectiveLocation", internal)]
-pub enum DirectiveLocation {
-    Query,
-    Mutation,
-    Subscription,
-    Field,
-    Scalar,
-    #[graphql(name = "FRAGMENT_DEFINITION")]
-    FragmentDefinition,
-    #[graphql(name = "FIELD_DEFINITION")]
-    FieldDefinition,
-    #[graphql(name = "VARIABLE_DEFINITION")]
-    VariableDefinition,
-    #[graphql(name = "FRAGMENT_SPREAD")]
-    FragmentSpread,
-    #[graphql(name = "INLINE_FRAGMENT")]
-    InlineFragment,
-    #[graphql(name = "ENUM_VALUE")]
-    EnumValue,
-}
-
-/// Allows seeing [Type] with different name/string representations
-/// as the same type without allocating.
-//
-// TODO: Ideally this type should not exist, but the reason it currently does
-// is that [Type] has a recursive design to allow arbitrary number of list wrappings.
-// The list layout could instead be modelled as a modifier so that type becomes a tuple of (name, modifier).
-//
-// If [Type] is modelled like this it becomes easier to project it as a borrowed version of itself,
-// i.e. [Type<ArcStr>] vs [Type<&str>].
-#[derive(Clone, Copy, Debug)]
-pub enum DynType<'a> {
-    Named(&'a str),
-    List(&'a dyn AsDynType, Option<usize>),
-    NonNullNamed(&'a str),
-    NonNullList(&'a dyn AsDynType, Option<usize>),
-}
-
-/// Trait for converting a [Type] into [DynType]
-pub trait AsDynType: fmt::Debug {
-    /// Project [self] as a [DynType].
-    ///
-    /// this function should not allocate memory.
-    fn as_dyn_type(&self) -> DynType<'_>;
-}
-
-impl AsDynType for Type<ArcStr> {
-    fn as_dyn_type(&self) -> DynType<'_> {
-        match self {
-            Self::Named(n) => DynType::Named(n.as_str()),
-            Self::List(t, s) => DynType::List(t.as_ref(), *s),
-            Self::NonNullNamed(n) => DynType::NonNullNamed(n.as_str()),
-            Self::NonNullList(t, s) => DynType::NonNullList(t.as_ref(), *s),
-        }
-    }
-}
-
-impl<'a> AsDynType for Type<&'a str> {
-    fn as_dyn_type(&self) -> DynType<'_> {
-        match self {
-            Self::Named(n) => DynType::Named(n),
-            Self::List(t, s) => DynType::List(t.as_ref(), *s),
-            Self::NonNullNamed(n) => DynType::NonNullNamed(n),
-            Self::NonNullList(t, s) => DynType::NonNullList(t.as_ref(), *s),
-        }
-    }
 }
 
 impl<QueryT, MutationT, SubscriptionT>
@@ -304,6 +205,19 @@ where
     }
 }
 
+/// Metadata for a schema
+#[derive(Debug)]
+pub struct SchemaType<S> {
+    pub(crate) description: Option<ArcStr>,
+    pub(crate) types: FnvHashMap<Name, MetaType<S>>,
+    pub(crate) query_type_name: String,
+    pub(crate) mutation_type_name: Option<String>,
+    pub(crate) subscription_type_name: Option<String>,
+    directives: FnvHashMap<ArcStr, DirectiveType<S>>,
+}
+
+impl<S> Context for SchemaType<S> {}
+
 impl<S> SchemaType<S> {
     /// Create a new schema.
     pub fn new<QueryT, MutationT, SubscriptionT>(
@@ -335,22 +249,20 @@ impl<S> SchemaType<S> {
 
         registry.get_type::<SchemaType<S>>(&());
 
-        directives.insert("skip".into(), DirectiveType::new_skip(&mut registry));
-        directives.insert("include".into(), DirectiveType::new_include(&mut registry));
-        directives.insert(
-            "deprecated".into(),
-            DirectiveType::new_deprecated(&mut registry),
-        );
-        directives.insert(
-            "specifiedBy".into(),
-            DirectiveType::new_specified_by(&mut registry),
-        );
+        let skip_directive = DirectiveType::new_skip(&mut registry);
+        let include_directive = DirectiveType::new_include(&mut registry);
+        let deprecated_directive = DirectiveType::new_deprecated(&mut registry);
+        let specified_by_directive = DirectiveType::new_specified_by(&mut registry);
+        directives.insert(skip_directive.name.clone(), skip_directive);
+        directives.insert(include_directive.name.clone(), include_directive);
+        directives.insert(deprecated_directive.name.clone(), deprecated_directive);
+        directives.insert(specified_by_directive.name.clone(), specified_by_directive);
 
         let mut meta_fields = vec![
-            registry.field::<SchemaType<S>>(literal!("__schema"), &()),
+            registry.field::<SchemaType<S>>(arcstr::literal!("__schema"), &()),
             registry
-                .field::<TypeType<S>>(literal!("__type"), &())
-                .argument(registry.arg::<String>(literal!("name"), &())),
+                .field::<TypeType<S>>(arcstr::literal!("__type"), &())
+                .argument(registry.arg::<String>(arcstr::literal!("name"), &())),
         ];
 
         if let Some(root_type) = registry.types.get_mut(query_type_name.as_ref()) {
@@ -600,44 +512,63 @@ impl<S> SchemaType<S> {
     }
 }
 
-impl<'a, S> TypeType<'a, S> {
-    #[inline]
-    pub fn to_concrete(&self) -> Option<&'a MetaType<S>> {
-        match *self {
-            TypeType::Concrete(t) => Some(t),
-            _ => None,
-        }
-    }
+#[derive(Clone)]
+pub enum TypeType<'a, S: 'a> {
+    Concrete(&'a MetaType<S>),
+    NonNull(Box<TypeType<'a, S>>),
+    List(Box<TypeType<'a, S>>, Option<usize>),
+}
 
-    #[inline]
-    pub fn innermost_concrete(&self) -> &'a MetaType<S> {
-        match *self {
-            TypeType::Concrete(t) => t,
-            TypeType::NonNull(ref n) | TypeType::List(ref n, _) => n.innermost_concrete(),
+impl<'a, S> fmt::Display for TypeType<'a, S> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Concrete(t) => f.write_str(t.name().unwrap()),
+            Self::List(i, _) => write!(f, "[{i}]"),
+            Self::NonNull(i) => write!(f, "{i}!"),
         }
-    }
-
-    #[inline]
-    pub fn list_contents(&self) -> Option<&TypeType<'a, S>> {
-        match *self {
-            TypeType::List(ref n, _) => Some(n),
-            TypeType::NonNull(ref n) => n.list_contents(),
-            _ => None,
-        }
-    }
-
-    #[inline]
-    pub fn is_non_null(&self) -> bool {
-        matches!(*self, TypeType::NonNull(_))
     }
 }
 
-impl<S> DirectiveType<S>
-where
-    S: ScalarValue,
-{
+impl<'a, S> TypeType<'a, S> {
+    pub fn to_concrete(&self) -> Option<&'a MetaType<S>> {
+        match self {
+            Self::Concrete(t) => Some(t),
+            Self::List(..) | Self::NonNull(_) => None,
+        }
+    }
+
+    pub fn innermost_concrete(&self) -> &'a MetaType<S> {
+        match self {
+            Self::Concrete(t) => t,
+            Self::NonNull(n) | Self::List(n, _) => n.innermost_concrete(),
+        }
+    }
+
+    pub fn list_contents(&self) -> Option<&Self> {
+        match self {
+            Self::List(n, _) => Some(n),
+            Self::NonNull(n) => n.list_contents(),
+            Self::Concrete(_) => None,
+        }
+    }
+
+    pub fn is_non_null(&self) -> bool {
+        matches!(self, TypeType::NonNull(_))
+    }
+}
+
+#[derive(Debug)]
+pub struct DirectiveType<S> {
+    pub name: ArcStr,
+    pub description: Option<ArcStr>,
+    pub locations: Vec<DirectiveLocation>,
+    pub arguments: Vec<Argument<S>>,
+    pub is_repeatable: bool,
+}
+
+impl<S> DirectiveType<S> {
     pub fn new(
-        name: &str,
+        name: impl Into<ArcStr>,
         locations: &[DirectiveLocation],
         arguments: &[Argument<S>],
         is_repeatable: bool,
@@ -651,73 +582,89 @@ where
         }
     }
 
-    fn new_skip(registry: &mut Registry<S>) -> DirectiveType<S>
+    fn new_skip(registry: &mut Registry<S>) -> Self
     where
         S: ScalarValue,
     {
         Self::new(
-            "skip",
+            arcstr::literal!("skip"),
             &[
                 DirectiveLocation::Field,
                 DirectiveLocation::FragmentSpread,
                 DirectiveLocation::InlineFragment,
             ],
-            &[registry.arg::<bool>(literal!("if"), &())],
+            &[registry.arg::<bool>(arcstr::literal!("if"), &())],
             false,
         )
     }
 
-    fn new_include(registry: &mut Registry<S>) -> DirectiveType<S>
+    fn new_include(registry: &mut Registry<S>) -> Self
     where
         S: ScalarValue,
     {
         Self::new(
-            "include",
+            arcstr::literal!("include"),
             &[
                 DirectiveLocation::Field,
                 DirectiveLocation::FragmentSpread,
                 DirectiveLocation::InlineFragment,
             ],
-            &[registry.arg::<bool>(literal!("if"), &())],
+            &[registry.arg::<bool>(arcstr::literal!("if"), &())],
             false,
         )
     }
 
-    fn new_deprecated(registry: &mut Registry<S>) -> DirectiveType<S>
+    fn new_deprecated(registry: &mut Registry<S>) -> Self
     where
         S: ScalarValue,
     {
         Self::new(
-            "deprecated",
+            arcstr::literal!("deprecated"),
             &[
                 DirectiveLocation::FieldDefinition,
                 DirectiveLocation::EnumValue,
             ],
-            &[registry.arg::<String>(literal!("reason"), &())],
+            &[registry.arg::<String>(arcstr::literal!("reason"), &())],
             false,
         )
     }
 
-    fn new_specified_by(registry: &mut Registry<S>) -> DirectiveType<S>
+    fn new_specified_by(registry: &mut Registry<S>) -> Self
     where
         S: ScalarValue,
     {
         Self::new(
-            "specifiedBy",
+            arcstr::literal!("specifiedBy"),
             &[DirectiveLocation::Scalar],
-            &[registry.arg::<String>(literal!("url"), &())],
+            &[registry.arg::<String>(arcstr::literal!("url"), &())],
             false,
         )
     }
 
-    pub fn description(mut self, description: &str) -> DirectiveType<S> {
+    pub fn description(mut self, description: impl Into<ArcStr>) -> Self {
         self.description = Some(description.into());
         self
     }
 }
 
+#[derive(Clone, Debug, Eq, GraphQLEnum, PartialEq)]
+#[graphql(name = "__DirectiveLocation", internal)]
+pub enum DirectiveLocation {
+    Query,
+    Mutation,
+    Subscription,
+    Field,
+    Scalar,
+    FragmentDefinition,
+    FieldDefinition,
+    VariableDefinition,
+    FragmentSpread,
+    InlineFragment,
+    EnumValue,
+}
+
 impl fmt::Display for DirectiveLocation {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
             Self::Query => "query",
             Self::Mutation => "mutation",
@@ -731,50 +678,6 @@ impl fmt::Display for DirectiveLocation {
             Self::Scalar => "scalar",
             Self::EnumValue => "enum value",
         })
-    }
-}
-
-impl<'a, S> fmt::Display for TypeType<'a, S> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::Concrete(t) => f.write_str(t.name().unwrap()),
-            Self::List(i, _) => write!(f, "[{i}]"),
-            Self::NonNull(i) => write!(f, "{i}!"),
-        }
-    }
-}
-
-impl<'a> DynType<'a> {
-    pub fn equals(&self, other: &DynType) -> bool {
-        match (self, other) {
-            (DynType::Named(n0), DynType::Named(n1)) => n0 == n1,
-            (DynType::List(t0, s0), DynType::List(t1, s1)) => {
-                t0.as_dyn_type().equals(&t1.as_dyn_type()) && s0 == s1
-            }
-            (DynType::NonNullNamed(n0), DynType::NonNullNamed(n1)) => n0 == n1,
-            (DynType::NonNullList(t0, s0), DynType::NonNullList(t1, s1)) => {
-                t0.as_dyn_type().equals(&t1.as_dyn_type()) && s0 == s1
-            }
-            _ => false,
-        }
-    }
-
-    pub fn innermost_name(&self) -> &'a str {
-        match self {
-            Self::Named(n) | Self::NonNullNamed(n) => n,
-            Self::List(l, _) | Self::NonNullList(l, _) => l.as_dyn_type().innermost_name(),
-        }
-    }
-}
-
-impl<'a> fmt::Display for DynType<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Named(n) => write!(f, "{n}"),
-            Self::NonNullNamed(n) => write!(f, "{n}!"),
-            Self::List(t, _) => write!(f, "[{}]", t.as_dyn_type()),
-            Self::NonNullList(t, _) => write!(f, "[{}]!", t.as_dyn_type()),
-        }
     }
 }
 
@@ -837,6 +740,88 @@ mod concrete_type_sort {
         }
     }
 }
+
+/// Allows seeing [Type] with different name/string representations
+/// as the same type without allocating.
+//
+// TODO: Ideally this type should not exist, but the reason it currently does
+// is that [Type] has a recursive design to allow arbitrary number of list wrappings.
+// The list layout could instead be modelled as a modifier so that type becomes a tuple of (name, modifier).
+//
+// If [Type] is modelled like this it becomes easier to project it as a borrowed version of itself,
+// i.e. [Type<ArcStr>] vs [Type<&str>].
+#[derive(Clone, Copy, Debug)]
+pub enum DynType<'a> {
+    Named(&'a str),
+    List(&'a dyn AsDynType, Option<usize>),
+    NonNullNamed(&'a str),
+    NonNullList(&'a dyn AsDynType, Option<usize>),
+}
+
+impl<'a> DynType<'a> {
+    pub fn equals(&self, other: &DynType) -> bool {
+        match (self, other) {
+            (DynType::Named(n0), DynType::Named(n1)) => n0 == n1,
+            (DynType::List(t0, s0), DynType::List(t1, s1)) => {
+                t0.as_dyn_type().equals(&t1.as_dyn_type()) && s0 == s1
+            }
+            (DynType::NonNullNamed(n0), DynType::NonNullNamed(n1)) => n0 == n1,
+            (DynType::NonNullList(t0, s0), DynType::NonNullList(t1, s1)) => {
+                t0.as_dyn_type().equals(&t1.as_dyn_type()) && s0 == s1
+            }
+            _ => false,
+        }
+    }
+
+    pub fn innermost_name(&self) -> &'a str {
+        match self {
+            Self::Named(n) | Self::NonNullNamed(n) => n,
+            Self::List(l, _) | Self::NonNullList(l, _) => l.as_dyn_type().innermost_name(),
+        }
+    }
+}
+
+impl<'a> fmt::Display for DynType<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Named(n) => write!(f, "{n}"),
+            Self::NonNullNamed(n) => write!(f, "{n}!"),
+            Self::List(t, _) => write!(f, "[{}]", t.as_dyn_type()),
+            Self::NonNullList(t, _) => write!(f, "[{}]!", t.as_dyn_type()),
+        }
+    }
+}
+
+/// Trait for converting a [Type] into [DynType]
+pub trait AsDynType: fmt::Debug {
+    /// Project [self] as a [DynType].
+    ///
+    /// this function should not allocate memory.
+    fn as_dyn_type(&self) -> DynType<'_>;
+}
+
+impl AsDynType for Type<ArcStr> {
+    fn as_dyn_type(&self) -> DynType<'_> {
+        match self {
+            Self::Named(n) => DynType::Named(n.as_str()),
+            Self::List(t, s) => DynType::List(t.as_ref(), *s),
+            Self::NonNullNamed(n) => DynType::NonNullNamed(n.as_str()),
+            Self::NonNullList(t, s) => DynType::NonNullList(t.as_ref(), *s),
+        }
+    }
+}
+
+impl<'a> AsDynType for Type<&'a str> {
+    fn as_dyn_type(&self) -> DynType<'_> {
+        match self {
+            Self::Named(n) => DynType::Named(n),
+            Self::List(t, s) => DynType::List(t.as_ref(), *s),
+            Self::NonNullNamed(n) => DynType::NonNullNamed(n),
+            Self::NonNullList(t, s) => DynType::NonNullList(t.as_ref(), *s),
+        }
+    }
+}
+
 
 #[cfg(test)]
 mod root_node_test {

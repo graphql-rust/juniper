@@ -83,7 +83,7 @@ impl GraphQLParserTranslator {
     {
         ExternalInputValue {
             position: Pos::default(),
-            description: input.description.as_deref().map(From::from),
+            description: input.description.as_deref().map(Into::into),
             name: From::from(input.name.as_str()),
             value_type: GraphQLParserTranslator::translate_type(&input.arg_type),
             default_value: input
@@ -160,13 +160,13 @@ impl GraphQLParserTranslator {
         match input {
             MetaType::Scalar(x) => ExternalTypeDefinition::Scalar(ExternalScalarType {
                 position: Pos::default(),
-                description: x.description.as_ref().map(|s| s.to_string()),
+                description: x.description.as_deref().map(Into::into),
                 name: From::from(x.name.as_ref()),
                 directives: vec![],
             }),
             MetaType::Enum(x) => ExternalTypeDefinition::Enum(ExternalEnum {
                 position: Pos::default(),
-                description: x.description.as_ref().map(|s| From::from(s.as_str())),
+                description: x.description.as_deref().map(Into::into),
                 name: From::from(x.name.as_ref()),
                 directives: vec![],
                 values: x
@@ -177,7 +177,7 @@ impl GraphQLParserTranslator {
             }),
             MetaType::Union(x) => ExternalTypeDefinition::Union(ExternalUnionType {
                 position: Pos::default(),
-                description: x.description.as_ref().map(|s| From::from(s.as_str())),
+                description: x.description.as_deref().map(Into::into),
                 name: From::from(x.name.as_ref()),
                 directives: vec![],
                 types: x
@@ -188,7 +188,7 @@ impl GraphQLParserTranslator {
             }),
             MetaType::Interface(x) => ExternalTypeDefinition::Interface(ExternalInterfaceType {
                 position: Pos::default(),
-                description: x.description.as_ref().map(|s| From::from(s.as_str())),
+                description: x.description.as_deref().map(Into::into),
                 name: From::from(x.name.as_ref()),
                 implements_interfaces: x
                     .interface_names
@@ -206,7 +206,7 @@ impl GraphQLParserTranslator {
             MetaType::InputObject(x) => {
                 ExternalTypeDefinition::InputObject(ExternalInputObjectType {
                     position: Pos::default(),
-                    description: x.description.as_ref().map(|s| From::from(s.as_str())),
+                    description: x.description.as_deref().map(Into::into),
                     name: From::from(x.name.as_ref()),
                     directives: vec![],
                     fields: x
@@ -219,7 +219,7 @@ impl GraphQLParserTranslator {
             }
             MetaType::Object(x) => ExternalTypeDefinition::Object(ExternalObjectType {
                 position: Pos::default(),
-                description: x.description.as_ref().map(|s| From::from(s.as_str())),
+                description: x.description.as_deref().map(Into::into),
                 name: From::from(x.name.as_ref()),
                 directives: vec![],
                 fields: x
@@ -245,7 +245,7 @@ impl GraphQLParserTranslator {
         ExternalEnumValue {
             position: Pos::default(),
             name: From::from(input.name.as_ref()),
-            description: input.description.as_ref().map(|s| From::from(s.as_str())),
+            description: input.description.as_deref().map(Into::into),
             directives: generate_directives(&input.deprecation_status),
         }
     }
@@ -269,7 +269,7 @@ impl GraphQLParserTranslator {
         ExternalField {
             position: Pos::default(),
             name: From::from(input.name.as_str()),
-            description: input.description.as_ref().map(|s| From::from(s.as_str())),
+            description: input.description.as_deref().map(Into::into),
             directives: generate_directives(&input.deprecation_status),
             field_type: GraphQLParserTranslator::translate_type(&input.field_type),
             arguments,
