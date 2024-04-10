@@ -263,7 +263,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ matrix.toolchain }}
-      - uses: peaceiris/actions-mdbook@v1
+      - uses: peaceiris/actions-mdbook@v2
 
       - run: make test.book
 
@@ -410,14 +410,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: peaceiris/actions-mdbook@v1
+      - uses: peaceiris/actions-mdbook@v2
 
       - run: make book.build out=gh-pages${{ (github.ref == 'refs/heads/master'
                                               && '/master')
                                           ||     '' }}
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           keep_files: true

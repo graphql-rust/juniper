@@ -22,7 +22,7 @@
 //! [s5]: https://graphql-scalars.dev/docs/scalars/utc-offset
 
 use time::{
-    format_description::{well_known::Rfc3339, FormatItem},
+    format_description::{well_known::Rfc3339, BorrowedFormatItem},
     macros::format_description,
 };
 
@@ -52,12 +52,12 @@ mod date {
     /// Format of a [`Date` scalar][1].
     ///
     /// [1]: https://graphql-scalars.dev/docs/scalars/date
-    const FORMAT: &[FormatItem<'_>] = format_description!("[year]-[month]-[day]");
+    const FORMAT: &[BorrowedFormatItem<'_>] = format_description!("[year]-[month]-[day]");
 
     pub(super) fn to_output<S: ScalarValue>(v: &Date) -> Value<S> {
         Value::scalar(
             v.format(FORMAT)
-                .unwrap_or_else(|e| panic!("Failed to format `Date`: {e}")),
+                .unwrap_or_else(|e| panic!("failed to format `Date`: {e}")),
         )
     }
 
@@ -89,18 +89,19 @@ mod local_time {
     /// Full format of a [`LocalTime` scalar][1].
     ///
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
-    const FORMAT: &[FormatItem<'_>] =
+    const FORMAT: &[BorrowedFormatItem<'_>] =
         format_description!("[hour]:[minute]:[second].[subsecond digits:3]");
 
     /// Format of a [`LocalTime` scalar][1] without milliseconds.
     ///
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
-    const FORMAT_NO_MILLIS: &[FormatItem<'_>] = format_description!("[hour]:[minute]:[second]");
+    const FORMAT_NO_MILLIS: &[BorrowedFormatItem<'_>] =
+        format_description!("[hour]:[minute]:[second]");
 
     /// Format of a [`LocalTime` scalar][1] without seconds.
     ///
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
-    const FORMAT_NO_SECS: &[FormatItem<'_>] = format_description!("[hour]:[minute]");
+    const FORMAT_NO_SECS: &[BorrowedFormatItem<'_>] = format_description!("[hour]:[minute]");
 
     pub(super) fn to_output<S: ScalarValue>(v: &LocalTime) -> Value<S> {
         Value::scalar(
@@ -109,7 +110,7 @@ mod local_time {
             } else {
                 v.format(FORMAT)
             }
-            .unwrap_or_else(|e| panic!("Failed to format `LocalTime`: {e}")),
+            .unwrap_or_else(|e| panic!("failed to format `LocalTime`: {e}")),
         )
     }
 
@@ -140,13 +141,13 @@ mod local_date_time {
     use super::*;
 
     /// Format of a [`LocalDateTime`] scalar.
-    const FORMAT: &[FormatItem<'_>] =
+    const FORMAT: &[BorrowedFormatItem<'_>] =
         format_description!("[year]-[month]-[day] [hour]:[minute]:[second]");
 
     pub(super) fn to_output<S: ScalarValue>(v: &LocalDateTime) -> Value<S> {
         Value::scalar(
             v.format(FORMAT)
-                .unwrap_or_else(|e| panic!("Failed to format `LocalDateTime`: {e}")),
+                .unwrap_or_else(|e| panic!("failed to format `LocalDateTime`: {e}")),
         )
     }
 
@@ -185,7 +186,7 @@ mod date_time {
         Value::scalar(
             v.to_offset(UtcOffset::UTC)
                 .format(&Rfc3339)
-                .unwrap_or_else(|e| panic!("Failed to format `DateTime`: {e}")),
+                .unwrap_or_else(|e| panic!("failed to format `DateTime`: {e}")),
         )
     }
 
@@ -202,7 +203,7 @@ mod date_time {
 /// Format of a [`UtcOffset` scalar][1].
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/utc-offset
-const UTC_OFFSET_FORMAT: &[FormatItem<'_>] =
+const UTC_OFFSET_FORMAT: &[BorrowedFormatItem<'_>] =
     format_description!("[offset_hour sign:mandatory]:[offset_minute]");
 
 /// Offset from UTC in `±hh:mm` format. See [list of database time zones][0].
@@ -227,7 +228,7 @@ mod utc_offset {
     pub(super) fn to_output<S: ScalarValue>(v: &UtcOffset) -> Value<S> {
         Value::scalar(
             v.format(UTC_OFFSET_FORMAT)
-                .unwrap_or_else(|e| panic!("Failed to format `UtcOffset`: {e}")),
+                .unwrap_or_else(|e| panic!("failed to format `UtcOffset`: {e}")),
         )
     }
 
