@@ -1,6 +1,5 @@
 use std::{char, fmt, marker::PhantomData, ops::Deref, rc::Rc, thread::JoinHandle, u32};
 
-use arcstr::{literal, ArcStr};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -67,7 +66,8 @@ impl fmt::Display for ID {
     }
 }
 
-#[graphql_scalar(with = impl_string_scalar)]
+#[graphql_scalar]
+#[graphql(with = impl_string_scalar)]
 type String = std::string::String;
 
 mod impl_string_scalar {
@@ -187,6 +187,26 @@ where
     })
 }
 
+#[graphql_scalar]
+#[graphql(name = "String", with = impl_arcstr_scalar, parse_token(String))]
+type ArcStr = arcstr::ArcStr;
+
+mod impl_arcstr_scalar {
+    use crate::{InputValue, ScalarValue, Value};
+
+    use super::ArcStr;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &ArcStr) -> Value<S> {
+        Value::scalar(v.to_string())
+    }
+
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<ArcStr, String> {
+        v.as_string_value()
+            .map(Into::into)
+            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+    }
+}
+
 impl<S> reflect::WrappedType<S> for str {
     const VALUE: reflect::WrappedValue = 1;
 }
@@ -199,24 +219,12 @@ impl<S> reflect::BaseSubTypes<S> for str {
     const NAMES: reflect::Types = &[<Self as reflect::BaseType<S>>::NAME];
 }
 
-impl<S> reflect::WrappedType<S> for ArcStr {
-    const VALUE: reflect::WrappedValue = 1;
-}
-
-impl<S> reflect::BaseType<S> for ArcStr {
-    const NAME: reflect::Type = "String";
-}
-
-impl<S> reflect::BaseSubTypes<S> for ArcStr {
-    const NAMES: reflect::Types = &[<Self as reflect::BaseType<S>>::NAME];
-}
-
 impl<S> GraphQLType<S> for str
 where
     S: ScalarValue,
 {
     fn name(_: &()) -> Option<ArcStr> {
-        Some(literal!("String"))
+        Some(arcstr::literal!("String"))
     }
 
     fn meta(_: &(), registry: &mut Registry<S>) -> MetaType<S> {
@@ -260,55 +268,6 @@ where
     }
 }
 
-impl<S> GraphQLType<S> for ArcStr
-where
-    S: ScalarValue,
-{
-    fn name(_: &()) -> Option<ArcStr> {
-        Some(literal!("String"))
-    }
-
-    fn meta(_: &(), registry: &mut Registry<S>) -> MetaType<S> {
-        registry.build_scalar_type::<String>(&()).into_meta()
-    }
-}
-
-impl<S> GraphQLValue<S> for ArcStr
-where
-    S: ScalarValue,
-{
-    type Context = ();
-    type TypeInfo = ();
-
-    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
-        <Self as GraphQLType<S>>::name(info)
-    }
-
-    fn resolve(
-        &self,
-        _: &(),
-        _: Option<&[Selection<S>]>,
-        _: &Executor<Self::Context, S>,
-    ) -> ExecutionResult<S> {
-        Ok(Value::scalar(String::from(self.as_str())))
-    }
-}
-
-impl<S> GraphQLValueAsync<S> for ArcStr
-where
-    S: ScalarValue + Send + Sync,
-{
-    fn resolve_async<'a>(
-        &'a self,
-        info: &'a Self::TypeInfo,
-        selection_set: Option<&'a [Selection<S>]>,
-        executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, crate::ExecutionResult<S>> {
-        use futures::future;
-        Box::pin(future::ready(self.resolve(info, selection_set, executor)))
-    }
-}
-
 impl<'a, S> ToInputValue<S> for &'a str
 where
     S: ScalarValue,
@@ -318,7 +277,8 @@ where
     }
 }
 
-#[graphql_scalar(with = impl_boolean_scalar)]
+#[graphql_scalar]
+#[graphql(with = impl_boolean_scalar)]
 type Boolean = bool;
 
 mod impl_boolean_scalar {
@@ -340,7 +300,8 @@ mod impl_boolean_scalar {
     }
 }
 
-#[graphql_scalar(with = impl_int_scalar)]
+#[graphql_scalar]
+#[graphql(with = impl_int_scalar)]
 type Int = i32;
 
 mod impl_int_scalar {
@@ -366,7 +327,8 @@ mod impl_int_scalar {
     }
 }
 
-#[graphql_scalar(with = impl_float_scalar)]
+#[graphql_scalar]
+#[graphql(with = impl_float_scalar)]
 type Float = f64;
 
 mod impl_float_scalar {
@@ -419,7 +381,7 @@ where
     S: ScalarValue,
 {
     fn name(_: &()) -> Option<ArcStr> {
-        Some(literal!("_EmptyMutation"))
+        Some(arcstr::literal!("_EmptyMutation"))
     }
 
     fn meta(_: &(), registry: &mut Registry<S>) -> MetaType<S> {
@@ -477,7 +439,7 @@ where
     S: ScalarValue,
 {
     fn name(_: &()) -> Option<ArcStr> {
-        Some(literal!("_EmptySubscription"))
+        Some(arcstr::literal!("_EmptySubscription"))
     }
 
     fn meta(_: &(), registry: &mut Registry<S>) -> MetaType<S> {
