@@ -263,7 +263,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ matrix.toolchain }}
-      - uses: peaceiris/actions-mdbook@v1
+      - uses: peaceiris/actions-mdbook@v2
 
       - run: make test.book
 
@@ -410,7 +410,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: peaceiris/actions-mdbook@v1
+      - uses: peaceiris/actions-mdbook@v2
 
       - run: make book.build out=gh-pages${{ (github.ref == 'refs/heads/master'
                                               && '/master')
