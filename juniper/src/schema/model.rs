@@ -533,27 +533,27 @@ impl<'a, S> TypeType<'a, S> {
     pub fn to_concrete(&self) -> Option<&'a MetaType<S>> {
         match self {
             Self::Concrete(t) => Some(t),
-            Self::List(..) | Self::NonNull(_) => None,
+            Self::List(..) | Self::NonNull(..) => None,
         }
     }
 
     pub fn innermost_concrete(&self) -> &'a MetaType<S> {
         match self {
             Self::Concrete(t) => t,
-            Self::NonNull(n) | Self::List(n, _) => n.innermost_concrete(),
+            Self::NonNull(n) | Self::List(n, ..) => n.innermost_concrete(),
         }
     }
 
     pub fn list_contents(&self) -> Option<&Self> {
         match self {
-            Self::List(n, _) => Some(n),
+            Self::List(n, ..) => Some(n),
             Self::NonNull(n) => n.list_contents(),
-            Self::Concrete(_) => None,
+            Self::Concrete(..) => None,
         }
     }
 
     pub fn is_non_null(&self) -> bool {
-        matches!(self, TypeType::NonNull(_))
+        matches!(self, TypeType::NonNull(..))
     }
 }
 
@@ -572,7 +572,10 @@ impl<S> DirectiveType<S> {
         locations: &[DirectiveLocation],
         arguments: &[Argument<S>],
         is_repeatable: bool,
-    ) -> Self {
+    ) -> Self
+    where
+        S: Clone,
+    {
         Self {
             name: name.into(),
             description: None,
@@ -706,18 +709,18 @@ mod concrete_type_sort {
     /// Returns a [`TypeType`] sorting weight by its type.
     pub fn by_type<S>(t: &TypeType<S>) -> u8 {
         match t {
-            TypeType::Concrete(MetaType::Enum(_)) => 0,
-            TypeType::Concrete(MetaType::InputObject(_)) => 1,
-            TypeType::Concrete(MetaType::Interface(_)) => 2,
-            TypeType::Concrete(MetaType::Scalar(_)) => 3,
-            TypeType::Concrete(MetaType::Object(_)) => 4,
-            TypeType::Concrete(MetaType::Union(_)) => 5,
+            TypeType::Concrete(MetaType::Enum(..)) => 0,
+            TypeType::Concrete(MetaType::InputObject(..)) => 1,
+            TypeType::Concrete(MetaType::Interface(..)) => 2,
+            TypeType::Concrete(MetaType::Scalar(..)) => 3,
+            TypeType::Concrete(MetaType::Object(..)) => 4,
+            TypeType::Concrete(MetaType::Union(..)) => 5,
             // NOTE: The following types are not part of the introspected types.
             TypeType::Concrete(
-                MetaType::List(_) | MetaType::Nullable(_) | MetaType::Placeholder(_),
+                MetaType::List(..) | MetaType::Nullable(..) | MetaType::Placeholder(..),
             ) => 6,
             // NOTE: Other variants will not appear since we're only sorting concrete types.
-            TypeType::List(..) | TypeType::NonNull(_) => 7,
+            TypeType::List(..) | TypeType::NonNull(..) => 7,
         }
     }
 
@@ -732,11 +735,11 @@ mod concrete_type_sort {
             TypeType::Concrete(MetaType::Union(meta)) => Some(&meta.name),
             TypeType::Concrete(
                 // NOTE: The following types are not part of the introspected types.
-                MetaType::List(_) | MetaType::Nullable(_) | MetaType::Placeholder(_),
+                MetaType::List(..) | MetaType::Nullable(..) | MetaType::Placeholder(..),
             )
             // NOTE: Other variants will not appear since we're only sorting concrete types.
             | TypeType::List(..)
-            | TypeType::NonNull(_) => None,
+            | TypeType::NonNull(..) => None,
         }
     }
 }
@@ -821,7 +824,6 @@ impl<'a> AsDynType for Type<&'a str> {
         }
     }
 }
-
 
 #[cfg(test)]
 mod root_node_test {

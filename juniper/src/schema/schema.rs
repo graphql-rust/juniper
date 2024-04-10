@@ -131,15 +131,16 @@ where
     }
 }
 
-#[graphql_object(
+#[graphql_object]
+#[graphql(
     name = "__Schema"
     context = SchemaType<S>,
     scalar = S,
     internal,
 )]
 impl<S: ScalarValue> SchemaType<S> {
-    fn description(&self) -> Option<&str> {
-        self.description.as_deref()
+    fn description(&self) -> Option<&ArcStr> {
+        self.description.as_ref()
     }
 
     fn types(&self) -> Vec<TypeType<S>> {
@@ -176,39 +177,40 @@ impl<S: ScalarValue> SchemaType<S> {
     }
 }
 
-#[graphql_object(
-    name = "__Type"
+#[graphql_object]
+#[graphql(
+    name = "__Type",
     context = SchemaType<S>,
     scalar = S,
     internal,
 )]
 impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
-    fn name(&self) -> Option<&str> {
+    fn name(&self) -> Option<&ArcStr> {
         match self {
-            TypeType::Concrete(t) => t.name().map(ArcStr::as_str),
-            _ => None,
+            Self::Concrete(t) => t.name(),
+            Self::List(..) | Self::NonNull(..) => None,
         }
     }
 
     fn description(&self) -> Option<&ArcStr> {
         match self {
-            TypeType::Concrete(t) => t.description(),
-            _ => None,
+            Self::Concrete(t) => t.description(),
+            Self::List(..) | Self::NonNull(..) => None,
         }
     }
 
     fn specified_by_url(&self) -> Option<&ArcStr> {
         match self {
             Self::Concrete(t) => t.specified_by_url(),
-            Self::NonNull(_) | Self::List(..) => None,
+            Self::List(..) | Self::NonNull(..) => None,
         }
     }
 
     fn kind(&self) -> TypeKind {
         match self {
-            TypeType::Concrete(t) => t.type_kind(),
-            TypeType::List(..) => TypeKind::List,
-            TypeType::NonNull(_) => TypeKind::NonNull,
+            Self::Concrete(t) => t.type_kind(),
+            Self::List(..) => TypeKind::List,
+            Self::NonNull(..) => TypeKind::NonNull,
         }
     }
 
@@ -217,101 +219,130 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
         #[graphql(default = false)] include_deprecated: Option<bool>,
     ) -> Option<Vec<&Field<S>>> {
         match self {
-            TypeType::Concrete(&MetaType::Interface(InterfaceMeta { ref fields, .. }))
-            | TypeType::Concrete(&MetaType::Object(ObjectMeta { ref fields, .. })) => Some(
-                fields
-                    .iter()
-                    .filter(|f| {
-                        include_deprecated.unwrap_or_default()
-                            || !f.deprecation_status.is_deprecated()
-                    })
-                    .filter(|f| !f.name.starts_with("__"))
-                    .collect(),
-            ),
-            _ => None,
+            Self::Concrete(t) => match t {
+                MetaType::Interface(InterfaceMeta { fields, .. })
+                | MetaType::Object(ObjectMeta { fields, .. }) => Some(
+                    fields
+                        .iter()
+                        .filter(|f| {
+                            include_deprecated.unwrap_or_default()
+                                || !f.deprecation_status.is_deprecated()
+                        })
+                        .filter(|f| !f.name.starts_with("__"))
+                        .collect(),
+                ),
+                MetaType::Enum(..)
+                | MetaType::InputObject(..)
+                | MetaType::List(..)
+                | MetaType::Nullable(..)
+                | MetaType::Placeholder(..)
+                | MetaType::Scalar(..)
+                | MetaType::Union(..) => None,
+            },
+            Self::List(..) | Self::NonNull(..) => None,
         }
     }
 
-    fn of_type(&self) -> Option<&TypeType<S>> {
+    fn of_type(&self) -> Option<&Self> {
         match self {
-            TypeType::Concrete(_) => None,
-            TypeType::List(l, _) | TypeType::NonNull(l) => Some(&**l),
+            Self::Concrete(..) => None,
+            Self::List(l, _) | Self::NonNull(l) => Some(&**l),
         }
     }
 
     fn input_fields(&self) -> Option<&[Argument<S>]> {
         match self {
-            TypeType::Concrete(&MetaType::InputObject(InputObjectMeta {
-                ref input_fields,
-                ..
-            })) => Some(input_fields.as_slice()),
-            _ => None,
+            Self::Concrete(t) => match t {
+                MetaType::InputObject(InputObjectMeta { input_fields, .. }) => {
+                    Some(input_fields.as_slice())
+                }
+                MetaType::Enum(..)
+                | MetaType::Interface(..)
+                | MetaType::List(..)
+                | MetaType::Nullable(..)
+                | MetaType::Object(..)
+                | MetaType::Placeholder(..)
+                | MetaType::Scalar(..)
+                | MetaType::Union(..) => None,
+            },
+            Self::List(..) | Self::NonNull(..) => None,
         }
     }
 
     fn interfaces<'s>(&self, context: &'s SchemaType<S>) -> Option<Vec<TypeType<'s, S>>> {
         match self {
-            TypeType::Concrete(
-                &MetaType::Object(ObjectMeta {
-                    ref interface_names,
-                    ..
+            Self::Concrete(t) => match t {
+                MetaType::Interface(InterfaceMeta {
+                    interface_names, ..
                 })
-                | &MetaType::Interface(InterfaceMeta {
-                    ref interface_names,
-                    ..
-                }),
-            ) => Some(
-                interface_names
-                    .iter()
-                    .filter_map(|n| context.type_by_name(n))
-                    .collect(),
-            ),
-            _ => None,
+                | MetaType::Object(ObjectMeta {
+                    interface_names, ..
+                }) => Some(
+                    interface_names
+                        .iter()
+                        .filter_map(|n| context.type_by_name(n))
+                        .collect(),
+                ),
+                MetaType::Enum(..)
+                | MetaType::InputObject(..)
+                | MetaType::List(..)
+                | MetaType::Nullable(..)
+                | MetaType::Placeholder(..)
+                | MetaType::Scalar(..)
+                | MetaType::Union(..) => None,
+            },
+            Self::List(..) | Self::NonNull(..) => None,
         }
     }
 
     fn possible_types<'s>(&self, context: &'s SchemaType<S>) -> Option<Vec<TypeType<'s, S>>> {
         match self {
-            TypeType::Concrete(&MetaType::Union(UnionMeta {
-                ref of_type_names, ..
-            })) => Some(
-                of_type_names
-                    .iter()
-                    .filter_map(|tn| context.type_by_name(tn))
-                    .collect(),
-            ),
-            TypeType::Concrete(&MetaType::Interface(InterfaceMeta {
-                name: ref iface_name,
-                ..
-            })) => {
-                let mut type_names = context
-                    .types
-                    .values()
-                    .filter_map(|ct| {
-                        if let MetaType::Object(ObjectMeta {
-                            name,
-                            interface_names,
-                            ..
-                        }) = ct
-                        {
-                            interface_names
-                                .iter()
-                                .any(|iname| iname == iface_name)
-                                .then(|| name.as_ref())
-                        } else {
-                            None
-                        }
-                    })
-                    .collect::<Vec<_>>();
-                type_names.sort();
-                Some(
-                    type_names
-                        .into_iter()
-                        .filter_map(|n| context.type_by_name(n))
+            Self::Concrete(t) => match t {
+                MetaType::Interface(InterfaceMeta {
+                    name: iface_name, ..
+                }) => {
+                    let mut type_names = context
+                        .types
+                        .values()
+                        .filter_map(|ct| {
+                            if let MetaType::Object(ObjectMeta {
+                                name,
+                                interface_names,
+                                ..
+                            }) = ct
+                            {
+                                interface_names
+                                    .iter()
+                                    .any(|iname| iname == iface_name)
+                                    .then(|| name.as_ref())
+                            } else {
+                                None
+                            }
+                        })
+                        .collect::<Vec<_>>();
+                    type_names.sort();
+                    Some(
+                        type_names
+                            .into_iter()
+                            .filter_map(|n| context.type_by_name(n))
+                            .collect(),
+                    )
+                }
+                MetaType::Union(UnionMeta { of_type_names, .. }) => Some(
+                    of_type_names
+                        .iter()
+                        .filter_map(|tn| context.type_by_name(tn))
                         .collect(),
-                )
-            }
-            _ => None,
+                ),
+                MetaType::Enum(..)
+                | MetaType::InputObject(..)
+                | MetaType::List(..)
+                | MetaType::Nullable(..)
+                | MetaType::Object(..)
+                | MetaType::Placeholder(..)
+                | MetaType::Scalar(..) => None,
+            },
+            Self::List(..) | Self::NonNull(..) => None,
         }
     }
 
@@ -320,21 +351,32 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
         #[graphql(default = false)] include_deprecated: Option<bool>,
     ) -> Option<Vec<&EnumValue>> {
         match self {
-            TypeType::Concrete(&MetaType::Enum(EnumMeta { ref values, .. })) => Some(
-                values
-                    .iter()
-                    .filter(|f| {
-                        include_deprecated.unwrap_or_default()
-                            || !f.deprecation_status.is_deprecated()
-                    })
-                    .collect(),
-            ),
-            _ => None,
+            Self::Concrete(t) => match t {
+                MetaType::Enum(EnumMeta { values, .. }) => Some(
+                    values
+                        .iter()
+                        .filter(|f| {
+                            include_deprecated.unwrap_or_default()
+                                || !f.deprecation_status.is_deprecated()
+                        })
+                        .collect(),
+                ),
+                MetaType::InputObject(..)
+                | MetaType::Interface(..)
+                | MetaType::List(..)
+                | MetaType::Nullable(..)
+                | MetaType::Object(..)
+                | MetaType::Placeholder(..)
+                | MetaType::Scalar(..)
+                | MetaType::Union(..) => None,
+            },
+            Self::List(..) | Self::NonNull(..) => None,
         }
     }
 }
 
-#[graphql_object(
+#[graphql_object]
+#[graphql(
     name = "__Field",
     context = SchemaType<S>,
     scalar = S,
@@ -346,8 +388,8 @@ impl<S: ScalarValue> Field<S> {
     }
 
     #[graphql(name = "description")]
-    fn description_(&self) -> Option<&str> {
-        self.description.as_deref()
+    fn description_(&self) -> Option<&ArcStr> {
+        self.description.as_ref()
     }
 
     fn args(&self) -> Vec<&Argument<S>> {
@@ -365,25 +407,26 @@ impl<S: ScalarValue> Field<S> {
         self.deprecation_status.is_deprecated()
     }
 
-    fn deprecation_reason(&self) -> Option<&str> {
+    fn deprecation_reason(&self) -> Option<&ArcStr> {
         self.deprecation_status.reason()
     }
 }
 
-#[graphql_object(
+#[graphql_object]
+#[graphql(
     name = "__InputValue",
     context = SchemaType<S>,
     scalar = S,
     internal,
 )]
 impl<S: ScalarValue> Argument<S> {
-    fn name(&self) -> &str {
+    fn name(&self) -> &ArcStr {
         &self.name
     }
 
     #[graphql(name = "description")]
-    fn description_(&self) -> Option<&str> {
-        self.description.as_deref()
+    fn description_(&self) -> Option<&ArcStr> {
+        self.description.as_ref()
     }
 
     #[graphql(name = "type")]
@@ -397,40 +440,42 @@ impl<S: ScalarValue> Argument<S> {
     }
 }
 
-#[graphql_object(name = "__EnumValue", internal)]
+#[graphql_object]
+#[graphql(name = "__EnumValue", internal)]
 impl EnumValue {
-    fn name(&self) -> &str {
+    fn name(&self) -> &ArcStr {
         &self.name
     }
 
     #[graphql(name = "description")]
-    fn description_(&self) -> Option<&str> {
-        self.description.as_deref()
+    fn description_(&self) -> Option<&ArcStr> {
+        self.description.as_ref()
     }
 
     fn is_deprecated(&self) -> bool {
         self.deprecation_status.is_deprecated()
     }
 
-    fn deprecation_reason(&self) -> Option<&str> {
+    fn deprecation_reason(&self) -> Option<&ArcStr> {
         self.deprecation_status.reason()
     }
 }
 
-#[graphql_object(
+#[graphql_object]
+#[graphql(
     name = "__Directive",
     context = SchemaType<S>,
     scalar = S,
     internal,
 )]
 impl<S: ScalarValue> DirectiveType<S> {
-    fn name(&self) -> &str {
+    fn name(&self) -> &ArcStr {
         &self.name
     }
 
     #[graphql(name = "description")]
-    fn description_(&self) -> Option<&str> {
-        self.description.as_deref()
+    fn description_(&self) -> Option<&ArcStr> {
+        self.description.as_ref()
     }
 
     fn locations(&self) -> &[DirectiveLocation] {

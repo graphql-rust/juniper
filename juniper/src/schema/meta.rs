@@ -26,16 +26,16 @@ impl DeprecationStatus {
     /// If this deprecation status indicates the item is deprecated.
     pub fn is_deprecated(&self) -> bool {
         match self {
-            DeprecationStatus::Current => false,
-            DeprecationStatus::Deprecated(_) => true,
+            Self::Current => false,
+            Self::Deprecated(_) => true,
         }
     }
 
     /// An optional reason for the deprecation, or none if `Current`.
-    pub fn reason(&self) -> Option<&str> {
+    pub fn reason(&self) -> Option<&ArcStr> {
         match self {
-            DeprecationStatus::Current => None,
-            DeprecationStatus::Deprecated(rsn) => rsn.as_deref(),
+            Self::Current => None,
+            Self::Deprecated(rsn) => rsn.as_ref(),
         }
     }
 }
@@ -529,11 +529,13 @@ pub struct EnumValue {
     ///
     /// This is the string literal representation of the enum in responses.
     pub name: ArcStr,
+
     /// The optional description of the enum value.
     ///
     /// Note: this is not the description of the enum itself; it's the
     /// description of this enum _value_.
     pub description: Option<ArcStr>,
+
     /// Whether the field is deprecated or not, with an optional reason.
     pub deprecation_status: DeprecationStatus,
 }
@@ -603,7 +605,7 @@ impl<S> MetaType<S> {
             | Self::Object(ObjectMeta { name, .. })
             | Self::Scalar(ScalarMeta { name, .. })
             | Self::Union(UnionMeta { name, .. }) => Some(name),
-            Self::List(_) | Self::Nullable(_) | Self::Placeholder(_) => None,
+            Self::List(..) | Self::Nullable(..) | Self::Placeholder(..) => None,
         }
     }
 
@@ -619,7 +621,7 @@ impl<S> MetaType<S> {
             | Self::Object(ObjectMeta { description, .. })
             | Self::Scalar(ScalarMeta { description, .. })
             | Self::Union(UnionMeta { description, .. }) => description.as_ref(),
-            Self::List(_) | Self::Nullable(_) | Self::Placeholder(_) => None,
+            Self::List(..) | Self::Nullable(..) | Self::Placeholder(..) => None,
         }
     }
 
@@ -633,14 +635,14 @@ impl<S> MetaType<S> {
             Self::Scalar(ScalarMeta {
                 specified_by_url, ..
             }) => specified_by_url.as_ref(),
-            Self::Enum(_)
-            | Self::InputObject(_)
-            | Self::Interface(_)
-            | Self::List(_)
-            | Self::Nullable(_)
-            | Self::Object(_)
-            | Self::Placeholder(_)
-            | Self::Union(_) => None,
+            Self::Enum(..)
+            | Self::InputObject(..)
+            | Self::Interface(..)
+            | Self::List(..)
+            | Self::Nullable(..)
+            | Self::Object(..)
+            | Self::Placeholder(..)
+            | Self::Union(..) => None,
         }
     }
 
@@ -651,15 +653,15 @@ impl<S> MetaType<S> {
     /// If this is [`MetaType::Nullable`] or [``MetaType::Placeholder`].
     pub fn type_kind(&self) -> TypeKind {
         match self {
-            Self::Scalar(_) => TypeKind::Scalar,
-            Self::List(_) => TypeKind::List,
-            Self::Nullable(_) => panic!("сan't take `type_kind` of `MetaType::Nullable`"),
-            Self::Object(_) => TypeKind::Object,
-            Self::Enum(_) => TypeKind::Enum,
-            Self::Interface(_) => TypeKind::Interface,
-            Self::Union(_) => TypeKind::Union,
-            Self::InputObject(_) => TypeKind::InputObject,
-            Self::Placeholder(_) => panic!("сan't take `type_kind` of `MetaType::Placeholder`"),
+            Self::Scalar(..) => TypeKind::Scalar,
+            Self::List(..) => TypeKind::List,
+            Self::Nullable(..) => panic!("сan't take `type_kind` of `MetaType::Nullable`"),
+            Self::Object(..) => TypeKind::Object,
+            Self::Enum(..) => TypeKind::Enum,
+            Self::Interface(..) => TypeKind::Interface,
+            Self::Union(..) => TypeKind::Union,
+            Self::InputObject(..) => TypeKind::InputObject,
+            Self::Placeholder(..) => panic!("сan't take `type_kind` of `MetaType::Placeholder`"),
         }
     }
 
@@ -670,13 +672,13 @@ impl<S> MetaType<S> {
         match self {
             Self::Interface(InterfaceMeta { fields, .. })
             | Self::Object(ObjectMeta { fields, .. }) => fields.iter().find(|f| f.name == name),
-            Self::Enum(_)
-            | Self::InputObject(_)
-            | Self::List(_)
-            | Self::Nullable(_)
-            | Self::Placeholder(_)
-            | Self::Scalar(_)
-            | Self::Union(_) => None,
+            Self::Enum(..)
+            | Self::InputObject(..)
+            | Self::List(..)
+            | Self::Nullable(..)
+            | Self::Placeholder(..)
+            | Self::Scalar(..)
+            | Self::Union(..) => None,
         }
     }
 
@@ -688,14 +690,14 @@ impl<S> MetaType<S> {
             Self::InputObject(InputObjectMeta { input_fields, .. }) => {
                 input_fields.iter().find(|f| f.name == name)
             }
-            Self::Enum(_)
-            | Self::Interface(_)
-            | Self::List(_)
-            | Self::Nullable(_)
-            | Self::Object(_)
-            | Self::Placeholder(_)
-            | Self::Scalar(_)
-            | Self::Union(_) => None,
+            Self::Enum(..)
+            | Self::Interface(..)
+            | Self::List(..)
+            | Self::Nullable(..)
+            | Self::Object(..)
+            | Self::Placeholder(..)
+            | Self::Scalar(..)
+            | Self::Union(..) => None,
         }
     }
 
@@ -732,12 +734,12 @@ impl<S> MetaType<S> {
             Self::Enum(EnumMeta { try_parse_fn, .. })
             | Self::InputObject(InputObjectMeta { try_parse_fn, .. })
             | Self::Scalar(ScalarMeta { try_parse_fn, .. }) => Some(*try_parse_fn),
-            Self::Interface(_)
-            | Self::List(_)
-            | Self::Nullable(_)
-            | Self::Object(_)
-            | Self::Placeholder(_)
-            | Self::Union(_) => None,
+            Self::Interface(..)
+            | Self::List(..)
+            | Self::Nullable(..)
+            | Self::Object(..)
+            | Self::Placeholder(..)
+            | Self::Union(..) => None,
         }
     }
 
@@ -746,21 +748,24 @@ impl<S> MetaType<S> {
     /// [Objects][`ObjectMeta`], [interfaces][`InterfaceMeta`] and [unions][`UnionMeta`] are
     /// composite types.
     pub fn is_composite(&self) -> bool {
-        matches!(self, Self::Interface(_) | Self::Object(_) | Self::Union(_))
+        matches!(
+            self,
+            Self::Interface(..) | Self::Object(..) | Self::Union(..)
+        )
     }
 
     /// Indicates whether the represented type can occur in leaf positions of queries.
     ///
     /// Only [enums][`EnumMeta`] and [scalars][`ScalarMeta`] are leaf types.
     pub fn is_leaf(&self) -> bool {
-        matches!(self, Self::Enum(_) | Self::Scalar(_))
+        matches!(self, Self::Enum(..) | Self::Scalar(..))
     }
 
     /// Indicates whether the represented type is abstract.
     ///
     /// Only [interfaces][`InterfaceMeta`] and [unions][`UnionMeta`] are abstract types.
     pub fn is_abstract(&self) -> bool {
-        matches!(self, Self::Interface(_) | Self::Union(_))
+        matches!(self, Self::Interface(..) | Self::Union(..))
     }
 
     /// Indicates whether the represented type can be used in input positions (e.g. arguments or
@@ -769,7 +774,10 @@ impl<S> MetaType<S> {
     /// Only [scalars][`ScalarMeta`], [enums][`EnumMeta`] and [input objects][`InputObjectMeta`] are
     /// input types.
     pub fn is_input(&self) -> bool {
-        matches!(self, Self::Enum(_) | Self::InputObject(_) | Self::Scalar(_))
+        matches!(
+            self,
+            Self::Enum(..) | Self::InputObject(..) | Self::Scalar(..)
+        )
     }
 
     /// Indicates whether the represented type is GraphQL built-in.
@@ -802,12 +810,12 @@ impl<S> MetaType<S> {
                         .flatten()
                         .collect(),
                 ),
-                Self::Enum(_)
-                | Self::InputObject(_)
-                | Self::List(_)
-                | Self::Nullable(_)
-                | Self::Placeholder(_)
-                | Self::Scalar(_) => None,
+                Self::Enum(..)
+                | Self::InputObject(..)
+                | Self::List(..)
+                | Self::Nullable(..)
+                | Self::Placeholder(..)
+                | Self::Scalar(..) => None,
             })
     }
 }
