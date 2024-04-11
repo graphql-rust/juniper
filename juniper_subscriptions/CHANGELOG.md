@@ -6,6 +6,18 @@ All user visible changes to `juniper_subscriptions` crate will be documented in 
 
 
 
+## master
+
+### BC Breaks
+
+- Removed lifetime parameters from `Coordinator`. ([#1247], [#819])
+
+[#819]: /../../issues/819
+[#1247]: /../../pull/1247
+
+
+
+
 ## [0.17.0] · 2024-03-20
 [0.17.0]: /../../tree/juniper_subscriptions-v0.17.0/juniper_subscriptions
 

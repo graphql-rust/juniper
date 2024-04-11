@@ -463,9 +463,15 @@ impl Definition {
 
             (!f.ignored).then(|| {
                 let arg = if let Some(default) = &f.default {
-                    quote! { .arg_with_default::<#ty>(::juniper::literal!(#name), &#default, info) }
+                    quote! {
+                        .arg_with_default::<#ty>(
+                            ::juniper::arcstr::literal!(#name), &#default, info,
+                        )
+                    }
                 } else {
-                    quote! { .arg::<#ty>(::juniper::literal!(#name), info) }
+                    quote! {
+                        .arg::<#ty>(::juniper::arcstr::literal!(#name), info)
+                    }
                 };
                 let description = &f.description;
 
@@ -479,17 +485,14 @@ impl Definition {
                 for #ident #ty_generics
                 #where_clause
             {
-                fn name(
-                    _: &Self::TypeInfo,
-                ) -> ::core::option::Option<::juniper::ArcStr> {
-                    ::core::option::Option::Some(::juniper::literal!(#name))
+                fn name(_: &Self::TypeInfo) -> ::core::option::Option<::juniper::ArcStr> {
+                    ::core::option::Option::Some(::juniper::arcstr::literal!(#name))
                 }
 
                 fn meta(
                     info: &Self::TypeInfo,
                     registry: &mut ::juniper::Registry<#scalar>,
-                ) -> ::juniper::meta::MetaType<#scalar>
-                {
+                ) -> ::juniper::meta::MetaType<#scalar> {
                     let fields = [#( #fields ),*];
                     registry
                         .build_input_object_type::<#ident #ty_generics>(info, &fields)
@@ -524,9 +527,9 @@ impl Definition {
                 type Context = #context;
                 type TypeInfo = ();
 
-                fn type_name<'__i>(
+                fn type_name(
                     &self,
-                    info: &'__i Self::TypeInfo,
+                    info: &Self::TypeInfo,
                 ) -> ::core::option::Option<::juniper::ArcStr> {
                     <Self as ::juniper::GraphQLType<#scalar>>::name(info)
                 }

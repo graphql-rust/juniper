@@ -438,7 +438,7 @@ impl Definition {
             let v_deprecation = &v.deprecated;
 
             quote! {
-                ::juniper::meta::EnumValue::new(::juniper::literal!(#v_name))
+                ::juniper::meta::EnumValue::new(::juniper::arcstr::literal!(#v_name))
                     #v_description
                     #v_deprecation
             }
@@ -450,17 +450,14 @@ impl Definition {
                 for #ident #ty_generics
                 #where_clause
             {
-                fn name(
-                    _ : &Self::TypeInfo,
-                ) -> ::core::option::Option<::juniper::ArcStr> {
-                    ::core::option::Option::Some(::juniper::literal!(#name))
+                fn name(_ : &Self::TypeInfo) -> ::core::option::Option<::juniper::ArcStr> {
+                    ::core::option::Option::Some(::juniper::arcstr::literal!(#name))
                 }
 
                 fn meta(
                     info: &Self::TypeInfo,
-                    registry: &mut ::juniper::Registry<#scalar>
-                ) -> ::juniper::meta::MetaType<#scalar>
-                {
+                    registry: &mut ::juniper::Registry<#scalar>,
+                ) -> ::juniper::meta::MetaType<#scalar> {
                     let variants = [#( #variants_meta ),*];
 
                     registry.build_enum_type::<#ident #ty_generics>(info, &variants)
@@ -512,9 +509,9 @@ impl Definition {
                 type Context = #context;
                 type TypeInfo = ();
 
-                fn type_name<'__i>(
+                fn type_name(
                     &self,
-                    info: &'__i Self::TypeInfo,
+                    info: &Self::TypeInfo,
                 ) -> ::core::option::Option<::juniper::ArcStr> {
                     <Self as ::juniper::GraphQLType<#scalar>>::name(info)
                 }

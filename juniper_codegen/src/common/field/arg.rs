@@ -303,10 +303,12 @@ impl OnMethod {
 
         let method = if let Some(val) = &arg.default {
             quote_spanned! { val.span() =>
-                .arg_with_default::<#ty>(::juniper::literal!(#name), &#val, info)
+                .arg_with_default::<#ty>(::juniper::arcstr::literal!(#name), &#val, info)
             }
         } else {
-            quote! { .arg::<#ty>(::juniper::literal!(#name), info) }
+            quote! {
+                .arg::<#ty>(::juniper::arcstr::literal!(#name), info)
+            }
         };
 
         Some(quote! { .argument(registry #method #description) })

@@ -773,7 +773,6 @@ mod tests {
 
     use crate::{
         executor::Registry,
-        literal,
         schema::meta::MetaType,
         types::{
             base::{GraphQLType, GraphQLValue},
@@ -1410,14 +1409,14 @@ mod tests {
         S: ScalarValue,
     {
         fn name(_: &()) -> Option<ArcStr> {
-            Some(literal!("SomeBox"))
+            Some(arcstr::literal!("SomeBox"))
         }
 
         fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
             let fields = &[
-                registry.field::<Option<SomeBox>>(literal!("deepBox"), i),
-                registry.field::<Option<String>>(literal!("unrelatedField"), i),
-                registry.field::<Option<String>>(literal!("otherField"), i),
+                registry.field::<Option<SomeBox>>(arcstr::literal!("deepBox"), i),
+                registry.field::<Option<String>>(arcstr::literal!("unrelatedField"), i),
+                registry.field::<Option<String>>(arcstr::literal!("otherField"), i),
             ];
 
             registry.build_interface_type::<Self>(i, fields).into_meta()
@@ -1441,17 +1440,18 @@ mod tests {
         S: ScalarValue,
     {
         fn name(_: &()) -> Option<ArcStr> {
-            Some(literal!("StringBox"))
+            Some(arcstr::literal!("StringBox"))
         }
 
         fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
             let fields = &[
-                registry.field::<Option<String>>(literal!("scalar"), i),
-                registry.field::<Option<StringBox>>(literal!("deepBox"), i),
-                registry.field::<Option<String>>(literal!("unrelatedField"), i),
-                registry.field::<Option<Vec<Option<StringBox>>>>(literal!("listStringBox"), i),
-                registry.field::<Option<StringBox>>(literal!("stringBox"), i),
-                registry.field::<Option<IntBox>>(literal!("intBox"), i),
+                registry.field::<Option<String>>(arcstr::literal!("scalar"), i),
+                registry.field::<Option<StringBox>>(arcstr::literal!("deepBox"), i),
+                registry.field::<Option<String>>(arcstr::literal!("unrelatedField"), i),
+                registry
+                    .field::<Option<Vec<Option<StringBox>>>>(arcstr::literal!("listStringBox"), i),
+                registry.field::<Option<StringBox>>(arcstr::literal!("stringBox"), i),
+                registry.field::<Option<IntBox>>(arcstr::literal!("intBox"), i),
             ];
 
             registry
@@ -1478,17 +1478,18 @@ mod tests {
         S: ScalarValue,
     {
         fn name(_: &()) -> Option<ArcStr> {
-            Some(literal!("IntBox"))
+            Some(arcstr::literal!("IntBox"))
         }
 
         fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
             let fields = &[
-                registry.field::<Option<i32>>(literal!("scalar"), i),
-                registry.field::<Option<IntBox>>(literal!("deepBox"), i),
-                registry.field::<Option<String>>(literal!("unrelatedField"), i),
-                registry.field::<Option<Vec<Option<StringBox>>>>(literal!("listStringBox"), i),
-                registry.field::<Option<StringBox>>(literal!("stringBox"), i),
-                registry.field::<Option<IntBox>>(literal!("intBox"), i),
+                registry.field::<Option<i32>>(arcstr::literal!("scalar"), i),
+                registry.field::<Option<IntBox>>(arcstr::literal!("deepBox"), i),
+                registry.field::<Option<String>>(arcstr::literal!("unrelatedField"), i),
+                registry
+                    .field::<Option<Vec<Option<StringBox>>>>(arcstr::literal!("listStringBox"), i),
+                registry.field::<Option<StringBox>>(arcstr::literal!("stringBox"), i),
+                registry.field::<Option<IntBox>>(arcstr::literal!("intBox"), i),
             ];
 
             registry
@@ -1515,11 +1516,11 @@ mod tests {
         S: ScalarValue,
     {
         fn name(_: &()) -> Option<ArcStr> {
-            Some(literal!("NonNullStringBox1"))
+            Some(arcstr::literal!("NonNullStringBox1"))
         }
 
         fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
-            let fields = &[registry.field::<String>(literal!("scalar"), i)];
+            let fields = &[registry.field::<String>(arcstr::literal!("scalar"), i)];
 
             registry.build_interface_type::<Self>(i, fields).into_meta()
         }
@@ -1542,14 +1543,14 @@ mod tests {
         S: ScalarValue,
     {
         fn name(_: &()) -> Option<ArcStr> {
-            Some(literal!("NonNullStringBox1Impl"))
+            Some(arcstr::literal!("NonNullStringBox1Impl"))
         }
 
         fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
             let fields = &[
-                registry.field::<String>(literal!("scalar"), i),
-                registry.field::<Option<SomeBox>>(literal!("deepBox"), i),
-                registry.field::<Option<String>>(literal!("unrelatedField"), i),
+                registry.field::<String>(arcstr::literal!("scalar"), i),
+                registry.field::<Option<SomeBox>>(arcstr::literal!("deepBox"), i),
+                registry.field::<Option<String>>(arcstr::literal!("unrelatedField"), i),
             ];
 
             registry
@@ -1579,11 +1580,11 @@ mod tests {
         S: ScalarValue,
     {
         fn name(_: &()) -> Option<ArcStr> {
-            Some(literal!("NonNullStringBox2"))
+            Some(arcstr::literal!("NonNullStringBox2"))
         }
 
         fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
-            let fields = &[registry.field::<String>(literal!("scalar"), i)];
+            let fields = &[registry.field::<String>(arcstr::literal!("scalar"), i)];
 
             registry.build_interface_type::<Self>(i, fields).into_meta()
         }
@@ -1606,14 +1607,14 @@ mod tests {
         S: ScalarValue,
     {
         fn name(_: &()) -> Option<ArcStr> {
-            Some(literal!("NonNullStringBox2Impl"))
+            Some(arcstr::literal!("NonNullStringBox2Impl"))
         }
 
         fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
             let fields = &[
-                registry.field::<String>(literal!("scalar"), i),
-                registry.field::<Option<SomeBox>>(literal!("deepBox"), i),
-                registry.field::<Option<String>>(literal!("unrelatedField"), i),
+                registry.field::<String>(arcstr::literal!("scalar"), i),
+                registry.field::<Option<SomeBox>>(arcstr::literal!("deepBox"), i),
+                registry.field::<Option<String>>(arcstr::literal!("unrelatedField"), i),
             ];
 
             registry
@@ -1643,13 +1644,13 @@ mod tests {
         S: ScalarValue,
     {
         fn name(_: &()) -> Option<ArcStr> {
-            Some(literal!("Node"))
+            Some(arcstr::literal!("Node"))
         }
 
         fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
             let fields = &[
-                registry.field::<Option<ID>>(literal!("id"), i),
-                registry.field::<Option<String>>(literal!("name"), i),
+                registry.field::<Option<ID>>(arcstr::literal!("id"), i),
+                registry.field::<Option<String>>(arcstr::literal!("name"), i),
             ];
 
             registry.build_object_type::<Self>(i, fields).into_meta()
@@ -1673,11 +1674,11 @@ mod tests {
         S: ScalarValue,
     {
         fn name(_: &()) -> Option<ArcStr> {
-            Some(literal!("Edge"))
+            Some(arcstr::literal!("Edge"))
         }
 
         fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
-            let fields = &[registry.field::<Option<Node>>(literal!("node"), i)];
+            let fields = &[registry.field::<Option<Node>>(arcstr::literal!("node"), i)];
 
             registry.build_object_type::<Self>(i, fields).into_meta()
         }
@@ -1700,11 +1701,12 @@ mod tests {
         S: ScalarValue,
     {
         fn name(_: &()) -> Option<ArcStr> {
-            Some(literal!("Connection"))
+            Some(arcstr::literal!("Connection"))
         }
 
         fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
-            let fields = &[registry.field::<Option<Vec<Option<Edge>>>>(literal!("edges"), i)];
+            let fields =
+                &[registry.field::<Option<Vec<Option<Edge>>>>(arcstr::literal!("edges"), i)];
 
             registry.build_object_type::<Self>(i, fields).into_meta()
         }
@@ -1727,7 +1729,7 @@ mod tests {
         S: ScalarValue,
     {
         fn name(_: &()) -> Option<ArcStr> {
-            Some(literal!("QueryRoot"))
+            Some(arcstr::literal!("QueryRoot"))
         }
 
         fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
@@ -1737,8 +1739,8 @@ mod tests {
             registry.get_type::<NonNullStringBox2Impl>(i);
 
             let fields = &[
-                registry.field::<Option<SomeBox>>(literal!("someBox"), i),
-                registry.field::<Option<Connection>>(literal!("connection"), i),
+                registry.field::<Option<SomeBox>>(arcstr::literal!("someBox"), i),
+                registry.field::<Option<Connection>>(arcstr::literal!("connection"), i),
             ];
             registry.build_object_type::<Self>(i, fields).into_meta()
         }

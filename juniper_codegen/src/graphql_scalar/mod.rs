@@ -363,7 +363,9 @@ impl Definition {
         let description = &self.description;
         let specified_by_url = self.specified_by_url.as_ref().map(|url| {
             let url_lit = url.as_str();
-            quote! { .specified_by_url(::juniper::literal!(#url_lit)) }
+            quote! {
+                .specified_by_url(::juniper::arcstr::literal!(#url_lit))
+            }
         });
 
         let (ty, generics) = self.impl_self_and_generics(false);
@@ -374,17 +376,14 @@ impl Definition {
             impl #impl_gens ::juniper::GraphQLType<#scalar> for #ty
                 #where_clause
             {
-                fn name(
-                    _: &Self::TypeInfo,
-                ) -> ::core::option::Option<::juniper::ArcStr> {
-                    ::core::option::Option::Some(::juniper::literal!(#name))
+                fn name(_: &Self::TypeInfo) -> ::core::option::Option<::juniper::ArcStr> {
+                    ::core::option::Option::Some(::juniper::arcstr::literal!(#name))
                 }
 
                 fn meta(
                     info: &Self::TypeInfo,
                     registry: &mut ::juniper::Registry<#scalar>,
-                ) -> ::juniper::meta::MetaType<#scalar>
-                {
+                ) -> ::juniper::meta::MetaType<#scalar> {
                     registry.build_scalar_type::<Self>(info)
                         #description
                         #specified_by_url
@@ -415,9 +414,9 @@ impl Definition {
                 type Context = ();
                 type TypeInfo = ();
 
-                fn type_name<'i>(
+                fn type_name(
                     &self,
-                    info: &'i Self::TypeInfo,
+                    info: &Self::TypeInfo,
                 ) -> ::core::option::Option<::juniper::ArcStr> {
                     <Self as ::juniper::GraphQLType<#scalar>>::name(info)
                 }

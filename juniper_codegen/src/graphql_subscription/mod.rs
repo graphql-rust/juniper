@@ -49,9 +49,9 @@ impl Definition<Subscription> {
                 type Context = #context;
                 type TypeInfo = ();
 
-                fn type_name<'__i>(
+                fn type_name(
                     &self,
-                    info: &'__i Self::TypeInfo,
+                    info: &Self::TypeInfo,
                 ) -> ::core::option::Option<::juniper::ArcStr> {
                     <Self as ::juniper::GraphQLType<#scalar>>::name(info)
                 }

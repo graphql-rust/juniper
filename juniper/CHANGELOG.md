@@ -6,10 +6,9 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 
 
-## [0.17.0] · 2024-04-?? (unreleased)
-[0.17.0]: /../../tree/juniper-v0.17.0/juniper
+## master
 
-[Diff](/../../compare/juniper-v0.16.1...juniper-v0.17.0) | [Milestone](/../../milestone/7)
+[Diff](/../../compare/juniper-v0.16.1...master) | [Milestone](/../../milestone/7)
 
 ### BC Breaks
 
@@ -20,6 +19,9 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - Made `DeprecationStatus::reason()` returning `ArcStr`.
     - Removed lifetime parameters from `DirectiveType`.
     - Made `DirectiveType::name` and `DirectiveType::description` using `ArcStr`.
+    - Made `types::Name` and `types::NameParseError` using `ArcStr` instead of `String`.
+    - Made `GraphQLType::name()` and `GraphQLValue::type_name()` returning `ArcStr`.
+    - Removed lifetime parameters from `RootNode`.
 
 ### Changed
 

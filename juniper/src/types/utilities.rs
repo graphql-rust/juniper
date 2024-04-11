@@ -85,7 +85,7 @@ where
     }
 }
 
-/// Validates the specified GraphQL literal and returns an error message if the it's invalid.
+/// Validates the specified GraphQL literal and returns an error message if it's invalid.
 pub fn validate_literal_value<S>(
     schema: &SchemaType<S>,
     arg_type: &TypeType<S>,
@@ -179,7 +179,7 @@ where
                         } else {
                             let missing_fields = remaining_required_fields
                                 .into_iter()
-                                .map(|s| format!("\"{}\"", s))
+                                .map(|s| format!("\"{s}\""))
                                 .collect::<Vec<_>>()
                                 .join(", ");
                             Some(error::missing_fields(arg_type, missing_fields))

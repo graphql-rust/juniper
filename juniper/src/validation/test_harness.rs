@@ -1,5 +1,6 @@
-use arcstr::{literal, ArcStr};
 use std::mem;
+
+use arcstr::ArcStr;
 
 use crate::{
     ast::{Document, FromInputValue, InputValue},
@@ -78,13 +79,13 @@ where
     S: ScalarValue,
 {
     fn name(_: &()) -> Option<ArcStr> {
-        Some(literal!("Being"))
+        Some(arcstr::literal!("Being"))
     }
 
     fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let fields = &[registry
-            .field::<Option<String>>(literal!("name"), i)
-            .argument(registry.arg::<Option<bool>>(literal!("surname"), i))];
+            .field::<Option<String>>(arcstr::literal!("name"), i)
+            .argument(registry.arg::<Option<bool>>(arcstr::literal!("surname"), i))];
 
         registry.build_interface_type::<Self>(i, fields).into_meta()
     }
@@ -107,13 +108,13 @@ where
     S: ScalarValue,
 {
     fn name(_: &()) -> Option<ArcStr> {
-        Some(literal!("Pet"))
+        Some(arcstr::literal!("Pet"))
     }
 
     fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let fields = &[registry
-            .field::<Option<String>>(literal!("name"), i)
-            .argument(registry.arg::<Option<bool>>(literal!("surname"), i))];
+            .field::<Option<String>>(arcstr::literal!("name"), i)
+            .argument(registry.arg::<Option<bool>>(arcstr::literal!("surname"), i))];
 
         registry.build_interface_type::<Self>(i, fields).into_meta()
     }
@@ -136,13 +137,13 @@ where
     S: ScalarValue,
 {
     fn name(_: &()) -> Option<ArcStr> {
-        Some(literal!("Canine"))
+        Some(arcstr::literal!("Canine"))
     }
 
     fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let fields = &[registry
-            .field::<Option<String>>(literal!("name"), i)
-            .argument(registry.arg::<Option<bool>>(literal!("surname"), i))];
+            .field::<Option<String>>(arcstr::literal!("name"), i)
+            .argument(registry.arg::<Option<bool>>(arcstr::literal!("surname"), i))];
 
         registry.build_interface_type::<Self>(i, fields).into_meta()
     }
@@ -165,13 +166,13 @@ where
     S: ScalarValue,
 {
     fn name(_: &()) -> Option<ArcStr> {
-        Some(literal!("Unpopulated"))
+        Some(arcstr::literal!("Unpopulated"))
     }
 
     fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let fields = &[registry
-            .field::<Option<String>>(literal!("name"), i)
-            .argument(registry.arg::<Option<bool>>(literal!("surname"), i))];
+            .field::<Option<String>>(arcstr::literal!("name"), i)
+            .argument(registry.arg::<Option<bool>>(arcstr::literal!("surname"), i))];
 
         registry
             .build_interface_type::<Self>(i, fields)
@@ -197,7 +198,7 @@ where
     S: ScalarValue,
 {
     fn name(_: &()) -> Option<ArcStr> {
-        Some(literal!("DogCommand"))
+        Some(arcstr::literal!("DogCommand"))
     }
 
     fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
@@ -247,27 +248,27 @@ where
     S: ScalarValue,
 {
     fn name(_: &()) -> Option<ArcStr> {
-        Some(literal!("Dog"))
+        Some(arcstr::literal!("Dog"))
     }
 
     fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let fields = &[
             registry
-                .field::<Option<String>>(literal!("name"), i)
-                .argument(registry.arg::<Option<bool>>(literal!("surname"), i)),
-            registry.field::<Option<String>>(literal!("nickname"), i),
-            registry.field::<Option<i32>>(literal!("barkVolume"), i),
-            registry.field::<Option<bool>>(literal!("barks"), i),
+                .field::<Option<String>>(arcstr::literal!("name"), i)
+                .argument(registry.arg::<Option<bool>>(arcstr::literal!("surname"), i)),
+            registry.field::<Option<String>>(arcstr::literal!("nickname"), i),
+            registry.field::<Option<i32>>(arcstr::literal!("barkVolume"), i),
+            registry.field::<Option<bool>>(arcstr::literal!("barks"), i),
             registry
-                .field::<Option<bool>>(literal!("doesKnowCommand"), i)
-                .argument(registry.arg::<Option<DogCommand>>(literal!("dogCommand"), i)),
+                .field::<Option<bool>>(arcstr::literal!("doesKnowCommand"), i)
+                .argument(registry.arg::<Option<DogCommand>>(arcstr::literal!("dogCommand"), i)),
             registry
-                .field::<Option<bool>>(literal!("isHousetrained"), i)
-                .argument(registry.arg_with_default(literal!("atOtherHomes"), &true, i)),
+                .field::<Option<bool>>(arcstr::literal!("isHousetrained"), i)
+                .argument(registry.arg_with_default(arcstr::literal!("atOtherHomes"), &true, i)),
             registry
-                .field::<Option<bool>>(literal!("isAtLocation"), i)
-                .argument(registry.arg::<Option<i32>>(literal!("x"), i))
-                .argument(registry.arg::<Option<i32>>(literal!("y"), i)),
+                .field::<Option<bool>>(arcstr::literal!("isAtLocation"), i)
+                .argument(registry.arg::<Option<i32>>(arcstr::literal!("x"), i))
+                .argument(registry.arg::<Option<i32>>(arcstr::literal!("y"), i)),
         ];
 
         registry
@@ -298,7 +299,7 @@ where
     S: ScalarValue,
 {
     fn name(_: &()) -> Option<ArcStr> {
-        Some(literal!("FurColor"))
+        Some(arcstr::literal!("FurColor"))
     }
 
     fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
@@ -350,18 +351,18 @@ where
     S: ScalarValue,
 {
     fn name(_: &()) -> Option<ArcStr> {
-        Some(literal!("Cat"))
+        Some(arcstr::literal!("Cat"))
     }
 
     fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let fields = &[
             registry
-                .field::<Option<String>>(literal!("name"), i)
-                .argument(registry.arg::<Option<bool>>(literal!("surname"), i)),
-            registry.field::<Option<String>>(literal!("nickname"), i),
-            registry.field::<Option<bool>>(literal!("meows"), i),
-            registry.field::<Option<i32>>(literal!("meowVolume"), i),
-            registry.field::<Option<FurColor>>(literal!("furColor"), i),
+                .field::<Option<String>>(arcstr::literal!("name"), i)
+                .argument(registry.arg::<Option<bool>>(arcstr::literal!("surname"), i)),
+            registry.field::<Option<String>>(arcstr::literal!("nickname"), i),
+            registry.field::<Option<bool>>(arcstr::literal!("meows"), i),
+            registry.field::<Option<i32>>(arcstr::literal!("meowVolume"), i),
+            registry.field::<Option<FurColor>>(arcstr::literal!("furColor"), i),
         ];
 
         registry
@@ -388,7 +389,7 @@ where
     S: ScalarValue,
 {
     fn name(_: &()) -> Option<ArcStr> {
-        Some(literal!("CatOrDog"))
+        Some(arcstr::literal!("CatOrDog"))
     }
 
     fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
@@ -415,11 +416,11 @@ where
     S: ScalarValue,
 {
     fn name(_: &()) -> Option<ArcStr> {
-        Some(literal!("Intelligent"))
+        Some(arcstr::literal!("Intelligent"))
     }
 
     fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
-        let fields = &[registry.field::<Option<i32>>(literal!("iq"), i)];
+        let fields = &[registry.field::<Option<i32>>(arcstr::literal!("iq"), i)];
 
         registry.build_interface_type::<Self>(i, fields).into_meta()
     }
@@ -442,17 +443,17 @@ where
     S: ScalarValue,
 {
     fn name(_: &()) -> Option<ArcStr> {
-        Some(literal!("Human"))
+        Some(arcstr::literal!("Human"))
     }
 
     fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let fields = &[
             registry
-                .field::<Option<String>>(literal!("name"), i)
-                .argument(registry.arg::<Option<bool>>(literal!("surname"), i)),
-            registry.field::<Option<Vec<Option<Pet>>>>(literal!("pets"), i),
-            registry.field::<Option<Vec<Human>>>(literal!("relatives"), i),
-            registry.field::<Option<i32>>(literal!("iq"), i),
+                .field::<Option<String>>(arcstr::literal!("name"), i)
+                .argument(registry.arg::<Option<bool>>(arcstr::literal!("surname"), i)),
+            registry.field::<Option<Vec<Option<Pet>>>>(arcstr::literal!("pets"), i),
+            registry.field::<Option<Vec<Human>>>(arcstr::literal!("relatives"), i),
+            registry.field::<Option<i32>>(arcstr::literal!("iq"), i),
         ];
         registry
             .build_object_type::<Self>(i, fields)
@@ -481,16 +482,16 @@ where
     S: ScalarValue,
 {
     fn name(_: &()) -> Option<ArcStr> {
-        Some(literal!("Alien"))
+        Some(arcstr::literal!("Alien"))
     }
 
     fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let fields = &[
             registry
-                .field::<Option<String>>(literal!("name"), i)
-                .argument(registry.arg::<Option<bool>>(literal!("surname"), i)),
-            registry.field::<Option<i32>>(literal!("iq"), i),
-            registry.field::<Option<i32>>(literal!("numEyes"), i),
+                .field::<Option<String>>(arcstr::literal!("name"), i)
+                .argument(registry.arg::<Option<bool>>(arcstr::literal!("surname"), i)),
+            registry.field::<Option<i32>>(arcstr::literal!("iq"), i),
+            registry.field::<Option<i32>>(arcstr::literal!("numEyes"), i),
         ];
 
         registry
@@ -520,7 +521,7 @@ where
     S: ScalarValue,
 {
     fn name(_: &()) -> Option<ArcStr> {
-        Some(literal!("DogOrHuman"))
+        Some(arcstr::literal!("DogOrHuman"))
     }
 
     fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
@@ -547,7 +548,7 @@ where
     S: ScalarValue,
 {
     fn name(_: &()) -> Option<ArcStr> {
-        Some(literal!("HumanOrAlien"))
+        Some(arcstr::literal!("HumanOrAlien"))
     }
 
     fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
@@ -574,16 +575,16 @@ where
     S: ScalarValue,
 {
     fn name(_: &()) -> Option<ArcStr> {
-        Some(literal!("ComplexInput"))
+        Some(arcstr::literal!("ComplexInput"))
     }
 
     fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let fields = &[
-            registry.arg::<bool>(literal!("requiredField"), i),
-            registry.arg::<Option<i32>>(literal!("intField"), i),
-            registry.arg::<Option<String>>(literal!("stringField"), i),
-            registry.arg::<Option<bool>>(literal!("booleanField"), i),
-            registry.arg::<Option<Vec<Option<String>>>>(literal!("stringListField"), i),
+            registry.arg::<bool>(arcstr::literal!("requiredField"), i),
+            registry.arg::<Option<i32>>(arcstr::literal!("intField"), i),
+            registry.arg::<Option<String>>(arcstr::literal!("stringField"), i),
+            registry.arg::<Option<bool>>(arcstr::literal!("booleanField"), i),
+            registry.arg::<Option<Vec<Option<String>>>>(arcstr::literal!("stringListField"), i),
         ];
 
         registry
@@ -648,57 +649,58 @@ where
     S: ScalarValue,
 {
     fn name(_: &()) -> Option<ArcStr> {
-        Some(literal!("ComplicatedArgs"))
+        Some(arcstr::literal!("ComplicatedArgs"))
     }
 
     fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let fields = &[
             registry
-                .field::<Option<String>>(literal!("intArgField"), i)
-                .argument(registry.arg::<Option<i32>>(literal!("intArg"), i)),
+                .field::<Option<String>>(arcstr::literal!("intArgField"), i)
+                .argument(registry.arg::<Option<i32>>(arcstr::literal!("intArg"), i)),
             registry
-                .field::<Option<String>>(literal!("nonNullIntArgField"), i)
-                .argument(registry.arg::<i32>(literal!("nonNullIntArg"), i)),
+                .field::<Option<String>>(arcstr::literal!("nonNullIntArgField"), i)
+                .argument(registry.arg::<i32>(arcstr::literal!("nonNullIntArg"), i)),
             registry
-                .field::<Option<String>>(literal!("stringArgField"), i)
-                .argument(registry.arg::<Option<String>>(literal!("stringArg"), i)),
+                .field::<Option<String>>(arcstr::literal!("stringArgField"), i)
+                .argument(registry.arg::<Option<String>>(arcstr::literal!("stringArg"), i)),
             registry
-                .field::<Option<String>>(literal!("booleanArgField"), i)
-                .argument(registry.arg::<Option<bool>>(literal!("booleanArg"), i)),
+                .field::<Option<String>>(arcstr::literal!("booleanArgField"), i)
+                .argument(registry.arg::<Option<bool>>(arcstr::literal!("booleanArg"), i)),
             registry
-                .field::<Option<String>>(literal!("enumArgField"), i)
-                .argument(registry.arg::<Option<FurColor>>(literal!("enumArg"), i)),
+                .field::<Option<String>>(arcstr::literal!("enumArgField"), i)
+                .argument(registry.arg::<Option<FurColor>>(arcstr::literal!("enumArg"), i)),
             registry
-                .field::<Option<String>>(literal!("floatArgField"), i)
-                .argument(registry.arg::<Option<f64>>(literal!("floatArg"), i)),
+                .field::<Option<String>>(arcstr::literal!("floatArgField"), i)
+                .argument(registry.arg::<Option<f64>>(arcstr::literal!("floatArg"), i)),
             registry
-                .field::<Option<String>>(literal!("idArgField"), i)
-                .argument(registry.arg::<Option<ID>>(literal!("idArg"), i)),
+                .field::<Option<String>>(arcstr::literal!("idArgField"), i)
+                .argument(registry.arg::<Option<ID>>(arcstr::literal!("idArg"), i)),
             registry
-                .field::<Option<String>>(literal!("stringListArgField"), i)
+                .field::<Option<String>>(arcstr::literal!("stringListArgField"), i)
                 .argument(
-                    registry.arg::<Option<Vec<Option<String>>>>(literal!("stringListArg"), i),
+                    registry
+                        .arg::<Option<Vec<Option<String>>>>(arcstr::literal!("stringListArg"), i),
                 ),
             registry
-                .field::<Option<String>>(literal!("nonNullStringListArgField"), i)
-                .argument(registry.arg::<Vec<String>>(literal!("nonNullStringListArg"), i)),
+                .field::<Option<String>>(arcstr::literal!("nonNullStringListArgField"), i)
+                .argument(registry.arg::<Vec<String>>(arcstr::literal!("nonNullStringListArg"), i)),
             registry
-                .field::<Option<String>>(literal!("complexArgField"), i)
-                .argument(registry.arg::<Option<ComplexInput>>(literal!("complexArg"), i)),
+                .field::<Option<String>>(arcstr::literal!("complexArgField"), i)
+                .argument(registry.arg::<Option<ComplexInput>>(arcstr::literal!("complexArg"), i)),
             registry
-                .field::<Option<String>>(literal!("multipleReqs"), i)
-                .argument(registry.arg::<i32>(literal!("req1"), i))
-                .argument(registry.arg::<i32>(literal!("req2"), i)),
+                .field::<Option<String>>(arcstr::literal!("multipleReqs"), i)
+                .argument(registry.arg::<i32>(arcstr::literal!("req1"), i))
+                .argument(registry.arg::<i32>(arcstr::literal!("req2"), i)),
             registry
-                .field::<Option<String>>(literal!("multipleOpts"), i)
-                .argument(registry.arg_with_default(literal!("opt1"), &0i32, i))
-                .argument(registry.arg_with_default(literal!("opt2"), &0i32, i)),
+                .field::<Option<String>>(arcstr::literal!("multipleOpts"), i)
+                .argument(registry.arg_with_default(arcstr::literal!("opt1"), &0i32, i))
+                .argument(registry.arg_with_default(arcstr::literal!("opt2"), &0i32, i)),
             registry
-                .field::<Option<String>>(literal!("multipleOptAndReq"), i)
-                .argument(registry.arg::<i32>(literal!("req1"), i))
-                .argument(registry.arg::<i32>(literal!("req2"), i))
-                .argument(registry.arg_with_default(literal!("opt1"), &0i32, i))
-                .argument(registry.arg_with_default(literal!("opt2"), &0i32, i)),
+                .field::<Option<String>>(arcstr::literal!("multipleOptAndReq"), i)
+                .argument(registry.arg::<i32>(arcstr::literal!("req1"), i))
+                .argument(registry.arg::<i32>(arcstr::literal!("req2"), i))
+                .argument(registry.arg_with_default(arcstr::literal!("opt1"), &0i32, i))
+                .argument(registry.arg_with_default(arcstr::literal!("opt2"), &0i32, i)),
         ];
 
         registry.build_object_type::<Self>(i, fields).into_meta()
@@ -722,22 +724,22 @@ where
     S: ScalarValue,
 {
     fn name(_: &()) -> Option<ArcStr> {
-        Some(literal!("QueryRoot"))
+        Some(arcstr::literal!("QueryRoot"))
     }
 
     fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let fields = &[
             registry
-                .field::<Option<Human>>(literal!("human"), i)
-                .argument(registry.arg::<Option<ID>>(literal!("id"), i)),
-            registry.field::<Option<Alien>>(literal!("alien"), i),
-            registry.field::<Option<Dog>>(literal!("dog"), i),
-            registry.field::<Option<Cat>>(literal!("cat"), i),
-            registry.field::<Option<Pet>>(literal!("pet"), i),
-            registry.field::<Option<CatOrDog>>(literal!("catOrDog"), i),
-            registry.field::<Option<DogOrHuman>>(literal!("dorOrHuman"), i),
-            registry.field::<Option<HumanOrAlien>>(literal!("humanOrAlien"), i),
-            registry.field::<Option<ComplicatedArgs>>(literal!("complicatedArgs"), i),
+                .field::<Option<Human>>(arcstr::literal!("human"), i)
+                .argument(registry.arg::<Option<ID>>(arcstr::literal!("id"), i)),
+            registry.field::<Option<Alien>>(arcstr::literal!("alien"), i),
+            registry.field::<Option<Dog>>(arcstr::literal!("dog"), i),
+            registry.field::<Option<Cat>>(arcstr::literal!("cat"), i),
+            registry.field::<Option<Pet>>(arcstr::literal!("pet"), i),
+            registry.field::<Option<CatOrDog>>(arcstr::literal!("catOrDog"), i),
+            registry.field::<Option<DogOrHuman>>(arcstr::literal!("dorOrHuman"), i),
+            registry.field::<Option<HumanOrAlien>>(arcstr::literal!("humanOrAlien"), i),
+            registry.field::<Option<ComplicatedArgs>>(arcstr::literal!("complicatedArgs"), i),
         ];
 
         registry.build_object_type::<Self>(i, fields).into_meta()
@@ -761,22 +763,22 @@ where
     S: ScalarValue,
 {
     fn name(_: &()) -> Option<ArcStr> {
-        Some(literal!("MutationRoot"))
+        Some(arcstr::literal!("MutationRoot"))
     }
 
     fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let _ = registry.get_type::<Unpopulated>(i);
 
-        let fields = [registry.field::<i32>(literal!("testInput"), i).argument(
-            registry.arg_with_default::<TestInput>(
-                literal!("input"),
+        let fields = [registry
+            .field::<i32>(arcstr::literal!("testInput"), i)
+            .argument(registry.arg_with_default::<TestInput>(
+                arcstr::literal!("input"),
                 &TestInput {
                     id: 423,
                     name: String::from("foo"),
                 },
                 i,
-            ),
-        )];
+            ))];
 
         registry.build_object_type::<Self>(i, &fields).into_meta()
     }
@@ -799,7 +801,7 @@ where
     S: ScalarValue,
 {
     fn name(_: &()) -> Option<ArcStr> {
-        Some(literal!("SubscriptionRoot"))
+        Some(arcstr::literal!("SubscriptionRoot"))
     }
 
     fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {

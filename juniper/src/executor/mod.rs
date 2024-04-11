@@ -17,7 +17,6 @@ use crate::{
         Definition, Document, Fragment, FromInputValue, InputValue, Operation, OperationType,
         Selection, ToInputValue, Type,
     },
-    literal,
     parser::{SourcePosition, Spanning},
     schema::{
         meta::{
@@ -47,16 +46,6 @@ pub use self::{
 
 mod look_ahead;
 mod owned_executor;
-
-/// A type registry used to build schemas
-///
-/// The registry gathers metadata for all types in a schema. It provides
-/// convenience methods to convert types implementing the `GraphQLType` trait
-/// into `Type` instances and automatically registers them.
-pub struct Registry<S = DefaultScalarValue> {
-    /// Currently registered types
-    pub types: FnvHashMap<Name, MetaType<S>>,
-}
 
 #[allow(missing_docs)]
 #[derive(Clone)]
@@ -1140,17 +1129,26 @@ where
     Ok((value, errors))
 }
 
-impl<'r, S: 'r> Registry<S> {
+/// A type registry used to build schemas
+///
+/// The registry gathers metadata for all types in a schema. It provides
+/// convenience methods to convert types implementing the `GraphQLType` trait
+/// into `Type` instances and automatically registers them.
+pub struct Registry<S = DefaultScalarValue> {
+    /// Currently registered types
+    pub types: FnvHashMap<Name, MetaType<S>>,
+}
+
+impl<S> Registry<S> {
     /// Constructs a new [`Registry`] out of the given `types`.
     pub fn new(types: FnvHashMap<Name, MetaType<S>>) -> Self {
         Self { types }
     }
 
-    /// Returns a [`Type`] instance for the given [`GraphQLType`], registered in
-    /// this [`Registry`].
+    /// Returns a [`Type`] instance for the given [`GraphQLType`], registered in this [`Registry`].
     ///
-    /// If this [`Registry`] hasn't seen a [`Type`] with such
-    /// [`GraphQLType::name`] before, it will construct the one and store it.
+    /// If this [`Registry`] hasn't seen a [`Type`] with such [`GraphQLType::name`] before, it will
+    /// construct the one and store it.
     pub fn get_type<T>(&mut self, info: &T::TypeInfo) -> Type
     where
         T: GraphQLType<S> + ?Sized,
@@ -1170,13 +1168,13 @@ impl<'r, S: 'r> Registry<S> {
     }
 
     /// Creates a [`Field`] with the provided `name`.
-    pub fn field<T>(&mut self, name: ArcStr, info: &T::TypeInfo) -> Field<S>
+    pub fn field<T>(&mut self, name: impl Into<ArcStr>, info: &T::TypeInfo) -> Field<S>
     where
         T: GraphQLType<S> + ?Sized,
         S: ScalarValue,
     {
         Field {
-            name,
+            name: name.into(),
             description: None,
             arguments: None,
             field_type: self.get_type::<T>(info),
@@ -1187,7 +1185,7 @@ impl<'r, S: 'r> Registry<S> {
     #[doc(hidden)]
     pub fn field_convert<'a, T: IntoResolvable<'a, S, I, C>, I, C>(
         &mut self,
-        name: ArcStr,
+        name: impl Into<ArcStr>,
         info: &I::TypeInfo,
     ) -> Field<S>
     where
@@ -1195,7 +1193,7 @@ impl<'r, S: 'r> Registry<S> {
         S: ScalarValue,
     {
         Field {
-            name,
+            name: name.into(),
             description: None,
             arguments: None,
             field_type: self.get_type::<I>(info),
@@ -1280,7 +1278,7 @@ impl<'r, S: 'r> Registry<S> {
         let name = T::name(info).expect("Object types must be named. Implement name()");
 
         let mut v = fields.to_vec();
-        v.push(self.field::<String>(literal!("__typename"), &()));
+        v.push(self.field::<String>(arcstr::literal!("__typename"), &()));
         ObjectMeta::new(name, &v)
     }
 
@@ -1309,7 +1307,7 @@ impl<'r, S: 'r> Registry<S> {
         let name = T::name(info).expect("Interface types must be named. Implement name()");
 
         let mut v = fields.to_vec();
-        v.push(self.field::<String>(literal!("__typename"), &()));
+        v.push(self.field::<String>(arcstr::literal!("__typename"), &()));
         InterfaceMeta::new(name, &v)
     }
 

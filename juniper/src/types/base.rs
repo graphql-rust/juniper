@@ -311,8 +311,8 @@ where
 /// ```
 /// # use std::collections::HashMap;
 /// use juniper::{
-///     literal, meta::MetaType, ArcStr, Arguments, Context, DefaultScalarValue, Executor, ExecutionResult,
-///     FieldResult, GraphQLType, GraphQLValue, Registry,
+///     arcstr, meta::MetaType, ArcStr, Arguments, Context, DefaultScalarValue, Executor,
+///     ExecutionResult, FieldResult, GraphQLType, GraphQLValue, Registry,
 /// };
 ///
 /// #[derive(Debug)]
@@ -324,7 +324,7 @@ where
 ///
 /// impl GraphQLType<DefaultScalarValue> for User {
 ///    fn name(_: &()) -> Option<ArcStr> {
-///        Some(literal!("User"))
+///        Some(arcstr::literal!("User"))
 ///    }
 ///
 ///    fn meta(_: &(), registry: &mut Registry) -> MetaType {
@@ -333,9 +333,9 @@ where
 ///        // If we need arguments, want to implement interfaces, or want to add documentation
 ///        // strings, we can do it here.
 ///        let fields = &[
-///            registry.field::<&String>(literal!("id"), &()),
-///            registry.field::<&String>(literal!("name"), &()),
-///            registry.field::<Vec<&User>>(literal!("friends"), &()),
+///            registry.field::<String>(arcstr::literal!("id"), &()),
+///            registry.field::<String>(arcstr::literal!("name"), &()),
+///            registry.field::<Vec<User>>(arcstr::literal!("friends"), &()),
 ///        ];
 ///        registry.build_object_type::<User>(&(), fields).into_meta()
 ///    }
