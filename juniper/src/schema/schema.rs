@@ -118,11 +118,12 @@ where
         arguments: &'b Arguments<S>,
         executor: &'b Executor<Self::Context, S>,
     ) -> crate::BoxFuture<'b, ExecutionResult<S>> {
-        use futures::future::ready;
+        use std::future;
+
         match field_name {
             "__schema" | "__type" => {
                 let v = self.resolve_field(info, field_name, arguments, executor);
-                Box::pin(ready(v))
+                Box::pin(future::ready(v))
             }
             _ => self
                 .query_type

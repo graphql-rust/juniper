@@ -719,7 +719,7 @@ impl<S> MetaType<S> {
                 Type::NonNullList(inner, expected_size) => {
                     Type::List(inner.clone(), *expected_size)
                 }
-                ty => ty.clone(),
+                ty @ (Type::List(..) | Type::Named(..)) => ty.clone(),
             },
             Self::Placeholder(PlaceholderMeta { of_type }) => of_type.clone(),
         }

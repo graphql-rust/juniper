@@ -1,32 +1,79 @@
 use std::{borrow::Cow, fmt, hash::Hash, slice, vec};
 
+use arcstr::ArcStr;
+
 use indexmap::IndexMap;
 
 use crate::{
     executor::Variables,
     parser::Spanning,
     value::{DefaultScalarValue, ScalarValue},
-    ArcStr,
 };
 
-/// A type literal in the syntax tree
+/// Type literal in a syntax tree.
 ///
-/// This enum carries no semantic information and might refer to types that do
-/// not exist.
-#[derive(Clone, Eq, PartialEq, Debug)]
+/// This enum carries no semantic information and might refer to types that do not exist.
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Type<N = ArcStr> {
-    /// A nullable named type, e.g. `String`
+    /// `null`able named type, e.g. `String`.
     Named(N),
-    /// A nullable list type, e.g. `[String]`
+
+    /// `null`able list type, e.g. `[String]`.
     ///
-    /// The list itself is what's nullable, the containing type might be non-null.
+    /// The list itself is `null`able, the containing [`Type`] might be non-`null`.
     List(Box<Type<N>>, Option<usize>),
-    /// A non-null named type, e.g. `String!`
+
+    /// Non-`null` named type, e.g. `String!`.
     NonNullNamed(N),
-    /// A non-null list type, e.g. `[String]!`.
+
+    /// Non-`null` list type, e.g. `[String]!`.
     ///
-    /// The list itself is what's non-null, the containing type might be null.
+    /// The list itself is non-`null`, the containing [`Type`] might be `null`able.
     NonNullList(Box<Type<N>>, Option<usize>),
+}
+
+impl<N: fmt::Display> fmt::Display for Type<N> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Named(n) => write!(f, "{n}"),
+            Self::NonNullNamed(n) => write!(f, "{n}!"),
+            Self::List(t, _) => write!(f, "[{t}]"),
+            Self::NonNullList(t, _) => write!(f, "[{t}]!"),
+        }
+    }
+}
+
+impl<N: AsRef<str>> Type<N> {
+    /// Returns the name of this named [`Type`].
+    ///
+    /// Only applies to named [`Type`]s. Lists will return [`None`].
+    #[must_use]
+    pub fn name(&self) -> Option<&str> {
+        match self {
+            Self::Named(n) | Self::NonNullNamed(n) => Some(n.as_ref()),
+            Self::List(..) | Self::NonNullList(..) => None,
+        }
+    }
+
+    /// Returns the innermost name of this [`Type`] by unpacking lists.
+    ///
+    /// All [`Type`] literals contain exactly one named type.
+    #[must_use]
+    pub fn innermost_name(&self) -> &str {
+        match self {
+            Self::Named(n) | Self::NonNullNamed(n) => n.as_ref(),
+            Self::List(l, ..) | Self::NonNullList(l, ..) => l.innermost_name(),
+        }
+    }
+
+    /// Indicates whether this [`Type`] can only represent non-`null` values.
+    #[must_use]
+    pub fn is_non_null(&self) -> bool {
+        match self {
+            Self::NonNullList(..) | Self::NonNullNamed(..) => true,
+            Self::List(..) | Self::Named(..) => false,
+        }
+    }
 }
 
 /// A JSON-like value that can be passed into the query execution, either
@@ -193,44 +240,6 @@ pub trait FromInputValue<S = DefaultScalarValue>: Sized {
 pub trait ToInputValue<S = DefaultScalarValue>: Sized {
     /// Performs the conversion.
     fn to_input_value(&self) -> InputValue<S>;
-}
-
-impl<N: AsRef<str>> Type<N> {
-    /// Get the name of a named type.
-    ///
-    /// Only applies to named types; lists will return `None`.
-    pub fn name(&self) -> Option<&str> {
-        match *self {
-            Type::Named(ref n) | Type::NonNullNamed(ref n) => Some(n.as_ref()),
-            _ => None,
-        }
-    }
-
-    /// Get the innermost name by unpacking lists
-    ///
-    /// All type literals contain exactly one named type.
-    pub fn innermost_name(&self) -> &str {
-        match *self {
-            Type::Named(ref n) | Type::NonNullNamed(ref n) => n.as_ref(),
-            Type::List(ref l, _) | Type::NonNullList(ref l, _) => l.innermost_name(),
-        }
-    }
-
-    /// Determines if a type only can represent non-null values.
-    pub fn is_non_null(&self) -> bool {
-        matches!(*self, Type::NonNullNamed(_) | Type::NonNullList(..))
-    }
-}
-
-impl<N: fmt::Display> fmt::Display for Type<N> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Named(n) => write!(f, "{n}"),
-            Self::NonNullNamed(n) => write!(f, "{n}!"),
-            Self::List(t, _) => write!(f, "[{t}]"),
-            Self::NonNullList(t, _) => write!(f, "[{t}]!"),
-        }
-    }
 }
 
 impl<S> InputValue<S> {

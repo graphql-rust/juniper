@@ -562,18 +562,18 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
         t2: &Type<N>,
     ) -> bool {
         match (t1, t2) {
-            (&Type::List(ref inner1, expected_size1), &Type::List(ref inner2, expected_size2))
+            (Type::List(inner1, expected_size1), Type::List(inner2, expected_size2))
             | (
-                &Type::NonNullList(ref inner1, expected_size1),
-                &Type::NonNullList(ref inner2, expected_size2),
+                Type::NonNullList(inner1, expected_size1),
+                Type::NonNullList(inner2, expected_size2),
             ) => {
                 if expected_size1 != expected_size2 {
                     return false;
                 }
                 Self::is_type_conflict(ctx, inner1, inner2)
             }
-            (&Type::NonNullNamed(ref n1), &Type::NonNullNamed(ref n2))
-            | (&Type::Named(ref n1), &Type::Named(ref n2)) => {
+            (Type::Named(n1), Type::Named(n2))
+            | (Type::NonNullNamed(n1), Type::NonNullNamed(n2)) => {
                 let ct1 = ctx.schema.concrete_type_by_name(n1.as_ref());
                 let ct2 = ctx.schema.concrete_type_by_name(n2.as_ref());
 

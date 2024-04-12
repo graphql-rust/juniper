@@ -89,7 +89,7 @@ impl<'a, S: fmt::Debug> VariableInAllowedPosition<'a, S> {
                             Type::NonNullList(inner.clone(), *expected_size)
                         }
                         (&Some(_), Type::Named(inner)) => Type::NonNullNamed(*inner),
-                        (_, t) => t.clone(),
+                        (_, ty) => ty.clone(),
                     };
 
                     if !ctx

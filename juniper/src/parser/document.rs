@@ -542,7 +542,7 @@ fn wrap_non_null<'a>(
     let wrapped = match inner.item {
         Type::Named(name) => Type::NonNullNamed(name),
         Type::List(l, expected_size) => Type::NonNullList(l, expected_size),
-        t => t,
+        ty @ (Type::NonNullList(..) | Type::NonNullNamed(..)) => ty,
     };
 
     Ok(Spanning::start_end(&inner.span.start, end_pos, wrapped))

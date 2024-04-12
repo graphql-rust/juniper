@@ -196,7 +196,7 @@ where
     /// The order of the generated definitions in the returned [`Document`] is NOT stable and may change without any
     /// real schema changes.
     #[must_use]
-    pub fn as_document(&self) -> Document<&str> {
+    pub fn as_document(&self) -> Document<'_, &str> {
         use crate::schema::translate::{
             graphql_parser::GraphQLParserTranslator, SchemaTranslator as _,
         };
@@ -319,11 +319,11 @@ impl<S> SchemaType<S> {
     }
 
     pub(crate) fn lookup_type<N: AsRef<str>>(&self, tpe: &Type<N>) -> Option<&MetaType<S>> {
-        match *tpe {
-            Type::NonNullNamed(ref name) | Type::Named(ref name) => {
+        match tpe {
+            Type::Named(name) | Type::NonNullNamed(name) => {
                 self.concrete_type_by_name(name.as_ref())
             }
-            Type::List(ref inner, _) | Type::NonNullList(ref inner, _) => self.lookup_type(inner),
+            Type::List(inner, ..) | Type::NonNullList(inner, ..) => self.lookup_type(inner),
         }
     }
 
