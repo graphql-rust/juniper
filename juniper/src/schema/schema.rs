@@ -19,8 +19,6 @@ use crate::schema::{
     model::{DirectiveLocation, DirectiveType, RootNode, SchemaType, TypeType},
 };
 
-use super::model::AsDynType;
-
 impl<S, QueryT, MutationT, SubscriptionT> GraphQLType<S>
     for RootNode<QueryT, MutationT, SubscriptionT, S>
 where
@@ -401,7 +399,7 @@ impl<S: ScalarValue> Field<S> {
 
     #[graphql(name = "type")]
     fn type_<'s>(&self, context: &'s SchemaType<S>) -> TypeType<'s, S> {
-        context.make_type(self.field_type.as_dyn_type())
+        context.make_type(&self.field_type)
     }
 
     fn is_deprecated(&self) -> bool {
@@ -432,7 +430,7 @@ impl<S: ScalarValue> Argument<S> {
 
     #[graphql(name = "type")]
     fn type_<'s>(&self, context: &'s SchemaType<S>) -> TypeType<'s, S> {
-        context.make_type(self.arg_type.as_dyn_type())
+        context.make_type(&self.arg_type)
     }
 
     #[graphql(name = "defaultValue")]

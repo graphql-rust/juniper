@@ -82,8 +82,8 @@ impl<N: AsRef<str>> Type<N> {
 ///
 /// Lists and objects variants are _spanned_, i.e. they contain a reference to
 /// their position in the source file, if available.
-#[derive(Clone, Debug, PartialEq)]
 #[allow(missing_docs)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum InputValue<S = DefaultScalarValue> {
     Null,
     Scalar(S),
@@ -93,24 +93,24 @@ pub enum InputValue<S = DefaultScalarValue> {
     Object(Vec<(Spanning<String>, Spanning<InputValue<S>>)>),
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct VariableDefinition<'a, S> {
     pub var_type: Spanning<Type<&'a str>>,
     pub default_value: Option<Spanning<InputValue<S>>>,
     pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Arguments<'a, S> {
     pub items: Vec<(Spanning<&'a str>, Spanning<InputValue<S>>)>,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct VariableDefinitions<'a, S> {
     pub items: Vec<(Spanning<&'a str>, VariableDefinition<'a, S>)>,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Field<'a, S> {
     pub alias: Option<Spanning<&'a str>>,
     pub name: Spanning<&'a str>,
@@ -119,13 +119,13 @@ pub struct Field<'a, S> {
     pub selection_set: Option<Vec<Selection<'a, S>>>,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct FragmentSpread<'a, S> {
     pub name: Spanning<&'a str>,
     pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct InlineFragment<'a, S> {
     pub type_condition: Option<Spanning<&'a str>>,
     pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
@@ -147,7 +147,7 @@ pub struct InlineFragment<'a, S> {
 ///   }
 /// }
 /// ```
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[allow(missing_docs)]
 pub enum Selection<'a, S = DefaultScalarValue> {
     Field(Spanning<Field<'a, S>>),
@@ -155,7 +155,7 @@ pub enum Selection<'a, S = DefaultScalarValue> {
     InlineFragment(Spanning<InlineFragment<'a, S>>),
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Directive<'a, S> {
     pub name: Spanning<&'a str>,
     pub arguments: Option<Spanning<Arguments<'a, S>>>,
@@ -170,7 +170,7 @@ pub enum OperationType {
 }
 
 #[allow(missing_docs)]
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Operation<'a, S> {
     pub operation_type: OperationType,
     pub name: Option<Spanning<&'a str>>,
@@ -179,7 +179,7 @@ pub struct Operation<'a, S> {
     pub selection_set: Vec<Selection<'a, S>>,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Fragment<'a, S> {
     pub name: Spanning<&'a str>,
     pub type_condition: Spanning<&'a str>,
@@ -188,7 +188,7 @@ pub struct Fragment<'a, S> {
 }
 
 #[doc(hidden)]
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Definition<'a, S> {
     Operation(Spanning<Operation<'a, S>>),
     Fragment(Spanning<Fragment<'a, S>>),
@@ -584,7 +584,7 @@ impl<'a, S> Arguments<'a, S> {
 }
 
 impl<'a, S> VariableDefinitions<'a, S> {
-    pub fn iter(&self) -> slice::Iter<(Spanning<&'a str>, VariableDefinition<S>)> {
+    pub fn iter(&self) -> slice::Iter<(Spanning<&'a str>, VariableDefinition<'a, S>)> {
         self.items.iter()
     }
 }

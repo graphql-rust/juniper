@@ -3,7 +3,6 @@ use std::fmt;
 use crate::{
     ast::VariableDefinition,
     parser::Spanning,
-    schema::model::AsDynType,
     types::utilities::validate_literal_value,
     validation::{ValidatorContext, Visitor},
     value::ScalarValue,
@@ -35,7 +34,7 @@ where
                     &[span.start],
                 )
             } else {
-                let meta_type = ctx.schema.make_type(var_def.var_type.item.as_dyn_type());
+                let meta_type = ctx.schema.make_type(&var_def.var_type.item);
 
                 if let Some(err) = validate_literal_value(ctx.schema, &meta_type, var_value) {
                     ctx.report_error(

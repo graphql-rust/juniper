@@ -4,7 +4,7 @@ use crate::{
     ast::InputValue,
     schema::{
         meta::{Argument, EnumMeta, InputObjectMeta, MetaType},
-        model::{AsDynType, SchemaType, TypeType},
+        model::{SchemaType, TypeType},
     },
     value::ScalarValue,
 };
@@ -73,7 +73,7 @@ where
     let field_type = object_fields
         .iter()
         .filter(|f| f.name == field_key)
-        .map(|f| schema.make_type(f.arg_type.as_dyn_type()))
+        .map(|f| schema.make_type(&f.arg_type))
         .next();
 
     if let Some(field_arg_type) = field_type {

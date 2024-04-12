@@ -7,7 +7,7 @@ use crate::{
     ast::Fragment,
     executor::FieldPath,
     parser::SourcePosition,
-    schema::model::{AsDynType, SchemaType, TypeType},
+    schema::model::{SchemaType, TypeType},
     ExecutionError, Executor, Selection, Variables,
 };
 
@@ -91,12 +91,12 @@ where
             current_selection_set: selection_set,
             parent_selection_set: self.current_selection_set.clone(),
             current_type: self.schema.make_type(
-                self.current_type
+                &self
+                    .current_type
                     .innermost_concrete()
                     .field_by_name(field_name)
                     .expect("Field not found on inner type")
-                    .field_type
-                    .as_dyn_type(),
+                    .field_type,
             ),
             schema: self.schema,
             context: self.context,

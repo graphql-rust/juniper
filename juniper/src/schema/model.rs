@@ -392,21 +392,22 @@ impl<S> SchemaType<S> {
     }
 
     /// Make a type.
-    pub fn make_type(&self, t: DynType) -> TypeType<S> {
-        match t {
-            DynType::NonNullNamed(n) => TypeType::NonNull(Box::new(
+    pub fn make_type(&self, ty: &Type<impl AsRef<str>>) -> TypeType<S> {
+        match ty {
+            Type::List(inner, expected_size) => {
+                TypeType::List(Box::new(self.make_type(inner)), *expected_size)
+            }
+            Type::Named(n) => self
+                .type_by_name(n.as_ref())
+                .expect("Type not found in schema"),
+            Type::NonNullList(inner, expected_size) => TypeType::NonNull(Box::new(TypeType::List(
+                Box::new(self.make_type(inner)),
+                *expected_size,
+            ))),
+            Type::NonNullNamed(n) => TypeType::NonNull(Box::new(
                 self.type_by_name(n.as_ref())
                     .expect("Type not found in schema"),
             )),
-            DynType::NonNullList(inner, expected_size) => TypeType::NonNull(Box::new(
-                TypeType::List(Box::new(self.make_type(inner.as_dyn_type())), expected_size),
-            )),
-            DynType::Named(n) => self
-                .type_by_name(n.as_ref())
-                .expect("Type not found in schema"),
-            DynType::List(inner, expected_size) => {
-                TypeType::List(Box::new(self.make_type(inner.as_dyn_type())), expected_size)
-            }
         }
     }
 

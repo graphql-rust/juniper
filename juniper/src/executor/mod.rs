@@ -24,7 +24,7 @@ use crate::{
             InterfaceMeta, ListMeta, MetaType, NullableMeta, ObjectMeta, PlaceholderMeta,
             ScalarMeta, UnionMeta,
         },
-        model::{AsDynType, RootNode, SchemaType, TypeType},
+        model::{RootNode, SchemaType, TypeType},
     },
     types::{
         async_await::{GraphQLTypeAsync, GraphQLValueAsync},
@@ -569,12 +569,12 @@ where
             current_selection_set: selection_set,
             parent_selection_set: self.current_selection_set,
             current_type: self.schema.make_type(
-                self.current_type
+                &self
+                    .current_type
                     .innermost_concrete()
                     .field_by_name(field_name)
                     .expect("Field not found on inner type")
-                    .field_type
-                    .as_dyn_type(),
+                    .field_type,
             ),
             schema: self.schema,
             context: self.context,
