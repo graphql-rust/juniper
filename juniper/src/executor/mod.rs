@@ -15,7 +15,7 @@ use futures::Stream;
 use crate::{
     ast::{
         Definition, Document, Fragment, FromInputValue, InputValue, Operation, OperationType,
-        Selection, ToInputValue, Type,
+        Selection, ToInputValue, Type, TypeName,
     },
     parser::{SourcePosition, Spanning},
     schema::{
@@ -1149,7 +1149,7 @@ impl<S> Registry<S> {
     ///
     /// If this [`Registry`] hasn't seen a [`Type`] with such [`GraphQLType::name`] before, it will
     /// construct the one and store it.
-    pub fn get_type<T>(&mut self, info: &T::TypeInfo) -> Type
+    pub fn get_type<T>(&mut self, info: &T::TypeInfo) -> Type<'static>
     where
         T: GraphQLType<S> + ?Sized,
         S: ScalarValue,
@@ -1157,7 +1157,10 @@ impl<S> Registry<S> {
         if let Some(name) = T::name(info) {
             let validated_name = Name::new(name.clone()).unwrap();
             if !self.types.contains_key(&name) {
-                self.insert_placeholder(validated_name.clone(), Type::NonNullNamed(name.clone()));
+                self.insert_placeholder(
+                    validated_name.clone(),
+                    Type::NonNullNamed(TypeName::Owned(name.clone())),
+                );
                 let meta = T::meta(info, self);
                 self.types.insert(validated_name, meta);
             }
@@ -1224,7 +1227,7 @@ impl<S> Registry<S> {
         Argument::new(name, self.get_type::<T>(info)).default_value(value.to_input_value())
     }
 
-    fn insert_placeholder(&mut self, name: Name, of_type: Type) {
+    fn insert_placeholder(&mut self, name: Name, of_type: Type<'static>) {
         self.types
             .entry(name)
             .or_insert(MetaType::Placeholder(PlaceholderMeta { of_type }));
@@ -1312,7 +1315,7 @@ impl<S> Registry<S> {
     }
 
     /// Creates an [`UnionMeta`] type of the given `types`.
-    pub fn build_union_type<T>(&mut self, info: &T::TypeInfo, types: &[Type]) -> UnionMeta
+    pub fn build_union_type<T>(&mut self, info: &T::TypeInfo, types: &[Type<'static>]) -> UnionMeta
     where
         T: GraphQLType<S> + ?Sized,
         S: ScalarValue,

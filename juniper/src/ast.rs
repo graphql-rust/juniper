@@ -1,4 +1,10 @@
-use std::{borrow::Cow, fmt, hash::Hash, slice, vec};
+use std::{
+    borrow::{Borrow, Cow},
+    fmt,
+    hash::Hash,
+    ops::Deref,
+    slice, vec,
+};
 
 use arcstr::ArcStr;
 
@@ -10,29 +16,114 @@ use crate::{
     value::{DefaultScalarValue, ScalarValue},
 };
 
+/// Name of a [`Type`] literal.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum TypeName<'a> {
+    /// Owned version of this name.
+    Owned(ArcStr),
+
+    /// Borrowed version of this name.
+    Borrowed(&'a str),
+}
+
+impl fmt::Display for TypeName<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Owned(n) => fmt::Display::fmt(n, f),
+            Self::Borrowed(n) => fmt::Display::fmt(n, f),
+        }
+    }
+}
+
+impl AsRef<str> for TypeName<'_> {
+    fn as_ref(&self) -> &str {
+        match self {
+            Self::Owned(n) => n.as_ref(),
+            Self::Borrowed(n) => n,
+        }
+    }
+}
+
+impl Borrow<str> for TypeName<'_> {
+    fn borrow(&self) -> &str {
+        self.as_ref()
+    }
+}
+
+impl Deref for TypeName<'_> {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        self.as_ref()
+    }
+}
+
+impl<'a> From<&'a str> for TypeName<'a> {
+    fn from(v: &'a str) -> Self {
+        Self::Borrowed(v)
+    }
+}
+
+impl From<ArcStr> for TypeName<'_> {
+    fn from(v: ArcStr) -> Self {
+        Self::Owned(v)
+    }
+}
+
+impl<'a> From<&'a ArcStr> for TypeName<'a> {
+    fn from(v: &'a ArcStr) -> Self {
+        Self::Borrowed(v.as_ref())
+    }
+}
+
+impl From<TypeName<'_>> for Box<str> {
+    fn from(n: TypeName<'_>) -> Self {
+        n.as_ref().into()
+    }
+}
+
+impl From<&TypeName<'_>> for Box<str> {
+    fn from(n: &TypeName<'_>) -> Self {
+        n.as_ref().into()
+    }
+}
+
+impl TypeName<'_> {
+    /// Return owned value if this [`TypeName`].
+    ///
+    /// [`Clone`]s if it's [`ArcStr`] already, otherwise allocates a new one.
+    #[must_use]
+    pub fn to_owned(&self) -> ArcStr {
+        match self {
+            Self::Owned(n) => n.clone(),
+            Self::Borrowed(n) => (*n).into(),
+        }
+    }
+}
+
 /// Type literal in a syntax tree.
 ///
 /// This enum carries no semantic information and might refer to types that do not exist.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Type<N = ArcStr> {
+pub enum Type<'a> {
     /// `null`able named type, e.g. `String`.
-    Named(N),
+    Named(TypeName<'a>),
 
     /// `null`able list type, e.g. `[String]`.
     ///
     /// The list itself is `null`able, the containing [`Type`] might be non-`null`.
-    List(Box<Type<N>>, Option<usize>),
+    List(Box<Type<'a>>, Option<usize>),
 
     /// Non-`null` named type, e.g. `String!`.
-    NonNullNamed(N),
+    NonNullNamed(TypeName<'a>),
 
     /// Non-`null` list type, e.g. `[String]!`.
     ///
     /// The list itself is non-`null`, the containing [`Type`] might be `null`able.
-    NonNullList(Box<Type<N>>, Option<usize>),
+    NonNullList(Box<Type<'a>>, Option<usize>),
 }
 
-impl<N: fmt::Display> fmt::Display for Type<N> {
+impl fmt::Display for Type<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Named(n) => write!(f, "{n}"),
@@ -43,7 +134,7 @@ impl<N: fmt::Display> fmt::Display for Type<N> {
     }
 }
 
-impl<N: AsRef<str>> Type<N> {
+impl<'a> Type<'a> {
     /// Returns the name of this named [`Type`].
     ///
     /// Only applies to named [`Type`]s. Lists will return [`None`].
@@ -59,10 +150,21 @@ impl<N: AsRef<str>> Type<N> {
     ///
     /// All [`Type`] literals contain exactly one named type.
     #[must_use]
-    pub fn innermost_name(&self) -> &str {
+    pub fn innermost_name(&self) -> &TypeName<'_> {
         match self {
-            Self::Named(n) | Self::NonNullNamed(n) => n.as_ref(),
+            Self::Named(n) | Self::NonNullNamed(n) => n,
             Self::List(l, ..) | Self::NonNullList(l, ..) => l.innermost_name(),
+        }
+    }
+
+    /// Returns the owned innermost name of this [`Type`] by unpacking lists.
+    ///
+    /// All [`Type`] literals contain exactly one named type.
+    #[must_use]
+    pub fn to_innermost_name(&self) -> ArcStr {
+        match self.innermost_name() {
+            TypeName::Owned(n) => n.clone(),
+            TypeName::Borrowed(n) => (*n).into(),
         }
     }
 
@@ -95,7 +197,7 @@ pub enum InputValue<S = DefaultScalarValue> {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct VariableDefinition<'a, S> {
-    pub var_type: Spanning<Type<&'a str>>,
+    pub var_type: Spanning<Type<'a>>,
     pub default_value: Option<Spanning<InputValue<S>>>,
     pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
 }

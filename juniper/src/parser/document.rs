@@ -507,7 +507,7 @@ where
     ))
 }
 
-pub fn parse_type<'a>(parser: &mut Parser<'a>) -> ParseResult<Type<&'a str>> {
+pub fn parse_type<'a>(parser: &mut Parser<'a>) -> ParseResult<Type<'a>> {
     let parsed_type = if let Some(Spanning {
         span: ref start_span,
         ..
@@ -521,7 +521,7 @@ pub fn parse_type<'a>(parser: &mut Parser<'a>) -> ParseResult<Type<&'a str>> {
             Type::List(Box::new(inner_type.item), None),
         )
     } else {
-        parser.expect_name()?.map(Type::Named)
+        parser.expect_name()?.map(|n| Type::Named(n.into()))
     };
 
     Ok(match *parser.peek() {
@@ -533,10 +533,7 @@ pub fn parse_type<'a>(parser: &mut Parser<'a>) -> ParseResult<Type<&'a str>> {
     })
 }
 
-fn wrap_non_null<'a>(
-    parser: &mut Parser<'a>,
-    inner: Spanning<Type<&'a str>>,
-) -> ParseResult<Type<&'a str>> {
+fn wrap_non_null<'a>(parser: &mut Parser<'a>, inner: Spanning<Type<'a>>) -> ParseResult<Type<'a>> {
     let end_pos = &parser.expect(&Token::ExclamationMark)?.span.end;
 
     let wrapped = match inner.item {

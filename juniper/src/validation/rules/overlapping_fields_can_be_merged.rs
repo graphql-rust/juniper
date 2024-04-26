@@ -446,9 +446,9 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
         if let (Some(s1), Some(s2)) = (&ast1.item.selection_set, &ast2.item.selection_set) {
             let conflicts = self.find_conflicts_between_sub_selection_sets(
                 mutually_exclusive,
-                t1.map(Type::innermost_name),
+                t1.map(|t| t.innermost_name().as_ref()),
                 s1,
-                t2.map(Type::innermost_name),
+                t2.map(|t| t.innermost_name().as_ref()),
                 s2,
                 ctx,
             );
@@ -556,11 +556,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
         ))
     }
 
-    fn is_type_conflict<N: AsRef<str> + PartialEq>(
-        ctx: &ValidatorContext<'a, S>,
-        t1: &Type<N>,
-        t2: &Type<N>,
-    ) -> bool {
+    fn is_type_conflict(ctx: &ValidatorContext<'a, S>, t1: &Type<'_>, t2: &Type<'_>) -> bool {
         match (t1, t2) {
             (Type::List(inner1, expected_size1), Type::List(inner2, expected_size2))
             | (
@@ -574,8 +570,8 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
             }
             (Type::Named(n1), Type::Named(n2))
             | (Type::NonNullNamed(n1), Type::NonNullNamed(n2)) => {
-                let ct1 = ctx.schema.concrete_type_by_name(n1.as_ref());
-                let ct2 = ctx.schema.concrete_type_by_name(n2.as_ref());
+                let ct1 = ctx.schema.concrete_type_by_name(n1);
+                let ct2 = ctx.schema.concrete_type_by_name(n2);
 
                 if ct1.map(MetaType::is_leaf).unwrap_or(false)
                     || ct2.map(MetaType::is_leaf).unwrap_or(false)
