@@ -13,15 +13,10 @@ note: ...which requires expanding type alias `Node2Value`...
    = note: type aliases cannot be recursive
    = help: consider using a struct, enum, or union instead to break the cycle
    = help: see <https://doc.rust-lang.org/reference/types.html#recursive-types> for more information
-note: cycle used when collecting item types in top-level module
-  --> fail/interface/struct/derive_cyclic_impl.rs:1:1
+note: cycle used when computing type of `<impl at $DIR/fail/interface/struct/derive_cyclic_impl.rs:3:10: 3:26>`
+  --> fail/interface/struct/derive_cyclic_impl.rs:3:10
    |
-1  | / use juniper::GraphQLInterface;
-2  | |
-3  | | #[derive(GraphQLInterface)]
-4  | | #[graphql(impl = Node2Value, for = Node2Value)]
-...  |
-14 | |
-15 | | fn main() {}
-   | |____________^
+3  | #[derive(GraphQLInterface)]
+   |          ^^^^^^^^^^^^^^^^
    = note: see https://rustc-dev-guide.rust-lang.org/overview.html#queries and https://rustc-dev-guide.rust-lang.org/query.html for more information
+   = note: this error originates in the derive macro `GraphQLInterface` (in Nightly builds, run with -Z macro-backtrace for more info)

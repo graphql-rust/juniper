@@ -1,27 +1,22 @@
 error[E0391]: cycle detected when expanding type alias `Node1Value`
-  --> fail/interface/trait/cyclic_impl.rs:3:46
-   |
-3  | #[graphql_interface(impl = Node2Value, for = Node2Value)]
-   |                                              ^^^^^^^^^^
-   |
+ --> fail/interface/trait/cyclic_impl.rs:3:46
+  |
+3 | #[graphql_interface(impl = Node2Value, for = Node2Value)]
+  |                                              ^^^^^^^^^^
+  |
 note: ...which requires expanding type alias `Node2Value`...
-  --> fail/interface/trait/cyclic_impl.rs:8:46
-   |
-8  | #[graphql_interface(impl = Node1Value, for = Node1Value)]
-   |                                              ^^^^^^^^^^
-   = note: ...which again requires expanding type alias `Node1Value`, completing the cycle
-   = note: type aliases cannot be recursive
-   = help: consider using a struct, enum, or union instead to break the cycle
-   = help: see <https://doc.rust-lang.org/reference/types.html#recursive-types> for more information
-note: cycle used when collecting item types in top-level module
-  --> fail/interface/trait/cyclic_impl.rs:1:1
-   |
-1  | / use juniper::graphql_interface;
-2  | |
-3  | | #[graphql_interface(impl = Node2Value, for = Node2Value)]
-4  | | trait Node1 {
-...  |
-12 | |
-13 | | fn main() {}
-   | |____________^
-   = note: see https://rustc-dev-guide.rust-lang.org/overview.html#queries and https://rustc-dev-guide.rust-lang.org/query.html for more information
+ --> fail/interface/trait/cyclic_impl.rs:8:46
+  |
+8 | #[graphql_interface(impl = Node1Value, for = Node1Value)]
+  |                                              ^^^^^^^^^^
+  = note: ...which again requires expanding type alias `Node1Value`, completing the cycle
+  = note: type aliases cannot be recursive
+  = help: consider using a struct, enum, or union instead to break the cycle
+  = help: see <https://doc.rust-lang.org/reference/types.html#recursive-types> for more information
+note: cycle used when computing type of `<impl at $DIR/fail/interface/trait/cyclic_impl.rs:3:1: 3:58>`
+ --> fail/interface/trait/cyclic_impl.rs:3:1
+  |
+3 | #[graphql_interface(impl = Node2Value, for = Node2Value)]
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  = note: see https://rustc-dev-guide.rust-lang.org/overview.html#queries and https://rustc-dev-guide.rust-lang.org/query.html for more information
+  = note: this error originates in the attribute macro `graphql_interface` (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -35,9 +35,9 @@ use crate::{
 };
 
 #[doc(hidden)]
-pub fn visit_all_rules<'a, S: Debug>(ctx: &mut ValidatorContext<'a, S>, doc: &'a Document<S>)
+pub fn visit_all_rules<'a, S>(ctx: &mut ValidatorContext<'a, S>, doc: &'a Document<S>)
 where
-    S: ScalarValue,
+    S: Debug + ScalarValue,
 {
     // Some validators are depending on the results of other ones.
     // For example, validators checking fragments usually rely on the fact that

@@ -401,7 +401,7 @@ impl Definition {
 
         let enum_gens = {
             let mut enum_gens = interface_gens.clone();
-            enum_gens.params = interface_gens_lifetimes.clone();
+            enum_gens.params.clone_from(&interface_gens_lifetimes);
             enum_gens.params.extend(variant_gens_pars.clone());
             enum_gens.params.extend(interface_gens_tys.clone());
             enum_gens

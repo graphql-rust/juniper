@@ -6,6 +6,7 @@ use juniper::{
     EmptySubscription, GraphQLObject, GraphQLUnion, RootNode,
 };
 
+#[allow(dead_code)]
 #[graphql_interface(for = [Human, Droid])]
 trait Character {
     fn id(&self) -> &str;

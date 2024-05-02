@@ -342,12 +342,6 @@ mod polyfill {
         /// Behaves like [`Result::unwrap()`]: if `self` is [`Ok`] yield the contained value,
         /// otherwise abort macro execution.
         fn unwrap_or_abort(self) -> Self::Ok;
-
-        /// Behaves like [`Result::expect()`]: if `self` is [`Ok`] yield the contained value,
-        /// otherwise abort macro execution.
-        ///
-        /// If it aborts then resulting error message will be preceded with the provided `message`.
-        fn expect_or_abort(self, message: &str) -> Self::Ok;
     }
 
     impl<T, E: Into<Diagnostic>> ResultExt for Result<T, E> {
@@ -355,14 +349,6 @@ mod polyfill {
 
         fn unwrap_or_abort(self) -> T {
             self.unwrap_or_else(|e| e.into().abort())
-        }
-
-        fn expect_or_abort(self, message: &str) -> T {
-            self.unwrap_or_else(|e| {
-                let mut d = e.into();
-                d.msg = format!("{message}: {}", d.msg);
-                d.abort()
-            })
         }
     }
 }

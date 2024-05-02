@@ -40,9 +40,9 @@ impl<'a, T> SchemaTranslator<'a, graphql_parser::schema::Document<'a, T>>
 where
     T: Text<'a> + Default,
 {
-    fn translate_schema<S: 'a>(input: &'a SchemaType<S>) -> graphql_parser::schema::Document<'a, T>
+    fn translate_schema<S>(input: &'a SchemaType<S>) -> graphql_parser::schema::Document<'a, T>
     where
-        S: ScalarValue,
+        S: ScalarValue + 'a,
     {
         let mut doc = Document::default();
 
@@ -94,9 +94,9 @@ impl GraphQLParserTranslator {
         }
     }
 
-    fn translate_value<'a, S: 'a, T>(input: &'a InputValue<S>) -> ExternalValue<'a, T>
+    fn translate_value<'a, S, T>(input: &'a InputValue<S>) -> ExternalValue<'a, T>
     where
-        S: ScalarValue,
+        S: ScalarValue + 'a,
         T: Text<'a>,
     {
         match input {
@@ -250,9 +250,9 @@ impl GraphQLParserTranslator {
         }
     }
 
-    fn translate_field<'a, S: 'a, T>(input: &'a Field<S>) -> ExternalField<'a, T>
+    fn translate_field<'a, S, T>(input: &'a Field<S>) -> ExternalField<'a, T>
     where
-        S: ScalarValue,
+        S: ScalarValue + 'a,
         T: Text<'a>,
     {
         let arguments = input

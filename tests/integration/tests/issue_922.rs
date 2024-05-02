@@ -24,6 +24,7 @@ impl Query {
     }
 }
 
+#[allow(dead_code)]
 #[graphql_interface(for = [Human, Droid])]
 trait Character {
     fn id(&self) -> i32;

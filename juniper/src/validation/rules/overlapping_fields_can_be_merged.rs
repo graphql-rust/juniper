@@ -59,26 +59,26 @@ impl<K: Eq + Hash + Clone, V> OrderedMap<K, V> {
         }
     }
 
-    fn get<Q: ?Sized>(&self, k: &Q) -> Option<&V>
+    fn get<Q>(&self, k: &Q) -> Option<&V>
     where
         K: Borrow<Q>,
-        Q: Hash + Eq,
+        Q: Hash + Eq + ?Sized,
     {
         self.data.get(k)
     }
 
-    fn get_mut<Q: ?Sized>(&mut self, k: &Q) -> Option<&mut V>
+    fn get_mut<Q>(&mut self, k: &Q) -> Option<&mut V>
     where
         K: Borrow<Q>,
-        Q: Hash + Eq,
+        Q: Hash + Eq + ?Sized,
     {
         self.data.get_mut(k)
     }
 
-    fn contains_key<Q: ?Sized>(&self, k: &Q) -> bool
+    fn contains_key<Q>(&self, k: &Q) -> bool
     where
         K: Borrow<Q>,
-        Q: Hash + Eq,
+        Q: Hash + Eq + ?Sized,
     {
         self.data.contains_key(k)
     }

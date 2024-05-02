@@ -1,5 +1,6 @@
 //! Tests for `#[graphql_interface]` macro placed on a trait.
 
+#![allow(dead_code)]
 // Assert that `#[graphql_interface]` macro placed on a trait stops Clippy from enforcing `# Errors`
 // and `# Panics` sections in GraphQL descriptions.
 #![deny(clippy::missing_errors_doc, clippy::missing_panics_doc)]
