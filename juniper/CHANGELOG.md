@@ -17,10 +17,10 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 ### Changed
 
-- Updated [GraphiQL] to [3.2.0 version](https://github.com/graphql/graphiql/blob/graphiql%403.2.0/packages/graphiql/CHANGELOG.md#320). ([#1253])
+- Updated [GraphiQL] to [3.2.1 version](https://github.com/graphql/graphiql/blob/graphiql%403.2.1/packages/graphiql/CHANGELOG.md#321). ([#1257])
 
 [#1252]: /../../pull/1252
-[#1253]: /../../pull/1253
+[#1257]: /../../pull/1257
 
 
 
