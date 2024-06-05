@@ -34,7 +34,7 @@ impl Query {
     }
 }
 
-type Schema = juniper::RootNode<'static, Query, EmptyMutation, EmptySubscription>;
+type Schema = juniper::RootNode<Query, EmptyMutation, EmptySubscription>;
 
 #[tokio::test]
 async fn fragments_with_nested_objects_dont_override_previous_selections() {

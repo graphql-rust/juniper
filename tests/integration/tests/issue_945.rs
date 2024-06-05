@@ -40,7 +40,7 @@ struct Droid {
     pub sensor_color: String,
 }
 
-type Schema = juniper::RootNode<'static, Query, EmptyMutation, EmptySubscription>;
+type Schema = juniper::RootNode<Query, EmptyMutation, EmptySubscription>;
 
 #[tokio::test]
 async fn fragment_on_union() {

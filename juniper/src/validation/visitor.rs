@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use crate::{
     ast::{
         Arguments, Definition, Directive, Document, Field, Fragment, FragmentSpread,
@@ -39,7 +37,7 @@ where
                         ..
                     },
                 ..
-            }) => Some(Type::NonNullNamed(Cow::Borrowed(name))),
+            }) => Some(Type::NonNullNamed(name.into())),
             Definition::Operation(Spanning {
                 item:
                     Operation {
@@ -47,9 +45,9 @@ where
                         ..
                     },
                 ..
-            }) => Some(Type::NonNullNamed(Cow::Borrowed(
-                ctx.schema.concrete_query_type().name().unwrap(),
-            ))),
+            }) => Some(Type::NonNullNamed(
+                ctx.schema.concrete_query_type().name().unwrap().into(),
+            )),
             Definition::Operation(Spanning {
                 item:
                     Operation {
@@ -60,7 +58,7 @@ where
             }) => ctx
                 .schema
                 .concrete_mutation_type()
-                .map(|t| Type::NonNullNamed(Cow::Borrowed(t.name().unwrap()))),
+                .map(|t| Type::NonNullNamed(t.name().unwrap().into())),
             Definition::Operation(Spanning {
                 item:
                     Operation {
@@ -71,7 +69,7 @@ where
             }) => ctx
                 .schema
                 .concrete_subscription_type()
-                .map(|t| Type::NonNullNamed(Cow::Borrowed(t.name().unwrap()))),
+                .map(|t| Type::NonNullNamed(t.name().unwrap().into())),
         };
 
         ctx.with_pushed_type(def_type.as_ref(), |ctx| {
@@ -132,9 +130,9 @@ fn visit_variable_definitions<'a, S, V>(
 {
     if let Some(ref defs) = *defs {
         for def in defs.item.iter() {
-            let var_type = def.1.var_type.item.clone();
+            let var_type = &def.1.var_type.item;
 
-            ctx.with_pushed_input_type(Some(&var_type), |ctx| {
+            ctx.with_pushed_input_type(Some(var_type), |ctx| {
                 v.enter_variable_definition(ctx, def);
 
                 if let Some(ref default_value) = def.1.default_value {
@@ -185,7 +183,7 @@ fn visit_directives<'a, S, V>(
 fn visit_arguments<'a, S, V>(
     v: &mut V,
     ctx: &mut ValidatorContext<'a, S>,
-    meta_args: Option<&Vec<Argument<'a, S>>>,
+    meta_args: Option<&'a Vec<Argument<S>>>,
     arguments: &'a Option<Spanning<Arguments<S>>>,
 ) where
     S: ScalarValue,
@@ -307,10 +305,7 @@ fn visit_inline_fragment<'a, S, V>(
         item: type_name, ..
     }) = fragment.item.type_condition
     {
-        ctx.with_pushed_type(
-            Some(&Type::NonNullNamed(Cow::Borrowed(type_name))),
-            visit_fn,
-        );
+        ctx.with_pushed_type(Some(&Type::NonNullNamed(type_name.into())), visit_fn);
     } else {
         visit_fn(ctx);
     }
@@ -331,8 +326,8 @@ fn visit_input_value<'a, S, V>(
             for (key, value) in fields {
                 let inner_type = ctx
                     .current_input_type_literal()
-                    .and_then(|t| match *t {
-                        Type::NonNullNamed(ref name) | Type::Named(ref name) => {
+                    .and_then(|t| match t {
+                        Type::NonNullNamed(name) | Type::Named(name) => {
                             ctx.schema.concrete_type_by_name(name)
                         }
                         _ => None,
@@ -348,14 +343,12 @@ fn visit_input_value<'a, S, V>(
             }
         }
         InputValue::List(ref ls) => {
-            let inner_type = ctx.current_input_type_literal().and_then(|t| match *t {
-                Type::List(ref inner, _) | Type::NonNullList(ref inner, _) => {
-                    Some(inner.as_ref().clone())
-                }
+            let inner_type = ctx.current_input_type_literal().and_then(|t| match t {
+                Type::List(inner, _) | Type::NonNullList(inner, _) => Some(&**inner),
                 _ => None,
             });
 
-            ctx.with_pushed_input_type(inner_type.as_ref(), |ctx| {
+            ctx.with_pushed_input_type(inner_type, |ctx| {
                 for value in ls {
                     visit_input_value(v, ctx, value);
                 }

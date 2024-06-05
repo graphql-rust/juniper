@@ -3,11 +3,11 @@ use std::{
     fmt::{self, Debug},
 };
 
-use crate::ast::{Definition, Document, Type};
-
-use crate::schema::{meta::MetaType, model::SchemaType};
-
-use crate::parser::SourcePosition;
+use crate::{
+    ast::{Definition, Document, Type},
+    parser::SourcePosition,
+    schema::{meta::MetaType, model::SchemaType},
+};
 
 /// Query validation error
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -18,13 +18,13 @@ pub struct RuleError {
 
 #[doc(hidden)]
 pub struct ValidatorContext<'a, S: Debug + 'a> {
-    pub schema: &'a SchemaType<'a, S>,
+    pub schema: &'a SchemaType<S>,
     errors: Vec<RuleError>,
-    type_stack: Vec<Option<&'a MetaType<'a, S>>>,
+    type_stack: Vec<Option<&'a MetaType<S>>>,
     type_literal_stack: Vec<Option<Type<'a>>>,
-    input_type_stack: Vec<Option<&'a MetaType<'a, S>>>,
+    input_type_stack: Vec<Option<&'a MetaType<S>>>,
     input_type_literal_stack: Vec<Option<Type<'a>>>,
-    parent_type_stack: Vec<Option<&'a MetaType<'a, S>>>,
+    parent_type_stack: Vec<Option<&'a MetaType<S>>>,
     fragment_names: HashSet<&'a str>,
 }
 
@@ -120,6 +120,7 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
             self.type_stack.push(None);
         }
 
+        // TODO: no cloning
         self.type_literal_stack.push(t.cloned());
 
         let res = f(self);
@@ -155,6 +156,7 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
             self.input_type_stack.push(None);
         }
 
+        // TODO: no cloning
         self.input_type_literal_stack.push(t.cloned());
 
         let res = f(self);
@@ -166,7 +168,7 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
     }
 
     #[doc(hidden)]
-    pub fn current_type(&self) -> Option<&'a MetaType<'a, S>> {
+    pub fn current_type(&self) -> Option<&'a MetaType<S>> {
         *self.type_stack.last().unwrap_or(&None)
     }
 
@@ -179,7 +181,7 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
     }
 
     #[doc(hidden)]
-    pub fn parent_type(&self) -> Option<&'a MetaType<'a, S>> {
+    pub fn parent_type(&self) -> Option<&'a MetaType<S>> {
         *self.parent_type_stack.last().unwrap_or(&None)
     }
 

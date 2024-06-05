@@ -1,5 +1,6 @@
-use std::{borrow::Cow, fmt};
+use std::fmt;
 
+use arcstr::ArcStr;
 use fnv::FnvHashMap;
 #[cfg(feature = "schema-language")]
 use graphql_parser::schema::Document;
@@ -19,7 +20,6 @@ use crate::{
 /// and provides the predefined metadata fields.
 #[derive(Debug)]
 pub struct RootNode<
-    'a,
     QueryT: GraphQLType<S>,
     MutationT: GraphQLType<S>,
     SubscriptionT: GraphQLType<S>,
@@ -40,64 +40,13 @@ pub struct RootNode<
     #[doc(hidden)]
     pub subscription_info: SubscriptionT::TypeInfo,
     #[doc(hidden)]
-    pub schema: SchemaType<'a, S>,
+    pub schema: SchemaType<S>,
     #[doc(hidden)]
     pub introspection_disabled: bool,
 }
 
-/// Metadata for a schema
-#[derive(Debug)]
-pub struct SchemaType<'a, S> {
-    pub(crate) description: Option<Cow<'a, str>>,
-    pub(crate) types: FnvHashMap<Name, MetaType<'a, S>>,
-    pub(crate) query_type_name: String,
-    pub(crate) mutation_type_name: Option<String>,
-    pub(crate) subscription_type_name: Option<String>,
-    directives: FnvHashMap<String, DirectiveType<'a, S>>,
-}
-
-impl<'a, S> Context for SchemaType<'a, S> {}
-
-#[derive(Clone)]
-pub enum TypeType<'a, S: 'a> {
-    Concrete(&'a MetaType<'a, S>),
-    NonNull(Box<TypeType<'a, S>>),
-    List(Box<TypeType<'a, S>>, Option<usize>),
-}
-
-#[derive(Debug)]
-pub struct DirectiveType<'a, S> {
-    pub name: String,
-    pub description: Option<String>,
-    pub locations: Vec<DirectiveLocation>,
-    pub arguments: Vec<Argument<'a, S>>,
-    pub is_repeatable: bool,
-}
-
-#[derive(Clone, PartialEq, Eq, Debug, GraphQLEnum)]
-#[graphql(name = "__DirectiveLocation", internal)]
-pub enum DirectiveLocation {
-    Query,
-    Mutation,
-    Subscription,
-    Field,
-    Scalar,
-    #[graphql(name = "FRAGMENT_DEFINITION")]
-    FragmentDefinition,
-    #[graphql(name = "FIELD_DEFINITION")]
-    FieldDefinition,
-    #[graphql(name = "VARIABLE_DEFINITION")]
-    VariableDefinition,
-    #[graphql(name = "FRAGMENT_SPREAD")]
-    FragmentSpread,
-    #[graphql(name = "INLINE_FRAGMENT")]
-    InlineFragment,
-    #[graphql(name = "ENUM_VALUE")]
-    EnumValue,
-}
-
-impl<'a, QueryT, MutationT, SubscriptionT>
-    RootNode<'a, QueryT, MutationT, SubscriptionT, DefaultScalarValue>
+impl<QueryT, MutationT, SubscriptionT>
+    RootNode<QueryT, MutationT, SubscriptionT, DefaultScalarValue>
 where
     QueryT: GraphQLType<DefaultScalarValue, TypeInfo = ()>,
     MutationT: GraphQLType<DefaultScalarValue, TypeInfo = ()>,
@@ -110,9 +59,9 @@ where
     }
 }
 
-impl<'a, QueryT, MutationT, SubscriptionT, S> RootNode<'a, QueryT, MutationT, SubscriptionT, S>
+impl<QueryT, MutationT, SubscriptionT, S> RootNode<QueryT, MutationT, SubscriptionT, S>
 where
-    S: ScalarValue + 'a,
+    S: ScalarValue,
     QueryT: GraphQLType<S, TypeInfo = ()>,
     MutationT: GraphQLType<S, TypeInfo = ()>,
     SubscriptionT: GraphQLType<S, TypeInfo = ()>,
@@ -128,12 +77,12 @@ where
     }
 }
 
-impl<'a, S, QueryT, MutationT, SubscriptionT> RootNode<'a, QueryT, MutationT, SubscriptionT, S>
+impl<S, QueryT, MutationT, SubscriptionT> RootNode<QueryT, MutationT, SubscriptionT, S>
 where
     QueryT: GraphQLType<S>,
     MutationT: GraphQLType<S>,
     SubscriptionT: GraphQLType<S>,
-    S: ScalarValue + 'a,
+    S: ScalarValue,
 {
     /// Construct a new root node from query and mutation nodes,
     /// while also providing type info objects for the query and
@@ -184,7 +133,7 @@ where
     ///     }
     /// }
     ///
-    /// type Schema = RootNode<'static, Query, EmptyMutation, EmptySubscription>;
+    /// type Schema = RootNode<Query, EmptyMutation, EmptySubscription>;
     ///
     /// let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new())
     ///     .disable_introspection();
@@ -247,7 +196,7 @@ where
     /// The order of the generated definitions in the returned [`Document`] is NOT stable and may change without any
     /// real schema changes.
     #[must_use]
-    pub fn as_document(&'a self) -> Document<'a, &'a str> {
+    pub fn as_document(&self) -> Document<'_, &str> {
         use crate::schema::translate::{
             graphql_parser::GraphQLParserTranslator, SchemaTranslator as _,
         };
@@ -256,7 +205,20 @@ where
     }
 }
 
-impl<'a, S> SchemaType<'a, S> {
+/// Metadata for a schema
+#[derive(Debug)]
+pub struct SchemaType<S> {
+    pub(crate) description: Option<ArcStr>,
+    pub(crate) types: FnvHashMap<Name, MetaType<S>>,
+    pub(crate) query_type_name: String,
+    pub(crate) mutation_type_name: Option<String>,
+    pub(crate) subscription_type_name: Option<String>,
+    directives: FnvHashMap<ArcStr, DirectiveType<S>>,
+}
+
+impl<S> Context for SchemaType<S> {}
+
+impl<S> SchemaType<S> {
     /// Create a new schema.
     pub fn new<QueryT, MutationT, SubscriptionT>(
         query_info: &QueryT::TypeInfo,
@@ -264,7 +226,7 @@ impl<'a, S> SchemaType<'a, S> {
         subscription_info: &SubscriptionT::TypeInfo,
     ) -> Self
     where
-        S: ScalarValue + 'a,
+        S: ScalarValue,
         QueryT: GraphQLType<S>,
         MutationT: GraphQLType<S>,
         SubscriptionT: GraphQLType<S>,
@@ -272,40 +234,38 @@ impl<'a, S> SchemaType<'a, S> {
         let mut directives = FnvHashMap::default();
         let mut registry = Registry::new(FnvHashMap::default());
 
-        let query_type_name = registry
+        let query_type_name: Box<str> = registry
             .get_type::<QueryT>(query_info)
             .innermost_name()
-            .to_owned();
-        let mutation_type_name = registry
+            .into();
+        let mutation_type_name: Box<str> = registry
             .get_type::<MutationT>(mutation_info)
             .innermost_name()
-            .to_owned();
-        let subscription_type_name = registry
+            .into();
+        let subscription_type_name: Box<str> = registry
             .get_type::<SubscriptionT>(subscription_info)
             .innermost_name()
-            .to_owned();
+            .into();
 
         registry.get_type::<SchemaType<S>>(&());
 
-        directives.insert("skip".into(), DirectiveType::new_skip(&mut registry));
-        directives.insert("include".into(), DirectiveType::new_include(&mut registry));
-        directives.insert(
-            "deprecated".into(),
-            DirectiveType::new_deprecated(&mut registry),
-        );
-        directives.insert(
-            "specifiedBy".into(),
-            DirectiveType::new_specified_by(&mut registry),
-        );
+        let skip_directive = DirectiveType::new_skip(&mut registry);
+        let include_directive = DirectiveType::new_include(&mut registry);
+        let deprecated_directive = DirectiveType::new_deprecated(&mut registry);
+        let specified_by_directive = DirectiveType::new_specified_by(&mut registry);
+        directives.insert(skip_directive.name.clone(), skip_directive);
+        directives.insert(include_directive.name.clone(), include_directive);
+        directives.insert(deprecated_directive.name.clone(), deprecated_directive);
+        directives.insert(specified_by_directive.name.clone(), specified_by_directive);
 
         let mut meta_fields = vec![
-            registry.field::<SchemaType<S>>("__schema", &()),
+            registry.field::<SchemaType<S>>(arcstr::literal!("__schema"), &()),
             registry
-                .field::<TypeType<S>>("__type", &())
-                .argument(registry.arg::<String>("name", &())),
+                .field::<TypeType<S>>(arcstr::literal!("__type"), &())
+                .argument(registry.arg::<String>(arcstr::literal!("name"), &())),
         ];
 
-        if let Some(root_type) = registry.types.get_mut(&query_type_name) {
+        if let Some(root_type) = registry.types.get_mut(query_type_name.as_ref()) {
             if let MetaType::Object(ObjectMeta { ref mut fields, .. }) = *root_type {
                 fields.append(&mut meta_fields);
             } else {
@@ -323,14 +283,14 @@ impl<'a, S> SchemaType<'a, S> {
         SchemaType {
             description: None,
             types: registry.types,
-            query_type_name,
-            mutation_type_name: if &mutation_type_name != "_EmptyMutation" {
-                Some(mutation_type_name)
+            query_type_name: query_type_name.into(),
+            mutation_type_name: if mutation_type_name.as_ref() != "_EmptyMutation" {
+                Some(mutation_type_name.into())
             } else {
                 None
             },
-            subscription_type_name: if &subscription_type_name != "_EmptySubscription" {
-                Some(subscription_type_name)
+            subscription_type_name: if subscription_type_name.as_ref() != "_EmptySubscription" {
+                Some(subscription_type_name.into())
             } else {
                 None
             },
@@ -339,12 +299,12 @@ impl<'a, S> SchemaType<'a, S> {
     }
 
     /// Add a description.
-    pub fn set_description(&mut self, description: impl Into<Cow<'a, str>>) {
-        self.description = Some(description.into());
+    pub fn set_description(&mut self, description: ArcStr) {
+        self.description = Some(description);
     }
 
     /// Add a directive like `skip` or `include`.
-    pub fn add_directive(&mut self, directive: DirectiveType<'a, S>) {
+    pub fn add_directive(&mut self, directive: DirectiveType<S>) {
         self.directives.insert(directive.name.clone(), directive);
     }
 
@@ -358,12 +318,10 @@ impl<'a, S> SchemaType<'a, S> {
         self.types.get(name)
     }
 
-    pub(crate) fn lookup_type(&self, tpe: &Type) -> Option<&MetaType<S>> {
-        match *tpe {
-            Type::NonNullNamed(ref name) | Type::Named(ref name) => {
-                self.concrete_type_by_name(name)
-            }
-            Type::List(ref inner, _) | Type::NonNullList(ref inner, _) => self.lookup_type(inner),
+    pub(crate) fn lookup_type(&self, tpe: &Type<'_>) -> Option<&MetaType<S>> {
+        match tpe {
+            Type::Named(name) | Type::NonNullNamed(name) => self.concrete_type_by_name(name),
+            Type::List(inner, ..) | Type::NonNullList(inner, ..) => self.lookup_type(inner),
         }
     }
 
@@ -371,7 +329,7 @@ impl<'a, S> SchemaType<'a, S> {
     pub fn query_type(&self) -> TypeType<S> {
         TypeType::Concrete(
             self.types
-                .get(&self.query_type_name)
+                .get(self.query_type_name.as_str())
                 .expect("Query type does not exist in schema"),
         )
     }
@@ -379,7 +337,7 @@ impl<'a, S> SchemaType<'a, S> {
     /// Get the concrete query type from the schema.
     pub fn concrete_query_type(&self) -> &MetaType<S> {
         self.types
-            .get(&self.query_type_name)
+            .get(self.query_type_name.as_str())
             .expect("Query type does not exist in schema")
     }
 
@@ -432,18 +390,19 @@ impl<'a, S> SchemaType<'a, S> {
     }
 
     /// Make a type.
-    pub fn make_type(&self, t: &Type) -> TypeType<S> {
-        match *t {
-            Type::NonNullNamed(ref n) => TypeType::NonNull(Box::new(
+    pub fn make_type(&self, ty: &Type<'_>) -> TypeType<S> {
+        match ty {
+            Type::List(inner, expected_size) => {
+                TypeType::List(Box::new(self.make_type(inner)), *expected_size)
+            }
+            Type::Named(n) => self.type_by_name(n).expect("Type not found in schema"),
+            Type::NonNullList(inner, expected_size) => TypeType::NonNull(Box::new(TypeType::List(
+                Box::new(self.make_type(inner)),
+                *expected_size,
+            ))),
+            Type::NonNullNamed(n) => TypeType::NonNull(Box::new(
                 self.type_by_name(n).expect("Type not found in schema"),
             )),
-            Type::NonNullList(ref inner, expected_size) => TypeType::NonNull(Box::new(
-                TypeType::List(Box::new(self.make_type(inner)), expected_size),
-            )),
-            Type::Named(ref n) => self.type_by_name(n).expect("Type not found in schema"),
-            Type::List(ref inner, expected_size) => {
-                TypeType::List(Box::new(self.make_type(inner)), expected_size)
-            }
         }
     }
 
@@ -512,22 +471,20 @@ impl<'a, S> SchemaType<'a, S> {
     }
 
     /// If the type is a subtype of another type.
-    pub fn is_subtype<'b>(&self, sub_type: &Type<'b>, super_type: &Type<'b>) -> bool {
-        use crate::ast::Type::*;
-
+    pub fn is_subtype(&self, sub_type: &Type<'_>, super_type: &Type<'_>) -> bool {
         if super_type == sub_type {
             return true;
         }
 
         match (super_type, sub_type) {
-            (&NonNullNamed(ref super_name), &NonNullNamed(ref sub_name))
-            | (&Named(ref super_name), &Named(ref sub_name))
-            | (&Named(ref super_name), &NonNullNamed(ref sub_name)) => {
+            (Type::NonNullNamed(super_name), Type::NonNullNamed(sub_name))
+            | (Type::Named(super_name), Type::Named(sub_name))
+            | (Type::Named(super_name), Type::NonNullNamed(sub_name)) => {
                 self.is_named_subtype(sub_name, super_name)
             }
-            (&NonNullList(ref super_inner, _), &NonNullList(ref sub_inner, _))
-            | (&List(ref super_inner, _), &List(ref sub_inner, _))
-            | (&List(ref super_inner, _), &NonNullList(ref sub_inner, _)) => {
+            (Type::NonNullList(super_inner, ..), Type::NonNullList(sub_inner, ..))
+            | (Type::List(super_inner, ..), Type::List(sub_inner, ..))
+            | (Type::List(super_inner, ..), Type::NonNullList(sub_inner, ..)) => {
                 self.is_subtype(sub_inner, super_inner)
             }
             _ => false,
@@ -549,48 +506,70 @@ impl<'a, S> SchemaType<'a, S> {
     }
 }
 
-impl<'a, S> TypeType<'a, S> {
-    #[inline]
-    pub fn to_concrete(&self) -> Option<&'a MetaType<S>> {
-        match *self {
-            TypeType::Concrete(t) => Some(t),
-            _ => None,
-        }
-    }
+#[derive(Clone)]
+pub enum TypeType<'a, S: 'a> {
+    Concrete(&'a MetaType<S>),
+    NonNull(Box<TypeType<'a, S>>),
+    List(Box<TypeType<'a, S>>, Option<usize>),
+}
 
-    #[inline]
-    pub fn innermost_concrete(&self) -> &'a MetaType<S> {
-        match *self {
-            TypeType::Concrete(t) => t,
-            TypeType::NonNull(ref n) | TypeType::List(ref n, _) => n.innermost_concrete(),
+impl<'a, S> fmt::Display for TypeType<'a, S> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Concrete(t) => f.write_str(t.name().unwrap()),
+            Self::List(i, _) => write!(f, "[{i}]"),
+            Self::NonNull(i) => write!(f, "{i}!"),
         }
-    }
-
-    #[inline]
-    pub fn list_contents(&self) -> Option<&TypeType<'a, S>> {
-        match *self {
-            TypeType::List(ref n, _) => Some(n),
-            TypeType::NonNull(ref n) => n.list_contents(),
-            _ => None,
-        }
-    }
-
-    #[inline]
-    pub fn is_non_null(&self) -> bool {
-        matches!(*self, TypeType::NonNull(_))
     }
 }
 
-impl<'a, S> DirectiveType<'a, S>
-where
-    S: ScalarValue + 'a,
-{
+impl<'a, S> TypeType<'a, S> {
+    pub fn to_concrete(&self) -> Option<&'a MetaType<S>> {
+        match self {
+            Self::Concrete(t) => Some(t),
+            Self::List(..) | Self::NonNull(..) => None,
+        }
+    }
+
+    pub fn innermost_concrete(&self) -> &'a MetaType<S> {
+        match self {
+            Self::Concrete(t) => t,
+            Self::NonNull(n) | Self::List(n, ..) => n.innermost_concrete(),
+        }
+    }
+
+    pub fn list_contents(&self) -> Option<&Self> {
+        match self {
+            Self::List(n, ..) => Some(n),
+            Self::NonNull(n) => n.list_contents(),
+            Self::Concrete(..) => None,
+        }
+    }
+
+    pub fn is_non_null(&self) -> bool {
+        matches!(self, TypeType::NonNull(..))
+    }
+}
+
+#[derive(Debug)]
+pub struct DirectiveType<S> {
+    pub name: ArcStr,
+    pub description: Option<ArcStr>,
+    pub locations: Vec<DirectiveLocation>,
+    pub arguments: Vec<Argument<S>>,
+    pub is_repeatable: bool,
+}
+
+impl<S> DirectiveType<S> {
     pub fn new(
-        name: &str,
+        name: impl Into<ArcStr>,
         locations: &[DirectiveLocation],
-        arguments: &[Argument<'a, S>],
+        arguments: &[Argument<S>],
         is_repeatable: bool,
-    ) -> Self {
+    ) -> Self
+    where
+        S: Clone,
+    {
         Self {
             name: name.into(),
             description: None,
@@ -600,73 +579,89 @@ where
         }
     }
 
-    fn new_skip(registry: &mut Registry<'a, S>) -> DirectiveType<'a, S>
+    fn new_skip(registry: &mut Registry<S>) -> Self
     where
         S: ScalarValue,
     {
         Self::new(
-            "skip",
+            arcstr::literal!("skip"),
             &[
                 DirectiveLocation::Field,
                 DirectiveLocation::FragmentSpread,
                 DirectiveLocation::InlineFragment,
             ],
-            &[registry.arg::<bool>("if", &())],
+            &[registry.arg::<bool>(arcstr::literal!("if"), &())],
             false,
         )
     }
 
-    fn new_include(registry: &mut Registry<'a, S>) -> DirectiveType<'a, S>
+    fn new_include(registry: &mut Registry<S>) -> Self
     where
         S: ScalarValue,
     {
         Self::new(
-            "include",
+            arcstr::literal!("include"),
             &[
                 DirectiveLocation::Field,
                 DirectiveLocation::FragmentSpread,
                 DirectiveLocation::InlineFragment,
             ],
-            &[registry.arg::<bool>("if", &())],
+            &[registry.arg::<bool>(arcstr::literal!("if"), &())],
             false,
         )
     }
 
-    fn new_deprecated(registry: &mut Registry<'a, S>) -> DirectiveType<'a, S>
+    fn new_deprecated(registry: &mut Registry<S>) -> Self
     where
         S: ScalarValue,
     {
         Self::new(
-            "deprecated",
+            arcstr::literal!("deprecated"),
             &[
                 DirectiveLocation::FieldDefinition,
                 DirectiveLocation::EnumValue,
             ],
-            &[registry.arg::<String>("reason", &())],
+            &[registry.arg::<String>(arcstr::literal!("reason"), &())],
             false,
         )
     }
 
-    fn new_specified_by(registry: &mut Registry<'a, S>) -> DirectiveType<'a, S>
+    fn new_specified_by(registry: &mut Registry<S>) -> Self
     where
         S: ScalarValue,
     {
         Self::new(
-            "specifiedBy",
+            arcstr::literal!("specifiedBy"),
             &[DirectiveLocation::Scalar],
-            &[registry.arg::<String>("url", &())],
+            &[registry.arg::<String>(arcstr::literal!("url"), &())],
             false,
         )
     }
 
-    pub fn description(mut self, description: &str) -> DirectiveType<'a, S> {
+    pub fn description(mut self, description: impl Into<ArcStr>) -> Self {
         self.description = Some(description.into());
         self
     }
 }
 
+#[derive(Clone, Debug, Eq, GraphQLEnum, PartialEq)]
+#[graphql(name = "__DirectiveLocation", internal)]
+pub enum DirectiveLocation {
+    Query,
+    Mutation,
+    Subscription,
+    Field,
+    Scalar,
+    FragmentDefinition,
+    FieldDefinition,
+    VariableDefinition,
+    FragmentSpread,
+    InlineFragment,
+    EnumValue,
+}
+
 impl fmt::Display for DirectiveLocation {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
             Self::Query => "query",
             Self::Mutation => "mutation",
@@ -680,16 +675,6 @@ impl fmt::Display for DirectiveLocation {
             Self::Scalar => "scalar",
             Self::EnumValue => "enum value",
         })
-    }
-}
-
-impl<'a, S> fmt::Display for TypeType<'a, S> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::Concrete(t) => f.write_str(t.name().unwrap()),
-            Self::List(i, _) => write!(f, "[{i}]"),
-            Self::NonNull(i) => write!(f, "{i}!"),
-        }
     }
 }
 
@@ -718,18 +703,18 @@ mod concrete_type_sort {
     /// Returns a [`TypeType`] sorting weight by its type.
     pub fn by_type<S>(t: &TypeType<S>) -> u8 {
         match t {
-            TypeType::Concrete(MetaType::Enum(_)) => 0,
-            TypeType::Concrete(MetaType::InputObject(_)) => 1,
-            TypeType::Concrete(MetaType::Interface(_)) => 2,
-            TypeType::Concrete(MetaType::Scalar(_)) => 3,
-            TypeType::Concrete(MetaType::Object(_)) => 4,
-            TypeType::Concrete(MetaType::Union(_)) => 5,
+            TypeType::Concrete(MetaType::Enum(..)) => 0,
+            TypeType::Concrete(MetaType::InputObject(..)) => 1,
+            TypeType::Concrete(MetaType::Interface(..)) => 2,
+            TypeType::Concrete(MetaType::Scalar(..)) => 3,
+            TypeType::Concrete(MetaType::Object(..)) => 4,
+            TypeType::Concrete(MetaType::Union(..)) => 5,
             // NOTE: The following types are not part of the introspected types.
             TypeType::Concrete(
-                MetaType::List(_) | MetaType::Nullable(_) | MetaType::Placeholder(_),
+                MetaType::List(..) | MetaType::Nullable(..) | MetaType::Placeholder(..),
             ) => 6,
             // NOTE: Other variants will not appear since we're only sorting concrete types.
-            TypeType::List(..) | TypeType::NonNull(_) => 7,
+            TypeType::List(..) | TypeType::NonNull(..) => 7,
         }
     }
 
@@ -744,11 +729,11 @@ mod concrete_type_sort {
             TypeType::Concrete(MetaType::Union(meta)) => Some(&meta.name),
             TypeType::Concrete(
                 // NOTE: The following types are not part of the introspected types.
-                MetaType::List(_) | MetaType::Nullable(_) | MetaType::Placeholder(_),
+                MetaType::List(..) | MetaType::Nullable(..) | MetaType::Placeholder(..),
             )
             // NOTE: Other variants will not appear since we're only sorting concrete types.
             | TypeType::List(..)
-            | TypeType::NonNull(_) => None,
+            | TypeType::NonNull(..) => None,
         }
     }
 }

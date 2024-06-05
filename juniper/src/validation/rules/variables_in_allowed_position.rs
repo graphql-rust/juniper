@@ -1,11 +1,10 @@
 use std::{
-    borrow::Cow,
     collections::{HashMap, HashSet},
     fmt,
 };
 
 use crate::{
-    ast::{Document, Fragment, FragmentSpread, Operation, Type, VariableDefinition},
+    ast::{Document, Fragment, FragmentSpread, Operation, Type, TypeName, VariableDefinition},
     parser::Spanning,
     validation::{ValidatorContext, Visitor},
     value::ScalarValue,
@@ -29,7 +28,7 @@ pub fn factory<'a, S: fmt::Debug>() -> VariableInAllowedPosition<'a, S> {
 
 pub struct VariableInAllowedPosition<'a, S: fmt::Debug + 'a> {
     spreads: HashMap<Scope<'a>, HashSet<&'a str>>,
-    variable_usages: HashMap<Scope<'a>, Vec<(SpannedInput<'a, String>, Type<'a>)>>,
+    variable_usages: HashMap<Scope<'a>, Vec<(SpannedInput<'a, String>, &'a Type<'a>)>>,
     #[allow(clippy::type_complexity)]
     variable_defs: HashMap<Scope<'a>, Vec<&'a (Spanning<&'a str>, VariableDefinition<'a, S>)>>,
     current_scope: Option<Scope<'a>>,
@@ -88,8 +87,10 @@ impl<'a, S: fmt::Debug> VariableInAllowedPosition<'a, S> {
                         (&Some(_), Type::List(inner, expected_size)) => {
                             Type::NonNullList(inner.clone(), *expected_size)
                         }
-                        (&Some(_), Type::Named(inner)) => Type::NonNullNamed(Cow::Borrowed(inner)),
-                        (_, t) => t.clone(),
+                        (&Some(_), Type::Named(inner)) => {
+                            Type::NonNullNamed(TypeName::Borrowed(inner))
+                        }
+                        (_, ty) => ty.clone(),
                     };
 
                     if !ctx.schema.is_subtype(&expected_type, var_type) {
@@ -169,7 +170,7 @@ where
             self.variable_usages
                 .entry(scope.clone())
                 .or_default()
-                .push((var_name, input_type.clone()));
+                .push((var_name, input_type));
         }
     }
 }

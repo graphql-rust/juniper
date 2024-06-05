@@ -1,4 +1,6 @@
-use std::fmt::Debug;
+use std::{collections::HashMap, fmt::Debug};
+
+use arcstr::ArcStr;
 
 use crate::{
     ast::{Definition, Document, FragmentSpread, InlineFragment},
@@ -8,10 +10,9 @@ use crate::{
     validation::{ValidatorContext, Visitor},
     value::ScalarValue,
 };
-use std::collections::HashMap;
 
 pub struct PossibleFragmentSpreads<'a, S: Debug + 'a> {
-    fragment_types: HashMap<&'a str, &'a MetaType<'a, S>>,
+    fragment_types: HashMap<&'a str, &'a MetaType<S>>,
 }
 
 pub fn factory<'a, S: Debug>() -> PossibleFragmentSpreads<'a, S> {
@@ -67,8 +68,11 @@ where
                 ctx.report_error(
                     &error_message(
                         None,
-                        parent_type.name().unwrap_or("<unknown>"),
-                        frag_type.name().unwrap_or("<unknown>"),
+                        parent_type
+                            .name()
+                            .map(ArcStr::as_str)
+                            .unwrap_or("<unknown>"),
+                        frag_type.name().map(ArcStr::as_str).unwrap_or("<unknown>"),
                     ),
                     &[frag.span.start],
                 );
@@ -106,8 +110,11 @@ where
                 ctx.report_error(
                     &error_message(
                         Some(spread.item.name.item),
-                        parent_type.name().unwrap_or("<unknown>"),
-                        frag_type.name().unwrap_or("<unknown>"),
+                        parent_type
+                            .name()
+                            .map(ArcStr::as_str)
+                            .unwrap_or("<unknown>"),
+                        frag_type.name().map(ArcStr::as_str).unwrap_or("<unknown>"),
                     ),
                     &[spread.span.start],
                 );

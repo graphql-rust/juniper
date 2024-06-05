@@ -54,7 +54,7 @@ impl Query {
     }
 }
 
-type Schema = RootNode<'static, Query, EmptyMutation, EmptySubscription>;
+type Schema = RootNode<Query, EmptyMutation, EmptySubscription>;
 
 #[tokio::test]
 async fn interface_inline_fragment_on_union() {

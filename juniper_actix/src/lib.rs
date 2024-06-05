@@ -42,7 +42,7 @@ where
 
 /// Actix Web GraphQL Handler for GET and POST requests
 pub async fn graphql_handler<Query, Mutation, Subscription, CtxT, S>(
-    schema: &juniper::RootNode<'static, Query, Mutation, Subscription, S>,
+    schema: &juniper::RootNode<Query, Mutation, Subscription, S>,
     context: &CtxT,
     req: HttpRequest,
     payload: actix_web::web::Payload,
@@ -65,7 +65,7 @@ where
 }
 /// Actix GraphQL Handler for GET requests
 pub async fn get_graphql_handler<Query, Mutation, Subscription, CtxT, S>(
-    schema: &juniper::RootNode<'static, Query, Mutation, Subscription, S>,
+    schema: &juniper::RootNode<Query, Mutation, Subscription, S>,
     context: &CtxT,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error>
@@ -94,7 +94,7 @@ where
 
 /// Actix GraphQL Handler for POST requests
 pub async fn post_graphql_handler<Query, Mutation, Subscription, CtxT, S>(
-    schema: &juniper::RootNode<'static, Query, Mutation, Subscription, S>,
+    schema: &juniper::RootNode<Query, Mutation, Subscription, S>,
     context: &CtxT,
     req: HttpRequest,
     payload: actix_web::web::Payload,
@@ -195,7 +195,7 @@ pub mod subscriptions {
     pub async fn ws_handler<Query, Mutation, Subscription, CtxT, S, I>(
         req: HttpRequest,
         stream: web::Payload,
-        schema: Arc<RootNode<'static, Query, Mutation, Subscription, S>>,
+        schema: Arc<RootNode<Query, Mutation, Subscription, S>>,
         init: I,
     ) -> Result<HttpResponse, actix_web::Error>
     where
@@ -238,7 +238,7 @@ pub mod subscriptions {
     pub async fn graphql_ws_handler<Query, Mutation, Subscription, CtxT, S, I>(
         req: HttpRequest,
         stream: web::Payload,
-        schema: Arc<RootNode<'static, Query, Mutation, Subscription, S>>,
+        schema: Arc<RootNode<Query, Mutation, Subscription, S>>,
         init: I,
     ) -> Result<HttpResponse, actix_web::Error>
     where
@@ -306,7 +306,7 @@ pub mod subscriptions {
     pub async fn graphql_transport_ws_handler<Query, Mutation, Subscription, CtxT, S, I>(
         req: HttpRequest,
         stream: web::Payload,
-        schema: Arc<RootNode<'static, Query, Mutation, Subscription, S>>,
+        schema: Arc<RootNode<Query, Mutation, Subscription, S>>,
         init: I,
     ) -> Result<HttpResponse, actix_web::Error>
     where
@@ -461,8 +461,7 @@ mod tests {
 
     use super::*;
 
-    type Schema =
-        juniper::RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
+    type Schema = juniper::RootNode<Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
     async fn take_response_body_string(resp: ServiceResponse) -> String {
         let mut body = resp.into_body();
@@ -856,7 +855,7 @@ mod subscription_tests {
         }
     }
 
-    type Schema = juniper::RootNode<'static, Query, EmptyMutation<Database>, Subscription>;
+    type Schema = juniper::RootNode<Query, EmptyMutation<Database>, Subscription>;
 
     fn subscription(
         proto: &'static str,

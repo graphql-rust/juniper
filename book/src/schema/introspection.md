@@ -45,7 +45,7 @@ impl Query {
     }
 }
 
-type Schema = RootNode<'static, Query, EmptyMutation, EmptySubscription>;
+type Schema = RootNode<Query, EmptyMutation, EmptySubscription>;
 
 fn main() {
     let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new())

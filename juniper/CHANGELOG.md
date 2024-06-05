@@ -6,19 +6,29 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 
 
-## [0.17.0] · 2024-04-?? (unreleased)
-[0.17.0]: /../../tree/juniper-v0.17.0/juniper
+## master
 
-[Diff](/../../compare/juniper-v0.16.1...juniper-v0.17.0) | [Milestone](/../../milestone/7)
+[Diff](/../../compare/juniper-v0.16.1...master) | [Milestone](/../../milestone/7)
 
 ### BC Breaks
 
 - Upgraded [`chrono-tz` crate] integration to [0.9 version](https://github.com/chronotope/chrono-tz/releases/tag/v0.9.0). ([#1252])
+- Optimized schema implementation with [`arcstr` crate]: ([#1247], [#819])
+    - Removed lifetime parameters from `MetaType` and its members.
+    - Made `MetaType::name()`, `MetaType::description()` and `MetaType::specified_by_url()` returning `ArcStr`.
+    - Made `DeprecationStatus::reason()` returning `ArcStr`.
+    - Removed lifetime parameters from `DirectiveType`.
+    - Made `DirectiveType::name` and `DirectiveType::description` using `ArcStr`.
+    - Made `types::Name` and `types::NameParseError` using `ArcStr` instead of `String`.
+    - Made `GraphQLType::name()` and `GraphQLValue::type_name()` returning `ArcStr`.
+    - Removed lifetime parameters from `RootNode`.
 
 ### Changed
 
 - Updated [GraphiQL] to [3.2.3 version](https://github.com/graphql/graphiql/blob/graphiql%403.2.2/packages/graphiql/CHANGELOG.md#322). ([#1260])
 
+[#819]: /../../issues/819
+[#1247]: /../../pull/1247
 [#1252]: /../../pull/1252
 [#1260]: /../../pull/1260
 
@@ -217,6 +227,7 @@ See [old CHANGELOG](/../../blob/juniper-v0.15.12/juniper/CHANGELOG.md).
 
 
 [`anyhow` crate]: https://docs.rs/anyhow
+[`arcstr` crate]: https://docs.rs/arcstr
 [`bigdecimal` crate]: https://docs.rs/bigdecimal
 [`bson` crate]: https://docs.rs/bson
 [`chrono` crate]: https://docs.rs/chrono

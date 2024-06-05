@@ -3,6 +3,8 @@ use std::{
     ptr,
 };
 
+use arcstr::ArcStr;
+
 use crate::{
     ast::{FromInputValue, InputValue, Selection, ToInputValue},
     executor::{ExecutionResult, Executor, FieldError, IntoFieldError, Registry},
@@ -19,14 +21,11 @@ where
     T: GraphQLType<S>,
     S: ScalarValue,
 {
-    fn name(_: &Self::TypeInfo) -> Option<&'static str> {
+    fn name(_: &Self::TypeInfo) -> Option<ArcStr> {
         None
     }
 
-    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(info: &Self::TypeInfo, registry: &mut Registry<S>) -> MetaType<S> {
         registry.build_nullable_type::<T>(info).into_meta()
     }
 }
@@ -39,7 +38,7 @@ where
     type Context = T::Context;
     type TypeInfo = T::TypeInfo;
 
-    fn type_name(&self, _: &Self::TypeInfo) -> Option<&'static str> {
+    fn type_name(&self, _: &Self::TypeInfo) -> Option<ArcStr> {
         None
     }
 
@@ -105,14 +104,11 @@ where
     T: GraphQLType<S>,
     S: ScalarValue,
 {
-    fn name(_: &Self::TypeInfo) -> Option<&'static str> {
+    fn name(_: &Self::TypeInfo) -> Option<ArcStr> {
         None
     }
 
-    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(info: &Self::TypeInfo, registry: &mut Registry<S>) -> MetaType<S> {
         registry.build_list_type::<T>(info, None).into_meta()
     }
 }
@@ -125,7 +121,7 @@ where
     type Context = T::Context;
     type TypeInfo = T::TypeInfo;
 
-    fn type_name(&self, _: &Self::TypeInfo) -> Option<&'static str> {
+    fn type_name(&self, _: &Self::TypeInfo) -> Option<ArcStr> {
         None
     }
 
@@ -225,14 +221,11 @@ where
     S: ScalarValue,
     T: GraphQLType<S>,
 {
-    fn name(_: &Self::TypeInfo) -> Option<&'static str> {
+    fn name(_: &Self::TypeInfo) -> Option<ArcStr> {
         None
     }
 
-    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(info: &Self::TypeInfo, registry: &mut Registry<S>) -> MetaType<S> {
         registry.build_list_type::<T>(info, None).into_meta()
     }
 }
@@ -245,7 +238,7 @@ where
     type Context = T::Context;
     type TypeInfo = T::TypeInfo;
 
-    fn type_name(&self, _: &Self::TypeInfo) -> Option<&'static str> {
+    fn type_name(&self, _: &Self::TypeInfo) -> Option<ArcStr> {
         None
     }
 
@@ -292,14 +285,11 @@ where
     S: ScalarValue,
     T: GraphQLType<S>,
 {
-    fn name(_: &Self::TypeInfo) -> Option<&'static str> {
+    fn name(_: &Self::TypeInfo) -> Option<ArcStr> {
         None
     }
 
-    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(info: &Self::TypeInfo, registry: &mut Registry<S>) -> MetaType<S> {
         registry.build_list_type::<T>(info, Some(N)).into_meta()
     }
 }
@@ -312,7 +302,7 @@ where
     type Context = T::Context;
     type TypeInfo = T::TypeInfo;
 
-    fn type_name(&self, _: &Self::TypeInfo) -> Option<&'static str> {
+    fn type_name(&self, _: &Self::TypeInfo) -> Option<ArcStr> {
         None
     }
 

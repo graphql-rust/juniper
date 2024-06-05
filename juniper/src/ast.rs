@@ -1,4 +1,12 @@
-use std::{borrow::Cow, fmt, hash::Hash, slice, vec};
+use std::{
+    borrow::{Borrow, Cow},
+    fmt,
+    hash::Hash,
+    ops::Deref,
+    slice, vec,
+};
+
+use arcstr::ArcStr;
 
 use indexmap::IndexMap;
 
@@ -8,24 +16,166 @@ use crate::{
     value::{DefaultScalarValue, ScalarValue},
 };
 
-/// A type literal in the syntax tree
+/// Name of a [`Type`] literal.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum TypeName<'a> {
+    /// Owned version of this name.
+    Owned(ArcStr),
+
+    /// Borrowed version of this name.
+    Borrowed(&'a str),
+}
+
+impl fmt::Display for TypeName<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Owned(n) => fmt::Display::fmt(n, f),
+            Self::Borrowed(n) => fmt::Display::fmt(n, f),
+        }
+    }
+}
+
+impl AsRef<str> for TypeName<'_> {
+    fn as_ref(&self) -> &str {
+        match self {
+            Self::Owned(n) => n.as_ref(),
+            Self::Borrowed(n) => n,
+        }
+    }
+}
+
+impl Borrow<str> for TypeName<'_> {
+    fn borrow(&self) -> &str {
+        self.as_ref()
+    }
+}
+
+impl Deref for TypeName<'_> {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        self.as_ref()
+    }
+}
+
+impl<'a> From<&'a str> for TypeName<'a> {
+    fn from(v: &'a str) -> Self {
+        Self::Borrowed(v)
+    }
+}
+
+impl From<ArcStr> for TypeName<'_> {
+    fn from(v: ArcStr) -> Self {
+        Self::Owned(v)
+    }
+}
+
+impl<'a> From<&'a ArcStr> for TypeName<'a> {
+    fn from(v: &'a ArcStr) -> Self {
+        Self::Borrowed(v.as_ref())
+    }
+}
+
+impl From<TypeName<'_>> for Box<str> {
+    fn from(n: TypeName<'_>) -> Self {
+        n.as_ref().into()
+    }
+}
+
+impl From<&TypeName<'_>> for Box<str> {
+    fn from(n: &TypeName<'_>) -> Self {
+        n.as_ref().into()
+    }
+}
+
+impl TypeName<'_> {
+    /// Return owned value if this [`TypeName`].
+    ///
+    /// [`Clone`]s if it's [`ArcStr`] already, otherwise allocates a new one.
+    #[must_use]
+    pub fn to_owned(&self) -> ArcStr {
+        match self {
+            Self::Owned(n) => n.clone(),
+            Self::Borrowed(n) => (*n).into(),
+        }
+    }
+}
+
+/// Type literal in a syntax tree.
 ///
-/// This enum carries no semantic information and might refer to types that do
-/// not exist.
-#[derive(Clone, Eq, PartialEq, Debug)]
+/// This enum carries no semantic information and might refer to types that do not exist.
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Type<'a> {
-    /// A nullable named type, e.g. `String`
-    Named(Cow<'a, str>),
-    /// A nullable list type, e.g. `[String]`
+    /// `null`able named type, e.g. `String`.
+    Named(TypeName<'a>),
+
+    /// `null`able list type, e.g. `[String]`.
     ///
-    /// The list itself is what's nullable, the containing type might be non-null.
+    /// The list itself is `null`able, the containing [`Type`] might be non-`null`.
     List(Box<Type<'a>>, Option<usize>),
-    /// A non-null named type, e.g. `String!`
-    NonNullNamed(Cow<'a, str>),
-    /// A non-null list type, e.g. `[String]!`.
+
+    /// Non-`null` named type, e.g. `String!`.
+    NonNullNamed(TypeName<'a>),
+
+    /// Non-`null` list type, e.g. `[String]!`.
     ///
-    /// The list itself is what's non-null, the containing type might be null.
+    /// The list itself is non-`null`, the containing [`Type`] might be `null`able.
     NonNullList(Box<Type<'a>>, Option<usize>),
+}
+
+impl fmt::Display for Type<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Named(n) => write!(f, "{n}"),
+            Self::NonNullNamed(n) => write!(f, "{n}!"),
+            Self::List(t, _) => write!(f, "[{t}]"),
+            Self::NonNullList(t, _) => write!(f, "[{t}]!"),
+        }
+    }
+}
+
+impl<'a> Type<'a> {
+    /// Returns the name of this named [`Type`].
+    ///
+    /// Only applies to named [`Type`]s. Lists will return [`None`].
+    #[must_use]
+    pub fn name(&self) -> Option<&str> {
+        match self {
+            Self::Named(n) | Self::NonNullNamed(n) => Some(n.as_ref()),
+            Self::List(..) | Self::NonNullList(..) => None,
+        }
+    }
+
+    /// Returns the innermost name of this [`Type`] by unpacking lists.
+    ///
+    /// All [`Type`] literals contain exactly one named type.
+    #[must_use]
+    pub fn innermost_name(&self) -> &TypeName<'_> {
+        match self {
+            Self::Named(n) | Self::NonNullNamed(n) => n,
+            Self::List(l, ..) | Self::NonNullList(l, ..) => l.innermost_name(),
+        }
+    }
+
+    /// Returns the owned innermost name of this [`Type`] by unpacking lists.
+    ///
+    /// All [`Type`] literals contain exactly one named type.
+    #[must_use]
+    pub fn to_innermost_name(&self) -> ArcStr {
+        match self.innermost_name() {
+            TypeName::Owned(n) => n.clone(),
+            TypeName::Borrowed(n) => (*n).into(),
+        }
+    }
+
+    /// Indicates whether this [`Type`] can only represent non-`null` values.
+    #[must_use]
+    pub fn is_non_null(&self) -> bool {
+        match self {
+            Self::NonNullList(..) | Self::NonNullNamed(..) => true,
+            Self::List(..) | Self::Named(..) => false,
+        }
+    }
 }
 
 /// A JSON-like value that can be passed into the query execution, either
@@ -34,8 +184,8 @@ pub enum Type<'a> {
 ///
 /// Lists and objects variants are _spanned_, i.e. they contain a reference to
 /// their position in the source file, if available.
-#[derive(Clone, Debug, PartialEq)]
 #[allow(missing_docs)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum InputValue<S = DefaultScalarValue> {
     Null,
     Scalar(S),
@@ -45,24 +195,24 @@ pub enum InputValue<S = DefaultScalarValue> {
     Object(Vec<(Spanning<String>, Spanning<InputValue<S>>)>),
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct VariableDefinition<'a, S> {
     pub var_type: Spanning<Type<'a>>,
     pub default_value: Option<Spanning<InputValue<S>>>,
     pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Arguments<'a, S> {
     pub items: Vec<(Spanning<&'a str>, Spanning<InputValue<S>>)>,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct VariableDefinitions<'a, S> {
     pub items: Vec<(Spanning<&'a str>, VariableDefinition<'a, S>)>,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Field<'a, S> {
     pub alias: Option<Spanning<&'a str>>,
     pub name: Spanning<&'a str>,
@@ -71,13 +221,13 @@ pub struct Field<'a, S> {
     pub selection_set: Option<Vec<Selection<'a, S>>>,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct FragmentSpread<'a, S> {
     pub name: Spanning<&'a str>,
     pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct InlineFragment<'a, S> {
     pub type_condition: Option<Spanning<&'a str>>,
     pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
@@ -99,7 +249,7 @@ pub struct InlineFragment<'a, S> {
 ///   }
 /// }
 /// ```
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[allow(missing_docs)]
 pub enum Selection<'a, S = DefaultScalarValue> {
     Field(Spanning<Field<'a, S>>),
@@ -107,7 +257,7 @@ pub enum Selection<'a, S = DefaultScalarValue> {
     InlineFragment(Spanning<InlineFragment<'a, S>>),
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Directive<'a, S> {
     pub name: Spanning<&'a str>,
     pub arguments: Option<Spanning<Arguments<'a, S>>>,
@@ -122,7 +272,7 @@ pub enum OperationType {
 }
 
 #[allow(missing_docs)]
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Operation<'a, S> {
     pub operation_type: OperationType,
     pub name: Option<Spanning<&'a str>>,
@@ -131,7 +281,7 @@ pub struct Operation<'a, S> {
     pub selection_set: Vec<Selection<'a, S>>,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Fragment<'a, S> {
     pub name: Spanning<&'a str>,
     pub type_condition: Spanning<&'a str>,
@@ -140,7 +290,7 @@ pub struct Fragment<'a, S> {
 }
 
 #[doc(hidden)]
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Definition<'a, S> {
     Operation(Spanning<Operation<'a, S>>),
     Fragment(Spanning<Fragment<'a, S>>),
@@ -192,44 +342,6 @@ pub trait FromInputValue<S = DefaultScalarValue>: Sized {
 pub trait ToInputValue<S = DefaultScalarValue>: Sized {
     /// Performs the conversion.
     fn to_input_value(&self) -> InputValue<S>;
-}
-
-impl<'a> Type<'a> {
-    /// Get the name of a named type.
-    ///
-    /// Only applies to named types; lists will return `None`.
-    pub fn name(&self) -> Option<&str> {
-        match *self {
-            Type::Named(ref n) | Type::NonNullNamed(ref n) => Some(n),
-            _ => None,
-        }
-    }
-
-    /// Get the innermost name by unpacking lists
-    ///
-    /// All type literals contain exactly one named type.
-    pub fn innermost_name(&self) -> &str {
-        match *self {
-            Type::Named(ref n) | Type::NonNullNamed(ref n) => n,
-            Type::List(ref l, _) | Type::NonNullList(ref l, _) => l.innermost_name(),
-        }
-    }
-
-    /// Determines if a type only can represent non-null values.
-    pub fn is_non_null(&self) -> bool {
-        matches!(*self, Type::NonNullNamed(_) | Type::NonNullList(..))
-    }
-}
-
-impl<'a> fmt::Display for Type<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Named(n) => write!(f, "{n}"),
-            Self::NonNullNamed(n) => write!(f, "{n}!"),
-            Self::List(t, _) => write!(f, "[{t}]"),
-            Self::NonNullList(t, _) => write!(f, "[{t}]!"),
-        }
-    }
 }
 
 impl<S> InputValue<S> {
@@ -574,7 +686,7 @@ impl<'a, S> Arguments<'a, S> {
 }
 
 impl<'a, S> VariableDefinitions<'a, S> {
-    pub fn iter(&self) -> slice::Iter<(Spanning<&'a str>, VariableDefinition<S>)> {
+    pub fn iter(&self) -> slice::Iter<(Spanning<&'a str>, VariableDefinition<'a, S>)> {
         self.items.iter()
     }
 }

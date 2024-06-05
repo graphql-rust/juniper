@@ -30,25 +30,25 @@ impl Query {
     }
 }
 
-fn schema<'q, C, Qry, Sub>(
+fn schema<C, Qry, Sub>(
     query_root: Qry,
     subscription_root: Sub,
-) -> RootNode<'q, Qry, EmptyMutation<C>, Sub>
+) -> RootNode<Qry, EmptyMutation<C>, Sub>
 where
-    Qry: GraphQLType<DefaultScalarValue, Context = C, TypeInfo = ()> + 'q,
-    Sub: GraphQLType<DefaultScalarValue, Context = C, TypeInfo = ()> + 'q,
+    Qry: GraphQLType<DefaultScalarValue, Context = C, TypeInfo = ()>,
+    Sub: GraphQLType<DefaultScalarValue, Context = C, TypeInfo = ()>,
 {
     RootNode::new(query_root, EmptyMutation::<C>::new(), subscription_root)
 }
 
-fn schema_with_scalar<'q, S, C, Qry, Sub>(
+fn schema_with_scalar<S, C, Qry, Sub>(
     query_root: Qry,
     subscription_root: Sub,
-) -> RootNode<'q, Qry, EmptyMutation<C>, Sub, S>
+) -> RootNode<Qry, EmptyMutation<C>, Sub, S>
 where
-    Qry: GraphQLType<S, Context = C, TypeInfo = ()> + 'q,
-    Sub: GraphQLType<S, Context = C, TypeInfo = ()> + 'q,
-    S: ScalarValue + 'q,
+    Qry: GraphQLType<S, Context = C, TypeInfo = ()>,
+    Sub: GraphQLType<S, Context = C, TypeInfo = ()>,
+    S: ScalarValue,
 {
     RootNode::new_with_scalar_value(query_root, EmptyMutation::<C>::new(), subscription_root)
 }

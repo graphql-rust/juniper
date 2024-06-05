@@ -1,3 +1,5 @@
+use arcstr::ArcStr;
+
 use crate::{
     ast::{FromInputValue, InputValue, Selection, ToInputValue},
     executor::{ExecutionResult, Executor, Registry},
@@ -224,14 +226,11 @@ where
     T: GraphQLType<S>,
     S: ScalarValue,
 {
-    fn name(_: &Self::TypeInfo) -> Option<&'static str> {
+    fn name(_: &Self::TypeInfo) -> Option<ArcStr> {
         None
     }
 
-    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(info: &Self::TypeInfo, registry: &mut Registry<S>) -> MetaType<S> {
         registry.build_nullable_type::<T>(info).into_meta()
     }
 }
@@ -244,7 +243,7 @@ where
     type Context = T::Context;
     type TypeInfo = T::TypeInfo;
 
-    fn type_name(&self, _: &Self::TypeInfo) -> Option<&'static str> {
+    fn type_name(&self, _: &Self::TypeInfo) -> Option<ArcStr> {
         None
     }
 

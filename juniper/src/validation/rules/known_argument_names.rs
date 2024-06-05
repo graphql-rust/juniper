@@ -14,7 +14,7 @@ enum ArgumentPosition<'a> {
 }
 
 pub struct KnownArgumentNames<'a, S: Debug + 'a> {
-    current_args: Option<(ArgumentPosition<'a>, &'a Vec<Argument<'a, S>>)>,
+    current_args: Option<(ArgumentPosition<'a>, &'a Vec<Argument<S>>)>,
 }
 
 pub fn factory<'a, S: Debug>() -> KnownArgumentNames<'a, S> {
