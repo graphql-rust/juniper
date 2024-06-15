@@ -15,10 +15,17 @@ use juniper::{
 use serde_json::error::Error as SerdeError;
 use url::form_urlencoded;
 
-pub async fn graphql_sync<CtxT, QueryT, MutationT, SubscriptionT, S>(
+pub async fn graphql_sync<
+    CtxT,
+    QueryT,
+    MutationT,
+    SubscriptionT,
+    S,
+    T: body::Body<Error = impl Error + 'static>,
+>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
-    req: Request<body::Incoming>,
+    req: Request<T>,
 ) -> Response<String>
 where
     QueryT: GraphQLType<S, Context = CtxT>,
@@ -36,10 +43,17 @@ where
     }
 }
 
-pub async fn graphql<CtxT, QueryT, MutationT, SubscriptionT, S>(
+pub async fn graphql<
+    CtxT,
+    QueryT,
+    MutationT,
+    SubscriptionT,
+    S,
+    T: body::Body<Error = impl Error + 'static>,
+>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
-    req: Request<body::Incoming>,
+    req: Request<T>,
 ) -> Response<String>
 where
     QueryT: GraphQLTypeAsync<S, Context = CtxT>,
@@ -57,8 +71,8 @@ where
     }
 }
 
-async fn parse_req<S: ScalarValue>(
-    req: Request<body::Incoming>,
+async fn parse_req<S: ScalarValue, T: body::Body<Error = impl Error + 'static>>(
+    req: Request<T>,
 ) -> Result<GraphQLBatchRequest<S>, Response<String>> {
     match *req.method() {
         Method::GET => parse_get_req(req),
@@ -78,9 +92,9 @@ async fn parse_req<S: ScalarValue>(
     .map_err(render_error)
 }
 
-fn parse_get_req<S: ScalarValue>(
-    req: Request<body::Incoming>,
-) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError> {
+fn parse_get_req<S: ScalarValue, T: body::Body<Error = impl Error + 'static>>(
+    req: Request<T>,
+) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError<T>> {
     req.uri()
         .query()
         .map(|q| gql_request_from_get(q).map(GraphQLBatchRequest::Single))
@@ -91,9 +105,9 @@ fn parse_get_req<S: ScalarValue>(
         })
 }
 
-async fn parse_post_json_req<S: ScalarValue>(
-    body: body::Incoming,
-) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError> {
+async fn parse_post_json_req<S: ScalarValue, T: body::Body<Error = impl Error + 'static>>(
+    body: T,
+) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError<T>> {
     let chunk = body
         .collect()
         .await
@@ -106,9 +120,9 @@ async fn parse_post_json_req<S: ScalarValue>(
         .map_err(GraphQLRequestError::BodyJSONError)
 }
 
-async fn parse_post_graphql_req<S: ScalarValue>(
-    body: body::Incoming,
-) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError> {
+async fn parse_post_graphql_req<S: ScalarValue, T: body::Body>(
+    body: T,
+) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError<T>> {
     let chunk = body
         .collect()
         .await
@@ -143,7 +157,9 @@ pub async fn playground(
     resp
 }
 
-fn render_error(err: GraphQLRequestError) -> Response<String> {
+fn render_error<T: body::Body<Error = impl Error + 'static>>(
+    err: GraphQLRequestError<T>,
+) -> Response<String> {
     let mut resp = new_response(StatusCode::BAD_REQUEST);
     *resp.body_mut() = err.to_string();
     resp
@@ -211,7 +227,9 @@ where
     resp
 }
 
-fn gql_request_from_get<S>(input: &str) -> Result<JuniperGraphQLRequest<S>, GraphQLRequestError>
+fn gql_request_from_get<S, T: body::Body>(
+    input: &str,
+) -> Result<JuniperGraphQLRequest<S>, GraphQLRequestError<T>>
 where
     S: ScalarValue,
 {
@@ -254,7 +272,7 @@ where
     }
 }
 
-fn invalid_err(parameter_name: &str) -> GraphQLRequestError {
+fn invalid_err<T: body::Body>(parameter_name: &str) -> GraphQLRequestError<T> {
     GraphQLRequestError::Invalid(format!(
         "`{parameter_name}` parameter is specified multiple times",
     ))
@@ -276,15 +294,15 @@ fn new_html_response(code: StatusCode) -> Response<String> {
 }
 
 #[derive(Debug)]
-enum GraphQLRequestError {
-    BodyHyper(hyper::Error),
+enum GraphQLRequestError<T: body::Body> {
+    BodyHyper(T::Error),
     BodyUtf8(FromUtf8Error),
     BodyJSONError(SerdeError),
     Variables(SerdeError),
     Invalid(String),
 }
 
-impl fmt::Display for GraphQLRequestError {
+impl<T: body::Body<Error = impl Error + 'static>> fmt::Display for GraphQLRequestError<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             GraphQLRequestError::BodyHyper(err) => fmt::Display::fmt(err, f),
@@ -296,7 +314,10 @@ impl fmt::Display for GraphQLRequestError {
     }
 }
 
-impl Error for GraphQLRequestError {
+impl<T: body::Body<Error = impl Error + 'static> + std::fmt::Debug> Error for GraphQLRequestError<T>
+where
+    <T as body::Body>::Error: std::fmt::Debug,
+{
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             GraphQLRequestError::BodyHyper(err) => Some(err),
