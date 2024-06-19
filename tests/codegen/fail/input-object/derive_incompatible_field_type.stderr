@@ -5,14 +5,14 @@ error[E0277]: the trait bound `ObjectA: IsInputType<__S>` is not satisfied
    |            ^^^^^^^ the trait `IsInputType<__S>` is not implemented for `ObjectA`
    |
    = help: the following other types implement trait `IsInputType<S>`:
-             <bool as IsInputType<__S>>
-             <i32 as IsInputType<__S>>
-             <f64 as IsInputType<__S>>
-             <Object as IsInputType<__S>>
-             <Box<T> as IsInputType<S>>
-             <juniper::schema::model::DirectiveLocation as IsInputType<__S>>
+             <&T as IsInputType<S>>
              <Arc<T> as IsInputType<S>>
+             <Box<T> as IsInputType<S>>
+             <ID as IsInputType<__S>>
+             <Object as IsInputType<__S>>
              <TypeKind as IsInputType<__S>>
+             <Vec<T> as IsInputType<S>>
+             <[T; N] as IsInputType<S>>
            and $N others
 
 error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
@@ -25,14 +25,14 @@ error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
    |            ^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjectA`
    |
    = help: the following other types implement trait `FromInputValue<S>`:
-             <bool as FromInputValue<__S>>
-             <i32 as FromInputValue<__S>>
-             <f64 as FromInputValue<__S>>
-             <Object as FromInputValue<__S>>
-             <Box<T> as FromInputValue<S>>
-             <juniper::schema::model::DirectiveLocation as FromInputValue<__S>>
              <Arc<T> as FromInputValue<S>>
+             <Box<T> as FromInputValue<S>>
+             <ID as FromInputValue<__S>>
+             <Object as FromInputValue<__S>>
              <TypeKind as FromInputValue<__S>>
+             <Vec<T> as FromInputValue<S>>
+             <[T; N] as FromInputValue<S>>
+             <bool as FromInputValue<__S>>
            and $N others
 note: required by a bound in `Registry::<'r, S>::arg`
   --> $WORKSPACE/juniper/src/executor/mod.rs
@@ -50,14 +50,14 @@ error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
   |          ^^^^^^^^^^^^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjectA`
   |
   = help: the following other types implement trait `FromInputValue<S>`:
-            <bool as FromInputValue<__S>>
-            <i32 as FromInputValue<__S>>
-            <f64 as FromInputValue<__S>>
-            <Object as FromInputValue<__S>>
-            <Box<T> as FromInputValue<S>>
-            <juniper::schema::model::DirectiveLocation as FromInputValue<__S>>
             <Arc<T> as FromInputValue<S>>
+            <Box<T> as FromInputValue<S>>
+            <ID as FromInputValue<__S>>
+            <Object as FromInputValue<__S>>
             <TypeKind as FromInputValue<__S>>
+            <Vec<T> as FromInputValue<S>>
+            <[T; N] as FromInputValue<S>>
+            <bool as FromInputValue<__S>>
           and $N others
   = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -68,13 +68,13 @@ error[E0277]: the trait bound `ObjectA: ToInputValue<_>` is not satisfied
   |          ^^^^^^^^^^^^^^^^^^ the trait `ToInputValue<_>` is not implemented for `ObjectA`
   |
   = help: the following other types implement trait `ToInputValue<S>`:
-            <bool as ToInputValue<__S>>
-            <i32 as ToInputValue<__S>>
-            <f64 as ToInputValue<__S>>
-            <Object as ToInputValue<__S>>
-            <Box<T> as ToInputValue<S>>
-            <juniper::schema::model::DirectiveLocation as ToInputValue<__S>>
+            <&'a T as ToInputValue<S>>
+            <&'a [T] as ToInputValue<S>>
+            <&'a str as ToInputValue<S>>
             <Arc<T> as ToInputValue<S>>
+            <Box<T> as ToInputValue<S>>
+            <ID as ToInputValue<__S>>
+            <Object as ToInputValue<__S>>
             <TypeKind as ToInputValue<__S>>
           and $N others
   = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)
