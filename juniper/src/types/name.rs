@@ -6,7 +6,7 @@ use std::{
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Name(String);
+pub struct Name(pub String);
 
 impl Name {
     pub fn is_valid(input: &str) -> bool {
