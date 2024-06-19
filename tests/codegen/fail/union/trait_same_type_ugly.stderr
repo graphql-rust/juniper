@@ -16,15 +16,15 @@ error[E0277]: the trait bound `std::string::String: GraphQLObject<__S>` is not s
   |                            ^^^^^^ the trait `GraphQLObject<__S>` is not implemented for `std::string::String`
   |
   = help: the following other types implement trait `GraphQLObject<S>`:
-            <Box<T> as GraphQLObject<S>>
-            <juniper::meta::Field<'a, S> as GraphQLObject<S>>
+            <&T as GraphQLObject<S>>
+            <Arc<T> as GraphQLObject<S>>
             <Argument<'a, S> as GraphQLObject<S>>
+            <Box<T> as GraphQLObject<S>>
             <EnumValue as GraphQLObject<__S>>
             <SchemaType<'a, S> as GraphQLObject<S>>
-            <juniper::schema::model::TypeType<'a, S> as GraphQLObject<S>>
+            <juniper::meta::Field<'a, S> as GraphQLObject<S>>
             <juniper::schema::model::DirectiveType<'a, S> as GraphQLObject<S>>
-            <Arc<T> as GraphQLObject<S>>
-            <&T as GraphQLObject<S>>
+            <juniper::schema::model::TypeType<'a, S> as GraphQLObject<S>>
 
 error[E0277]: the trait bound `std::string::String: GraphQLObject<__S>` is not satisfied
  --> fail/union/trait_same_type_ugly.rs:6:28
@@ -33,12 +33,12 @@ error[E0277]: the trait bound `std::string::String: GraphQLObject<__S>` is not s
   |                            ^^^^^^^^^^^^^^^^^^^ the trait `GraphQLObject<__S>` is not implemented for `std::string::String`
   |
   = help: the following other types implement trait `GraphQLObject<S>`:
-            <Box<T> as GraphQLObject<S>>
-            <juniper::meta::Field<'a, S> as GraphQLObject<S>>
+            <&T as GraphQLObject<S>>
+            <Arc<T> as GraphQLObject<S>>
             <Argument<'a, S> as GraphQLObject<S>>
+            <Box<T> as GraphQLObject<S>>
             <EnumValue as GraphQLObject<__S>>
             <SchemaType<'a, S> as GraphQLObject<S>>
-            <juniper::schema::model::TypeType<'a, S> as GraphQLObject<S>>
+            <juniper::meta::Field<'a, S> as GraphQLObject<S>>
             <juniper::schema::model::DirectiveType<'a, S> as GraphQLObject<S>>
-            <Arc<T> as GraphQLObject<S>>
-            <&T as GraphQLObject<S>>
+            <juniper::schema::model::TypeType<'a, S> as GraphQLObject<S>>
