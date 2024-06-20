@@ -258,31 +258,29 @@ where
                 let is_non_null = meta_field.field_type.is_non_null();
 
                 let response_name = response_name.to_string();
-                async_values.push_back(AsyncValueFuture::Field(async move {
-                    // TODO: implement custom future type instead of
-                    //       two-level boxing.
-                    let res = instance
-                        .resolve_field_async(info, f.name.item, &args, &sub_exec)
-                        .await;
+                let res = instance
+                    .resolve_field_async(info, f.name.item, &args, &sub_exec)
+                    .await;
 
-                    let value = match res {
-                        Ok(Value::Null) if is_non_null => None,
-                        Ok(v) => Some(v),
-                        Err(e) => {
-                            sub_exec.push_error_at(e, pos);
-
-                            if is_non_null {
-                                None
-                            } else {
-                                Some(Value::null())
-                            }
+                let value = match res {
+                    Ok(Value::Null) if is_non_null => None,
+                    Ok(v) => Some(v),
+                    Err(e) => {
+                        sub_exec.push_error_at(e, pos);
+                        if is_non_null {
+                            None
+                        } else {
+                            Some(Value::null())
                         }
-                    };
-                    AsyncValue::Field(AsyncField {
+                    }
+                };
+
+                async_values.push_back(AsyncValueFuture::Field(future::ready(AsyncValue::Field(
+                    AsyncField {
                         name: response_name,
                         value,
-                    })
-                }));
+                    },
+                ))));
             }
 
             Selection::FragmentSpread(Spanning {
