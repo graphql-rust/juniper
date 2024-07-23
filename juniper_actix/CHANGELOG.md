@@ -6,7 +6,7 @@ All user visible changes to `juniper_actix` crate will be documented in this fil
 
 
 
-## ## master
+## master
 
 ### BC Breaks
 
