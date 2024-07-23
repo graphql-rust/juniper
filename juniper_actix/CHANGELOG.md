@@ -6,8 +6,7 @@ All user visible changes to `juniper_actix` crate will be documented in this fil
 
 
 
-## [0.6.0] · 2024-??-?? (unreleased)
-[0.6.0]: /../../tree/juniper_actix-v0.5.0/juniper_actix
+## ## master
 
 ### BC Breaks
 
