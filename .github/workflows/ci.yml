@@ -150,7 +150,7 @@ jobs:
           - juniper
           - juniper_subscriptions
           - juniper_graphql_ws
-          - juniper_actix
+          #- juniper_actix
           - juniper_axum
           - juniper_hyper
           - juniper_rocket
@@ -159,6 +159,10 @@ jobs:
           - ubuntu
           - macOS
           - windows
+        include:
+          - { msrv: "1.75.0", crate: "juniper_actix", os: "ubuntu" }
+          - { msrv: "1.75.0", crate: "juniper_actix", os: "macOS" }
+          - { msrv: "1.75.0", crate: "juniper_actix", os: "windows" }
     runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/checkout@v4
@@ -172,10 +176,6 @@ jobs:
       - run: cargo +nightly update -Z minimal-versions
 
       - run: make test.cargo crate=${{ matrix.crate }}
-        if: ${{ matrix.crate != 'juniper_actix' }}
-      # TODO: Remove once MSRV bumps up >=1.75.
-      - run: cargo check -p ${{ matrix.crate }} --all-features
-        if: ${{ matrix.crate == 'juniper_actix' }}
 
   package:
     name: check (package)
