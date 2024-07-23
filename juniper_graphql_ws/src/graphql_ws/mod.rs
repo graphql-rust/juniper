@@ -260,23 +260,6 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
     }
 }
 
-struct InterruptableStream<S> {
-    stream: S,
-    rx: oneshot::Receiver<()>,
-}
-
-impl<S: Stream + Unpin> Stream for InterruptableStream<S> {
-    type Item = S::Item;
-
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
-        match Pin::new(&mut self.rx).poll(cx) {
-            Poll::Ready(_) => return Poll::Ready(None),
-            Poll::Pending => {}
-        }
-        Pin::new(&mut self.stream).poll_next(cx)
-    }
-}
-
 /// SubscriptionStartState is the state for a subscription operation.
 enum SubscriptionStartState<S: Schema> {
     /// Init is the start before being polled for the first time.
