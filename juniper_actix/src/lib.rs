@@ -230,8 +230,8 @@ pub mod subscriptions {
     /// an authentication based on the parameters provided by a client.
     ///
     /// > __WARNING__: This protocol has been deprecated in favor of the
-    ///                [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new], which is
-    ///                provided by the [`graphql_transport_ws_handler()`] function.
+    /// >              [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new], which is
+    /// >              provided by the [`graphql_transport_ws_handler()`] function.
     ///
     /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
     /// [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md

@@ -67,7 +67,6 @@ pub use self::subscriptions::{graphql_transport_ws, graphql_ws, ws};
 ///
 /// [`extract`]: axum::extract
 /// [`Handler`]: axum::handler::Handler
-#[cfg_attr(text, axum::debug_handler)]
 pub async fn graphql<S>(
     Extension(schema): Extension<S>,
     JuniperRequest(req): JuniperRequest<S::ScalarValue>,
