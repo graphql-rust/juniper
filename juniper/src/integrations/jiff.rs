@@ -194,6 +194,51 @@ mod local_date_time {
     }
 }
 
+/// An instant in time represented as the number of nanoseconds since the Unix
+/// epoch.
+///
+/// A timestamp is always in UTC.
+///
+/// [`DateTime` scalar][1] compliant.
+///
+/// See also [`jiff::Timestamp`][2] for details.
+///
+/// [1]: https://graphql-scalars.dev/docs/scalars/date-time
+/// [2]: https://docs.rs/jiff/latest/jiff/struct.Timestamp.html
+#[graphql_scalar(
+    with = date_time,
+    parse_token(String),
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/date-time",
+)]
+pub type DateTime = jiff::Timestamp;
+
+mod date_time {
+    use std::str::FromStr as _;
+
+    use super::*;
+
+    /// Format of a [`DateTime` scalar][1].
+    ///
+    /// [1]: https://graphql-scalars.dev/docs/scalars/date-time
+    const FORMAT: &str = "%Y-%m-%dT%H:%M:%S%.fZ";
+
+    pub(super) fn to_output<S>(v: &DateTime) -> Value<S>
+    where
+        S: ScalarValue,
+    {
+        Value::scalar(v.strftime(FORMAT).to_string())
+    }
+
+    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<DateTime, String>
+    where
+        S: ScalarValue,
+    {
+        v.as_string_value()
+            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+            .and_then(|s| DateTime::from_str(s).map_err(|e| format!("Invalid `DateTime`: {e}")))
+    }
+}
+
 #[cfg(test)]
 mod local_date_test {
     use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
@@ -415,6 +460,131 @@ mod local_date_time_test {
             (
                 LocalDateTime::constant(1564, 1, 30, 14, 0, 0, 0),
                 graphql_input_value!("1564-01-30 14:00:00"),
+            ),
+        ] {
+            let actual: InputValue = val.to_input_value();
+
+            assert_eq!(actual, expected, "on value: {val}");
+        }
+    }
+}
+
+#[cfg(test)]
+mod date_time_test {
+    use jiff::{civil, tz::TimeZone};
+
+    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+
+    use super::DateTime;
+
+    #[test]
+    fn parses_correct_input() {
+        for (raw, expected) in [
+            (
+                "2014-11-28T21:00:09+09:00",
+                civil::DateTime::constant(2014, 11, 28, 12, 0, 9, 0)
+                    .to_zoned(TimeZone::UTC)
+                    .unwrap()
+                    .timestamp(),
+            ),
+            (
+                "2014-11-28T21:00:09Z",
+                civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
+                    .to_zoned(TimeZone::UTC)
+                    .unwrap()
+                    .timestamp(),
+            ),
+            (
+                "2014-11-28 21:00:09z",
+                civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
+                    .to_zoned(TimeZone::UTC)
+                    .unwrap()
+                    .timestamp(),
+            ),
+            (
+                "2014-11-28T21:00:09+00:00",
+                civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
+                    .to_zoned(TimeZone::UTC)
+                    .unwrap()
+                    .timestamp(),
+            ),
+            (
+                "2014-11-28T21:00:09.05+09:00",
+                civil::DateTime::constant(2014, 11, 28, 12, 0, 9, 50_000_000)
+                    .to_zoned(TimeZone::UTC)
+                    .unwrap()
+                    .timestamp(),
+            ),
+            (
+                "2014-11-28 21:00:09.05+09:00",
+                civil::DateTime::constant(2014, 11, 28, 12, 0, 9, 50_000_000)
+                    .to_zoned(TimeZone::UTC)
+                    .unwrap()
+                    .timestamp(),
+            ),
+        ] {
+            let input: InputValue = graphql_input_value!((raw));
+            let parsed = DateTime::from_input_value(&input);
+
+            assert!(
+                parsed.is_ok(),
+                "failed to parse `{raw}`: {:?}",
+                parsed.unwrap_err(),
+            );
+            assert_eq!(parsed.unwrap(), expected, "input: {raw}");
+        }
+    }
+
+    #[test]
+    fn fails_on_invalid_input() {
+        for input in [
+            graphql_input_value!("12"),
+            graphql_input_value!("12:"),
+            graphql_input_value!("56:34:22"),
+            graphql_input_value!("56:34:22.000"),
+            graphql_input_value!("1996-12-1914:23:43"),
+            graphql_input_value!("1996-12-19Q14:23:43Z"),
+            graphql_input_value!("1996-12-19T14:23:43"),
+            graphql_input_value!("1996-12-19T14:23:43ZZ"),
+            graphql_input_value!("1996-12-19T14:23:43.543"),
+            graphql_input_value!("1996-12-19T14:23"),
+            graphql_input_value!("1996-12-19T14:23:1"),
+            graphql_input_value!("1996-12-19T14:23:"),
+            graphql_input_value!("1996-12-19T23:78:43Z"),
+            graphql_input_value!("1996-12-19T23:18:99Z"),
+            graphql_input_value!("1996-12-19T24:00:00Z"),
+            graphql_input_value!("1996-12-19T99:02:13Z"),
+            graphql_input_value!("1996-12-19T99:02:13Z"),
+            graphql_input_value!("1996-12-19T12:02:13+4444444"),
+            graphql_input_value!("i'm not even a datetime"),
+            graphql_input_value!(2.32),
+            graphql_input_value!(1),
+            graphql_input_value!(null),
+            graphql_input_value!(false),
+        ] {
+            let input: InputValue = input;
+            let parsed = DateTime::from_input_value(&input);
+
+            assert!(parsed.is_err(), "allows input: {input:?}");
+        }
+    }
+
+    #[test]
+    fn formats_correctly() {
+        for (val, expected) in [
+            (
+                civil::DateTime::constant(1996, 12, 19, 0, 0, 0, 0)
+                    .to_zoned(TimeZone::UTC)
+                    .unwrap()
+                    .timestamp(),
+                graphql_input_value!("1996-12-19T00:00:00Z"),
+            ),
+            (
+                civil::DateTime::constant(1564, 1, 30, 5, 0, 0, 123_000_000)
+                    .to_zoned(TimeZone::UTC)
+                    .unwrap()
+                    .timestamp(),
+                graphql_input_value!("1564-01-30T05:00:00.123Z"),
             ),
         ] {
             let actual: InputValue = val.to_input_value();
