@@ -195,7 +195,7 @@ mod local_date_time {
 }
 
 #[cfg(test)]
-mod date_test {
+mod local_date_test {
     use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
 
     use super::LocalDate;
@@ -203,8 +203,8 @@ mod date_test {
     #[test]
     fn parses_correct_input() {
         for (raw, expected) in [
-            ("1996-12-19", LocalDate::new(1996, 12, 19)),
-            ("1564-01-30", LocalDate::new(1564, 01, 30)),
+            ("1996-12-19", LocalDate::constant(1996, 12, 19)),
+            ("1564-01-30", LocalDate::constant(1564, 01, 30)),
         ] {
             let input: InputValue = graphql_input_value!((raw));
             let parsed = LocalDate::from_input_value(&input);
@@ -214,7 +214,7 @@ mod date_test {
                 "failed to parse `{raw}`: {:?}",
                 parsed.unwrap_err(),
             );
-            assert_eq!(parsed.unwrap(), expected.unwrap(), "input: {raw}");
+            assert_eq!(parsed.unwrap(), expected, "input: {raw}");
         }
     }
 
@@ -245,19 +245,18 @@ mod date_test {
     fn formats_correctly() {
         for (val, expected) in [
             (
-                LocalDate::new(1996, 12, 19),
+                LocalDate::constant(1996, 12, 19),
                 graphql_input_value!("1996-12-19"),
             ),
             (
-                LocalDate::new(1564, 01, 30),
+                LocalDate::constant(1564, 01, 30),
                 graphql_input_value!("1564-01-30"),
             ),
             (
-                LocalDate::new(2020, 01, 01),
+                LocalDate::constant(2020, 01, 01),
                 graphql_input_value!("2020-01-01"),
             ),
         ] {
-            let val = val.unwrap();
             let actual: InputValue = val.to_input_value();
 
             assert_eq!(actual, expected, "on value: {val}");
@@ -274,12 +273,12 @@ mod local_time_test {
     #[test]
     fn parses_correct_input() {
         for (raw, expected) in [
-            ("14:23:43", LocalTime::new(14, 23, 43, 000_000_000)),
-            ("14:00:00", LocalTime::new(14, 00, 00, 000_000_000)),
-            ("14:00", LocalTime::new(14, 00, 00, 000_000_000)),
-            ("14:32", LocalTime::new(14, 32, 00, 000_000_000)),
-            ("14:00:00.000", LocalTime::new(14, 00, 00, 000_000_000)),
-            ("14:23:43.345", LocalTime::new(14, 23, 43, 345_000_000)),
+            ("14:23:43", LocalTime::constant(14, 23, 43, 000_000_000)),
+            ("14:00:00", LocalTime::constant(14, 00, 00, 000_000_000)),
+            ("14:00", LocalTime::constant(14, 00, 00, 000_000_000)),
+            ("14:32", LocalTime::constant(14, 32, 00, 000_000_000)),
+            ("14:00:00.000", LocalTime::constant(14, 00, 00, 000_000_000)),
+            ("14:23:43.345", LocalTime::constant(14, 23, 43, 345_000_000)),
         ] {
             let input: InputValue = graphql_input_value!((raw));
             let parsed = LocalTime::from_input_value(&input);
@@ -289,7 +288,7 @@ mod local_time_test {
                 "failed to parse `{raw}`: {:?}",
                 parsed.unwrap_err(),
             );
-            assert_eq!(parsed.unwrap(), expected.unwrap(), "input: {raw}");
+            assert_eq!(parsed.unwrap(), expected, "input: {raw}");
         }
     }
 
@@ -324,17 +323,22 @@ mod local_time_test {
     fn formats_correctly() {
         for (val, expected) in [
             (
-                LocalTime::new(1, 2, 3, 4_005_000),
+                LocalTime::constant(1, 2, 3, 4_005_000),
                 graphql_input_value!("01:02:03.004"),
             ),
-            (LocalTime::new(0, 0, 0, 0), graphql_input_value!("00:00:00")),
             (
-                LocalTime::new(12, 0, 0, 0),
+                LocalTime::constant(0, 0, 0, 0),
+                graphql_input_value!("00:00:00"),
+            ),
+            (
+                LocalTime::constant(12, 0, 0, 0),
                 graphql_input_value!("12:00:00"),
             ),
-            (LocalTime::new(1, 2, 3, 0), graphql_input_value!("01:02:03")),
+            (
+                LocalTime::constant(1, 2, 3, 0),
+                graphql_input_value!("01:02:03"),
+            ),
         ] {
-            let val = val.unwrap();
             let actual: InputValue = val.to_input_value();
 
             assert_eq!(actual, expected, "on value: {val}");
@@ -353,11 +357,11 @@ mod local_date_time_test {
         for (raw, expected) in [
             (
                 "1996-12-19 14:23:43",
-                LocalDateTime::new(1996, 12, 19, 14, 23, 43, 0).unwrap(),
+                LocalDateTime::constant(1996, 12, 19, 14, 23, 43, 0),
             ),
             (
                 "1564-01-30 14:00:00",
-                LocalDateTime::new(1564, 1, 30, 14, 00, 00, 0).unwrap(),
+                LocalDateTime::constant(1564, 1, 30, 14, 00, 00, 0),
             ),
         ] {
             let input: InputValue = graphql_input_value!((raw));
@@ -405,11 +409,11 @@ mod local_date_time_test {
     fn formats_correctly() {
         for (val, expected) in [
             (
-                LocalDateTime::new(1996, 12, 19, 0, 0, 0, 0).unwrap(),
+                LocalDateTime::constant(1996, 12, 19, 0, 0, 0, 0),
                 graphql_input_value!("1996-12-19 00:00:00"),
             ),
             (
-                LocalDateTime::new(1564, 1, 30, 14, 0, 0, 0).unwrap(),
+                LocalDateTime::constant(1564, 1, 30, 14, 0, 0, 0),
                 graphql_input_value!("1564-01-30 14:00:00"),
             ),
         ] {
