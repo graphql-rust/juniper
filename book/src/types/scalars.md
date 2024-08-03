@@ -396,6 +396,10 @@ mod date_scalar {
 | [`chrono::DateTime`]        | [`DateTime`]     | [`chrono`]       |
 | [`chrono_tz::Tz`]           | `TimeZone`       | [`chrono-tz`]    |
 | [`Decimal`]                 | `Decimal`        | [`rust_decimal`] |
+| [`jiff::civil::Date`]       | [`LocalDate`]    | [`jiff`]         |
+| [`jiff::civil::Time`]       | [`LocalTime`]    | [`jiff`]         |
+| [`jiff::civil::DateTime`]   | `LocalDateTime`  | [`jiff`]         |
+| [`jiff::Timestamp`]         | [`DateTime`]     | [`jiff`]         |
 | [`time::Date`]              | [`Date`]         | [`time`]         |
 | [`time::Time`]              | [`LocalTime`]    | [`time`]         |
 | [`time::PrimitiveDateTime`] | `LocalDateTime`  | [`time`]         |
@@ -423,6 +427,12 @@ mod date_scalar {
 [`DateTime`]: https://graphql-scalars.dev/docs/scalars/date-time
 [`Decimal`]: https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html
 [`ID`]: https://spec.graphql.org/October2021#sec-ID
+[`jiff`]: https://docs.rs/jiff
+[`jiff::civil::Date`]: https://docs.rs/jiff/latest/jiff/civil/struct.Date.html
+[`jiff::civil::Time`]: https://docs.rs/jiff/latest/jiff/civil/struct.Time.html
+[`jiff::civil::DateTime`]: https://docs.rs/jiff/latest/jiff/civil/struct.DateTime.html
+[`jiff::Timestamp`]: https://docs.rs/jiff/latest/jiff/struct.Timestamp.html
+[`LocalDate`]: https://graphql-scalars.dev/docs/scalars/local-date
 [`LocalTime`]: https://graphql-scalars.dev/docs/scalars/local-time
 [`rust_decimal`]: https://docs.rs/rust_decimal
 [`ScalarValue`]: https://docs.rs/juniper/0.16.1/juniper/trait.ScalarValue.html
