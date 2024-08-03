@@ -7,8 +7,14 @@
 //! | [`civil::Date`]     | `yyyy-MM-dd`          | [`LocalDate`][s1]     |
 //! | [`civil::Time`]     | `HH:mm[:ss[.SSS]]`    | [`LocalTime`][s2]     |
 //! | [`civil::DateTime`] | `yyyy-MM-ddTHH:mm:ss` | [`LocalDateTime`][s3] |
-//! | [`Zoned`]           | [RFC 3339] string     | [`DateTime`][s4]      |
 //! | [`Timestamp`]       | [RFC 3339] string     | [`DateTime`][s4]      |
+//!
+//! # Unsupported types
+//!
+//! [`Zoned`] is not supported because the GraphQL scalar [`DateTime`][s4] only supports time zone
+//! offsets but no IANA time zone names (as in `2024-08-10T23:14:00-04:00[America/New_York]`, cf.
+//! [RFC 9557]). Serializing such values would incur a loss of information with unexpected and
+//! subtle consequences (a fixed offset would only _seem_ to work in most cases).
 //!
 //! [`civil::Date`]: jiff::civil::Date
 //! [`civil::Time`]: jiff::civil::Time
@@ -16,6 +22,7 @@
 //! [`Zoned`]: jiff::Zoned
 //! [`Timestamp`]: jiff::Timestamp
 //! [RFC 3339]: https://datatracker.ietf.org/doc/html/rfc3339#section-5.6
+//! [RFC 9557]: https://datatracker.ietf.org/doc/html/rfc9557#section-4.1
 //! [s1]: https://graphql-scalars.dev/docs/scalars/local-date
 //! [s2]: https://graphql-scalars.dev/docs/scalars/local-time
 //! [s3]: https://graphql-scalars.dev/docs/scalars/local-date-time
