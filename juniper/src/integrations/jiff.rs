@@ -8,6 +8,7 @@
 //! | [`civil::Time`]     | `HH:mm[:ss[.SSS]]`    | [`LocalTime`][s2]     |
 //! | [`civil::DateTime`] | `yyyy-MM-ddTHH:mm:ss` | [`LocalDateTime`][s3] |
 //! | [`Timestamp`]       | [RFC 3339] string     | [`DateTime`][s4]      |
+//! | [`Span`]            | [ISO 8601] duration   | [`Duration`][s5]      |
 //!
 //! # Unsupported types
 //!
@@ -19,14 +20,17 @@
 //! [`civil::Date`]: jiff::civil::Date
 //! [`civil::Time`]: jiff::civil::Time
 //! [`civil::DateTime`]: jiff::civil::DateTime
-//! [`Zoned`]: jiff::Zoned
+//! [`Span`]: jiff::Span
 //! [`Timestamp`]: jiff::Timestamp
+//! [`Zoned`]: jiff::Zoned
 //! [RFC 3339]: https://datatracker.ietf.org/doc/html/rfc3339#section-5.6
 //! [RFC 9557]: https://datatracker.ietf.org/doc/html/rfc9557#section-4.1
+//! [ISO 8601]: https://en.wikipedia.org/wiki/ISO_8601#Durations
 //! [s1]: https://graphql-scalars.dev/docs/scalars/local-date
 //! [s2]: https://graphql-scalars.dev/docs/scalars/local-time
 //! [s3]: https://graphql-scalars.dev/docs/scalars/local-date-time
 //! [s4]: https://graphql-scalars.dev/docs/scalars/date-time
+//! [s5]: https://graphql-scalars.dev/docs/scalars/duration
 
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
@@ -243,6 +247,46 @@ mod date_time {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| DateTime::from_str(s).map_err(|e| format!("Invalid `DateTime`: {e}")))
+    }
+}
+
+/// A span of time represented via a mixture of calendar and clock units.
+///
+/// A span represents a duration of time in units of years, months, weeks,
+/// days, hours, minutes, seconds, milliseconds, microseconds and nanoseconds.
+///
+/// [`Duration` scalar][1] compliant.
+///
+/// See also [`jiff::Span`][2] for details.
+///
+/// [1]: https://graphql-scalars.dev/docs/scalars/duration
+/// [2]: https://docs.rs/jiff/latest/jiff/struct.Span.html
+#[graphql_scalar(
+    with = duration,
+    parse_token(String),
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/duration",
+)]
+pub type Duration = jiff::Span;
+
+mod duration {
+    use std::str::FromStr as _;
+
+    use super::*;
+
+    pub(super) fn to_output<S>(v: &Duration) -> Value<S>
+    where
+        S: ScalarValue,
+    {
+        Value::scalar(v.to_string())
+    }
+
+    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<Duration, String>
+    where
+        S: ScalarValue,
+    {
+        v.as_string_value()
+            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+            .and_then(|s| Duration::from_str(s).map_err(|e| format!("Invalid `Duration`: {e}")))
     }
 }
 
@@ -593,6 +637,101 @@ mod date_time_test {
                     .timestamp(),
                 graphql_input_value!("1564-01-30T05:00:00.123Z"),
             ),
+        ] {
+            let actual: InputValue = val.to_input_value();
+
+            assert_eq!(actual, expected, "on value: {val}");
+        }
+    }
+}
+
+#[cfg(test)]
+mod duration_test {
+    use jiff::ToSpan;
+
+    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+
+    use super::Duration;
+
+    #[test]
+    fn parses_correct_input() {
+        for (raw, expected) in [
+            ("P5dT8h1m", 5.days().hours(8).minutes(1)),
+            ("-P5d", (-5).days()),
+            ("P2M10DT2H30M", 2.months().days(10).hours(2).minutes(30)),
+            ("P40D", 40.days()),
+            ("P1y1d", 1.year().days(1)),
+            ("P3dT4h59m", 3.days().hours(4).minutes(59)),
+            ("PT2H30M", 2.hours().minutes(30)),
+            ("P1m", 1.month()),
+            ("P1w", 1.week()),
+            ("P1w4d", 1.week().days(4)),
+            ("PT1m", 1.minute()),
+            ("PT0.0021s", 2.milliseconds().microseconds(100)),
+            ("PT0s", 0.seconds()),
+            ("P0d", 0.seconds()),
+            (
+                "P1y1m1dT1h1m1.1s",
+                1.year()
+                    .months(1)
+                    .days(1)
+                    .hours(1)
+                    .minutes(1)
+                    .seconds(1)
+                    .milliseconds(100),
+            ),
+        ] {
+            let input: InputValue = graphql_input_value!((raw));
+            let parsed = Duration::from_input_value(&input);
+
+            assert!(
+                parsed.is_ok(),
+                "failed to parse `{raw}`: {:?}",
+                parsed.unwrap_err(),
+            );
+            assert_eq!(parsed.unwrap(), expected, "input: {raw}");
+        }
+    }
+
+    #[test]
+    fn fails_on_invalid_input() {
+        for input in [
+            graphql_input_value!("12"),
+            graphql_input_value!("12S"),
+            graphql_input_value!("P0"),
+            graphql_input_value!("PT"),
+            graphql_input_value!("PTS"),
+            graphql_input_value!("56:34:22"),
+            graphql_input_value!("1996-12-19"),
+            graphql_input_value!("1996-12-19T14:23:43"),
+            graphql_input_value!("1996-12-19T14:23:43Z"),
+            graphql_input_value!("i'm not even a duration"),
+            graphql_input_value!(2.32),
+            graphql_input_value!(1),
+            graphql_input_value!(null),
+            graphql_input_value!(false),
+        ] {
+            let input: InputValue = input;
+            let parsed = Duration::from_input_value(&input);
+
+            assert!(parsed.is_err(), "allows input: {input:?}");
+        }
+    }
+
+    #[test]
+    fn formats_correctly() {
+        for (val, expected) in [
+            (
+                1.year()
+                    .months(1)
+                    .days(1)
+                    .hours(1)
+                    .minutes(1)
+                    .seconds(1)
+                    .milliseconds(100),
+                graphql_input_value!("P1y1m1dT1h1m1.1s"),
+            ),
+            ((-5).days(), graphql_input_value!("-P5d")),
         ] {
             let actual: InputValue = val.to_input_value();
 

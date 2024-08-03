@@ -400,6 +400,7 @@ mod date_scalar {
 | [`jiff::civil::Time`]       | [`LocalTime`]    | [`jiff`]         |
 | [`jiff::civil::DateTime`]   | `LocalDateTime`  | [`jiff`]         |
 | [`jiff::Timestamp`]         | [`DateTime`]     | [`jiff`]         |
+| [`jiff::Span`]              | [`Duration`]     | [`jiff`]         |
 | [`time::Date`]              | [`Date`]         | [`time`]         |
 | [`time::Time`]              | [`LocalTime`]    | [`time`]         |
 | [`time::PrimitiveDateTime`] | `LocalDateTime`  | [`time`]         |
@@ -426,12 +427,14 @@ mod date_scalar {
 [`Date`]: https://graphql-scalars.dev/docs/scalars/date
 [`DateTime`]: https://graphql-scalars.dev/docs/scalars/date-time
 [`Decimal`]: https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html
+[`Duration`]: https://graphql-scalars.dev/docs/scalars/duration
 [`ID`]: https://spec.graphql.org/October2021#sec-ID
 [`jiff`]: https://docs.rs/jiff
 [`jiff::civil::Date`]: https://docs.rs/jiff/latest/jiff/civil/struct.Date.html
 [`jiff::civil::Time`]: https://docs.rs/jiff/latest/jiff/civil/struct.Time.html
 [`jiff::civil::DateTime`]: https://docs.rs/jiff/latest/jiff/civil/struct.DateTime.html
 [`jiff::Timestamp`]: https://docs.rs/jiff/latest/jiff/struct.Timestamp.html
+[`jiff::Span`]: https://docs.rs/jiff/latest/jiff/struct.Span.html
 [`LocalDate`]: https://graphql-scalars.dev/docs/scalars/local-date
 [`LocalTime`]: https://graphql-scalars.dev/docs/scalars/local-time
 [`rust_decimal`]: https://docs.rs/rust_decimal
