@@ -127,8 +127,7 @@ mod local_time {
                 v.strftime(FORMAT_NO_MILLIS)
             } else {
                 // `LocalTime` scalar only allows precision up to milliseconds.
-                v.clone()
-                    .round(jiff::Unit::Millisecond)
+                (*v).round(jiff::Unit::Millisecond)
                     .unwrap_or_else(|e| panic!("failed to format `LocalTime`: {e}"))
                     .strftime(FORMAT)
             }
