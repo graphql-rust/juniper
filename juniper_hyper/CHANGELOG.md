@@ -14,10 +14,12 @@ All user visible changes to `juniper_hyper` crate will be documented in this fil
 - Switched to 0.16 version of [`juniper` crate].
 - Switched to 1 version of [`hyper` crate]. ([#1217])
 - Changed return type of all functions from `Response<Body>` to `Response<String>`. ([#1101], [#1096])
+- Add support for `Request<T>` where `T` is a type that implements `hyper::body::Body` trait. ([#1263])
 
 [#1096]: /../../issues/1096
 [#1101]: /../../pull/1101
 [#1217]: /../../pull/1217
+[#1263]: /../../pull/1263
 
 
 
