@@ -1,8 +1,8 @@
 [package]
 name = "juniper_actix"
-version = "0.5.0"
+version = "0.6.0"
 edition = "2021"
-rust-version = "1.73"
+rust-version = "1.75"
 description = "`juniper` GraphQL integration with `actix-web`."
 license = "BSD-2-Clause"
 authors = [
@@ -27,7 +27,7 @@ subscriptions = ["dep:actix-ws", "dep:juniper_graphql_ws"]
 [dependencies]
 actix-http = "3.2"
 actix-web = "4.4"
-actix-ws = { version = "0.2", optional = true }
+actix-ws = { version = "0.3", optional = true }
 anyhow = "1.0.47"
 futures = "0.3.22"
 juniper = { version = "0.16", path = "../juniper", default-features = false }

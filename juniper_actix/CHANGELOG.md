@@ -6,6 +6,19 @@ All user visible changes to `juniper_actix` crate will be documented in this fil
 
 
 
+## [0.6.0] · 2024-07-23
+[0.6.0]: /../../tree/juniper_actix-v0.6.0/juniper_actix
+
+### BC Breaks
+
+- Switched to 0.3 version of [`actix-ws` crate]. ([#1267])
+- Bumped up [MSRV] to 1.75 due to [`actix-ws` crate] requirements. ([#1267])
+
+[#1267]: /../../pull/1267
+
+
+
+
 ## [0.5.0] · 2024-03-20
 [0.5.0]: /../../tree/juniper_actix-v0.5.0/juniper_actix
 
@@ -50,3 +63,4 @@ See [old CHANGELOG](/../../blob/juniper_actix-v0.4.0/juniper_actix/CHANGELOG.md)
 [Semantic Versioning 2.0.0]: https://semver.org
 [graphql-transport-ws]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
 [graphql-ws]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
+[MSRV]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field
