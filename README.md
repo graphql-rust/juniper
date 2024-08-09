@@ -73,6 +73,7 @@ your Schemas automatically.
 - [url][url]
 - [chrono][chrono]
 - [chrono-tz][chrono-tz]
+- [jiff][jiff]
 - [time][time]
 - [bson][bson]
 
@@ -119,6 +120,7 @@ Juniper has not reached 1.0 yet, thus some API instability should be expected.
 [url]: https://crates.io/crates/url
 [chrono]: https://crates.io/crates/chrono
 [chrono-tz]: https://crates.io/crates/chrono-tz
+[jiff]: https://crates.io/crates/jiff
 [time]: https://crates.io/crates/time
 [bson]: https://crates.io/crates/bson
 [juniper-from-schema]: https://github.com/davidpdrsn/juniper-from-schema

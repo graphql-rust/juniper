@@ -48,6 +48,7 @@ As an exception to other [GraphQL] libraries for other languages, [Juniper] buil
 - [`bigdecimal`]
 - [`bson`]
 - [`chrono`], [`chrono-tz`]
+- [`jiff`]
 - [`rust_decimal`]
 - [`time`]
 - [`url`]
@@ -85,6 +86,7 @@ This project is licensed under [BSD 2-Clause License](https://github.com/graphql
 [`bson`]: https://docs.rs/bson
 [`chrono`]: https://docs.rs/chrono
 [`chrono-tz`]: https://docs.rs/chrono-tz
+[`jiff`]: https://docs.rs/jiff
 [`juniper_actix`]: https://docs.rs/juniper_actix
 [`juniper_axum`]: https://docs.rs/juniper_axum
 [`juniper_hyper`]: https://docs.rs/juniper_hyper

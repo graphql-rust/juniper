@@ -31,6 +31,7 @@ Introduction
 - [`bigdecimal`]
 - [`bson`]
 - [`chrono`], [`chrono-tz`]
+- [`jiff`]
 - [`rust_decimal`]
 - [`time`]
 - [`url`]
@@ -63,6 +64,7 @@ Introduction
 [`bson`]: https://docs.rs/bson
 [`chrono`]: https://docs.rs/chrono
 [`chrono-tz`]: https://docs.rs/chrono-tz
+[`jiff`]: https://docs.rs/jiff
 [`juniper`]: https://docs.rs/juniper
 [`juniper_actix`]: https://docs.rs/juniper_actix
 [`juniper_axum`]: https://docs.rs/juniper_axum

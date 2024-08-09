@@ -10,6 +10,8 @@ pub mod bson;
 pub mod chrono;
 #[cfg(feature = "chrono-tz")]
 pub mod chrono_tz;
+#[cfg(feature = "jiff")]
+pub mod jiff;
 #[cfg(feature = "rust_decimal")]
 pub mod rust_decimal;
 #[doc(hidden)]
