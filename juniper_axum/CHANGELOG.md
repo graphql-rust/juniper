@@ -6,6 +6,17 @@ All user visible changes to `juniper_axum` crate will be documented in this file
 
 
 
+## master
+
+### BC Breaks
+
+- Bumped up [MSRV] to 1.75. ([#1272])
+
+[#1272]: /../../pull/1272
+
+
+
+
 ## [0.1.0] · 2024-03-20
 [0.1.0]: /../../tree/juniper_axum-v0.1.0/juniper_axum
 
@@ -38,8 +49,9 @@ All user visible changes to `juniper_axum` crate will be documented in this file
 [`juniper` crate]: https://docs.rs/juniper
 [`juniper_graphql_ws` crate]: https://docs.rs/juniper_graphql_ws
 [GraphiQL]: https://github.com/graphql/graphiql
-[GraphQL]: http://graphql.org
-[GraphQL Playground]: https://github.com/prisma/graphql-playground
-[Semantic Versioning 2.0.0]: https://semver.org
 [graphql-transport-ws]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
 [graphql-ws]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
+[GraphQL]: http://graphql.org
+[GraphQL Playground]: https://github.com/prisma/graphql-playground
+[MSRV]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field
+[Semantic Versioning 2.0.0]: https://semver.org

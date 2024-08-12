@@ -6,20 +6,21 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 
 
-## [0.17.0] · 2024-04-?? (unreleased)
-[0.17.0]: /../../tree/juniper-v0.17.0/juniper
+## master
 
-[Diff](/../../compare/juniper-v0.16.1...juniper-v0.17.0) | [Milestone](/../../milestone/7)
+[Diff](/../../compare/juniper-v0.16.1...master) | [Milestone](/../../milestone/7)
 
 ### BC Breaks
 
 - Upgraded [`chrono-tz` crate] integration to [0.9 version](https://github.com/chronotope/chrono-tz/releases/tag/v0.9.0). ([#1252])
+- Bumped up [MSRV] to 1.75. ([#1272])
 
 ### Changed
 
 - Updated [GraphiQL] to [3.4.1 version](https://github.com/graphql/graphiql/blob/graphiql%403.4.1/packages/graphiql/CHANGELOG.md#341). ([#1273])
 
 [#1252]: /../../pull/1252
+[#1272]: /../../pull/1272
 [#1273]: /../../pull/1273
 
 
@@ -227,6 +228,7 @@ See [old CHANGELOG](/../../blob/juniper-v0.15.12/juniper/CHANGELOG.md).
 [GraphiQL]: https://github.com/graphql/graphiql
 [GraphQL Playground]: https://github.com/prisma/graphql-playground
 [graphql-scalars.dev]: https://graphql-scalars.dev
+[MSRV]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field
 [October 2021]: https://spec.graphql.org/October2021
 [object safety]: https://doc.rust-lang.org/reference/items/traits.html#object-safety
 [orphan rules]: https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules

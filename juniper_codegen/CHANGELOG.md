@@ -6,6 +6,17 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
 
 
 
+## master
+
+### BC Breaks
+
+- Bumped up [MSRV] to 1.75. ([#1272])
+
+[#1272]: /../../pull/1272
+
+
+
+
 ## [0.16.0] · 2024-03-20
 [0.16.0]: /../../tree/juniper_codegen-v0.16.0/juniper_codegen
 
@@ -67,5 +78,6 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
 
 
 
+[MSRV]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field
 [orphan rules]: https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules
 [Semantic Versioning 2.0.0]: https://semver.org
