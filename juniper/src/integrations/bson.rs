@@ -4,23 +4,28 @@
 //!
 //! | Rust type         | Format            | GraphQL scalar   |
 //! |-------------------|-------------------|------------------|
-//! | [`oid::ObjectId`] | HEX string        | `ObjectId`       |
+//! | [`oid::ObjectId`] | HEX string        | [`ObjectID`][s1] |
 //! | [`DateTime`]      | [RFC 3339] string | [`DateTime`][s4] |
 //!
 //! [`DateTime`]: bson::DateTime
-//! [`ObjectId`]: bson::oid::ObjectId
+//! [`oid::ObjectId`]: bson::oid::ObjectId
 //! [RFC 3339]: https://datatracker.ietf.org/doc/html/rfc3339#section-5.6
+//! [s1]: https://graphql-scalars.dev/docs/scalars/object-id
 //! [s4]: https://graphql-scalars.dev/docs/scalars/date-time
 
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
 /// [BSON ObjectId][0] represented as a HEX string.
 ///
+/// [`ObjectID` scalar][1] compliant.
+///
 /// See also [`bson::oid::ObjectId`][2] for details.
 ///
 /// [0]: https://www.mongodb.com/docs/manual/reference/bson-types#objectid
+/// [1]: https://graphql-scalars.dev/docs/scalars/object-id
 /// [2]: https://docs.rs/bson/*/bson/oid/struct.ObjectId.html
 #[graphql_scalar(
+    name = "ObjectID",
     with = object_id,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/object-id",
@@ -38,7 +43,7 @@ mod object_id {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| {
-                ObjectId::parse_str(s).map_err(|e| format!("Failed to parse `ObjectId`: {e}"))
+                ObjectId::parse_str(s).map_err(|e| format!("Failed to parse `ObjectID`: {e}"))
             })
     }
 }
