@@ -431,10 +431,10 @@ mod date_scalar {
 [`ID`]: https://spec.graphql.org/October2021#sec-ID
 [`jiff`]: https://docs.rs/jiff
 [`jiff::civil::Date`]: https://docs.rs/jiff/latest/jiff/civil/struct.Date.html
-[`jiff::civil::Time`]: https://docs.rs/jiff/latest/jiff/civil/struct.Time.html
 [`jiff::civil::DateTime`]: https://docs.rs/jiff/latest/jiff/civil/struct.DateTime.html
-[`jiff::Timestamp`]: https://docs.rs/jiff/latest/jiff/struct.Timestamp.html
+[`jiff::civil::Time`]: https://docs.rs/jiff/latest/jiff/civil/struct.Time.html
 [`jiff::Span`]: https://docs.rs/jiff/latest/jiff/struct.Span.html
+[`jiff::Timestamp`]: https://docs.rs/jiff/latest/jiff/struct.Timestamp.html
 [`LocalDate`]: https://graphql-scalars.dev/docs/scalars/local-date
 [`LocalTime`]: https://graphql-scalars.dev/docs/scalars/local-time
 [`rust_decimal`]: https://docs.rs/rust_decimal

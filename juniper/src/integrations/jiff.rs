@@ -18,14 +18,14 @@
 //! subtle consequences (a fixed offset would only _seem_ to work in most cases).
 //!
 //! [`civil::Date`]: jiff::civil::Date
-//! [`civil::Time`]: jiff::civil::Time
 //! [`civil::DateTime`]: jiff::civil::DateTime
+//! [`civil::Time`]: jiff::civil::Time
 //! [`Span`]: jiff::Span
 //! [`Timestamp`]: jiff::Timestamp
 //! [`Zoned`]: jiff::Zoned
+//! [ISO 8601]: https://en.wikipedia.org/wiki/ISO_8601#Durations
 //! [RFC 3339]: https://datatracker.ietf.org/doc/html/rfc3339#section-5.6
 //! [RFC 9557]: https://datatracker.ietf.org/doc/html/rfc9557#section-4.1
-//! [ISO 8601]: https://en.wikipedia.org/wiki/ISO_8601#Durations
 //! [s1]: https://graphql-scalars.dev/docs/scalars/local-date
 //! [s2]: https://graphql-scalars.dev/docs/scalars/local-time
 //! [s3]: https://graphql-scalars.dev/docs/scalars/local-date-time
@@ -34,12 +34,11 @@
 
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
-/// A representation of a civil date in the Gregorian calendar.
+/// Representation of a civil date in the Gregorian calendar.
 ///
-/// A `Date` value corresponds to a triple of year, month and day. Every `Date`
-/// value is guaranteed to be a valid Gregorian calendar date. For example,
-/// both `2023-02-29` and `2023-11-31` are invalid and cannot be represented by
-/// a `Date`.
+/// Corresponds to a triple of year, month and day. Every value is guaranteed to be a valid
+/// Gregorian calendar date. For example, both `2023-02-29` and `2023-11-31` are invalid and cannot
+/// be represented.
 ///
 /// [`LocalDate` scalar][1] compliant.
 ///
@@ -81,11 +80,11 @@ mod local_date {
     }
 }
 
-/// A representation of civil "wall clock" time.
+/// Representation of a civil "wall clock" time.
 ///
-/// Conceptually, a `Time` value corresponds to the typical hours and minutes
-/// that you might see on a clock. This type also contains the second and
-/// fractional subsecond (to nanosecond precision) associated with a time.
+/// Conceptually, corresponds to the typical hours and minutes that you might see on a clock. This
+/// type also contains the second and fractional subsecond (to nanosecond precision) associated with
+/// a time.
 ///
 /// [`LocalTime` scalar][1] compliant.
 ///
@@ -150,15 +149,13 @@ mod local_time {
     }
 }
 
-/// A representation of a civil datetime in the Gregorian calendar.
+/// Representation of a civil datetime in the Gregorian calendar.
 ///
-/// A `DateTime` value corresponds to a pair of a [`Date`] and a [`Time`].
-/// That is, a datetime contains a year, month, day, hour, minute, second and
-/// the fractional number of nanoseconds.
+/// Corresponds to a pair of a `LocalDate` and a `LocalTime`. That is, a datetime contains a year,
+/// month, day, hour, minute, second and the fractional number of nanoseconds.
 ///
-/// A `DateTime` value is guaranteed to contain a valid date and time. For
-/// example, neither `2023-02-29T00:00:00` nor `2015-06-30T23:59:60` are
-/// valid `DateTime` values.
+/// Value is guaranteed to contain a valid date and time. For example, neither `2023-02-29T00:00:00`
+/// nor `2015-06-30T23:59:60` are valid.
 ///
 /// [`LocalDateTime` scalar][1] compliant.
 ///
@@ -201,10 +198,9 @@ mod local_date_time {
     }
 }
 
-/// An instant in time represented as the number of nanoseconds since the Unix
-/// epoch.
+/// Instant in time represented as the number of nanoseconds since the Unix epoch.
 ///
-/// A timestamp is always in UTC.
+/// Always in UTC.
 ///
 /// [`DateTime` scalar][1] compliant.
 ///
@@ -246,10 +242,10 @@ mod date_time {
     }
 }
 
-/// A span of time represented via a mixture of calendar and clock units.
+/// Span of time represented via a mixture of calendar and clock units.
 ///
-/// A span represents a duration of time in units of years, months, weeks,
-/// days, hours, minutes, seconds, milliseconds, microseconds and nanoseconds.
+/// Represents a duration of time in units of years, months, weeks, days, hours, minutes, seconds,
+/// milliseconds, microseconds and nanoseconds.
 ///
 /// [`Duration` scalar][1] compliant.
 ///

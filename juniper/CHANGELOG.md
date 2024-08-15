@@ -24,6 +24,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Updated [GraphiQL] to [3.5.0 version](https://github.com/graphql/graphiql/blob/graphiql%403.5.0/packages/graphiql/CHANGELOG.md#350). ([#1274])
 
 [#1252]: /../../pull/1252
+[#1271]: /../../pull/1271
 [#1272]: /../../pull/1272
 [#1274]: /../../pull/1274
 
@@ -208,7 +209,6 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1237]: /../../pull/1237
 [#1239]: /../../pull/1239
 [#1246]: /../../pull/1246
-[#1271]: /../../pull/1271
 [ba1ed85b]: /../../commit/ba1ed85b3c3dd77fbae7baf6bc4e693321a94083
 [CVE-2022-31173]: /../../security/advisories/GHSA-4rx6-g5vg-5f3j
 
