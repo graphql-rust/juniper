@@ -394,7 +394,7 @@ mod date_scalar {
 | [`chrono::NaiveTime`]       | [`LocalTime`]     | [`chrono`]       |
 | [`chrono::NaiveDateTime`]   | [`LocalDateTime`] | [`chrono`]       |
 | [`chrono::DateTime`]        | [`DateTime`]      | [`chrono`]       |
-| [`chrono_tz::Tz`]           | `TimeZone`        | [`chrono-tz`]    |
+| [`chrono_tz::Tz`]           | [`TimeZone`]      | [`chrono-tz`]    |
 | [`rust_decimal::Decimal`]   | `Decimal`         | [`rust_decimal`] |
 | [`jiff::civil::Date`]       | [`LocalDate`]     | [`jiff`]         |
 | [`jiff::civil::Time`]       | [`LocalTime`]     | [`jiff`]         |
@@ -446,6 +446,7 @@ mod date_scalar {
 [`time::Time`]: https://docs.rs/time/latest/time/struct.Time.html
 [`time::UtcOffset`]: https://docs.rs/time/latest/time/struct.UtcOffset.html
 [`time::OffsetDateTime`]: https://docs.rs/time/latest/time/struct.OffsetDateTime.html
+[`TimeZone`]: https://graphql-scalars.dev/docs/scalars/time-zone
 [`url`]: https://docs.rs/url
 [`url::Url`]: https://docs.rs/url/latest/url/struct.Url.html
 [`URL`]: https://graphql-scalars.dev/docs/scalars/url
