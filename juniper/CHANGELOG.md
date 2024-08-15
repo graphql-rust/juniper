@@ -17,7 +17,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 ### Added
 
-- [`jiff` crate] integration behind `jiff` [Cargo feature]. ([#1271])
+- [`jiff` crate] integration behind `jiff`/`jiff-tz` [Cargo feature]. ([#1271])
 
 ### Changed
 

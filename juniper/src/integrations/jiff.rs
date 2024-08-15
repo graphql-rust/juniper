@@ -8,14 +8,12 @@
 //! | [`civil::Time`]     | `HH:mm[:ss[.SSS]]`    | [`LocalTime`][s2]     |
 //! | [`civil::DateTime`] | `yyyy-MM-ddTHH:mm:ss` | [`LocalDateTime`][s3] |
 //! | [`Timestamp`]       | [RFC 3339] string     | [`DateTime`][s4]      |
+//! | [`Zoned`][^1]       | [RFC 9557] string     | `ZonedDateTime`       |
 //! | [`Span`]            | [ISO 8601] duration   | [`Duration`][s5]      |
 //!
-//! # Unsupported types
-//!
-//! [`Zoned`] is not supported because the GraphQL scalar [`DateTime`][s4] only supports time zone
-//! offsets but no IANA time zone names (as in `2024-08-10T23:14:00-04:00[America/New_York]`, cf.
-//! [RFC 9557]). Serializing such values would incur a loss of information with unexpected and
-//! subtle consequences (a fixed offset would only _seem_ to work in most cases).
+//! [^1]: For [`Zoned`], feature flag `jiff-tz` must be enabled and crate [`jiff`] must be installed
+//! with a feature flag that provides access to the Time Zone Database (e.g. by using the crate's
+//! default feature flags). See [`jiff` time zone features][tz] for details.
 //!
 //! [`civil::Date`]: jiff::civil::Date
 //! [`civil::DateTime`]: jiff::civil::DateTime
@@ -31,6 +29,7 @@
 //! [s3]: https://graphql-scalars.dev/docs/scalars/local-date-time
 //! [s4]: https://graphql-scalars.dev/docs/scalars/date-time
 //! [s5]: https://graphql-scalars.dev/docs/scalars/duration
+//! [tz]: https://docs.rs/jiff/latest/jiff/index.html#time-zone-features
 
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
@@ -239,6 +238,55 @@ mod date_time {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| DateTime::from_str(s).map_err(|e| format!("Invalid `DateTime`: {e}")))
+    }
+}
+
+/// Time zone aware instant in time.
+///
+/// Can be thought of as combination of the following types, all rolled into one:
+///
+/// - [`Timestamp`][3] for indicating precise instant in time.
+/// - [`DateTime`][4] for indicating "civil" calendar date and clock time.
+/// - [`TimeZone`][5] for indicating how to apply time zone transitions while performing arithmetic.
+///
+/// [RFC 9557][1] compliant.
+///
+/// See also [`jiff::Zoned`][2] for details.
+///
+/// [1]: https://datatracker.ietf.org/doc/html/rfc9557#section-4.1
+/// [2]: https://docs.rs/jiff/latest/jiff/struct.Zoned.html
+/// [3]: https://docs.rs/jiff/latest/jiff/struct.Timestamp.html
+/// [4]: https://docs.rs/jiff/latest/jiff/civil/struct.DateTime.html
+/// [5]: https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html
+#[cfg(feature = "jiff-tz")]
+#[graphql_scalar(
+    with = zoned_date_time,
+    parse_token(String),
+)]
+pub type ZonedDateTime = jiff::Zoned;
+
+#[cfg(feature = "jiff-tz")]
+mod zoned_date_time {
+    use std::str::FromStr as _;
+
+    use super::*;
+
+    pub(super) fn to_output<S>(v: &ZonedDateTime) -> Value<S>
+    where
+        S: ScalarValue,
+    {
+        Value::scalar(v.to_string())
+    }
+
+    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<ZonedDateTime, String>
+    where
+        S: ScalarValue,
+    {
+        v.as_string_value()
+            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+            .and_then(|s| {
+                ZonedDateTime::from_str(s).map_err(|e| format!("Invalid `ZonedDateTime`: {e}"))
+            })
     }
 }
 
@@ -628,6 +676,193 @@ mod date_time_test {
                     .unwrap()
                     .timestamp(),
                 graphql_input_value!("1564-01-30T05:00:00.123Z"),
+            ),
+        ] {
+            let actual: InputValue = val.to_input_value();
+
+            assert_eq!(actual, expected, "on value: {val}");
+        }
+    }
+}
+
+#[cfg(feature = "jiff-tz")]
+#[cfg(test)]
+mod zoned_date_time_test {
+    use jiff::{civil, tz, tz::TimeZone};
+
+    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+
+    use super::ZonedDateTime;
+
+    #[test]
+    fn parses_correct_input() {
+        for (raw, expected) in [
+            (
+                "2014-11-28T21:00:09+09:00[Asia/Tokyo]",
+                civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
+                    .to_zoned(TimeZone::get("Asia/Tokyo").unwrap())
+                    .unwrap(),
+            ),
+            (
+                "2014-11-28T21:00:09[America/New_York]",
+                civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
+                    .to_zoned(TimeZone::get("America/New_York").unwrap())
+                    .unwrap(),
+            ),
+            (
+                "2014-11-28 21:00:09[America/New_York]",
+                civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
+                    .to_zoned(TimeZone::get("America/New_York").unwrap())
+                    .unwrap(),
+            ),
+            (
+                "2014-11-28T21:00:09Z[gmt+0]",
+                civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
+                    .to_zoned(TimeZone::get("GMT+0").unwrap())
+                    .unwrap(),
+            ),
+            (
+                "2014-11-28T21:00:09+03:00[etc/gmt-3]",
+                civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
+                    .to_zoned(TimeZone::get("Etc/GMT-3").unwrap())
+                    .unwrap(),
+            ),
+            (
+                "2014-11-28T21:00:09+00:00[UTC]",
+                civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
+                    .to_zoned(TimeZone::get("UTC").unwrap())
+                    .unwrap(),
+            ),
+            (
+                "2014-11-28T21:00:09+02:00[+02:00]",
+                civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
+                    .to_zoned(TimeZone::fixed(tz::offset(2)))
+                    .unwrap(),
+            ),
+            (
+                "2014-11-28T21:00:09-11:00[-11:00]",
+                civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
+                    .to_zoned(TimeZone::fixed(tz::offset(-11)))
+                    .unwrap(),
+            ),
+            (
+                "2014-11-28T21:00:09.05+09:00[Asia/Tokyo]",
+                civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 50_000_000)
+                    .to_zoned(TimeZone::get("Asia/Tokyo").unwrap())
+                    .unwrap(),
+            ),
+            (
+                "2014-11-28 21:00:09.05+09:00[Asia/Tokyo]",
+                civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 50_000_000)
+                    .to_zoned(TimeZone::get("Asia/Tokyo").unwrap())
+                    .unwrap(),
+            ),
+        ] {
+            let input: InputValue = graphql_input_value!((raw));
+            let parsed = ZonedDateTime::from_input_value(&input);
+
+            assert!(
+                parsed.is_ok(),
+                "failed to parse `{raw}`: {:?}",
+                parsed.unwrap_err(),
+            );
+            assert_eq!(parsed.unwrap(), expected, "input: {raw}");
+        }
+    }
+
+    #[test]
+    fn fails_on_invalid_input() {
+        for input in [
+            graphql_input_value!("12"),
+            graphql_input_value!("12:"),
+            graphql_input_value!("56:34:22"),
+            graphql_input_value!("56:34:22.000"),
+            graphql_input_value!("1996-12-1914:23:43"),
+            graphql_input_value!("1996-12-19Q14:23:43Z"),
+            graphql_input_value!("1996-12-19T14:23:43"),
+            graphql_input_value!("1996-12-19T14:23:43ZZ"),
+            graphql_input_value!("1996-12-19T14:23:43.543"),
+            graphql_input_value!("1996-12-19T14:23"),
+            graphql_input_value!("1996-12-19T14:23:1"),
+            graphql_input_value!("1996-12-19T14:23:"),
+            graphql_input_value!("1996-12-19T23:78:43Z"),
+            graphql_input_value!("1996-12-19T23:18:99Z"),
+            graphql_input_value!("1996-12-19T24:00:00Z"),
+            graphql_input_value!("1996-12-19T99:02:13Z"),
+            graphql_input_value!("1996-12-19T99:02:13Z"),
+            graphql_input_value!("1996-12-19T12:02:13+4444444"),
+            graphql_input_value!("i'm not even a datetime"),
+            graphql_input_value!("2014-11-28T21:00:09Z"),
+            graphql_input_value!("2014-11-28T21:00:09+09:00"),
+            graphql_input_value!("2014-11-28T21:00:09+09:00[InvTZ]"),
+            graphql_input_value!(2.32),
+            graphql_input_value!(1),
+            graphql_input_value!(null),
+            graphql_input_value!(false),
+        ] {
+            let input: InputValue = input;
+            let parsed = ZonedDateTime::from_input_value(&input);
+
+            assert!(parsed.is_err(), "allows input: {input:?}");
+        }
+    }
+
+    #[test]
+    fn formats_correctly() {
+        for (val, expected) in [
+            (
+                civil::DateTime::constant(1996, 12, 19, 0, 0, 0, 0)
+                    .to_zoned(TimeZone::get("America/New_York").unwrap())
+                    .unwrap(),
+                graphql_input_value!("1996-12-19T00:00:00-05:00[America/New_York]"),
+            ),
+            (
+                civil::DateTime::constant(1964, 7, 30, 5, 0, 0, 123_000_000)
+                    .to_zoned(TimeZone::get("America/New_York").unwrap())
+                    .unwrap(),
+                graphql_input_value!("1964-07-30T05:00:00.123-04:00[America/New_York]"),
+            ),
+            (
+                civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
+                    .to_zoned(TimeZone::get("GMT+0").unwrap())
+                    .unwrap(),
+                graphql_input_value!("2014-11-28T21:00:09+00:00[GMT+0]"),
+            ),
+            (
+                civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
+                    .to_zoned(TimeZone::get("Etc/GMT+3").unwrap())
+                    .unwrap(),
+                graphql_input_value!("2014-11-28T21:00:09-03:00[Etc/GMT+3]"),
+            ),
+            (
+                civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
+                    .to_zoned(TimeZone::get("UTC").unwrap())
+                    .unwrap(),
+                graphql_input_value!("2014-11-28T21:00:09+00:00[UTC]"),
+            ),
+            (
+                civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
+                    .to_zoned(TimeZone::UTC)
+                    .unwrap(),
+                graphql_input_value!("2014-11-28T21:00:09+00:00[UTC]"),
+            ),
+            (
+                civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
+                    .to_zoned(TimeZone::fixed(tz::offset(0)))
+                    .unwrap(),
+                graphql_input_value!("2014-11-28T21:00:09+00:00[UTC]"),
+            ),
+            (
+                civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
+                    .to_zoned(TimeZone::fixed(tz::offset(2)))
+                    .unwrap(),
+                graphql_input_value!("2014-11-28T21:00:09+02:00[+02:00]"),
+            ),
+            (
+                civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
+                    .to_zoned(TimeZone::fixed(tz::offset(-11)))
+                    .unwrap(),
+                graphql_input_value!("2014-11-28T21:00:09-11:00[-11:00]"),
             ),
         ] {
             let actual: InputValue = val.to_input_value();

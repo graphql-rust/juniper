@@ -34,6 +34,7 @@ chrono-clock = ["chrono", "chrono/clock"]
 chrono-tz = ["dep:chrono-tz", "dep:regex"]
 expose-test-schema = ["dep:anyhow", "dep:serde_json"]
 jiff = ["dep:jiff"]
+jiff-tz = ["jiff", "jiff/std"]
 js = ["chrono?/wasmbind", "time?/wasm-bindgen", "uuid?/js"]
 rust_decimal = ["dep:rust_decimal"]
 schema-language = ["dep:graphql-parser", "dep:void"]
@@ -78,6 +79,7 @@ void = { version = "1.0.2", optional = true }
 [dev-dependencies]
 bencher = "0.1.2"
 chrono = { version = "0.4.30", features = ["alloc"], default-features = false }
+jiff = { version = "0.1.5", features = ["tzdb-bundle-always"], default-features = false }
 pretty_assertions = "1.0.0"
 serde_json = "1.0.18"
 serial_test = "3.0"

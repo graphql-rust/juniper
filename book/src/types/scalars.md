@@ -401,6 +401,7 @@ mod date_scalar {
 | [`jiff::civil::DateTime`]   | `LocalDateTime`  | [`jiff`]         |
 | [`jiff::Timestamp`]         | [`DateTime`]     | [`jiff`]         |
 | [`jiff::Span`]              | [`Duration`]     | [`jiff`]         |
+| [`jiff::Zoned`]             | `ZonedDateTime`  | `jiff-tz`        |
 | [`time::Date`]              | [`Date`]         | [`time`]         |
 | [`time::Time`]              | [`LocalTime`]    | [`time`]         |
 | [`time::PrimitiveDateTime`] | `LocalDateTime`  | [`time`]         |
@@ -435,6 +436,7 @@ mod date_scalar {
 [`jiff::civil::Time`]: https://docs.rs/jiff/latest/jiff/civil/struct.Time.html
 [`jiff::Span`]: https://docs.rs/jiff/latest/jiff/struct.Span.html
 [`jiff::Timestamp`]: https://docs.rs/jiff/latest/jiff/struct.Timestamp.html
+[`jiff::Zoned`]: https://docs.rs/jiff/latest/jiff/struct.Zoned.html
 [`LocalDate`]: https://graphql-scalars.dev/docs/scalars/local-date
 [`LocalTime`]: https://graphql-scalars.dev/docs/scalars/local-time
 [`rust_decimal`]: https://docs.rs/rust_decimal
