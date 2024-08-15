@@ -2,13 +2,13 @@
 //!
 //! # Supported types
 //!
-//! | Rust type             | Format                | GraphQL scalar      |
-//! |-----------------------|-----------------------|---------------------|
-//! | [`Date`]              | `yyyy-MM-dd`          | [`Date`][s1]        |
-//! | [`Time`]              | `HH:mm[:ss[.SSS]]`    | [`LocalTime`][s2]   |
-//! | [`PrimitiveDateTime`] | `yyyy-MM-dd HH:mm:ss` | `LocalDateTime`     |
-//! | [`OffsetDateTime`]    | [RFC 3339] string     | [`DateTime`][s4]    |
-//! | [`UtcOffset`]         | `±hh:mm`              | [`UtcOffset`][s5]   |
+//! | Rust type             | Format                | GraphQL scalar        |
+//! |-----------------------|-----------------------|-----------------------|
+//! | [`Date`]              | `yyyy-MM-dd`          | [`Date`][s1]          |
+//! | [`Time`]              | `HH:mm[:ss[.SSS]]`    | [`LocalTime`][s2]     |
+//! | [`PrimitiveDateTime`] | `yyyy-MM-ddTHH:mm:ss` | [`LocalDateTime`][s3] |
+//! | [`OffsetDateTime`]    | [RFC 3339] string     | [`DateTime`][s4]      |
+//! | [`UtcOffset`]         | `±hh:mm`              | [`UtcOffset`][s5]     |
 //!
 //! [`Date`]: time::Date
 //! [`OffsetDateTime`]: time::OffsetDateTime
@@ -18,6 +18,7 @@
 //! [RFC 3339]: https://datatracker.ietf.org/doc/html/rfc3339#section-5.6
 //! [s1]: https://graphql-scalars.dev/docs/scalars/date
 //! [s2]: https://graphql-scalars.dev/docs/scalars/local-time
+//! [s3]: https://graphql-scalars.dev/docs/scalars/local-date-time
 //! [s4]: https://graphql-scalars.dev/docs/scalars/date-time
 //! [s5]: https://graphql-scalars.dev/docs/scalars/utc-offset
 
@@ -129,10 +130,13 @@ mod local_time {
     }
 }
 
-/// Combined date and time (without time zone) in `yyyy-MM-dd HH:mm:ss` format.
+/// Combined date and time (without time zone) in `yyyy-MM-ddTHH:mm:ss` format.
+///
+/// [`LocalDateTime` scalar][1] compliant.
 ///
 /// See also [`time::PrimitiveDateTime`][2] for details.
 ///
+/// [1]: https://graphql-scalars.dev/docs/scalars/local-date-time
 /// [2]: https://docs.rs/time/*/time/struct.PrimitiveDateTime.html
 #[graphql_scalar(with = local_date_time, parse_token(String))]
 pub type LocalDateTime = time::PrimitiveDateTime;
@@ -140,9 +144,11 @@ pub type LocalDateTime = time::PrimitiveDateTime;
 mod local_date_time {
     use super::*;
 
-    /// Format of a [`LocalDateTime`] scalar.
+    /// Format of a [`LocalDateTime` scalar][1].
+    ///
+    /// [1]: https://graphql-scalars.dev/docs/scalars/local-date-time
     const FORMAT: &[BorrowedFormatItem<'_>] =
-        format_description!("[year]-[month]-[day] [hour]:[minute]:[second]");
+        format_description!("[year]-[month]-[day]T[hour]:[minute]:[second]");
 
     pub(super) fn to_output<S: ScalarValue>(v: &LocalDateTime) -> Value<S> {
         Value::scalar(
@@ -392,8 +398,8 @@ mod local_date_time_test {
     #[test]
     fn parses_correct_input() {
         for (raw, expected) in [
-            ("1996-12-19 14:23:43", datetime!(1996-12-19 14:23:43)),
-            ("1564-01-30 14:00:00", datetime!(1564-01-30 14:00)),
+            ("1996-12-19T14:23:43", datetime!(1996-12-19 14:23:43)),
+            ("1564-01-30T14:00:00", datetime!(1564-01-30 14:00)),
         ] {
             let input: InputValue = graphql_input_value!((raw));
             let parsed = LocalDateTime::from_input_value(&input);
@@ -415,16 +421,17 @@ mod local_date_time_test {
             graphql_input_value!("56:34:22"),
             graphql_input_value!("56:34:22.000"),
             graphql_input_value!("1996-12-1914:23:43"),
-            graphql_input_value!("1996-12-19T14:23:43"),
-            graphql_input_value!("1996-12-19 14:23:43Z"),
-            graphql_input_value!("1996-12-19 14:23:43.543"),
-            graphql_input_value!("1996-12-19 14:23"),
-            graphql_input_value!("1996-12-19 14:23:1"),
-            graphql_input_value!("1996-12-19 14:23:"),
-            graphql_input_value!("1996-12-19 23:78:43"),
-            graphql_input_value!("1996-12-19 23:18:99"),
-            graphql_input_value!("1996-12-19 24:00:00"),
-            graphql_input_value!("1996-12-19 99:02:13"),
+            graphql_input_value!("1996-12-19 14:23:43"),
+            graphql_input_value!("1996-12-19Q14:23:43"),
+            graphql_input_value!("1996-12-19T14:23:43Z"),
+            graphql_input_value!("1996-12-19T14:23:43.543"),
+            graphql_input_value!("1996-12-19T14:23"),
+            graphql_input_value!("1996-12-19T14:23:1"),
+            graphql_input_value!("1996-12-19T14:23:"),
+            graphql_input_value!("1996-12-19T23:78:43"),
+            graphql_input_value!("1996-12-19T23:18:99"),
+            graphql_input_value!("1996-12-19T24:00:00"),
+            graphql_input_value!("1996-12-19T99:02:13"),
             graphql_input_value!("i'm not even a datetime"),
             graphql_input_value!(2.32),
             graphql_input_value!(1),
@@ -443,11 +450,11 @@ mod local_date_time_test {
         for (val, expected) in [
             (
                 datetime!(1996-12-19 12:00 am),
-                graphql_input_value!("1996-12-19 00:00:00"),
+                graphql_input_value!("1996-12-19T00:00:00"),
             ),
             (
                 datetime!(1564-01-30 14:00),
-                graphql_input_value!("1564-01-30 14:00:00"),
+                graphql_input_value!("1564-01-30T14:00:00"),
             ),
         ] {
             let actual: InputValue = val.to_input_value();
@@ -679,7 +686,7 @@ mod integration_test {
                 graphql_value!({
                     "date": "2015-03-14",
                     "localTime": "16:07:08",
-                    "localDateTime": "2016-07-08 09:10:11",
+                    "localDateTime": "2016-07-08T09:10:11",
                     "dateTime": "1996-12-20T00:39:57Z",
                     "utcOffset": "+11:30",
                 }),
