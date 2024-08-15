@@ -387,7 +387,7 @@ mod date_scalar {
 
 | [Rust] type                 | [GraphQL] scalar  | [Cargo feature]  |
 |-----------------------------|-------------------|------------------|
-| [`BigDecimal`]              | `BigDecimal`      | [`bigdecimal`]   |
+| [`bigdecimal::BigDecimal`]  | `BigDecimal`      | [`bigdecimal`]   |
 | [`bson::oid::ObjectId`]     | `ObjectId`        | [`bson`]         |
 | [`bson::DateTime`]          | `UtcDateTime`     | [`bson`]         |
 | [`chrono::NaiveDate`]       | [`Date`]          | [`chrono`]       |
@@ -395,7 +395,7 @@ mod date_scalar {
 | [`chrono::NaiveDateTime`]   | [`LocalDateTime`] | [`chrono`]       |
 | [`chrono::DateTime`]        | [`DateTime`]      | [`chrono`]       |
 | [`chrono_tz::Tz`]           | `TimeZone`        | [`chrono-tz`]    |
-| [`Decimal`]                 | `Decimal`         | [`rust_decimal`] |
+| [`rust_decimal::Decimal`]   | `Decimal`         | [`rust_decimal`] |
 | [`jiff::civil::Date`]       | [`LocalDate`]     | [`jiff`]         |
 | [`jiff::civil::Time`]       | [`LocalTime`]     | [`jiff`]         |
 | [`jiff::civil::DateTime`]   | [`LocalDateTime`] | [`jiff`]         |
@@ -406,14 +406,14 @@ mod date_scalar {
 | [`time::PrimitiveDateTime`] | [`LocalDateTime`] | [`time`]         |
 | [`time::OffsetDateTime`]    | [`DateTime`]      | [`time`]         |
 | [`time::UtcOffset`]         | [`UtcOffset`]     | [`time`]         |
-| [`Url`]                     | `Url`             | [`url`]          |
-| [`Uuid`]                    | `Uuid`            | [`uuid`]         |
+| [`url::Url`]                | [`URL`]           | [`url`]          |
+| [`uuid::Uuid`]              | [`UUID`]          | [`uuid`]         |
 
 
 
 
 [`bigdecimal`]: https://docs.rs/bigdecimal
-[`BigDecimal`]: https://docs.rs/bigdecimal/latest/bigdecimal/struct.BigDecimal.html
+[`bigdecimal::BigDecimal`]: https://docs.rs/bigdecimal/latest/bigdecimal/struct.BigDecimal.html
 [`bson`]: https://docs.rs/bson
 [`bson::DateTime`]: https://docs.rs/bson/latest/bson/struct.DateTime.html
 [`bson::oid::ObjectId`]: https://docs.rs/bson/latest/bson/oid/struct.ObjectId.html
@@ -448,10 +448,12 @@ mod date_scalar {
 [`time::UtcOffset`]: https://docs.rs/time/latest/time/struct.UtcOffset.html
 [`time::OffsetDateTime`]: https://docs.rs/time/latest/time/struct.OffsetDateTime.html
 [`url`]: https://docs.rs/url
-[`Url`]: https://docs.rs/url/latest/url/struct.Url.html
+[`url::Url`]: https://docs.rs/url/latest/url/struct.Url.html
+[`URL`]: https://graphql-scalars.dev/docs/scalars/url
 [`UtcOffset`]: https://graphql-scalars.dev/docs/scalars/utc-offset
 [`uuid`]: https://docs.rs/uuid
-[`Uuid`]: https://docs.rs/uuid/latest/uuid/struct.Uuid.html
+[`uuid::Uuid`]: https://docs.rs/uuid/latest/uuid/struct.Uuid.html
+[`UUID`]: https://graphql-scalars.dev/docs/scalars/uuid
 [Cargo feature]: https://doc.rust-lang.org/cargo/reference/features.html
 [GraphQL]: https://graphql.org
 [Juniper]: https://docs.rs/juniper

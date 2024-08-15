@@ -20,6 +20,8 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
         - `time::PrimitiveDateTime`.
     - Renamed `Url` scalar to `URL` in types:
         - `url::Url`.
+    - Renamed `Uuid` scalar to `UUID` in types:
+        - `uuid::Uuid`.
 
 ### Added
 

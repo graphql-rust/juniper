@@ -4,7 +4,21 @@
 
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
-#[graphql_scalar(with = uuid_scalar, parse_token(String))]
+/// [Universally Unique Identifier][0] (UUID).
+///
+/// [`UUID` scalar][1] compliant.
+///
+/// See also [`uuid::Uuid`][2] for details.
+///
+/// [0]: https://en.wikipedia.org/wiki/Universally_unique_identifier
+/// [1]: https://graphql-scalars.dev/docs/scalars/uuid
+/// [2]: https://docs.rs/uuid/*/uuid/struct.Uuid.html
+#[graphql_scalar(
+    name = "UUID",
+    with = uuid_scalar,
+    parse_token(String),
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/uuid",
+)]
 type Uuid = uuid::Uuid;
 
 mod uuid_scalar {
@@ -17,7 +31,7 @@ mod uuid_scalar {
     pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Uuid, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| Uuid::parse_str(s).map_err(|e| format!("Failed to parse `Uuid`: {e}")))
+            .and_then(|s| Uuid::parse_str(s).map_err(|e| format!("Failed to parse `UUID`: {e}")))
     }
 }
 
