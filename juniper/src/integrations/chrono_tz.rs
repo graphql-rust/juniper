@@ -22,7 +22,11 @@ use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 /// [1]: https://www.iana.org/time-zones
 /// [2]: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 /// [3]: https://docs.rs/chrono-tz/latest/chrono_tz/enum.Tz.html
-#[graphql_scalar(with = tz, parse_token(String))]
+#[graphql_scalar(
+    with = tz,
+    parse_token(String),
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/time-zone",
+)]
 pub type TimeZone = chrono_tz::Tz;
 
 mod tz {

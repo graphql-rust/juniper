@@ -4,7 +4,11 @@
 
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
-#[graphql_scalar(with = uuid_scalar, parse_token(String))]
+#[graphql_scalar(
+    with = uuid_scalar,
+    parse_token(String),
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/uuid",
+)]
 type Uuid = uuid::Uuid;
 
 mod uuid_scalar {

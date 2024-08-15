@@ -2,7 +2,11 @@
 
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
-#[graphql_scalar(with = object_id, parse_token(String))]
+#[graphql_scalar(
+    with = object_id,
+    parse_token(String),
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/object-id",
+)]
 type ObjectId = bson::oid::ObjectId;
 
 mod object_id {

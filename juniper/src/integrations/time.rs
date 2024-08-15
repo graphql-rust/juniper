@@ -80,7 +80,11 @@ mod date {
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
 /// [2]: https://docs.rs/time/*/time/struct.Time.html
-#[graphql_scalar(with = local_time, parse_token(String))]
+#[graphql_scalar(
+    with = local_time,
+    parse_token(String),
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-time",
+)]
 pub type LocalTime = time::Time;
 
 mod local_time {
@@ -134,7 +138,11 @@ mod local_time {
 /// See also [`time::PrimitiveDateTime`][2] for details.
 ///
 /// [2]: https://docs.rs/time/*/time/struct.PrimitiveDateTime.html
-#[graphql_scalar(with = local_date_time, parse_token(String))]
+#[graphql_scalar(
+    with = local_date_time,
+    parse_token(String),
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-date-time",
+)]
 pub type LocalDateTime = time::PrimitiveDateTime;
 
 mod local_date_time {
