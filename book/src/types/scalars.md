@@ -390,7 +390,7 @@ mod date_scalar {
 | [`bigdecimal::BigDecimal`]  | `BigDecimal`      | [`bigdecimal`]   |
 | [`bson::oid::ObjectId`]     | `ObjectId`        | [`bson`]         |
 | [`bson::DateTime`]          | `UtcDateTime`     | [`bson`]         |
-| [`chrono::NaiveDate`]       | [`Date`]          | [`chrono`]       |
+| [`chrono::NaiveDate`]       | [`LocalDate`]     | [`chrono`]       |
 | [`chrono::NaiveTime`]       | [`LocalTime`]     | [`chrono`]       |
 | [`chrono::NaiveDateTime`]   | [`LocalDateTime`] | [`chrono`]       |
 | [`chrono::DateTime`]        | [`DateTime`]      | [`chrono`]       |
@@ -401,7 +401,7 @@ mod date_scalar {
 | [`jiff::civil::DateTime`]   | [`LocalDateTime`] | [`jiff`]         |
 | [`jiff::Timestamp`]         | [`DateTime`]      | [`jiff`]         |
 | [`jiff::Span`]              | [`Duration`]      | [`jiff`]         |
-| [`time::Date`]              | [`Date`]          | [`time`]         |
+| [`time::Date`]              | [`LocalDate`]     | [`time`]         |
 | [`time::Time`]              | [`LocalTime`]     | [`time`]         |
 | [`time::PrimitiveDateTime`] | [`LocalDateTime`] | [`time`]         |
 | [`time::OffsetDateTime`]    | [`DateTime`]      | [`time`]         |
@@ -424,7 +424,6 @@ mod date_scalar {
 [`chrono::NaiveTime`]: https://docs.rs/chrono/latest/chrono/naive/struct.NaiveTime.html
 [`chrono-tz`]: https://docs.rs/chrono-tz
 [`chrono_tz::Tz`]: https://docs.rs/chrono-tz/latest/chrono_tz/enum.Tz.html
-[`Date`]: https://graphql-scalars.dev/docs/scalars/date
 [`DateTime`]: https://graphql-scalars.dev/docs/scalars/date-time
 [`Decimal`]: https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html
 [`Duration`]: https://graphql-scalars.dev/docs/scalars/duration

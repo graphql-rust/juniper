@@ -4,7 +4,7 @@
 //!
 //! | Rust type             | Format                | GraphQL scalar        |
 //! |-----------------------|-----------------------|-----------------------|
-//! | [`Date`]              | `yyyy-MM-dd`          | [`Date`][s1]          |
+//! | [`Date`]              | `yyyy-MM-dd`          | [`LocalDate`][s1]     |
 //! | [`Time`]              | `HH:mm[:ss[.SSS]]`    | [`LocalTime`][s2]     |
 //! | [`PrimitiveDateTime`] | `yyyy-MM-ddTHH:mm:ss` | [`LocalDateTime`][s3] |
 //! | [`OffsetDateTime`]    | [RFC 3339] string     | [`DateTime`][s4]      |
@@ -16,7 +16,7 @@
 //! [`Time`]: time::Time
 //! [`UtcOffset`]: time::UtcOffset
 //! [RFC 3339]: https://datatracker.ietf.org/doc/html/rfc3339#section-5.6
-//! [s1]: https://graphql-scalars.dev/docs/scalars/date
+//! [s1]: https://graphql-scalars.dev/docs/scalars/local-date
 //! [s2]: https://graphql-scalars.dev/docs/scalars/local-time
 //! [s3]: https://graphql-scalars.dev/docs/scalars/local-date-time
 //! [s4]: https://graphql-scalars.dev/docs/scalars/date-time
@@ -34,38 +34,38 @@ use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 /// Represents a description of the date (as used for birthdays, for example).
 /// It cannot represent an instant on the time-line.
 ///
-/// [`Date` scalar][1] compliant.
+/// [`LocalDate` scalar][1] compliant.
 ///
 /// See also [`time::Date`][2] for details.
 ///
-/// [1]: https://graphql-scalars.dev/docs/scalars/date
+/// [1]: https://graphql-scalars.dev/docs/scalars/local-date
 /// [2]: https://docs.rs/time/*/time/struct.Date.html
 #[graphql_scalar(
-    with = date,
+    with = local_date,
     parse_token(String),
-    specified_by_url = "https://graphql-scalars.dev/docs/scalars/date",
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-date",
 )]
-pub type Date = time::Date;
+pub type LocalDate = time::Date;
 
-mod date {
+mod local_date {
     use super::*;
 
-    /// Format of a [`Date` scalar][1].
+    /// Format of a [`LocalDate` scalar][1].
     ///
-    /// [1]: https://graphql-scalars.dev/docs/scalars/date
+    /// [1]: https://graphql-scalars.dev/docs/scalars/local-date
     const FORMAT: &[BorrowedFormatItem<'_>] = format_description!("[year]-[month]-[day]");
 
-    pub(super) fn to_output<S: ScalarValue>(v: &Date) -> Value<S> {
+    pub(super) fn to_output<S: ScalarValue>(v: &LocalDate) -> Value<S> {
         Value::scalar(
             v.format(FORMAT)
-                .unwrap_or_else(|e| panic!("failed to format `Date`: {e}")),
+                .unwrap_or_else(|e| panic!("failed to format `LocalDate`: {e}")),
         )
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Date, String> {
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<LocalDate, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| Date::parse(s, FORMAT).map_err(|e| format!("Invalid `Date`: {e}")))
+            .and_then(|s| LocalDate::parse(s, FORMAT).map_err(|e| format!("Invalid `LocalDate`: {e}")))
     }
 }
 
@@ -253,12 +253,12 @@ mod utc_offset {
 }
 
 #[cfg(test)]
-mod date_test {
+mod local_date_test {
     use time::macros::date;
 
     use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
 
-    use super::Date;
+    use super::LocalDate;
 
     #[test]
     fn parses_correct_input() {
@@ -267,7 +267,7 @@ mod date_test {
             ("1564-01-30", date!(1564 - 01 - 30)),
         ] {
             let input: InputValue = graphql_input_value!((raw));
-            let parsed = Date::from_input_value(&input);
+            let parsed = LocalDate::from_input_value(&input);
 
             assert!(
                 parsed.is_ok(),
@@ -295,7 +295,7 @@ mod date_test {
             graphql_input_value!(false),
         ] {
             let input: InputValue = input;
-            let parsed = Date::from_input_value(&input);
+            let parsed = LocalDate::from_input_value(&input);
 
             assert!(parsed.is_err(), "allows input: {input:?}");
         }
