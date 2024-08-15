@@ -45,7 +45,7 @@ use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 /// See also [`jiff::civil::Date`][2] for details.
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-date
-/// [2]: https://docs.rs/jiff/latest/jiff/civil/struct.Date.html
+/// [2]: https://docs.rs/jiff/*/jiff/civil/struct.Date.html
 #[graphql_scalar(
     with = local_date,
     parse_token(String),
@@ -91,7 +91,7 @@ mod local_date {
 /// See also [`jiff::civil::Time`][2] for details.
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
-/// [2]: https://docs.rs/jiff/latest/jiff/civil/struct.Time.html
+/// [2]: https://docs.rs/jiff/*/jiff/civil/struct.Time.html
 #[graphql_scalar(
     with = local_time,
     parse_token(String),
@@ -162,7 +162,7 @@ mod local_time {
 /// See also [`jiff::civil::DateTime`][2] for details.
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-date-time
-/// [2]: https://docs.rs/jiff/latest/jiff/civil/struct.DateTime.html
+/// [2]: https://docs.rs/jiff/*/jiff/civil/struct.DateTime.html
 #[graphql_scalar(
     with = local_date_time,
     parse_token(String),
@@ -176,7 +176,7 @@ mod local_date_time {
     /// Format of a [`LocalDateTime` scalar][1].
     ///
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-date-time
-    const FORMAT: &str = "%Y-%m-%d %H:%M:%S";
+    const FORMAT: &str = "%Y-%m-%dT%H:%M:%S";
 
     pub(super) fn to_output<S>(v: &LocalDateTime) -> Value<S>
     where
@@ -207,7 +207,7 @@ mod local_date_time {
 /// See also [`jiff::Timestamp`][2] for details.
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/date-time
-/// [2]: https://docs.rs/jiff/latest/jiff/struct.Timestamp.html
+/// [2]: https://docs.rs/jiff/*/jiff/struct.Timestamp.html
 #[graphql_scalar(
     with = date_time,
     parse_token(String),
@@ -252,7 +252,7 @@ mod date_time {
 /// See also [`jiff::Span`][2] for details.
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/duration
-/// [2]: https://docs.rs/jiff/latest/jiff/struct.Span.html
+/// [2]: https://docs.rs/jiff/*/jiff/struct.Span.html
 #[graphql_scalar(
     with = duration,
     parse_token(String),
@@ -444,11 +444,11 @@ mod local_date_time_test {
     fn parses_correct_input() {
         for (raw, expected) in [
             (
-                "1996-12-19 14:23:43",
+                "1996-12-19T14:23:43",
                 LocalDateTime::constant(1996, 12, 19, 14, 23, 43, 0),
             ),
             (
-                "1564-01-30 14:00:00",
+                "1564-01-30T14:00:00",
                 LocalDateTime::constant(1564, 1, 30, 14, 00, 00, 0),
             ),
         ] {
@@ -471,15 +471,17 @@ mod local_date_time_test {
             graphql_input_value!("12:"),
             graphql_input_value!("56:34:22"),
             graphql_input_value!("56:34:22.000"),
-            graphql_input_value!("1996-12-19T14:23:43"),
-            graphql_input_value!("1996-12-19 14:23:43Z"),
-            graphql_input_value!("1996-12-19 14:23:43.543"),
-            graphql_input_value!("1996-12-19 14:23"),
-            graphql_input_value!("1996-12-19 14:23:"),
-            graphql_input_value!("1996-12-19 23:78:43"),
-            graphql_input_value!("1996-12-19 23:18:99"),
-            graphql_input_value!("1996-12-19 24:00:00"),
-            graphql_input_value!("1996-12-19 99:02:13"),
+            graphql_input_value!("1996-12-1914:23:43"),
+            graphql_input_value!("1996-12-19 14:23:43"),
+            graphql_input_value!("1996-12-19Q14:23:43"),
+            graphql_input_value!("1996-12-19T14:23:43Z"),
+            graphql_input_value!("1996-12-19T14:23:43.543"),
+            graphql_input_value!("1996-12-19T14:23"),
+            graphql_input_value!("1996-12-19T14:23:"),
+            graphql_input_value!("1996-12-19T23:78:43"),
+            graphql_input_value!("1996-12-19T23:18:99"),
+            graphql_input_value!("1996-12-19T24:00:00"),
+            graphql_input_value!("1996-12-19T99:02:13"),
             graphql_input_value!("i'm not even a datetime"),
             graphql_input_value!(2.32),
             graphql_input_value!(1),
@@ -498,11 +500,11 @@ mod local_date_time_test {
         for (val, expected) in [
             (
                 LocalDateTime::constant(1996, 12, 19, 0, 0, 0, 0),
-                graphql_input_value!("1996-12-19 00:00:00"),
+                graphql_input_value!("1996-12-19T00:00:00"),
             ),
             (
                 LocalDateTime::constant(1564, 1, 30, 14, 0, 0, 0),
-                graphql_input_value!("1564-01-30 14:00:00"),
+                graphql_input_value!("1564-01-30T14:00:00"),
             ),
         ] {
             let actual: InputValue = val.to_input_value();
@@ -586,6 +588,7 @@ mod date_time_test {
             graphql_input_value!("56:34:22"),
             graphql_input_value!("56:34:22.000"),
             graphql_input_value!("1996-12-1914:23:43"),
+            graphql_input_value!("1996-12-19 14:23:43"),
             graphql_input_value!("1996-12-19Q14:23:43Z"),
             graphql_input_value!("1996-12-19T14:23:43"),
             graphql_input_value!("1996-12-19T14:23:43ZZ"),
@@ -639,7 +642,7 @@ mod date_time_test {
 
 #[cfg(test)]
 mod duration_test {
-    use jiff::ToSpan;
+    use jiff::ToSpan as _;
 
     use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
 
@@ -729,5 +732,83 @@ mod duration_test {
 
             assert_eq!(actual, expected, "on value: {val}");
         }
+    }
+}
+
+#[cfg(test)]
+mod integration_test {
+    use jiff::{civil, tz::TimeZone, ToSpan as _};
+
+    use crate::{
+        execute, graphql_object, graphql_value, graphql_vars,
+        schema::model::RootNode,
+        types::scalars::{EmptyMutation, EmptySubscription},
+    };
+
+    use super::{DateTime, Duration, LocalDate, LocalDateTime, LocalTime};
+
+    #[tokio::test]
+    async fn serializes() {
+        struct Root;
+
+        #[graphql_object]
+        impl Root {
+            fn local_date() -> LocalDate {
+                LocalDate::constant(2015, 3, 14)
+            }
+
+            fn local_time() -> LocalTime {
+                LocalTime::constant(16, 7, 8, 0)
+            }
+
+            fn local_date_time() -> LocalDateTime {
+                LocalDateTime::constant(2016, 7, 8, 9, 10, 11, 0)
+            }
+
+            fn date_time() -> DateTime {
+                civil::DateTime::constant(2014, 11, 28, 12, 0, 9, 50_000_000)
+                    .to_zoned(TimeZone::UTC)
+                    .unwrap()
+                    .timestamp()
+            }
+
+            fn duration() -> Duration {
+                1.year()
+                    .months(1)
+                    .days(1)
+                    .hours(1)
+                    .minutes(1)
+                    .seconds(1)
+                    .milliseconds(100)
+            }
+        }
+
+        const DOC: &str = r#"{
+            localDate
+            localTime
+            localDateTime
+            dateTime,
+            duration,
+        }"#;
+
+        let schema = RootNode::new(
+            Root,
+            EmptyMutation::<()>::new(),
+            EmptySubscription::<()>::new(),
+        );
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({
+                    "localDate": "2015-03-14",
+                    "localTime": "16:07:08",
+                    "localDateTime": "2016-07-08T09:10:11",
+                    "dateTime": "2014-11-28T12:00:09.05Z",
+                    "duration": "P1y1m1dT1h1m1.1s",
+                }),
+                vec![],
+            )),
+        );
     }
 }

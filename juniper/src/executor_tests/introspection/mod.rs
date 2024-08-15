@@ -24,6 +24,7 @@ enum Sample {
 struct Scalar(i32);
 
 /// A sample interface
+#[allow(dead_code)] // TODO: Consider this for the GraphQL interfaces in the expansion.
 #[graphql_interface(name = "SampleInterface", for = Root)]
 trait Interface {
     /// A sample field in the interface
