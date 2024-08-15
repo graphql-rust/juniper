@@ -388,13 +388,13 @@ mod date_scalar {
 | [Rust] type                 | [GraphQL] scalar  | [Cargo feature]  |
 |-----------------------------|-------------------|------------------|
 | [`BigDecimal`]              | `BigDecimal`      | [`bigdecimal`]   |
-| [`bson::oid::ObjectId`]     | `ObjectId`        | [`bson`]         |
+| [`bson::oid::ObjectId`]     | [`ObjectID`]      | [`bson`]         |
 | [`bson::DateTime`]          | `UtcDateTime`     | [`bson`]         |
 | [`chrono::NaiveDate`]       | [`Date`]          | [`chrono`]       |
 | [`chrono::NaiveTime`]       | [`LocalTime`]     | [`chrono`]       |
 | [`chrono::NaiveDateTime`]   | [`LocalDateTime`] | [`chrono`]       |
 | [`chrono::DateTime`]        | [`DateTime`]      | [`chrono`]       |
-| [`chrono_tz::Tz`]           | `TimeZone`        | [`chrono-tz`]    |
+| [`chrono_tz::Tz`]           | [`TimeZone`]      | [`chrono-tz`]    |
 | [`Decimal`]                 | `Decimal`         | [`rust_decimal`] |
 | [`jiff::civil::Date`]       | [`LocalDate`]     | [`jiff`]         |
 | [`jiff::civil::Time`]       | [`LocalTime`]     | [`jiff`]         |
@@ -406,8 +406,8 @@ mod date_scalar {
 | [`time::PrimitiveDateTime`] | [`LocalDateTime`] | [`time`]         |
 | [`time::OffsetDateTime`]    | [`DateTime`]      | [`time`]         |
 | [`time::UtcOffset`]         | [`UtcOffset`]     | [`time`]         |
-| [`Url`]                     | `Url`             | [`url`]          |
-| [`Uuid`]                    | `Uuid`            | [`uuid`]         |
+| [`Url`]                     | [`URL`]           | [`url`]          |
+| [`Uuid`]                    | [`UUID`]          | [`uuid`]         |
 
 
 
@@ -438,6 +438,7 @@ mod date_scalar {
 [`LocalDate`]: https://graphql-scalars.dev/docs/scalars/local-date
 [`LocalDateTime`]: https://graphql-scalars.dev/docs/scalars/local-date-time
 [`LocalTime`]: https://graphql-scalars.dev/docs/scalars/local-time
+[`ObjectID`]: https://the-guild.dev/graphql/scalars/docs/scalars/object-id
 [`rust_decimal`]: https://docs.rs/rust_decimal
 [`ScalarValue`]: https://docs.rs/juniper/0.16.1/juniper/trait.ScalarValue.html
 [`serde`]: https://docs.rs/serde
@@ -447,11 +448,14 @@ mod date_scalar {
 [`time::Time`]: https://docs.rs/time/latest/time/struct.Time.html
 [`time::UtcOffset`]: https://docs.rs/time/latest/time/struct.UtcOffset.html
 [`time::OffsetDateTime`]: https://docs.rs/time/latest/time/struct.OffsetDateTime.html
+[`TimeZone`]: https://the-guild.dev/graphql/scalars/docs/scalars/time-zone
 [`url`]: https://docs.rs/url
 [`Url`]: https://docs.rs/url/latest/url/struct.Url.html
 [`UtcOffset`]: https://graphql-scalars.dev/docs/scalars/utc-offset
 [`uuid`]: https://docs.rs/uuid
 [`Uuid`]: https://docs.rs/uuid/latest/uuid/struct.Uuid.html
+[`URL`]: https://the-guild.dev/graphql/scalars/docs/scalars/url
+[`UUID`]: https://the-guild.dev/graphql/scalars/docs/scalars/uuid
 [Cargo feature]: https://doc.rust-lang.org/cargo/reference/features.html
 [GraphQL]: https://graphql.org
 [Juniper]: https://docs.rs/juniper
