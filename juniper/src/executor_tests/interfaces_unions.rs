@@ -6,6 +6,7 @@ mod interface {
         GraphQLObject,
     };
 
+    #[allow(dead_code)] // TODO: Consider this for the GraphQL interfaces in the expansion.
     #[graphql_interface(for = [Cat, Dog])]
     trait Pet {
         fn name(&self) -> &str;

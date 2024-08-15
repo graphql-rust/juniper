@@ -387,33 +387,33 @@ mod date_scalar {
 
 | [Rust] type                 | [GraphQL] scalar  | [Cargo feature]  |
 |-----------------------------|-------------------|------------------|
-| [`BigDecimal`]              | `BigDecimal`      | [`bigdecimal`]   |
+| [`bigdecimal::BigDecimal`]  | `BigDecimal`      | [`bigdecimal`]   |
 | [`bson::oid::ObjectId`]     | [`ObjectID`]      | [`bson`]         |
-| [`bson::DateTime`]          | `UtcDateTime`     | [`bson`]         |
-| [`chrono::NaiveDate`]       | [`Date`]          | [`chrono`]       |
+| [`bson::DateTime`]          | [`DateTime`]      | [`bson`]         |
+| [`chrono::NaiveDate`]       | [`LocalDate`]     | [`chrono`]       |
 | [`chrono::NaiveTime`]       | [`LocalTime`]     | [`chrono`]       |
 | [`chrono::NaiveDateTime`]   | [`LocalDateTime`] | [`chrono`]       |
 | [`chrono::DateTime`]        | [`DateTime`]      | [`chrono`]       |
 | [`chrono_tz::Tz`]           | [`TimeZone`]      | [`chrono-tz`]    |
-| [`Decimal`]                 | `Decimal`         | [`rust_decimal`] |
+| [`rust_decimal::Decimal`]   | `Decimal`         | [`rust_decimal`] |
 | [`jiff::civil::Date`]       | [`LocalDate`]     | [`jiff`]         |
 | [`jiff::civil::Time`]       | [`LocalTime`]     | [`jiff`]         |
 | [`jiff::civil::DateTime`]   | [`LocalDateTime`] | [`jiff`]         |
 | [`jiff::Timestamp`]         | [`DateTime`]      | [`jiff`]         |
 | [`jiff::Span`]              | [`Duration`]      | [`jiff`]         |
-| [`time::Date`]              | [`Date`]          | [`time`]         |
+| [`time::Date`]              | [`LocalDate`]     | [`time`]         |
 | [`time::Time`]              | [`LocalTime`]     | [`time`]         |
 | [`time::PrimitiveDateTime`] | [`LocalDateTime`] | [`time`]         |
 | [`time::OffsetDateTime`]    | [`DateTime`]      | [`time`]         |
 | [`time::UtcOffset`]         | [`UtcOffset`]     | [`time`]         |
-| [`Url`]                     | [`URL`]           | [`url`]          |
-| [`Uuid`]                    | [`UUID`]          | [`uuid`]         |
+| [`url::Url`]                | [`URL`]           | [`url`]          |
+| [`uuid::Uuid`]              | [`UUID`]          | [`uuid`]         |
 
 
 
 
 [`bigdecimal`]: https://docs.rs/bigdecimal
-[`BigDecimal`]: https://docs.rs/bigdecimal/latest/bigdecimal/struct.BigDecimal.html
+[`bigdecimal::BigDecimal`]: https://docs.rs/bigdecimal/latest/bigdecimal/struct.BigDecimal.html
 [`bson`]: https://docs.rs/bson
 [`bson::DateTime`]: https://docs.rs/bson/latest/bson/struct.DateTime.html
 [`bson::oid::ObjectId`]: https://docs.rs/bson/latest/bson/oid/struct.ObjectId.html
@@ -424,7 +424,6 @@ mod date_scalar {
 [`chrono::NaiveTime`]: https://docs.rs/chrono/latest/chrono/naive/struct.NaiveTime.html
 [`chrono-tz`]: https://docs.rs/chrono-tz
 [`chrono_tz::Tz`]: https://docs.rs/chrono-tz/latest/chrono_tz/enum.Tz.html
-[`Date`]: https://graphql-scalars.dev/docs/scalars/date
 [`DateTime`]: https://graphql-scalars.dev/docs/scalars/date-time
 [`Decimal`]: https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html
 [`Duration`]: https://graphql-scalars.dev/docs/scalars/duration
@@ -448,14 +447,14 @@ mod date_scalar {
 [`time::Time`]: https://docs.rs/time/latest/time/struct.Time.html
 [`time::UtcOffset`]: https://docs.rs/time/latest/time/struct.UtcOffset.html
 [`time::OffsetDateTime`]: https://docs.rs/time/latest/time/struct.OffsetDateTime.html
-[`TimeZone`]: https://the-guild.dev/graphql/scalars/docs/scalars/time-zone
+[`TimeZone`]: https://graphql-scalars.dev/docs/scalars/time-zone
 [`url`]: https://docs.rs/url
-[`Url`]: https://docs.rs/url/latest/url/struct.Url.html
+[`url::Url`]: https://docs.rs/url/latest/url/struct.Url.html
+[`URL`]: https://graphql-scalars.dev/docs/scalars/url
 [`UtcOffset`]: https://graphql-scalars.dev/docs/scalars/utc-offset
 [`uuid`]: https://docs.rs/uuid
-[`Uuid`]: https://docs.rs/uuid/latest/uuid/struct.Uuid.html
-[`URL`]: https://the-guild.dev/graphql/scalars/docs/scalars/url
-[`UUID`]: https://the-guild.dev/graphql/scalars/docs/scalars/uuid
+[`uuid::Uuid`]: https://docs.rs/uuid/latest/uuid/struct.Uuid.html
+[`UUID`]: https://graphql-scalars.dev/docs/scalars/uuid
 [Cargo feature]: https://doc.rust-lang.org/cargo/reference/features.html
 [GraphQL]: https://graphql.org
 [Juniper]: https://docs.rs/juniper

@@ -13,16 +13,19 @@
 
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
-/// Timezone based on [`IANA` database][1].
+/// Timezone based on [`IANA` database][0].
 ///
-/// See ["List of tz database time zones"][2] `TZ database name` column for
+/// See ["List of tz database time zones"][3] `TZ database name` column for
 /// available names.
 ///
-/// See also [`chrono_tz::Tz`][3] for detals.
+/// [`TimeZone` scalar][1] compliant.
 ///
-/// [1]: https://www.iana.org/time-zones
-/// [2]: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-/// [3]: https://docs.rs/chrono-tz/latest/chrono_tz/enum.Tz.html
+/// See also [`chrono_tz::Tz`][2] for details.
+///
+/// [0]: https://www.iana.org/time-zones
+/// [1]: https://graphql-scalars.dev/docs/scalars/time-zone
+/// [2]: https://docs.rs/chrono-tz/*/chrono_tz/enum.Tz.html
+/// [3]: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 #[graphql_scalar(
     with = tz,
     parse_token(String),
