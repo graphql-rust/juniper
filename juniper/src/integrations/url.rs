@@ -1,4 +1,13 @@
 //! GraphQL support for [`url`] crate types.
+//!
+//! # Supported types
+//!
+//! | Rust type | GraphQL scalar |
+//! |-----------|----------------|
+//! | [`Url`]   | [`URL`][s1]    |
+//!
+//! [`Url`]: url::Url
+//! [s1]: https://graphql-scalars.dev/docs/scalars/url
 
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 

@@ -1,6 +1,13 @@
-//! GraphQL support for [uuid](https://doc.rust-lang.org/uuid/uuid/struct.Uuid.html) types.
-
-#![allow(clippy::needless_lifetimes)]
+//! GraphQL support for [`uuid`] crate types.
+//!
+//! # Supported types
+//!
+//! | Rust type | GraphQL scalar |
+//! |-----------|----------------|
+//! | [`Uuid`]  | [`UUID`][s1]   |
+//!
+//! [`Uuid`]: uuid::Uuid
+//! [s1]: https://graphql-scalars.dev/docs/scalars/uuid
 
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 

@@ -65,7 +65,9 @@ mod local_date {
     pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<LocalDate, String> {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| LocalDate::parse(s, FORMAT).map_err(|e| format!("Invalid `LocalDate`: {e}")))
+            .and_then(|s| {
+                LocalDate::parse(s, FORMAT).map_err(|e| format!("Invalid `LocalDate`: {e}"))
+            })
     }
 }
 
@@ -641,7 +643,7 @@ mod integration_test {
         types::scalars::{EmptyMutation, EmptySubscription},
     };
 
-    use super::{Date, DateTime, LocalDateTime, LocalTime, UtcOffset};
+    use super::{DateTime, LocalDate, LocalDateTime, LocalTime, UtcOffset};
 
     #[tokio::test]
     async fn serializes() {
@@ -649,7 +651,7 @@ mod integration_test {
 
         #[graphql_object]
         impl Root {
-            fn date() -> Date {
+            fn local_date() -> LocalDate {
                 date!(2015 - 03 - 14)
             }
 
@@ -671,7 +673,7 @@ mod integration_test {
         }
 
         const DOC: &str = r#"{
-            date
+            localDate
             localTime
             localDateTime
             dateTime,
@@ -688,7 +690,7 @@ mod integration_test {
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({
-                    "date": "2015-03-14",
+                    "localDate": "2015-03-14",
                     "localTime": "16:07:08",
                     "localDateTime": "2016-07-08T09:10:11",
                     "dateTime": "1996-12-20T00:39:57Z",

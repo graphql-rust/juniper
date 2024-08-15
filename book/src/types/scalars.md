@@ -389,7 +389,7 @@ mod date_scalar {
 |-----------------------------|-------------------|------------------|
 | [`bigdecimal::BigDecimal`]  | `BigDecimal`      | [`bigdecimal`]   |
 | [`bson::oid::ObjectId`]     | `ObjectId`        | [`bson`]         |
-| [`bson::DateTime`]          | `UtcDateTime`     | [`bson`]         |
+| [`bson::DateTime`]          | [`DateTime`]      | [`bson`]         |
 | [`chrono::NaiveDate`]       | [`LocalDate`]     | [`chrono`]       |
 | [`chrono::NaiveTime`]       | [`LocalTime`]     | [`chrono`]       |
 | [`chrono::NaiveDateTime`]   | [`LocalDateTime`] | [`chrono`]       |

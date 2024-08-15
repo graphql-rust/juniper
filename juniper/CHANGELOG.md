@@ -21,6 +21,8 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - Switched from `Date` scalar to `LocalDate` scalar in types:
         - `chrono::NaiveDate`.
         - `time::Date`.
+    - Switched from `UtcDateTime` scalar to `DateTime` scalar in types:
+        - `bson::DateTime`.
     - Corrected `TimeZone` scalar in types:
         - `chrono_tz::Tz`.
     - Renamed `Url` scalar to `URL` in types:

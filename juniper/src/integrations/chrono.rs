@@ -65,7 +65,8 @@ mod local_date {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| {
-                LocalDate::parse_from_str(s, FORMAT).map_err(|e| format!("Invalid `LocalDate`: {e}"))
+                LocalDate::parse_from_str(s, FORMAT)
+                    .map_err(|e| format!("Invalid `LocalDate`: {e}"))
             })
     }
 }
@@ -749,7 +750,9 @@ mod integration_test {
         types::scalars::{EmptyMutation, EmptySubscription},
     };
 
-    use super::{LocalDate, DateTime, FixedOffset, FromFixedOffset, LocalDateTime, LocalTime, TimeZone};
+    use super::{
+        DateTime, FixedOffset, FromFixedOffset, LocalDate, LocalDateTime, LocalTime, TimeZone,
+    };
 
     #[tokio::test]
     async fn serializes() {
