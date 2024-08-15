@@ -149,7 +149,11 @@ mod local_time {
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-date-time
 /// [2]: https://docs.rs/chrono/latest/chrono/naive/struct.NaiveDateTime.html
-#[graphql_scalar(with = local_date_time, parse_token(String))]
+#[graphql_scalar(
+    with = local_date_time,
+    parse_token(String),
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-date-time",
+)]
 pub type LocalDateTime = chrono::NaiveDateTime;
 
 mod local_date_time {

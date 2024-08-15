@@ -45,7 +45,7 @@ use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 /// See also [`jiff::civil::Date`][2] for details.
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-date
-/// [2]: https://docs.rs/jiff/latest/jiff/civil/struct.Date.html
+/// [2]: https://docs.rs/jiff/*/jiff/civil/struct.Date.html
 #[graphql_scalar(
     with = local_date,
     parse_token(String),
@@ -91,7 +91,7 @@ mod local_date {
 /// See also [`jiff::civil::Time`][2] for details.
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
-/// [2]: https://docs.rs/jiff/latest/jiff/civil/struct.Time.html
+/// [2]: https://docs.rs/jiff/*/jiff/civil/struct.Time.html
 #[graphql_scalar(
     with = local_time,
     parse_token(String),
@@ -162,7 +162,7 @@ mod local_time {
 /// See also [`jiff::civil::DateTime`][2] for details.
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-date-time
-/// [2]: https://docs.rs/jiff/latest/jiff/civil/struct.DateTime.html
+/// [2]: https://docs.rs/jiff/*/jiff/civil/struct.DateTime.html
 #[graphql_scalar(
     with = local_date_time,
     parse_token(String),
@@ -207,7 +207,7 @@ mod local_date_time {
 /// See also [`jiff::Timestamp`][2] for details.
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/date-time
-/// [2]: https://docs.rs/jiff/latest/jiff/struct.Timestamp.html
+/// [2]: https://docs.rs/jiff/*/jiff/struct.Timestamp.html
 #[graphql_scalar(
     with = date_time,
     parse_token(String),
@@ -252,7 +252,7 @@ mod date_time {
 /// See also [`jiff::Span`][2] for details.
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/duration
-/// [2]: https://docs.rs/jiff/latest/jiff/struct.Span.html
+/// [2]: https://docs.rs/jiff/*/jiff/struct.Span.html
 #[graphql_scalar(
     with = duration,
     parse_token(String),

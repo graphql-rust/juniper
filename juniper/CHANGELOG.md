@@ -15,9 +15,11 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Upgraded [`chrono-tz` crate] integration to [0.9 version](https://github.com/chronotope/chrono-tz/releases/tag/v0.9.0). ([#1252])
 - Bumped up [MSRV] to 1.75. ([#1272])
 - Corrected compliance with newer [graphql-scalars.dev] specs: ([#1275])
-    - Switched `LocalDateTime` scalars to `yyyy-MM-ddTHH:mm:ss` format:
+    - Switched `LocalDateTime` scalars to `yyyy-MM-ddTHH:mm:ss` format in types:
         - `chrono::NaiveDateTime`.
         - `time::PrimitiveDateTime`.
+    - Renamed `Url` scalar to `URL` in types:
+        - `url::Url`.
 
 ### Added
 
