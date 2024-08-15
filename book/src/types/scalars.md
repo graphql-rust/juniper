@@ -385,29 +385,29 @@ mod date_scalar {
 
 [Juniper] provides out-of-the-box [GraphQL scalar][0] implementations for some very common [Rust] crates. The types from these crates will be usable in your schemas automatically after enabling the correspondent self-titled [Cargo feature].
 
-| [Rust] type                 | [GraphQL] scalar | [Cargo feature]  |
-|-----------------------------|------------------|------------------|
-| [`BigDecimal`]              | `BigDecimal`     | [`bigdecimal`]   |
-| [`bson::oid::ObjectId`]     | `ObjectId`       | [`bson`]         |
-| [`bson::DateTime`]          | `UtcDateTime`    | [`bson`]         |
-| [`chrono::NaiveDate`]       | [`Date`]         | [`chrono`]       |
-| [`chrono::NaiveTime`]       | [`LocalTime`]    | [`chrono`]       |
-| [`chrono::NaiveDateTime`]   | `LocalDateTime`  | [`chrono`]       |
-| [`chrono::DateTime`]        | [`DateTime`]     | [`chrono`]       |
-| [`chrono_tz::Tz`]           | `TimeZone`       | [`chrono-tz`]    |
-| [`Decimal`]                 | `Decimal`        | [`rust_decimal`] |
-| [`jiff::civil::Date`]       | [`LocalDate`]    | [`jiff`]         |
-| [`jiff::civil::Time`]       | [`LocalTime`]    | [`jiff`]         |
-| [`jiff::civil::DateTime`]   | `LocalDateTime`  | [`jiff`]         |
-| [`jiff::Timestamp`]         | [`DateTime`]     | [`jiff`]         |
-| [`jiff::Span`]              | [`Duration`]     | [`jiff`]         |
-| [`time::Date`]              | [`Date`]         | [`time`]         |
-| [`time::Time`]              | [`LocalTime`]    | [`time`]         |
-| [`time::PrimitiveDateTime`] | `LocalDateTime`  | [`time`]         |
-| [`time::OffsetDateTime`]    | [`DateTime`]     | [`time`]         |
-| [`time::UtcOffset`]         | [`UtcOffset`]    | [`time`]         |
-| [`Url`]                     | `Url`            | [`url`]          |
-| [`Uuid`]                    | `Uuid`           | [`uuid`]         |
+| [Rust] type                 | [GraphQL] scalar  | [Cargo feature]  |
+|-----------------------------|-------------------|------------------|
+| [`BigDecimal`]              | `BigDecimal`      | [`bigdecimal`]   |
+| [`bson::oid::ObjectId`]     | `ObjectId`        | [`bson`]         |
+| [`bson::DateTime`]          | `UtcDateTime`     | [`bson`]         |
+| [`chrono::NaiveDate`]       | [`Date`]          | [`chrono`]       |
+| [`chrono::NaiveTime`]       | [`LocalTime`]     | [`chrono`]       |
+| [`chrono::NaiveDateTime`]   | [`LocalDateTime`] | [`chrono`]       |
+| [`chrono::DateTime`]        | [`DateTime`]      | [`chrono`]       |
+| [`chrono_tz::Tz`]           | `TimeZone`        | [`chrono-tz`]    |
+| [`Decimal`]                 | `Decimal`         | [`rust_decimal`] |
+| [`jiff::civil::Date`]       | [`LocalDate`]     | [`jiff`]         |
+| [`jiff::civil::Time`]       | [`LocalTime`]     | [`jiff`]         |
+| [`jiff::civil::DateTime`]   | [`LocalDateTime`] | [`jiff`]         |
+| [`jiff::Timestamp`]         | [`DateTime`]      | [`jiff`]         |
+| [`jiff::Span`]              | [`Duration`]      | [`jiff`]         |
+| [`time::Date`]              | [`Date`]          | [`time`]         |
+| [`time::Time`]              | [`LocalTime`]     | [`time`]         |
+| [`time::PrimitiveDateTime`] | [`LocalDateTime`] | [`time`]         |
+| [`time::OffsetDateTime`]    | [`DateTime`]      | [`time`]         |
+| [`time::UtcOffset`]         | [`UtcOffset`]     | [`time`]         |
+| [`Url`]                     | `Url`             | [`url`]          |
+| [`Uuid`]                    | `Uuid`            | [`uuid`]         |
 
 
 
@@ -436,6 +436,7 @@ mod date_scalar {
 [`jiff::Span`]: https://docs.rs/jiff/latest/jiff/struct.Span.html
 [`jiff::Timestamp`]: https://docs.rs/jiff/latest/jiff/struct.Timestamp.html
 [`LocalDate`]: https://graphql-scalars.dev/docs/scalars/local-date
+[`LocalDateTime`]: https://graphql-scalars.dev/docs/scalars/local-date-time
 [`LocalTime`]: https://graphql-scalars.dev/docs/scalars/local-time
 [`rust_decimal`]: https://docs.rs/rust_decimal
 [`ScalarValue`]: https://docs.rs/juniper/0.16.1/juniper/trait.ScalarValue.html
