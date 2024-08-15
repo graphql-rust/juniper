@@ -2,13 +2,14 @@
 //!
 //! # Supported types
 //!
-//! | Rust type | Format             | GraphQL scalar |
-//! |-----------|--------------------|----------------|
-//! | [`Tz`]    | [IANA database][1] | `TimeZone`     |
+//! | Rust type | Format             | GraphQL scalar   |
+//! |-----------|--------------------|------------------|
+//! | [`Tz`]    | [IANA database][1] | [`TimeZone`][s1] |
 //!
 //! [`chrono-tz`]: chrono_tz
 //! [`Tz`]: chrono_tz::Tz
 //! [1]: http://www.iana.org/time-zones
+//! [s1]: https://graphql-scalars.dev/docs/scalars/time-zone
 
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 

@@ -2,13 +2,13 @@
 //!
 //! # Supported types
 //!
-//! | Rust type             | Format                | GraphQL scalar      |
-//! |-----------------------|-----------------------|---------------------|
-//! | [`Date`]              | `yyyy-MM-dd`          | [`Date`][s1]        |
-//! | [`Time`]              | `HH:mm[:ss[.SSS]]`    | [`LocalTime`][s2]   |
-//! | [`PrimitiveDateTime`] | `yyyy-MM-dd HH:mm:ss` | `LocalDateTime`     |
-//! | [`OffsetDateTime`]    | [RFC 3339] string     | [`DateTime`][s4]    |
-//! | [`UtcOffset`]         | `±hh:mm`              | [`UtcOffset`][s5]   |
+//! | Rust type             | Format                | GraphQL scalar        |
+//! |-----------------------|-----------------------|-----------------------|
+//! | [`Date`]              | `yyyy-MM-dd`          | [`Date`][s1]          |
+//! | [`Time`]              | `HH:mm[:ss[.SSS]]`    | [`LocalTime`][s2]     |
+//! | [`PrimitiveDateTime`] | `yyyy-MM-dd HH:mm:ss` | [`LocalDateTime`][s3] |
+//! | [`OffsetDateTime`]    | [RFC 3339] string     | [`DateTime`][s4]      |
+//! | [`UtcOffset`]         | `±hh:mm`              | [`UtcOffset`][s5]     |
 //!
 //! [`Date`]: time::Date
 //! [`OffsetDateTime`]: time::OffsetDateTime
@@ -18,6 +18,7 @@
 //! [RFC 3339]: https://datatracker.ietf.org/doc/html/rfc3339#section-5.6
 //! [s1]: https://graphql-scalars.dev/docs/scalars/date
 //! [s2]: https://graphql-scalars.dev/docs/scalars/local-time
+//! [s3]: https://graphql-scalars.dev/docs/scalars/local-date-time
 //! [s4]: https://graphql-scalars.dev/docs/scalars/date-time
 //! [s5]: https://graphql-scalars.dev/docs/scalars/utc-offset
 

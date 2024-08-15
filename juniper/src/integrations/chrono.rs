@@ -2,12 +2,12 @@
 //!
 //! # Supported types
 //!
-//! | Rust type         | Format                | GraphQL scalar    |
-//! |-------------------|-----------------------|-------------------|
-//! | [`NaiveDate`]     | `yyyy-MM-dd`          | [`Date`][s1]      |
-//! | [`NaiveTime`]     | `HH:mm[:ss[.SSS]]`    | [`LocalTime`][s2] |
-//! | [`NaiveDateTime`] | `yyyy-MM-dd HH:mm:ss` | `LocalDateTime`   |
-//! | [`DateTime`]      | [RFC 3339] string     | [`DateTime`][s4]  |
+//! | Rust type         | Format                | GraphQL scalar        |
+//! |-------------------|-----------------------|-----------------------|
+//! | [`NaiveDate`]     | `yyyy-MM-dd`          | [`Date`][s1]          |
+//! | [`NaiveTime`]     | `HH:mm[:ss[.SSS]]`    | [`LocalTime`][s2]     |
+//! | [`NaiveDateTime`] | `yyyy-MM-dd HH:mm:ss` | [`LocalDateTime`][s3] |
+//! | [`DateTime`]      | [RFC 3339] string     | [`DateTime`][s4]      |
 //!
 //! [`DateTime`]: chrono::DateTime
 //! [`NaiveDate`]: chrono::naive::NaiveDate
@@ -16,6 +16,7 @@
 //! [RFC 3339]: https://datatracker.ietf.org/doc/html/rfc3339#section-5.6
 //! [s1]: https://graphql-scalars.dev/docs/scalars/date
 //! [s2]: https://graphql-scalars.dev/docs/scalars/local-time
+//! [s3]: https://graphql-scalars.dev/docs/scalars/local-date-time
 //! [s4]: https://graphql-scalars.dev/docs/scalars/date-time
 
 use std::fmt;
