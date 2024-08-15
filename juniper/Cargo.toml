@@ -33,6 +33,7 @@ chrono = ["dep:chrono"]
 chrono-clock = ["chrono", "chrono/clock"]
 chrono-tz = ["dep:chrono-tz", "dep:regex"]
 expose-test-schema = ["dep:anyhow", "dep:serde_json"]
+jiff = ["dep:jiff"]
 js = ["chrono?/wasmbind", "time?/wasm-bindgen", "uuid?/js"]
 rust_decimal = ["dep:rust_decimal"]
 schema-language = ["dep:graphql-parser", "dep:void"]
@@ -52,6 +53,7 @@ fnv = "1.0.5"
 futures = { version = "0.3.22", features = ["alloc"], default-features = false }
 graphql-parser = { version = "0.4", optional = true }
 indexmap = { version = "2.0", features = ["serde"] }
+jiff = { version = "0.1.5", features = ["alloc"], default-features = false, optional = true }
 juniper_codegen = { version = "0.16.0", path = "../juniper_codegen" }
 rust_decimal = { version = "1.20", default-features = false, optional = true }
 ryu = { version = "1.0", optional = true }

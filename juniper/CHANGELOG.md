@@ -15,11 +15,16 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Upgraded [`chrono-tz` crate] integration to [0.9 version](https://github.com/chronotope/chrono-tz/releases/tag/v0.9.0). ([#1252])
 - Bumped up [MSRV] to 1.75. ([#1272])
 
+### Added
+
+- [`jiff` crate] integration behind `jiff` [Cargo feature]. ([#1271])
+
 ### Changed
 
 - Updated [GraphiQL] to [3.5.0 version](https://github.com/graphql/graphiql/blob/graphiql%403.5.0/packages/graphiql/CHANGELOG.md#350). ([#1274])
 
 [#1252]: /../../pull/1252
+[#1271]: /../../pull/1271
 [#1272]: /../../pull/1272
 [#1274]: /../../pull/1274
 
@@ -222,6 +227,7 @@ See [old CHANGELOG](/../../blob/juniper-v0.15.12/juniper/CHANGELOG.md).
 [`bson` crate]: https://docs.rs/bson
 [`chrono` crate]: https://docs.rs/chrono
 [`chrono-tz` crate]: https://docs.rs/chrono-tz
+[`jiff` crate]: https://docs.rs/jiff
 [`time` crate]: https://docs.rs/time
 [Cargo feature]: https://doc.rust-lang.org/cargo/reference/features.html
 [`graphql-transport-ws` GraphQL over WebSocket Protocol]: https://github.com/enisdenjo/graphql-ws/v5.14.0/PROTOCOL.md 
