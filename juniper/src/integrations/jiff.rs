@@ -529,7 +529,13 @@ mod time_zone {
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/utc-offset",
 )]
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct UtcOffset(jiff::tz::TimeZone);
+pub struct UtcOffset(jiff::tz::Offset);
+
+impl From<jiff::tz::Offset> for UtcOffset {
+    fn from(value: jiff::tz::Offset) -> Self {
+        Self(value)
+    }
+}
 
 impl TryFrom<jiff::tz::TimeZone> for UtcOffset {
     type Error = TimeZoneError;
@@ -538,51 +544,68 @@ impl TryFrom<jiff::tz::TimeZone> for UtcOffset {
         if value.iana_name().is_some() {
             // Since `TimeZone::UTC` is common, we allow it here.
             if value == jiff::tz::TimeZone::UTC {
-                return Ok(Self(value));
+                return Ok(Self(jiff::tz::offset(0)));
             }
             return Err(TimeZoneError::UnexpectedIanaName(value));
         }
-        Ok(Self(value))
+        Ok(Self(value.to_offset(jiff::Timestamp::now()).0))
     }
+}
+
+fn utc_offset_from_str(value: &str) -> Result<jiff::tz::Offset, jiff::Error> {
+    let tm = jiff::fmt::strtime::BrokenDownTime::parse("%:z", value)?;
+    let offset = tm
+        .offset()
+        .expect("successful %:z parsing guarantees offset");
+    Ok(offset)
 }
 
 impl str::FromStr for UtcOffset {
     type Err = TimeZoneError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        let value = jiff::tz::TimeZone::get(value).map_err(TimeZoneError::InvalidInput)?;
-        value.try_into()
+        let offset = utc_offset_from_str(value).map_err(TimeZoneError::InvalidInput)?;
+        Ok(offset.into())
+    }
+}
+
+fn utc_offset_to_string(value: jiff::tz::Offset) -> String {
+    let mut buf = String::new();
+    let tm = jiff::fmt::strtime::BrokenDownTime::from(
+        &jiff::Zoned::now().with_time_zone(jiff::tz::TimeZone::fixed(value)),
+    );
+    tm.format("%:z", &mut buf).unwrap();
+    buf
+}
+
+impl fmt::Display for UtcOffset {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        utc_offset_to_string(self.0).fmt(f)
     }
 }
 
 impl From<UtcOffset> for jiff::tz::TimeZone {
+    fn from(value: UtcOffset) -> Self {
+        jiff::tz::TimeZone::fixed(value.0)
+    }
+}
+
+impl From<UtcOffset> for jiff::tz::Offset {
     fn from(value: UtcOffset) -> Self {
         value.0
     }
 }
 
 mod utc_offset {
-    use super::*;
+    use std::str::FromStr as _;
 
-    /// Format of a [`UtcOffset` scalar][1].
-    ///
-    /// [1]: https://graphql-scalars.dev/docs/scalars/utc-offset
-    const FORMAT: &str = "%:z";
+    use super::*;
 
     pub(super) fn to_output<S>(v: &UtcOffset) -> Value<S>
     where
         S: ScalarValue,
     {
-        // As no IANA time zone identifier is available, fall back to displaying the time
-        // offset directly (using format `[+-]HH:MM[:SS]` from RFC 9557, e.g. `+05:30`).
-        //
-        // <https://github.com/graphql-rust/juniper/pull/1278#discussion_r1719161686>
-        Value::scalar(
-            jiff::Zoned::now()
-                .with_time_zone(v.0.clone())
-                .strftime(FORMAT)
-                .to_string(),
-        )
+        Value::scalar(v.to_string())
     }
 
     pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<UtcOffset, String>
@@ -591,13 +614,7 @@ mod utc_offset {
     {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| {
-                jiff::Zoned::strptime(FORMAT, s).map_err(|e| format!("Invalid `UtcOffset`: {e}"))
-            })
-            .and_then(|z| {
-                UtcOffset::try_from(z.time_zone().clone())
-                    .map_err(|e| format!("Invalid `UtcOffset`: {e}"))
-            })
+            .and_then(|s| UtcOffset::from_str(s).map_err(|e| format!("Invalid `UtcOffset`: {e}")))
     }
 }
 
