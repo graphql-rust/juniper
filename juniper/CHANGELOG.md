@@ -14,19 +14,47 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 - Upgraded [`chrono-tz` crate] integration to [0.9 version](https://github.com/chronotope/chrono-tz/releases/tag/v0.9.0). ([#1252])
 - Bumped up [MSRV] to 1.75. ([#1272])
+- Corrected compliance with newer [graphql-scalars.dev] specs: ([#1275], [#1277])
+    - Switched `LocalDateTime` scalars to `yyyy-MM-ddTHH:mm:ss` format in types:
+        - `chrono::NaiveDateTime`.
+        - `time::PrimitiveDateTime`.
+    - Switched from `Date` scalar to `LocalDate` scalar in types:
+        - `chrono::NaiveDate`.
+        - `time::Date`.
+    - Switched from `UtcDateTime` scalar to `DateTime` scalar in types:
+        - `bson::DateTime`.
+    - Corrected `TimeZone` scalar in types:
+        - `chrono_tz::Tz`.
+    - Renamed `Url` scalar to `URL` in types:
+        - `url::Url`.
+    - Renamed `Uuid` scalar to `UUID` in types:
+        - `uuid::Uuid`.
+    - Renamed `ObjectId` scalar to `ObjectID` in types: ([#1277])
+        - `bson::oid::ObjectId`.
 
 ### Added
 
-- [`jiff` crate] integration behind `jiff`/`jiff-tz` [Cargo feature]. ([#1271])
+- [`jiff` crate] integration behind `jiff`/`jiff-tz` [Cargo feature]: ([#1271], [#1278], [#1270])
+    - `jiff::civil::Date` as `LocalDate` scalar.
+    - `jiff::civil::Time` as `LocalTime` scalar.
+    - `jiff::civil::DateTime` as `LocalDateTime` scalar. ([#1275])
+    - `jiff::Timestamp` as `DateTime` scalar.
+    - `jiff::Span` as `Duration` scalar.
+    - `jiff::Zoned` as `ZonedDateTime` scalar.
+    - `jiff::tz::TimeZone` as `TimeZone` scalar.
 
 ### Changed
 
 - Updated [GraphiQL] to [3.5.0 version](https://github.com/graphql/graphiql/blob/graphiql%403.5.0/packages/graphiql/CHANGELOG.md#350). ([#1274])
 
 [#1252]: /../../pull/1252
+[#1270]: /../../issues/1270
 [#1271]: /../../pull/1271
+[#1278]: /../../pull/1278
 [#1272]: /../../pull/1272
 [#1274]: /../../pull/1274
+[#1275]: /../../pull/1275
+[#1277]: /../../pull/1277
 
 
 
