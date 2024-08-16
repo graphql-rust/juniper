@@ -2,19 +2,32 @@
 //!
 //! # Supported types
 //!
-//! | Rust type            | Format                | GraphQL scalar        |
-//! |----------------------|-----------------------|-----------------------|
-//! | [`civil::Date`]      | `yyyy-MM-dd`          | [`LocalDate`][s1]     |
-//! | [`civil::Time`]      | `HH:mm[:ss[.SSS]]`    | [`LocalTime`][s2]     |
-//! | [`civil::DateTime`]  | `yyyy-MM-ddTHH:mm:ss` | [`LocalDateTime`][s3] |
-//! | [`Timestamp`]        | [RFC 3339] string     | [`DateTime`][s4]      |
-//! | [`Zoned`][^1]        | [RFC 9557] string     | `ZonedDateTime`       |
-//! | [`tz::TimeZone`][^1] | [IANA database][1]    | [`TimeZone`][s5]      |
-//! | [`Span`]             | [ISO 8601] duration   | [`Duration`][s6]      |
+//! | Rust type                             | Format                      | GraphQL scalar        |
+//! |---------------------------------------|-----------------------------|-----------------------|
+//! | [`civil::Date`]                       | `yyyy-MM-dd`                | [`LocalDate`][s1]     |
+//! | [`civil::Time`]                       | `HH:mm[:ss[.SSS]]`          | [`LocalTime`][s2]     |
+//! | [`civil::DateTime`]                   | `yyyy-MM-ddTHH:mm:ss`       | [`LocalDateTime`][s3] |
+//! | [`Timestamp`]                         | [RFC 3339] string           | [`DateTime`][s4]      |
+//! | [`Zoned`][^1]                         | [RFC 9557] string           | `ZonedDateTime`       |
+//! | [`tz::TimeZone`][^1]                  | [IANA database][1]/`±hh:mm` | `TimeZoneOrUtcOffset` |
+//! | [`tz::TimeZone`] via [`TimeZone`][^1] | [IANA database][1]          | [`TimeZone`][s5]      |
+//! | [`tz::TimeZone`] via [`UtcOffset`]    | `±hh:mm`                    | [`UtcOffset`][s6]     |
+//! | [`Span`]                              | [ISO 8601] duration         | [`Duration`][s7]      |
 //!
 //! [^1]: For these, crate [`jiff`] must be installed with a feature flag that provides access to
 //! the Time Zone Database (e.g. by using the crate's default feature flags). See [`jiff` time zone
 //! features][tz] for details.
+//!
+//! # [`tz::TimeZone`] types
+//!
+//! `tz::TimeZone` values can be either IANA Time Zone Database identifiers or fixed offsets. These
+//! correspond to distinct GraphQL scalars [`TimeZone`][s5] and [`UtcOffset`][s6]. Newtypes
+//! [`TimeZone`] and [`UtcOffset`] have been provided with [`TryFrom`] and [`Into`] implementations
+//! that serialize to the corresponding scalars.
+//!
+//! In addition, `tz::TimeZone` serializes directly to `TimeZoneOrUtcOffset`, a GraphQL scalar that
+//! can contain either an IANA identifier or a fixed offset for clients that can consume such mixed
+//! values.
 //!
 //! [`civil::Date`]: jiff::civil::Date
 //! [`civil::DateTime`]: jiff::civil::DateTime
@@ -31,7 +44,8 @@
 //! [s3]: https://graphql-scalars.dev/docs/scalars/local-date-time
 //! [s4]: https://graphql-scalars.dev/docs/scalars/date-time
 //! [s5]: https://graphql-scalars.dev/docs/scalars/time-zone
-//! [s6]: https://graphql-scalars.dev/docs/scalars/duration
+//! [s6]: https://graphql-scalars.dev/docs/scalars/utc-offset
+//! [s7]: https://graphql-scalars.dev/docs/scalars/duration
 //! [tz]: https://docs.rs/jiff/latest/jiff/index.html#time-zone-features
 //! [1]: http://www.iana.org/time-zones
 
@@ -334,13 +348,9 @@ mod duration {
     }
 }
 
-/// Representation of time zone.
+/// Representation of time zone or UTC offset.
 ///
-/// Is a set of rules for determining the civil time, via an offset from UTC, in a particular
-/// geographic region. In many cases, the offset in a particular time zone can vary over the course
-/// of a year through transitions into and out of daylight saving time.
-///
-/// [IANA database][1] compliant.
+/// [IANA database][1] or `±hh:mm`.
 ///
 /// See also [`jiff::tz::TimeZone`][2] for details.
 ///
@@ -348,7 +358,7 @@ mod duration {
 /// [2]: https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html
 #[graphql_scalar(
     with = time_zone_or_utc_offset,
-    parse_token(String)
+    parse_token(String),
 )]
 pub type TimeZoneOrUtcOffset = jiff::tz::TimeZone;
 
@@ -438,11 +448,11 @@ impl Error for TimeZoneError {
 /// geographic region. In many cases, the offset in a particular time zone can vary over the course
 /// of a year through transitions into and out of daylight saving time.
 ///
-/// [IANA database][1] compliant.
+/// [`TimeZone` scalar][1] compliant.
 ///
 /// See also [`jiff::tz::TimeZone`][2] for details.
 ///
-/// [1]: http://www.iana.org/time-zones
+/// [1]: https://graphql-scalars.dev/docs/scalars/time-zone
 /// [2]: https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html
 #[graphql_scalar(
     with = time_zone,
@@ -505,17 +515,13 @@ mod time_zone {
     }
 }
 
-/// Representation of time zone.
+/// Representation of UTC offset.
 ///
-/// Is a set of rules for determining the civil time, via an offset from UTC, in a particular
-/// geographic region. In many cases, the offset in a particular time zone can vary over the course
-/// of a year through transitions into and out of daylight saving time.
-///
-/// [IANA database][1] compliant.
+/// [`UtcOffset` scalar][1] compliant.
 ///
 /// See also [`jiff::tz::TimeZone`][2] for details.
 ///
-/// [1]: http://www.iana.org/time-zones
+/// [1]: https://graphql-scalars.dev/docs/scalars/utc-offset
 /// [2]: https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html
 #[graphql_scalar(
     with = utc_offset,
