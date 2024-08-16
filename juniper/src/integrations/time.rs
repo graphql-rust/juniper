@@ -83,7 +83,11 @@ mod local_date {
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
 /// [2]: https://docs.rs/time/*/time/struct.Time.html
-#[graphql_scalar(with = local_time, parse_token(String))]
+#[graphql_scalar(
+    with = local_time,
+    parse_token(String),
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-time",
+)]
 pub type LocalTime = time::Time;
 
 mod local_time {

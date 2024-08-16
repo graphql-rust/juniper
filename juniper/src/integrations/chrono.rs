@@ -200,6 +200,7 @@ mod local_date_time {
 #[graphql_scalar(
     with = date_time,
     parse_token(String),
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/date-time",
     where(
         Tz: TimeZone + FromFixedOffset,
         Tz::Offset: fmt::Display,

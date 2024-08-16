@@ -388,7 +388,7 @@ mod date_scalar {
 | [Rust] type                 | [GraphQL] scalar  | [Cargo feature]  |
 |-----------------------------|-------------------|------------------|
 | [`bigdecimal::BigDecimal`]  | `BigDecimal`      | [`bigdecimal`]   |
-| [`bson::oid::ObjectId`]     | `ObjectId`        | [`bson`]         |
+| [`bson::oid::ObjectId`]     | [`ObjectID`]      | [`bson`]         |
 | [`bson::DateTime`]          | [`DateTime`]      | [`bson`]         |
 | [`chrono::NaiveDate`]       | [`LocalDate`]     | [`chrono`]       |
 | [`chrono::NaiveTime`]       | [`LocalTime`]     | [`chrono`]       |
@@ -437,6 +437,7 @@ mod date_scalar {
 [`LocalDate`]: https://graphql-scalars.dev/docs/scalars/local-date
 [`LocalDateTime`]: https://graphql-scalars.dev/docs/scalars/local-date-time
 [`LocalTime`]: https://graphql-scalars.dev/docs/scalars/local-time
+[`ObjectID`]: https://the-guild.dev/graphql/scalars/docs/scalars/object-id
 [`rust_decimal`]: https://docs.rs/rust_decimal
 [`ScalarValue`]: https://docs.rs/juniper/0.16.1/juniper/trait.ScalarValue.html
 [`serde`]: https://docs.rs/serde
