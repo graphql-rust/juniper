@@ -354,15 +354,28 @@ pub type TimeZone = jiff::tz::TimeZone;
 mod time_zone {
     use super::*;
 
+    /// Format of a [`TimeZone` scalar][1].
+    ///
+    /// [1]: https://graphql-scalars.dev/docs/scalars/time-zone
+    const FORMAT: &str = "%:V";
+
     pub(super) fn to_output<S>(v: &TimeZone) -> Value<S>
     where
         S: ScalarValue,
     {
-        Value::scalar(
-            v.iana_name()
-                .unwrap_or_else(|| panic!("Failed to format `TimeZone`: no IANA name"))
-                .to_owned(),
-        )
+        Value::scalar(v.iana_name().map_or_else(
+            || {
+                // If no IANA time zone identifier is available, fall back to displaying the time
+                // offset directly (using format `[+-]HH:MM[:SS]` from RFC 9557, e.g. `+05:30`).
+                //
+                // <https://github.com/graphql-rust/juniper/pull/1278#discussion_r1719161686>
+                jiff::Zoned::now()
+                    .with_time_zone(v.clone())
+                    .strftime(FORMAT)
+                    .to_string()
+            },
+            ToOwned::to_owned,
+        ))
     }
 
     pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<TimeZone, String>
@@ -1089,6 +1102,14 @@ mod time_zone_test {
             (TimeZone::fixed(tz::offset(0)), graphql_input_value!("UTC")),
             (TimeZone::get("UTC").unwrap(), graphql_input_value!("UTC")),
             (TimeZone::UTC, graphql_input_value!("UTC")),
+            (
+                TimeZone::fixed(tz::offset(2)),
+                graphql_input_value!("+02:00"),
+            ),
+            (
+                TimeZone::fixed(tz::offset(-11)),
+                graphql_input_value!("-11:00"),
+            ),
         ] {
             let actual: InputValue = val.to_input_value();
 
