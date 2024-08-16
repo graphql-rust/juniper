@@ -395,7 +395,7 @@ mod time_zone_or_utc_offset {
             .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| {
                 TimeZoneOrUtcOffset::get(s)
-                    .map_err(TimeZoneError::InvalidInput)
+                    .map_err(TimeZoneError::InvalidTimeZone)
                     .or_else(|_| utc_offset::utc_offset_from_str(s).map(TimeZoneOrUtcOffset::fixed))
                     .map_err(|e| format!("Invalid `TimeZoneOrUtcOffset`: {e}"))
             })
@@ -405,8 +405,8 @@ mod time_zone_or_utc_offset {
 /// Error while handling [`TimeZone`] value.
 #[derive(Clone)]
 pub enum TimeZoneError {
-    /// Input could not be parsed by [`tz::TimeZone::get`](jiff::tz::TimeZone::get).
-    InvalidInput(jiff::Error),
+    /// Identifier could not be parsed by [`tz::TimeZone::get`](jiff::tz::TimeZone::get).
+    InvalidTimeZone(jiff::Error),
     /// GraphQL scalar [`TimeZone`] requires `tz::TimeZone` with IANA name.
     MissingIanaName(jiff::tz::TimeZone),
 }
@@ -414,7 +414,7 @@ pub enum TimeZoneError {
 impl fmt::Debug for TimeZoneError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidInput(err) => write!(f, "TimeZoneError::InvalidInput({err:?})"),
+            Self::InvalidTimeZone(err) => write!(f, "TimeZoneError::InvalidTimeZone({err:?})"),
             Self::MissingIanaName(_value) => write!(f, "TimeZoneError::MissingIanaName(..)"),
         }
     }
@@ -423,7 +423,7 @@ impl fmt::Debug for TimeZoneError {
 impl fmt::Display for TimeZoneError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidInput(err) => err.fmt(f),
+            Self::InvalidTimeZone(err) => err.fmt(f),
             Self::MissingIanaName(_value) => write!(f, "missing IANA name"),
         }
     }
@@ -432,7 +432,7 @@ impl fmt::Display for TimeZoneError {
 impl Error for TimeZoneError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            Self::InvalidInput(err) => Some(err),
+            Self::InvalidTimeZone(err) => Some(err),
             Self::MissingIanaName(_) => None,
         }
     }
@@ -473,7 +473,7 @@ impl str::FromStr for TimeZone {
     type Err = TimeZoneError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        let value = jiff::tz::TimeZone::get(value).map_err(TimeZoneError::InvalidInput)?;
+        let value = jiff::tz::TimeZone::get(value).map_err(TimeZoneError::InvalidTimeZone)?;
         value.try_into()
     }
 }
