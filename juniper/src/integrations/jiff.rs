@@ -395,6 +395,8 @@ mod time_zone_or_utc_offset {
             .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| {
                 TimeZoneOrUtcOffset::get(s)
+                    .map_err(TimeZoneError::InvalidInput)
+                    .or_else(|_| utc_offset::utc_offset_from_str(s).map(TimeZoneOrUtcOffset::fixed))
                     .map_err(|e| format!("Invalid `TimeZoneOrUtcOffset`: {e}"))
             })
     }
@@ -532,7 +534,7 @@ mod utc_offset {
     /// [1]: https://graphql-scalars.dev/docs/scalars/utc-offset
     const FORMAT: &str = "%:z";
 
-    fn utc_offset_from_str(value: &str) -> Result<jiff::tz::Offset, jiff::Error> {
+    pub(super) fn utc_offset_from_str(value: &str) -> Result<jiff::tz::Offset, jiff::Error> {
         let tm = jiff::fmt::strtime::BrokenDownTime::parse(FORMAT, value)?;
         let offset = tm
             .offset()
@@ -1228,6 +1230,18 @@ mod time_zone_or_utc_offset_test {
             ("factory", TimeZoneOrUtcOffset::get("Factory").unwrap()),
             ("zULU", TimeZoneOrUtcOffset::get("Zulu").unwrap()),
             ("UTC", TimeZoneOrUtcOffset::get("UTC").unwrap()),
+            (
+                "+00:00",
+                TimeZoneOrUtcOffset::try_from(tz::TimeZone::fixed(tz::offset(0))).unwrap(),
+            ),
+            (
+                "+03:00",
+                TimeZoneOrUtcOffset::try_from(tz::TimeZone::fixed(tz::offset(3))).unwrap(),
+            ),
+            (
+                "-09:00",
+                TimeZoneOrUtcOffset::try_from(tz::TimeZone::fixed(tz::offset(-9))).unwrap(),
+            ),
         ] {
             let input: InputValue = graphql_input_value!((raw));
             let parsed = TimeZoneOrUtcOffset::from_input_value(&input);
@@ -1247,8 +1261,6 @@ mod time_zone_or_utc_offset_test {
             graphql_input_value!("Abc/Xyz"),
             graphql_input_value!("8086"),
             graphql_input_value!("AbcXyz"),
-            graphql_input_value!("-02:00"),
-            graphql_input_value!("+11:00"),
             graphql_input_value!("Z"),
             graphql_input_value!("i'm not even a time zone"),
             graphql_input_value!(2.32),
