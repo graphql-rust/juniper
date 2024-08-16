@@ -18,11 +18,11 @@
 //! the Time Zone Database (e.g. by using the crate's default feature flags). See [`jiff` time zone
 //! features][tz] for details.
 //!
-//! # [`tz::TimeZone`] types
+//! # Time zone types
 //!
-//! `tz::TimeZone` values can be either IANA time zone identifiers or fixed offsets, corresponding
-//! to GraphQL scalars [`TimeZone`][s5] and [`UtcOffset`][s6]. While `UtcOffset` can be serialized
-//! from [`tz::Offset`] directly, newtype [`TimeZone`] handles serialization to `TimeZone`, with
+//! `tz::TimeZone` values can be IANA time zone identifiers or fixed offsets, corresponding to
+//! GraphQL scalars [`TimeZone`][s5] and [`UtcOffset`][s6]. While `UtcOffset` can be serialized from
+//! [`tz::Offset`] directly, newtype [`TimeZone`] handles serialization to `TimeZone`, with
 //! [`TryFrom`] and [`Into`] implementations from and to `tz::TimeZone`.
 //!
 //! In addition, `tz::TimeZone` serializes to `TimeZoneOrUtcOffset` which is a GraphQL scalar that
@@ -478,6 +478,16 @@ impl str::FromStr for TimeZone {
     }
 }
 
+impl fmt::Display for TimeZone {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0
+            .iana_name()
+            // PANIC: We made sure that IANA name is available when constructing `Self`.
+            .unwrap_or_else(|| panic!("Failed to display `TimeZone`: no IANA name"))
+            .fmt(f)
+    }
+}
+
 impl From<TimeZone> for jiff::tz::TimeZone {
     fn from(value: TimeZone) -> Self {
         value.0
@@ -493,12 +503,7 @@ mod time_zone {
     where
         S: ScalarValue,
     {
-        Value::scalar(
-            v.0.iana_name()
-                // PANIC: We made sure that IANA name is available when constructing `TimeZone`.
-                .unwrap_or_else(|| panic!("Failed to format `TimeZone`: no IANA name"))
-                .to_owned(),
-        )
+        Value::scalar(v.to_string())
     }
 
     pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<TimeZone, String>
