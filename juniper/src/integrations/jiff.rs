@@ -9,12 +9,12 @@
 //! | [`civil::DateTime`]  | `yyyy-MM-ddTHH:mm:ss` | [`LocalDateTime`][s3] |
 //! | [`Timestamp`]        | [RFC 3339] string     | [`DateTime`][s4]      |
 //! | [`Zoned`][^1]        | [RFC 9557] string     | `ZonedDateTime`       |
-//! | [`tz::TimeZone`][^1] | [IANA database][1]    | [`TimeZone`][s6]      |
-//! | [`Span`]             | [ISO 8601] duration   | [`Duration`][s5]      |
+//! | [`tz::TimeZone`][^1] | [IANA database][1]    | [`TimeZone`][s5]      |
+//! | [`Span`]             | [ISO 8601] duration   | [`Duration`][s6]      |
 //!
-//! [^1]: For these, feature flag `jiff-tz` must be enabled and crate [`jiff`] must be installed
-//! with a feature flag that provides access to the Time Zone Database (e.g. by using the crate's
-//! default feature flags). See [`jiff` time zone features][tz] for details.
+//! [^1]: For these, crate [`jiff`] must be installed with a feature flag that provides access to
+//! the Time Zone Database (e.g. by using the crate's default feature flags). See [`jiff` time zone
+//! features][tz] for details.
 //!
 //! [`civil::Date`]: jiff::civil::Date
 //! [`civil::DateTime`]: jiff::civil::DateTime
@@ -30,8 +30,8 @@
 //! [s2]: https://graphql-scalars.dev/docs/scalars/local-time
 //! [s3]: https://graphql-scalars.dev/docs/scalars/local-date-time
 //! [s4]: https://graphql-scalars.dev/docs/scalars/date-time
-//! [s5]: https://graphql-scalars.dev/docs/scalars/duration
-//! [s6]: https://graphql-scalars.dev/docs/scalars/time-zone
+//! [s5]: https://graphql-scalars.dev/docs/scalars/time-zone
+//! [s6]: https://graphql-scalars.dev/docs/scalars/duration
 //! [tz]: https://docs.rs/jiff/latest/jiff/index.html#time-zone-features
 //! [1]: http://www.iana.org/time-zones
 
@@ -262,14 +262,12 @@ mod date_time {
 /// [3]: https://docs.rs/jiff/latest/jiff/struct.Timestamp.html
 /// [4]: https://docs.rs/jiff/latest/jiff/civil/struct.DateTime.html
 /// [5]: https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html
-#[cfg(feature = "jiff-tz")]
 #[graphql_scalar(
     with = zoned_date_time,
     parse_token(String),
 )]
 pub type ZonedDateTime = jiff::Zoned;
 
-#[cfg(feature = "jiff-tz")]
 mod zoned_date_time {
     use std::str::FromStr as _;
 
@@ -346,7 +344,6 @@ mod duration {
 ///
 /// [1]: http://www.iana.org/time-zones
 /// [2]: https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html
-#[cfg(feature = "jiff-tz")]
 #[graphql_scalar(
     with = time_zone,
     parse_token(String),
@@ -354,7 +351,6 @@ mod duration {
 )]
 pub type TimeZone = jiff::tz::TimeZone;
 
-#[cfg(feature = "jiff-tz")]
 mod time_zone {
     use super::*;
 
@@ -737,7 +733,6 @@ mod date_time_test {
     }
 }
 
-#[cfg(feature = "jiff-tz")]
 #[cfg(test)]
 mod zoned_date_time_test {
     use jiff::{civil, tz, tz::TimeZone};
@@ -1019,7 +1014,6 @@ mod duration_test {
     }
 }
 
-#[cfg(feature = "jiff-tz")]
 #[cfg(test)]
 mod time_zone_test {
     use jiff::tz;

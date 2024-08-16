@@ -108,7 +108,6 @@ jobs:
           - { feature: chrono-tz, crate: juniper }
           - { feature: expose-test-schema, crate: juniper }
           - { feature: jiff, crate: juniper }
-          - { feature: jiff-tz, crate: juniper }
           - { feature: rust_decimal, crate: juniper }
           - { feature: schema-language, crate: juniper }
           - { feature: time, crate: juniper }
