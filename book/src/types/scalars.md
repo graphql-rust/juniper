@@ -427,6 +427,7 @@ mod date_scalar {
 [`chrono::NaiveTime`]: https://docs.rs/chrono/latest/chrono/naive/struct.NaiveTime.html
 [`chrono-tz`]: https://docs.rs/chrono-tz
 [`chrono_tz::Tz`]: https://docs.rs/chrono-tz/latest/chrono_tz/enum.Tz.html
+[`rust_decimal::Decimal`]: https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html
 [`DateTime`]: https://graphql-scalars.dev/docs/scalars/date-time
 [`Decimal`]: https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html
 [`Duration`]: https://graphql-scalars.dev/docs/scalars/duration
