@@ -1120,7 +1120,7 @@ mod time_zone_test {
 
 #[cfg(test)]
 mod integration_test {
-    use jiff::{civil, tz::TimeZone, ToSpan as _};
+    use jiff::{civil, tz, ToSpan as _};
 
     use crate::{
         execute, graphql_object, graphql_value, graphql_vars,
@@ -1128,7 +1128,7 @@ mod integration_test {
         types::scalars::{EmptyMutation, EmptySubscription},
     };
 
-    use super::{DateTime, Duration, LocalDate, LocalDateTime, LocalTime};
+    use super::{DateTime, Duration, LocalDate, LocalDateTime, LocalTime, TimeZone, ZonedDateTime};
 
     #[tokio::test]
     async fn serializes() {
@@ -1150,9 +1150,19 @@ mod integration_test {
 
             fn date_time() -> DateTime {
                 civil::DateTime::constant(2014, 11, 28, 12, 0, 9, 50_000_000)
-                    .to_zoned(TimeZone::UTC)
+                    .to_zoned(tz::TimeZone::UTC)
                     .unwrap()
                     .timestamp()
+            }
+
+            fn zoned_date_time() -> ZonedDateTime {
+                civil::DateTime::constant(2014, 11, 28, 12, 0, 9, 50_000_000)
+                    .to_zoned(tz::TimeZone::get("America/New_York").unwrap())
+                    .unwrap()
+            }
+
+            fn time_zone() -> TimeZone {
+                tz::TimeZone::get("Asia/Tokyo").unwrap()
             }
 
             fn duration() -> Duration {
@@ -1171,6 +1181,8 @@ mod integration_test {
             localTime
             localDateTime
             dateTime,
+            zonedDateTime,
+            timeZone,
             duration,
         }"#;
 
@@ -1188,6 +1200,8 @@ mod integration_test {
                     "localTime": "16:07:08",
                     "localDateTime": "2016-07-08T09:10:11",
                     "dateTime": "2014-11-28T12:00:09.05Z",
+                    "zonedDateTime": "2014-11-28T12:00:09.05-05:00[America/New_York]",
+                    "timeZone": "Asia/Tokyo",
                     "duration": "P1y1m1dT1h1m1.1s",
                 }),
                 vec![],
