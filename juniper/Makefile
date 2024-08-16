@@ -39,10 +39,6 @@ graphiql:
 		https://raw.githubusercontent.com/graphql/graphiql/graphiql%40$(GRAPHIQL_VER)/examples/graphiql-cdn/index.html
 	$(sed-i) 's|unpkg.com/graphiql/|unpkg.com/graphiql@$(GRAPHIQL_VER)/|g' \
 		src/http/graphiql.html
-	$(sed-i) 's|react.development.js|react.production.min.js|g' \
-		src/http/graphiql.html
-	$(sed-i) 's|react-dom.development.js|react-dom.production.min.js|g' \
-		src/http/graphiql.html
 	$(sed-i) "s|'https://swapi-graphql.netlify.app/.netlify/functions/index'|JUNIPER_URL|g" \
 		src/http/graphiql.html
 	$(sed-i) "s|url: JUNIPER_URL,|url: JUNIPER_URL,\n        subscriptionUrl: normalizeSubscriptionEndpoint(JUNIPER_URL, JUNIPER_SUBSCRIPTIONS_URL)|" \
