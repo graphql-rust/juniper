@@ -341,7 +341,7 @@ pub enum TimeZoneError {
     InvalidInput(jiff::Error),
     /// GraphQL scalar [`TimeZone`] requires `tz::TimeZone` with IANA name.
     MissingIanaName(jiff::tz::TimeZone),
-    /// GraphQL scalar [`UTCOffset`] expects `tz::TimeZone` without IANA name.
+    /// GraphQL scalar [`UtcOffset`] expects `tz::TimeZone` without IANA name.
     UnexpectedIanaName(jiff::tz::TimeZone),
 }
 
@@ -465,9 +465,9 @@ mod time_zone {
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/utc-offset",
 )]
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct UTCOffset(jiff::tz::TimeZone);
+pub struct UtcOffset(jiff::tz::TimeZone);
 
-impl TryFrom<jiff::tz::TimeZone> for UTCOffset {
+impl TryFrom<jiff::tz::TimeZone> for UtcOffset {
     type Error = TimeZoneError;
 
     fn try_from(value: jiff::tz::TimeZone) -> Result<Self, Self::Error> {
@@ -482,7 +482,7 @@ impl TryFrom<jiff::tz::TimeZone> for UTCOffset {
     }
 }
 
-impl str::FromStr for UTCOffset {
+impl str::FromStr for UtcOffset {
     type Err = TimeZoneError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
@@ -491,8 +491,8 @@ impl str::FromStr for UTCOffset {
     }
 }
 
-impl From<UTCOffset> for jiff::tz::TimeZone {
-    fn from(value: UTCOffset) -> Self {
+impl From<UtcOffset> for jiff::tz::TimeZone {
+    fn from(value: UtcOffset) -> Self {
         value.0
     }
 }
@@ -502,12 +502,12 @@ mod utc_offset {
 
     use super::*;
 
-    /// Format of a [`UTCOffset` scalar][1].
+    /// Format of a [`UtcOffset` scalar][1].
     ///
     /// [1]: https://graphql-scalars.dev/docs/scalars/utc-offset
     const FORMAT: &str = "%:z";
 
-    pub(super) fn to_output<S>(v: &UTCOffset) -> Value<S>
+    pub(super) fn to_output<S>(v: &UtcOffset) -> Value<S>
     where
         S: ScalarValue,
     {
@@ -523,18 +523,18 @@ mod utc_offset {
         )
     }
 
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<UTCOffset, String>
+    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<UtcOffset, String>
     where
         S: ScalarValue,
     {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| {
-                jiff::Zoned::strptime(FORMAT, s).map_err(|e| format!("Invalid `UTCOffset`: {e}"))
+                jiff::Zoned::strptime(FORMAT, s).map_err(|e| format!("Invalid `UtcOffset`: {e}"))
             })
             .and_then(|z| {
-                UTCOffset::try_from(z.time_zone().clone())
-                    .map_err(|e| format!("Invalid `UTCOffset`: {e}"))
+                UtcOffset::try_from(z.time_zone().clone())
+                    .map_err(|e| format!("Invalid `UtcOffset`: {e}"))
             })
     }
 }
@@ -1297,26 +1297,26 @@ mod utc_offset_test {
 
     use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
 
-    use super::UTCOffset;
+    use super::UtcOffset;
 
     #[test]
     fn parses_correct_input() {
         for (raw, expected) in [
             (
                 "+00:00",
-                UTCOffset::try_from(tz::TimeZone::fixed(tz::offset(0))).unwrap(),
+                UtcOffset::try_from(tz::TimeZone::fixed(tz::offset(0))).unwrap(),
             ),
             (
                 "+03:00",
-                UTCOffset::try_from(tz::TimeZone::fixed(tz::offset(3))).unwrap(),
+                UtcOffset::try_from(tz::TimeZone::fixed(tz::offset(3))).unwrap(),
             ),
             (
                 "-09:00",
-                UTCOffset::try_from(tz::TimeZone::fixed(tz::offset(-9))).unwrap(),
+                UtcOffset::try_from(tz::TimeZone::fixed(tz::offset(-9))).unwrap(),
             ),
         ] {
             let input: InputValue = graphql_input_value!((raw));
-            let parsed = UTCOffset::from_input_value(&input);
+            let parsed = UtcOffset::from_input_value(&input);
 
             assert!(
                 parsed.is_ok(),
@@ -1342,7 +1342,7 @@ mod utc_offset_test {
             graphql_input_value!(false),
         ] {
             let input: InputValue = input;
-            let parsed = UTCOffset::from_input_value(&input);
+            let parsed = UtcOffset::from_input_value(&input);
 
             assert!(parsed.is_err(), "allows input: {input:?}");
         }
@@ -1352,19 +1352,19 @@ mod utc_offset_test {
     fn formats_correctly() {
         for (val, expected) in [
             (
-                UTCOffset::try_from(tz::TimeZone::fixed(tz::offset(0))).unwrap(),
+                UtcOffset::try_from(tz::TimeZone::fixed(tz::offset(0))).unwrap(),
                 graphql_input_value!("+00:00"),
             ),
             (
-                UTCOffset::try_from(tz::TimeZone::UTC).unwrap(),
+                UtcOffset::try_from(tz::TimeZone::UTC).unwrap(),
                 graphql_input_value!("+00:00"),
             ),
             (
-                UTCOffset::try_from(tz::TimeZone::fixed(tz::offset(2))).unwrap(),
+                UtcOffset::try_from(tz::TimeZone::fixed(tz::offset(2))).unwrap(),
                 graphql_input_value!("+02:00"),
             ),
             (
-                UTCOffset::try_from(tz::TimeZone::fixed(tz::offset(-11))).unwrap(),
+                UtcOffset::try_from(tz::TimeZone::fixed(tz::offset(-11))).unwrap(),
                 graphql_input_value!("-11:00"),
             ),
         ] {
@@ -1386,7 +1386,7 @@ mod integration_test {
     };
 
     use super::{
-        DateTime, Duration, LocalDate, LocalDateTime, LocalTime, TimeZone, UTCOffset, ZonedDateTime,
+        DateTime, Duration, LocalDate, LocalDateTime, LocalTime, TimeZone, UtcOffset, ZonedDateTime,
     };
 
     #[tokio::test]
@@ -1424,7 +1424,7 @@ mod integration_test {
                 tz::TimeZone::get("Asia/Tokyo").unwrap().try_into().unwrap()
             }
 
-            fn utc_offset() -> UTCOffset {
+            fn utc_offset() -> UtcOffset {
                 tz::TimeZone::fixed(tz::offset(10)).try_into().unwrap()
             }
 
