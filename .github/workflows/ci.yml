@@ -107,6 +107,7 @@ jobs:
           - { feature: chrono-clock, crate: juniper }
           - { feature: chrono-tz, crate: juniper }
           - { feature: expose-test-schema, crate: juniper }
+          - { feature: jiff, crate: juniper }
           - { feature: rust_decimal, crate: juniper }
           - { feature: schema-language, crate: juniper }
           - { feature: time, crate: juniper }
@@ -144,13 +145,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        msrv: ["1.73.0"]
+        msrv: ["1.75.0"]
         crate:
           - juniper_codegen
           - juniper
           - juniper_subscriptions
           - juniper_graphql_ws
-          #- juniper_actix
+          - juniper_actix
           - juniper_axum
           - juniper_hyper
           - juniper_rocket
@@ -159,10 +160,10 @@ jobs:
           - ubuntu
           - macOS
           - windows
-        include:
-          - { msrv: "1.75.0", crate: "juniper_actix", os: "ubuntu" }
-          - { msrv: "1.75.0", crate: "juniper_actix", os: "macOS" }
-          - { msrv: "1.75.0", crate: "juniper_actix", os: "windows" }
+        #include:
+        #  - { msrv: "1.75.0", crate: "juniper_actix", os: "ubuntu" }
+        #  - { msrv: "1.75.0", crate: "juniper_actix", os: "macOS" }
+        #  - { msrv: "1.75.0", crate: "juniper_actix", os: "windows" }
     runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/checkout@v4

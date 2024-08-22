@@ -4,7 +4,7 @@ Juniper (GraphQL server library for Rust)
 [![Crates.io](https://img.shields.io/crates/v/juniper.svg?maxAge=2592000)](https://crates.io/crates/juniper)
 [![Documentation](https://docs.rs/juniper/badge.svg)](https://docs.rs/juniper)
 [![CI](https://github.com/graphql-rust/juniper/workflows/CI/badge.svg?branch=master "CI")](https://github.com/graphql-rust/juniper/actions?query=workflow%3ACI+branch%3Amaster)
-[![Rust 1.73+](https://img.shields.io/badge/rustc-1.73+-lightgray.svg "Rust 1.73+")](https://blog.rust-lang.org/2023/10/05/Rust-1.73.0.html)
+[![Rust 1.75+](https://img.shields.io/badge/rustc-1.75+-lightgray.svg "Rust 1.75+")](https://blog.rust-lang.org/2023/12/28/Rust-1.75.0.html)
 
 - [Juniper Book] ([current][Juniper Book] | [edge][Juniper Book edge])
 - [Changelog](https://github.com/graphql-rust/juniper/blob/juniper-v0.16.1/juniper/CHANGELOG.md)
@@ -48,6 +48,7 @@ As an exception to other [GraphQL] libraries for other languages, [Juniper] buil
 - [`bigdecimal`]
 - [`bson`]
 - [`chrono`], [`chrono-tz`]
+- [`jiff`]
 - [`rust_decimal`]
 - [`time`]
 - [`url`]
@@ -85,6 +86,7 @@ This project is licensed under [BSD 2-Clause License](https://github.com/graphql
 [`bson`]: https://docs.rs/bson
 [`chrono`]: https://docs.rs/chrono
 [`chrono-tz`]: https://docs.rs/chrono-tz
+[`jiff`]: https://docs.rs/jiff
 [`juniper_actix`]: https://docs.rs/juniper_actix
 [`juniper_axum`]: https://docs.rs/juniper_axum
 [`juniper_hyper`]: https://docs.rs/juniper_hyper

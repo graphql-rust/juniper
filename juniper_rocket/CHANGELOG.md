@@ -6,6 +6,17 @@ All user visible changes to `juniper_rocket` crate will be documented in this fi
 
 
 
+## master
+
+### BC Breaks
+
+- Bumped up [MSRV] to 1.75. ([#1272])
+
+[#1272]: /../../pull/1272
+
+
+
+
 ## [0.9.0] · 2024-03-20
 [0.9.0]: /../../tree/juniper_rocket-v0.9.0/juniper_rocket
 
@@ -40,4 +51,5 @@ See [old CHANGELOG](/../../blob/juniper_rocket-v0.8.2/juniper_rocket/CHANGELOG.m
 
 [`juniper` crate]: https://docs.rs/juniper
 [`rocket` crate]: https://docs.rs/rocket
+[MSRV]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field
 [Semantic Versioning 2.0.0]: https://semver.org

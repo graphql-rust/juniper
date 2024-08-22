@@ -2,27 +2,35 @@
 //!
 //! # Supported types
 //!
-//! | Rust type | Format             | GraphQL scalar |
-//! |-----------|--------------------|----------------|
-//! | [`Tz`]    | [IANA database][1] | `TimeZone`     |
+//! | Rust type | Format             | GraphQL scalar   |
+//! |-----------|--------------------|------------------|
+//! | [`Tz`]    | [IANA database][1] | [`TimeZone`][s1] |
 //!
 //! [`chrono-tz`]: chrono_tz
 //! [`Tz`]: chrono_tz::Tz
 //! [1]: http://www.iana.org/time-zones
+//! [s1]: https://graphql-scalars.dev/docs/scalars/time-zone
 
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
-/// Timezone based on [`IANA` database][1].
+/// Timezone based on [`IANA` database][0].
 ///
-/// See ["List of tz database time zones"][2] `TZ database name` column for
+/// See ["List of tz database time zones"][3] `TZ database name` column for
 /// available names.
 ///
-/// See also [`chrono_tz::Tz`][3] for detals.
+/// [`TimeZone` scalar][1] compliant.
 ///
-/// [1]: https://www.iana.org/time-zones
-/// [2]: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-/// [3]: https://docs.rs/chrono-tz/latest/chrono_tz/enum.Tz.html
-#[graphql_scalar(with = tz, parse_token(String))]
+/// See also [`chrono_tz::Tz`][2] for details.
+///
+/// [0]: https://www.iana.org/time-zones
+/// [1]: https://graphql-scalars.dev/docs/scalars/time-zone
+/// [2]: https://docs.rs/chrono-tz/*/chrono_tz/enum.Tz.html
+/// [3]: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+#[graphql_scalar(
+    with = tz,
+    parse_token(String),
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/time-zone",
+)]
 pub type TimeZone = chrono_tz::Tz;
 
 mod tz {

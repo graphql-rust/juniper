@@ -60,7 +60,7 @@ See [old CHANGELOG](/../../blob/juniper_actix-v0.4.0/juniper_actix/CHANGELOG.md)
 [`actix-ws` crate]: https://docs.rs/actix-ws
 [`juniper` crate]: https://docs.rs/juniper
 [`juniper_graphql_ws` crate]: https://docs.rs/juniper_graphql_ws
-[Semantic Versioning 2.0.0]: https://semver.org
 [graphql-transport-ws]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
 [graphql-ws]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
 [MSRV]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field
+[Semantic Versioning 2.0.0]: https://semver.org

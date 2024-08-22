@@ -1,51 +1,57 @@
-//! GraphQL support for [`time`] crate types.
+//! GraphQL support for [`jiff`] crate types.
 //!
 //! # Supported types
 //!
-//! | Rust type             | Format                | GraphQL scalar        |
-//! |-----------------------|-----------------------|-----------------------|
-//! | [`Date`]              | `yyyy-MM-dd`          | [`LocalDate`][s1]     |
-//! | [`Time`]              | `HH:mm[:ss[.SSS]]`    | [`LocalTime`][s2]     |
-//! | [`PrimitiveDateTime`] | `yyyy-MM-ddTHH:mm:ss` | [`LocalDateTime`][s3] |
-//! | [`OffsetDateTime`]    | [RFC 3339] string     | [`DateTime`][s4]      |
-//! | [`UtcOffset`]         | `±hh:mm`              | [`UtcOffset`][s5]     |
+//! | Rust type           | Format                | GraphQL scalar        |
+//! |---------------------|-----------------------|-----------------------|
+//! | [`civil::Date`]     | `yyyy-MM-dd`          | [`LocalDate`][s1]     |
+//! | [`civil::Time`]     | `HH:mm[:ss[.SSS]]`    | [`LocalTime`][s2]     |
+//! | [`civil::DateTime`] | `yyyy-MM-ddTHH:mm:ss` | [`LocalDateTime`][s3] |
+//! | [`Timestamp`]       | [RFC 3339] string     | [`DateTime`][s4]      |
+//! | [`Span`]            | [ISO 8601] duration   | [`Duration`][s5]      |
 //!
-//! [`Date`]: time::Date
-//! [`OffsetDateTime`]: time::OffsetDateTime
-//! [`PrimitiveDateTime`]: time::PrimitiveDateTime
-//! [`Time`]: time::Time
-//! [`UtcOffset`]: time::UtcOffset
+//! # Unsupported types
+//!
+//! [`Zoned`] is not supported because the GraphQL scalar [`DateTime`][s4] only supports time zone
+//! offsets but no IANA time zone names (as in `2024-08-10T23:14:00-04:00[America/New_York]`, cf.
+//! [RFC 9557]). Serializing such values would incur a loss of information with unexpected and
+//! subtle consequences (a fixed offset would only _seem_ to work in most cases).
+//!
+//! [`civil::Date`]: jiff::civil::Date
+//! [`civil::DateTime`]: jiff::civil::DateTime
+//! [`civil::Time`]: jiff::civil::Time
+//! [`Span`]: jiff::Span
+//! [`Timestamp`]: jiff::Timestamp
+//! [`Zoned`]: jiff::Zoned
+//! [ISO 8601]: https://en.wikipedia.org/wiki/ISO_8601#Durations
 //! [RFC 3339]: https://datatracker.ietf.org/doc/html/rfc3339#section-5.6
+//! [RFC 9557]: https://datatracker.ietf.org/doc/html/rfc9557#section-4.1
 //! [s1]: https://graphql-scalars.dev/docs/scalars/local-date
 //! [s2]: https://graphql-scalars.dev/docs/scalars/local-time
 //! [s3]: https://graphql-scalars.dev/docs/scalars/local-date-time
 //! [s4]: https://graphql-scalars.dev/docs/scalars/date-time
-//! [s5]: https://graphql-scalars.dev/docs/scalars/utc-offset
-
-use time::{
-    format_description::{well_known::Rfc3339, BorrowedFormatItem},
-    macros::format_description,
-};
+//! [s5]: https://graphql-scalars.dev/docs/scalars/duration
 
 use crate::{graphql_scalar, InputValue, ScalarValue, Value};
 
-/// Date in the proleptic Gregorian calendar (without time zone).
+/// Representation of a civil date in the Gregorian calendar.
 ///
-/// Represents a description of the date (as used for birthdays, for example).
-/// It cannot represent an instant on the time-line.
+/// Corresponds to a triple of year, month and day. Every value is guaranteed to be a valid
+/// Gregorian calendar date. For example, both `2023-02-29` and `2023-11-31` are invalid and cannot
+/// be represented.
 ///
 /// [`LocalDate` scalar][1] compliant.
 ///
-/// See also [`time::Date`][2] for details.
+/// See also [`jiff::civil::Date`][2] for details.
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-date
-/// [2]: https://docs.rs/time/*/time/struct.Date.html
+/// [2]: https://docs.rs/jiff/*/jiff/civil/struct.Date.html
 #[graphql_scalar(
     with = local_date,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-date",
 )]
-pub type LocalDate = time::Date;
+pub type LocalDate = jiff::civil::Date;
 
 mod local_date {
     use super::*;
@@ -53,42 +59,45 @@ mod local_date {
     /// Format of a [`LocalDate` scalar][1].
     ///
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-date
-    const FORMAT: &[BorrowedFormatItem<'_>] = format_description!("[year]-[month]-[day]");
+    const FORMAT: &str = "%Y-%m-%d";
 
-    pub(super) fn to_output<S: ScalarValue>(v: &LocalDate) -> Value<S> {
-        Value::scalar(
-            v.format(FORMAT)
-                .unwrap_or_else(|e| panic!("failed to format `LocalDate`: {e}")),
-        )
+    pub(super) fn to_output<S>(v: &LocalDate) -> Value<S>
+    where
+        S: ScalarValue,
+    {
+        Value::scalar(v.strftime(FORMAT).to_string())
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<LocalDate, String> {
+    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<LocalDate, String>
+    where
+        S: ScalarValue,
+    {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| {
-                LocalDate::parse(s, FORMAT).map_err(|e| format!("Invalid `LocalDate`: {e}"))
+                LocalDate::strptime(FORMAT, s).map_err(|e| format!("Invalid `LocalDate`: {e}"))
             })
     }
 }
 
-/// Clock time within a given date (without time zone) in `HH:mm[:ss[.SSS]]`
-/// format.
+/// Representation of a civil "wall clock" time.
 ///
-/// All minutes are assumed to have exactly 60 seconds; no attempt is made to
-/// handle leap seconds (either positive or negative).
+/// Conceptually, corresponds to the typical hours and minutes that you might see on a clock. This
+/// type also contains the second and fractional subsecond (to nanosecond precision) associated with
+/// a time.
 ///
 /// [`LocalTime` scalar][1] compliant.
 ///
-/// See also [`time::Time`][2] for details.
+/// See also [`jiff::civil::Time`][2] for details.
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
-/// [2]: https://docs.rs/time/*/time/struct.Time.html
+/// [2]: https://docs.rs/jiff/*/jiff/civil/struct.Time.html
 #[graphql_scalar(
     with = local_time,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-time",
 )]
-pub type LocalTime = time::Time;
+pub type LocalTime = jiff::civil::Time;
 
 mod local_time {
     use super::*;
@@ -96,60 +105,70 @@ mod local_time {
     /// Full format of a [`LocalTime` scalar][1].
     ///
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
-    const FORMAT: &[BorrowedFormatItem<'_>] =
-        format_description!("[hour]:[minute]:[second].[subsecond digits:3]");
+    const FORMAT: &str = "%H:%M:%S%.3f";
 
     /// Format of a [`LocalTime` scalar][1] without milliseconds.
     ///
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
-    const FORMAT_NO_MILLIS: &[BorrowedFormatItem<'_>] =
-        format_description!("[hour]:[minute]:[second]");
+    const FORMAT_NO_MILLIS: &str = "%H:%M:%S";
 
     /// Format of a [`LocalTime` scalar][1] without seconds.
     ///
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
-    const FORMAT_NO_SECS: &[BorrowedFormatItem<'_>] = format_description!("[hour]:[minute]");
+    const FORMAT_NO_SECS: &str = "%H:%M";
 
-    pub(super) fn to_output<S: ScalarValue>(v: &LocalTime) -> Value<S> {
+    pub(super) fn to_output<S>(v: &LocalTime) -> Value<S>
+    where
+        S: ScalarValue,
+    {
         Value::scalar(
-            if v.millisecond() == 0 {
-                v.format(FORMAT_NO_MILLIS)
+            if v.subsec_nanosecond() == 0 {
+                v.strftime(FORMAT_NO_MILLIS)
             } else {
-                v.format(FORMAT)
+                v.strftime(FORMAT)
             }
-            .unwrap_or_else(|e| panic!("failed to format `LocalTime`: {e}")),
+            .to_string(),
         )
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<LocalTime, String> {
+    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<LocalTime, String>
+    where
+        S: ScalarValue,
+    {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| {
                 // First, try to parse the most used format.
                 // At the end, try to parse the full format for the parsing
                 // error to be most informative.
-                LocalTime::parse(s, FORMAT_NO_MILLIS)
-                    .or_else(|_| LocalTime::parse(s, FORMAT_NO_SECS))
-                    .or_else(|_| LocalTime::parse(s, FORMAT))
+                LocalTime::strptime(FORMAT_NO_MILLIS, s)
+                    .or_else(|_| LocalTime::strptime(FORMAT_NO_SECS, s))
+                    .or_else(|_| LocalTime::strptime(FORMAT, s))
                     .map_err(|e| format!("Invalid `LocalTime`: {e}"))
             })
     }
 }
 
-/// Combined date and time (without time zone) in `yyyy-MM-ddTHH:mm:ss` format.
+/// Representation of a civil datetime in the Gregorian calendar.
+///
+/// Corresponds to a pair of a `LocalDate` and a `LocalTime`. That is, a datetime contains a year,
+/// month, day, hour, minute, second and the fractional number of nanoseconds.
+///
+/// Value is guaranteed to contain a valid date and time. For example, neither `2023-02-29T00:00:00`
+/// nor `2015-06-30T23:59:60` are valid.
 ///
 /// [`LocalDateTime` scalar][1] compliant.
 ///
-/// See also [`time::PrimitiveDateTime`][2] for details.
+/// See also [`jiff::civil::DateTime`][2] for details.
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-date-time
-/// [2]: https://docs.rs/time/*/time/struct.PrimitiveDateTime.html
+/// [2]: https://docs.rs/jiff/*/jiff/civil/struct.DateTime.html
 #[graphql_scalar(
     with = local_date_time,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-date-time",
 )]
-pub type LocalDateTime = time::PrimitiveDateTime;
+pub type LocalDateTime = jiff::civil::DateTime;
 
 mod local_date_time {
     use super::*;
@@ -157,111 +176,114 @@ mod local_date_time {
     /// Format of a [`LocalDateTime` scalar][1].
     ///
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-date-time
-    const FORMAT: &[BorrowedFormatItem<'_>] =
-        format_description!("[year]-[month]-[day]T[hour]:[minute]:[second]");
+    const FORMAT: &str = "%Y-%m-%dT%H:%M:%S";
 
-    pub(super) fn to_output<S: ScalarValue>(v: &LocalDateTime) -> Value<S> {
-        Value::scalar(
-            v.format(FORMAT)
-                .unwrap_or_else(|e| panic!("failed to format `LocalDateTime`: {e}")),
-        )
+    pub(super) fn to_output<S>(v: &LocalDateTime) -> Value<S>
+    where
+        S: ScalarValue,
+    {
+        Value::scalar(v.strftime(FORMAT).to_string())
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<LocalDateTime, String> {
+    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<LocalDateTime, String>
+    where
+        S: ScalarValue,
+    {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| {
-                LocalDateTime::parse(s, FORMAT).map_err(|e| format!("Invalid `LocalDateTime`: {e}"))
+                LocalDateTime::strptime(FORMAT, s)
+                    .map_err(|e| format!("Invalid `LocalDateTime`: {e}"))
             })
     }
 }
 
-/// Combined date and time (with time zone) in [RFC 3339][0] format.
+/// Instant in time represented as the number of nanoseconds since the Unix epoch.
 ///
-/// Represents a description of an exact instant on the time-line (such as the
-/// instant that a user account was created).
+/// Always in UTC.
 ///
 /// [`DateTime` scalar][1] compliant.
 ///
-/// See also [`time::OffsetDateTime`][2] for details.
+/// See also [`jiff::Timestamp`][2] for details.
 ///
-/// [0]: https://datatracker.ietf.org/doc/html/rfc3339#section-5.6
 /// [1]: https://graphql-scalars.dev/docs/scalars/date-time
-/// [2]: https://docs.rs/time/*/time/struct.OffsetDateTime.html
+/// [2]: https://docs.rs/jiff/*/jiff/struct.Timestamp.html
 #[graphql_scalar(
     with = date_time,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/date-time",
 )]
-pub type DateTime = time::OffsetDateTime;
+pub type DateTime = jiff::Timestamp;
 
 mod date_time {
+    use std::str::FromStr as _;
+
     use super::*;
 
-    pub(super) fn to_output<S: ScalarValue>(v: &DateTime) -> Value<S> {
-        Value::scalar(
-            v.to_offset(UtcOffset::UTC)
-                .format(&Rfc3339)
-                .unwrap_or_else(|e| panic!("failed to format `DateTime`: {e}")),
-        )
+    /// Format of a [`DateTime` scalar][1].
+    ///
+    /// [1]: https://graphql-scalars.dev/docs/scalars/date-time
+    const FORMAT: &str = "%Y-%m-%dT%H:%M:%S%.fZ";
+
+    pub(super) fn to_output<S>(v: &DateTime) -> Value<S>
+    where
+        S: ScalarValue,
+    {
+        Value::scalar(v.strftime(FORMAT).to_string())
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<DateTime, String> {
+    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<DateTime, String>
+    where
+        S: ScalarValue,
+    {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| {
-                DateTime::parse(s, &Rfc3339).map_err(|e| format!("Invalid `DateTime`: {e}"))
-            })
-            .map(|dt| dt.to_offset(UtcOffset::UTC))
+            .and_then(|s| DateTime::from_str(s).map_err(|e| format!("Invalid `DateTime`: {e}")))
     }
 }
 
-/// Format of a [`UtcOffset` scalar][1].
+/// Span of time represented via a mixture of calendar and clock units.
 ///
-/// [1]: https://graphql-scalars.dev/docs/scalars/utc-offset
-const UTC_OFFSET_FORMAT: &[BorrowedFormatItem<'_>] =
-    format_description!("[offset_hour sign:mandatory]:[offset_minute]");
-
-/// Offset from UTC in `±hh:mm` format. See [list of database time zones][0].
+/// Represents a duration of time in units of years, months, weeks, days, hours, minutes, seconds,
+/// milliseconds, microseconds and nanoseconds.
 ///
-/// [`UtcOffset` scalar][1] compliant.
+/// [`Duration` scalar][1] compliant.
 ///
-/// See also [`time::UtcOffset`][2] for details.
+/// See also [`jiff::Span`][2] for details.
 ///
-/// [0]: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-/// [1]: https://graphql-scalars.dev/docs/scalars/utc-offset
-/// [2]: https://docs.rs/time/*/time/struct.UtcOffset.html
+/// [1]: https://graphql-scalars.dev/docs/scalars/duration
+/// [2]: https://docs.rs/jiff/*/jiff/struct.Span.html
 #[graphql_scalar(
-    with = utc_offset,
+    with = duration,
     parse_token(String),
-    specified_by_url = "https://graphql-scalars.dev/docs/scalars/utc-offset",
+    specified_by_url = "https://graphql-scalars.dev/docs/scalars/duration",
 )]
-pub type UtcOffset = time::UtcOffset;
+pub type Duration = jiff::Span;
 
-mod utc_offset {
+mod duration {
+    use std::str::FromStr as _;
+
     use super::*;
 
-    pub(super) fn to_output<S: ScalarValue>(v: &UtcOffset) -> Value<S> {
-        Value::scalar(
-            v.format(UTC_OFFSET_FORMAT)
-                .unwrap_or_else(|e| panic!("failed to format `UtcOffset`: {e}")),
-        )
+    pub(super) fn to_output<S>(v: &Duration) -> Value<S>
+    where
+        S: ScalarValue,
+    {
+        Value::scalar(v.to_string())
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<UtcOffset, String> {
+    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<Duration, String>
+    where
+        S: ScalarValue,
+    {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| {
-                UtcOffset::parse(s, UTC_OFFSET_FORMAT)
-                    .map_err(|e| format!("Invalid `UtcOffset`: {e}"))
-            })
+            .and_then(|s| Duration::from_str(s).map_err(|e| format!("Invalid `Duration`: {e}")))
     }
 }
 
 #[cfg(test)]
 mod local_date_test {
-    use time::macros::date;
-
     use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
 
     use super::LocalDate;
@@ -269,8 +291,8 @@ mod local_date_test {
     #[test]
     fn parses_correct_input() {
         for (raw, expected) in [
-            ("1996-12-19", date!(1996 - 12 - 19)),
-            ("1564-01-30", date!(1564 - 01 - 30)),
+            ("1996-12-19", LocalDate::constant(1996, 12, 19)),
+            ("1564-01-30", LocalDate::constant(1564, 01, 30)),
         ] {
             let input: InputValue = graphql_input_value!((raw));
             let parsed = LocalDate::from_input_value(&input);
@@ -310,10 +332,18 @@ mod local_date_test {
     #[test]
     fn formats_correctly() {
         for (val, expected) in [
-            (date!(1996 - 12 - 19), graphql_input_value!("1996-12-19")),
-            (date!(1564 - 01 - 30), graphql_input_value!("1564-01-30")),
-            (date!(2020 - W 01 - 3), graphql_input_value!("2020-01-01")),
-            (date!(2020 - 001), graphql_input_value!("2020-01-01")),
+            (
+                LocalDate::constant(1996, 12, 19),
+                graphql_input_value!("1996-12-19"),
+            ),
+            (
+                LocalDate::constant(1564, 01, 30),
+                graphql_input_value!("1564-01-30"),
+            ),
+            (
+                LocalDate::constant(2020, 01, 01),
+                graphql_input_value!("2020-01-01"),
+            ),
         ] {
             let actual: InputValue = val.to_input_value();
 
@@ -324,8 +354,6 @@ mod local_date_test {
 
 #[cfg(test)]
 mod local_time_test {
-    use time::macros::time;
-
     use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
 
     use super::LocalTime;
@@ -333,12 +361,12 @@ mod local_time_test {
     #[test]
     fn parses_correct_input() {
         for (raw, expected) in [
-            ("14:23:43", time!(14:23:43)),
-            ("14:00:00", time!(14:00)),
-            ("14:00", time!(14:00)),
-            ("14:32", time!(14:32:00)),
-            ("14:00:00.000", time!(14:00)),
-            ("14:23:43.345", time!(14:23:43.345)),
+            ("14:23:43", LocalTime::constant(14, 23, 43, 000_000_000)),
+            ("14:00:00", LocalTime::constant(14, 00, 00, 000_000_000)),
+            ("14:00", LocalTime::constant(14, 00, 00, 000_000_000)),
+            ("14:32", LocalTime::constant(14, 32, 00, 000_000_000)),
+            ("14:00:00.000", LocalTime::constant(14, 00, 00, 000_000_000)),
+            ("14:23:43.345", LocalTime::constant(14, 23, 43, 345_000_000)),
         ] {
             let input: InputValue = graphql_input_value!((raw));
             let parsed = LocalTime::from_input_value(&input);
@@ -361,10 +389,7 @@ mod local_time_test {
             graphql_input_value!("23:78:43"),
             graphql_input_value!("23:78:"),
             graphql_input_value!("23:18:99"),
-            graphql_input_value!("23:18:22.4351"),
             graphql_input_value!("23:18:22."),
-            graphql_input_value!("23:18:22.3"),
-            graphql_input_value!("23:18:22.03"),
             graphql_input_value!("22.03"),
             graphql_input_value!("24:00"),
             graphql_input_value!("24:00:00"),
@@ -385,10 +410,22 @@ mod local_time_test {
     #[test]
     fn formats_correctly() {
         for (val, expected) in [
-            (time!(1:02:03.004_005), graphql_input_value!("01:02:03.004")),
-            (time!(0:00), graphql_input_value!("00:00:00")),
-            (time!(12:00 pm), graphql_input_value!("12:00:00")),
-            (time!(1:02:03), graphql_input_value!("01:02:03")),
+            (
+                LocalTime::constant(1, 2, 3, 4_005_000),
+                graphql_input_value!("01:02:03.004"),
+            ),
+            (
+                LocalTime::constant(0, 0, 0, 0),
+                graphql_input_value!("00:00:00"),
+            ),
+            (
+                LocalTime::constant(12, 0, 0, 0),
+                graphql_input_value!("12:00:00"),
+            ),
+            (
+                LocalTime::constant(1, 2, 3, 0),
+                graphql_input_value!("01:02:03"),
+            ),
         ] {
             let actual: InputValue = val.to_input_value();
 
@@ -399,8 +436,6 @@ mod local_time_test {
 
 #[cfg(test)]
 mod local_date_time_test {
-    use time::macros::datetime;
-
     use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
 
     use super::LocalDateTime;
@@ -408,8 +443,14 @@ mod local_date_time_test {
     #[test]
     fn parses_correct_input() {
         for (raw, expected) in [
-            ("1996-12-19T14:23:43", datetime!(1996-12-19 14:23:43)),
-            ("1564-01-30T14:00:00", datetime!(1564-01-30 14:00)),
+            (
+                "1996-12-19T14:23:43",
+                LocalDateTime::constant(1996, 12, 19, 14, 23, 43, 0),
+            ),
+            (
+                "1564-01-30T14:00:00",
+                LocalDateTime::constant(1564, 1, 30, 14, 00, 00, 0),
+            ),
         ] {
             let input: InputValue = graphql_input_value!((raw));
             let parsed = LocalDateTime::from_input_value(&input);
@@ -436,7 +477,6 @@ mod local_date_time_test {
             graphql_input_value!("1996-12-19T14:23:43Z"),
             graphql_input_value!("1996-12-19T14:23:43.543"),
             graphql_input_value!("1996-12-19T14:23"),
-            graphql_input_value!("1996-12-19T14:23:1"),
             graphql_input_value!("1996-12-19T14:23:"),
             graphql_input_value!("1996-12-19T23:78:43"),
             graphql_input_value!("1996-12-19T23:18:99"),
@@ -459,11 +499,11 @@ mod local_date_time_test {
     fn formats_correctly() {
         for (val, expected) in [
             (
-                datetime!(1996-12-19 12:00 am),
+                LocalDateTime::constant(1996, 12, 19, 0, 0, 0, 0),
                 graphql_input_value!("1996-12-19T00:00:00"),
             ),
             (
-                datetime!(1564-01-30 14:00),
+                LocalDateTime::constant(1564, 1, 30, 14, 0, 0, 0),
                 graphql_input_value!("1564-01-30T14:00:00"),
             ),
         ] {
@@ -476,7 +516,7 @@ mod local_date_time_test {
 
 #[cfg(test)]
 mod date_time_test {
-    use time::macros::datetime;
+    use jiff::{civil, tz::TimeZone};
 
     use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
 
@@ -487,16 +527,45 @@ mod date_time_test {
         for (raw, expected) in [
             (
                 "2014-11-28T21:00:09+09:00",
-                datetime!(2014-11-28 21:00:09 +9),
+                civil::DateTime::constant(2014, 11, 28, 12, 0, 9, 0)
+                    .to_zoned(TimeZone::UTC)
+                    .unwrap()
+                    .timestamp(),
             ),
-            ("2014-11-28T21:00:09Z", datetime!(2014-11-28 21:00:09 +0)),
+            (
+                "2014-11-28T21:00:09Z",
+                civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
+                    .to_zoned(TimeZone::UTC)
+                    .unwrap()
+                    .timestamp(),
+            ),
+            (
+                "2014-11-28 21:00:09z",
+                civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
+                    .to_zoned(TimeZone::UTC)
+                    .unwrap()
+                    .timestamp(),
+            ),
             (
                 "2014-11-28T21:00:09+00:00",
-                datetime!(2014-11-28 21:00:09 +0),
+                civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
+                    .to_zoned(TimeZone::UTC)
+                    .unwrap()
+                    .timestamp(),
             ),
             (
                 "2014-11-28T21:00:09.05+09:00",
-                datetime!(2014-11-28 12:00:09.05 +0),
+                civil::DateTime::constant(2014, 11, 28, 12, 0, 9, 50_000_000)
+                    .to_zoned(TimeZone::UTC)
+                    .unwrap()
+                    .timestamp(),
+            ),
+            (
+                "2014-11-28 21:00:09.05+09:00",
+                civil::DateTime::constant(2014, 11, 28, 12, 0, 9, 50_000_000)
+                    .to_zoned(TimeZone::UTC)
+                    .unwrap()
+                    .timestamp(),
             ),
         ] {
             let input: InputValue = graphql_input_value!((raw));
@@ -519,7 +588,8 @@ mod date_time_test {
             graphql_input_value!("56:34:22"),
             graphql_input_value!("56:34:22.000"),
             graphql_input_value!("1996-12-1914:23:43"),
-            graphql_input_value!("1996-12-19 14:23:43Z"),
+            graphql_input_value!("1996-12-19 14:23:43"),
+            graphql_input_value!("1996-12-19Q14:23:43Z"),
             graphql_input_value!("1996-12-19T14:23:43"),
             graphql_input_value!("1996-12-19T14:23:43ZZ"),
             graphql_input_value!("1996-12-19T14:23:43.543"),
@@ -549,12 +619,18 @@ mod date_time_test {
     fn formats_correctly() {
         for (val, expected) in [
             (
-                datetime!(1996-12-19 12:00 am UTC),
+                civil::DateTime::constant(1996, 12, 19, 0, 0, 0, 0)
+                    .to_zoned(TimeZone::UTC)
+                    .unwrap()
+                    .timestamp(),
                 graphql_input_value!("1996-12-19T00:00:00Z"),
             ),
             (
-                datetime!(1564-01-30 14:00 +9),
-                graphql_input_value!("1564-01-30T05:00:00Z"),
+                civil::DateTime::constant(1564, 1, 30, 5, 0, 0, 123_000_000)
+                    .to_zoned(TimeZone::UTC)
+                    .unwrap()
+                    .timestamp(),
+                graphql_input_value!("1564-01-30T05:00:00.123Z"),
             ),
         ] {
             let actual: InputValue = val.to_input_value();
@@ -565,25 +641,43 @@ mod date_time_test {
 }
 
 #[cfg(test)]
-mod utc_offset_test {
-    use time::macros::offset;
+mod duration_test {
+    use jiff::ToSpan as _;
 
     use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
 
-    use super::UtcOffset;
+    use super::Duration;
 
     #[test]
     fn parses_correct_input() {
         for (raw, expected) in [
-            ("+00:00", offset!(+0)),
-            ("-00:00", offset!(-0)),
-            ("+10:00", offset!(+10)),
-            ("-07:30", offset!(-7:30)),
-            ("+14:00", offset!(+14)),
-            ("-12:00", offset!(-12)),
+            ("P5dT8h1m", 5.days().hours(8).minutes(1)),
+            ("-P5d", (-5).days()),
+            ("P2M10DT2H30M", 2.months().days(10).hours(2).minutes(30)),
+            ("P40D", 40.days()),
+            ("P1y1d", 1.year().days(1)),
+            ("P3dT4h59m", 3.days().hours(4).minutes(59)),
+            ("PT2H30M", 2.hours().minutes(30)),
+            ("P1m", 1.month()),
+            ("P1w", 1.week()),
+            ("P1w4d", 1.week().days(4)),
+            ("PT1m", 1.minute()),
+            ("PT0.0021s", 2.milliseconds().microseconds(100)),
+            ("PT0s", 0.seconds()),
+            ("P0d", 0.seconds()),
+            (
+                "P1y1m1dT1h1m1.1s",
+                1.year()
+                    .months(1)
+                    .days(1)
+                    .hours(1)
+                    .minutes(1)
+                    .seconds(1)
+                    .milliseconds(100),
+            ),
         ] {
             let input: InputValue = graphql_input_value!((raw));
-            let parsed = UtcOffset::from_input_value(&input);
+            let parsed = Duration::from_input_value(&input);
 
             assert!(
                 parsed.is_ok(),
@@ -598,26 +692,22 @@ mod utc_offset_test {
     fn fails_on_invalid_input() {
         for input in [
             graphql_input_value!("12"),
-            graphql_input_value!("12:"),
-            graphql_input_value!("12:00"),
-            graphql_input_value!("+12:"),
-            graphql_input_value!("+12:0"),
-            graphql_input_value!("+12:00:34"),
-            graphql_input_value!("+12"),
-            graphql_input_value!("-12"),
-            graphql_input_value!("-12:"),
-            graphql_input_value!("-12:0"),
-            graphql_input_value!("-12:00:32"),
-            graphql_input_value!("-999:00"),
-            graphql_input_value!("+999:00"),
-            graphql_input_value!("i'm not even an offset"),
+            graphql_input_value!("12S"),
+            graphql_input_value!("P0"),
+            graphql_input_value!("PT"),
+            graphql_input_value!("PTS"),
+            graphql_input_value!("56:34:22"),
+            graphql_input_value!("1996-12-19"),
+            graphql_input_value!("1996-12-19T14:23:43"),
+            graphql_input_value!("1996-12-19T14:23:43Z"),
+            graphql_input_value!("i'm not even a duration"),
             graphql_input_value!(2.32),
             graphql_input_value!(1),
             graphql_input_value!(null),
             graphql_input_value!(false),
         ] {
             let input: InputValue = input;
-            let parsed = UtcOffset::from_input_value(&input);
+            let parsed = Duration::from_input_value(&input);
 
             assert!(parsed.is_err(), "allows input: {input:?}");
         }
@@ -626,9 +716,17 @@ mod utc_offset_test {
     #[test]
     fn formats_correctly() {
         for (val, expected) in [
-            (offset!(+1), graphql_input_value!("+01:00")),
-            (offset!(+0), graphql_input_value!("+00:00")),
-            (offset!(-2:30), graphql_input_value!("-02:30")),
+            (
+                1.year()
+                    .months(1)
+                    .days(1)
+                    .hours(1)
+                    .minutes(1)
+                    .seconds(1)
+                    .milliseconds(100),
+                graphql_input_value!("P1y1m1dT1h1m1.1s"),
+            ),
+            ((-5).days(), graphql_input_value!("-P5d")),
         ] {
             let actual: InputValue = val.to_input_value();
 
@@ -639,7 +737,7 @@ mod utc_offset_test {
 
 #[cfg(test)]
 mod integration_test {
-    use time::macros::{date, datetime, offset, time};
+    use jiff::{civil, tz::TimeZone, ToSpan as _};
 
     use crate::{
         execute, graphql_object, graphql_value, graphql_vars,
@@ -647,7 +745,7 @@ mod integration_test {
         types::scalars::{EmptyMutation, EmptySubscription},
     };
 
-    use super::{DateTime, LocalDate, LocalDateTime, LocalTime, UtcOffset};
+    use super::{DateTime, Duration, LocalDate, LocalDateTime, LocalTime};
 
     #[tokio::test]
     async fn serializes() {
@@ -656,23 +754,32 @@ mod integration_test {
         #[graphql_object]
         impl Root {
             fn local_date() -> LocalDate {
-                date!(2015 - 03 - 14)
+                LocalDate::constant(2015, 3, 14)
             }
 
             fn local_time() -> LocalTime {
-                time!(16:07:08)
+                LocalTime::constant(16, 7, 8, 0)
             }
 
             fn local_date_time() -> LocalDateTime {
-                datetime!(2016-07-08 09:10:11)
+                LocalDateTime::constant(2016, 7, 8, 9, 10, 11, 0)
             }
 
             fn date_time() -> DateTime {
-                datetime!(1996-12-19 16:39:57 -8)
+                civil::DateTime::constant(2014, 11, 28, 12, 0, 9, 50_000_000)
+                    .to_zoned(TimeZone::UTC)
+                    .unwrap()
+                    .timestamp()
             }
 
-            fn utc_offset() -> UtcOffset {
-                offset!(+11:30)
+            fn duration() -> Duration {
+                1.year()
+                    .months(1)
+                    .days(1)
+                    .hours(1)
+                    .minutes(1)
+                    .seconds(1)
+                    .milliseconds(100)
             }
         }
 
@@ -681,7 +788,7 @@ mod integration_test {
             localTime
             localDateTime
             dateTime,
-            utcOffset,
+            duration,
         }"#;
 
         let schema = RootNode::new(
@@ -697,8 +804,8 @@ mod integration_test {
                     "localDate": "2015-03-14",
                     "localTime": "16:07:08",
                     "localDateTime": "2016-07-08T09:10:11",
-                    "dateTime": "1996-12-20T00:39:57Z",
-                    "utcOffset": "+11:30",
+                    "dateTime": "2014-11-28T12:00:09.05Z",
+                    "duration": "P1y1m1dT1h1m1.1s",
                 }),
                 vec![],
             )),

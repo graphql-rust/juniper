@@ -6,21 +6,52 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 
 
-## [0.17.0] · 2024-04-?? (unreleased)
-[0.17.0]: /../../tree/juniper-v0.17.0/juniper
+## master
 
-[Diff](/../../compare/juniper-v0.16.1...juniper-v0.17.0) | [Milestone](/../../milestone/7)
+[Diff](/../../compare/juniper-v0.16.1...master) | [Milestone](/../../milestone/7)
 
 ### BC Breaks
 
 - Upgraded [`chrono-tz` crate] integration to [0.9 version](https://github.com/chronotope/chrono-tz/releases/tag/v0.9.0). ([#1252])
+- Bumped up [MSRV] to 1.75. ([#1272])
+- Corrected compliance with newer [graphql-scalars.dev] specs: ([#1275], [#1277])
+    - Switched `LocalDateTime` scalars to `yyyy-MM-ddTHH:mm:ss` format in types:
+        - `chrono::NaiveDateTime`.
+        - `time::PrimitiveDateTime`.
+    - Switched from `Date` scalar to `LocalDate` scalar in types:
+        - `chrono::NaiveDate`.
+        - `time::Date`.
+    - Switched from `UtcDateTime` scalar to `DateTime` scalar in types:
+        - `bson::DateTime`.
+    - Corrected `TimeZone` scalar in types:
+        - `chrono_tz::Tz`.
+    - Renamed `Url` scalar to `URL` in types:
+        - `url::Url`.
+    - Renamed `Uuid` scalar to `UUID` in types:
+        - `uuid::Uuid`.
+    - Renamed `ObjectId` scalar to `ObjectID` in types: ([#1277])
+        - `bson::oid::ObjectId`.
+
+### Added
+
+- [`jiff` crate] integration behind `jiff` [Cargo feature]: ([#1271], [#1270])
+    - `jiff::civil::Date` as `LocalDate` scalar.
+    - `jiff::civil::Time` as `LocalTime` scalar.
+    - `jiff::civil::DateTime` as `LocalDateTime` scalar. ([#1275])
+    - `jiff::Timestamp` as `DateTime` scalar.
+    - `jiff::Span` as `Duration` scalar.
 
 ### Changed
 
-- Updated [GraphiQL] to [3.4.0 version](https://github.com/graphql/graphiql/blob/graphiql%403.4.0/packages/graphiql/CHANGELOG.md#340). ([#1269])
+- Updated [GraphiQL] to [3.7.0 version](https://github.com/graphql/graphiql/blob/graphiql%403.7.0/packages/graphiql/CHANGELOG.md#370). ([#1279])
 
 [#1252]: /../../pull/1252
-[#1269]: /../../pull/1269
+[#1270]: /../../issues/1270
+[#1271]: /../../pull/1271
+[#1272]: /../../pull/1272
+[#1275]: /../../pull/1275
+[#1277]: /../../pull/1277
+[#1279]: /../../pull/1279
 
 
 
@@ -221,12 +252,14 @@ See [old CHANGELOG](/../../blob/juniper-v0.15.12/juniper/CHANGELOG.md).
 [`bson` crate]: https://docs.rs/bson
 [`chrono` crate]: https://docs.rs/chrono
 [`chrono-tz` crate]: https://docs.rs/chrono-tz
+[`jiff` crate]: https://docs.rs/jiff
 [`time` crate]: https://docs.rs/time
 [Cargo feature]: https://doc.rust-lang.org/cargo/reference/features.html
 [`graphql-transport-ws` GraphQL over WebSocket Protocol]: https://github.com/enisdenjo/graphql-ws/v5.14.0/PROTOCOL.md 
 [GraphiQL]: https://github.com/graphql/graphiql
 [GraphQL Playground]: https://github.com/prisma/graphql-playground
 [graphql-scalars.dev]: https://graphql-scalars.dev
+[MSRV]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field
 [October 2021]: https://spec.graphql.org/October2021
 [object safety]: https://doc.rust-lang.org/reference/items/traits.html#object-safety
 [orphan rules]: https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules

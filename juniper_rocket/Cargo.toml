@@ -2,7 +2,7 @@
 name = "juniper_rocket"
 version = "0.9.0"
 edition = "2021"
-rust-version = "1.73"
+rust-version = "1.75"
 description = "`juniper` GraphQL integration with `rocket`."
 license = "BSD-2-Clause"
 authors = [
