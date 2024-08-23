@@ -385,33 +385,33 @@ mod date_scalar {
 
 [Juniper] provides out-of-the-box [GraphQL scalar][0] implementations for some very common [Rust] crates. The types from these crates will be usable in your schemas automatically after enabling the correspondent self-titled [Cargo feature].
 
-| [Rust] type                 | [GraphQL] scalar      | [Cargo feature]  | Notes |
-|-----------------------------|-----------------------|------------------|-------|
-| [`bigdecimal::BigDecimal`]  | `BigDecimal`          | [`bigdecimal`]   |       |
-| [`bson::oid::ObjectId`]     | [`ObjectID`]          | [`bson`]         |       |
-| [`bson::DateTime`]          | [`DateTime`]          | [`bson`]         |       |
-| [`chrono::NaiveDate`]       | [`LocalDate`]         | [`chrono`]       |       |
-| [`chrono::NaiveTime`]       | [`LocalTime`]         | [`chrono`]       |       |
-| [`chrono::NaiveDateTime`]   | [`LocalDateTime`]     | [`chrono`]       |       |
-| [`chrono::DateTime`]        | [`DateTime`]          | [`chrono`]       |       |
-| [`chrono_tz::Tz`]           | [`TimeZone`]          | [`chrono-tz`]    |       |
-| [`rust_decimal::Decimal`]   | `Decimal`             | [`rust_decimal`] |       |
-| [`jiff::civil::Date`]       | [`LocalDate`]         | [`jiff`]         |       |
-| [`jiff::civil::Time`]       | [`LocalTime`]         | [`jiff`]         |       |
-| [`jiff::civil::DateTime`]   | [`LocalDateTime`]     | [`jiff`]         |       |
-| [`jiff::Timestamp`]         | [`DateTime`]          | [`jiff`]         |       |
-| [`jiff::Zoned`]             | `ZonedDateTime`       | [`jiff`]         |       |
-| [`jiff::tz::TimeZone`]      | `TimeZoneOrUtcOffset` | [`jiff`]         |       |
-| [`jiff::tz::TimeZone`]      | [`TimeZone`]          | [`jiff`]         | [^n1] |
-| [`jiff::tz::Offset`]        | [`UtcOffset`]         | [`jiff`]         |       |
-| [`jiff::Span`]              | [`Duration`]          | [`jiff`]         |       |
-| [`time::Date`]              | [`LocalDate`]         | [`time`]         |       |
-| [`time::Time`]              | [`LocalTime`]         | [`time`]         |       |
-| [`time::PrimitiveDateTime`] | [`LocalDateTime`]     | [`time`]         |       |
-| [`time::OffsetDateTime`]    | [`DateTime`]          | [`time`]         |       |
-| [`time::UtcOffset`]         | [`UtcOffset`]         | [`time`]         |       |
-| [`url::Url`]                | [`URL`]               | [`url`]          |       |
-| [`uuid::Uuid`]              | [`UUID`]              | [`uuid`]         |       |
+| [Rust] type                 | [GraphQL] scalar      | [Cargo feature]  |
+|-----------------------------|-----------------------|------------------|
+| [`bigdecimal::BigDecimal`]  | `BigDecimal`          | [`bigdecimal`]   |
+| [`bson::oid::ObjectId`]     | [`ObjectID`]          | [`bson`]         |
+| [`bson::DateTime`]          | [`DateTime`]          | [`bson`]         |
+| [`chrono::NaiveDate`]       | [`LocalDate`]         | [`chrono`]       |
+| [`chrono::NaiveTime`]       | [`LocalTime`]         | [`chrono`]       |
+| [`chrono::NaiveDateTime`]   | [`LocalDateTime`]     | [`chrono`]       |
+| [`chrono::DateTime`]        | [`DateTime`]          | [`chrono`]       |
+| [`chrono_tz::Tz`]           | [`TimeZone`]          | [`chrono-tz`]    |
+| [`rust_decimal::Decimal`]   | `Decimal`             | [`rust_decimal`] |
+| [`jiff::civil::Date`]       | [`LocalDate`]         | [`jiff`]         |
+| [`jiff::civil::Time`]       | [`LocalTime`]         | [`jiff`]         |
+| [`jiff::civil::DateTime`]   | [`LocalDateTime`]     | [`jiff`]         |
+| [`jiff::Timestamp`]         | [`DateTime`]          | [`jiff`]         |
+| [`jiff::Zoned`]             | `ZonedDateTime`       | [`jiff`]         |
+| [`jiff::tz::TimeZone`]      | `TimeZoneOrUtcOffset` | [`jiff`]         |
+| [`jiff::tz::TimeZone`]      | [`TimeZone`] [^n1]    | [`jiff`]         |
+| [`jiff::tz::Offset`]        | [`UtcOffset`]         | [`jiff`]         |
+| [`jiff::Span`]              | [`Duration`]          | [`jiff`]         |
+| [`time::Date`]              | [`LocalDate`]         | [`time`]         |
+| [`time::Time`]              | [`LocalTime`]         | [`time`]         |
+| [`time::PrimitiveDateTime`] | [`LocalDateTime`]     | [`time`]         |
+| [`time::OffsetDateTime`]    | [`DateTime`]          | [`time`]         |
+| [`time::UtcOffset`]         | [`UtcOffset`]         | [`time`]         |
+| [`url::Url`]                | [`URL`]               | [`url`]          |
+| [`uuid::Uuid`]              | [`UUID`]              | [`uuid`]         |
 
 [^n1]: Conversion supported via newtype.
 
