@@ -440,7 +440,7 @@ impl Error for TimeZoneError {
 
 /// Representation of time zone.
 ///
-/// Is a set of rules for determining the civil time, via an offset from UTC, in a particular
+/// A set of rules for determining the civil time, via an offset from UTC, in a particular
 /// geographic region. In many cases, the offset in a particular time zone can vary over the course
 /// of a year through transitions into and out of daylight saving time.
 ///
