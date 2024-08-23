@@ -432,7 +432,6 @@ mod date_scalar {
 [`chrono_tz::Tz`]: https://docs.rs/chrono-tz/latest/chrono_tz/enum.Tz.html
 [`rust_decimal::Decimal`]: https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html
 [`DateTime`]: https://graphql-scalars.dev/docs/scalars/date-time
-[`Decimal`]: https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html
 [`Duration`]: https://graphql-scalars.dev/docs/scalars/duration
 [`ID`]: https://spec.graphql.org/October2021#sec-ID
 [`jiff`]: https://docs.rs/jiff
