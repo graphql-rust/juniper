@@ -430,7 +430,6 @@ mod date_scalar {
 [`chrono::NaiveTime`]: https://docs.rs/chrono/latest/chrono/naive/struct.NaiveTime.html
 [`chrono-tz`]: https://docs.rs/chrono-tz
 [`chrono_tz::Tz`]: https://docs.rs/chrono-tz/latest/chrono_tz/enum.Tz.html
-[`rust_decimal::Decimal`]: https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html
 [`DateTime`]: https://graphql-scalars.dev/docs/scalars/date-time
 [`Duration`]: https://graphql-scalars.dev/docs/scalars/duration
 [`ID`]: https://spec.graphql.org/October2021#sec-ID
@@ -448,6 +447,7 @@ mod date_scalar {
 [`LocalTime`]: https://graphql-scalars.dev/docs/scalars/local-time
 [`ObjectID`]: https://the-guild.dev/graphql/scalars/docs/scalars/object-id
 [`rust_decimal`]: https://docs.rs/rust_decimal
+[`rust_decimal::Decimal`]: https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html
 [`ScalarValue`]: https://docs.rs/juniper/0.16.1/juniper/trait.ScalarValue.html
 [`serde`]: https://docs.rs/serde
 [`time`]: https://docs.rs/time
