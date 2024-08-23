@@ -413,7 +413,7 @@ mod date_scalar {
 | [`url::Url`]                | [`URL`]               | [`url`]          |
 | [`uuid::Uuid`]              | [`UUID`]              | [`uuid`]         |
 
-[^n1]: Conversion supported via newtype.
+[^n1]: Conversion supported via newtype [`integrations::jiff::TimeZone`][10].
 
 
 
@@ -482,3 +482,4 @@ mod date_scalar {
 [7]: https://spec.graphql.org/October2021#sec-Value-Resolution
 [8]: https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLScalar.html
 [9]: https://docs.rs/juniper/0.16.1/juniper/attr.graphql_scalar.html
+[10]: https://docs.rs/juniper/0.16.1/juniper/integrations/jiff/struct.TimeZone.html
