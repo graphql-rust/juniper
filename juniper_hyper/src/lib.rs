@@ -335,7 +335,11 @@ mod tests {
         convert::Infallible, error::Error, net::SocketAddr, panic, sync::Arc, time::Duration,
     };
 
-    use hyper::{server::conn::http1, service::service_fn, Method, Response, StatusCode};
+    use http_body_util::BodyExt;
+    use hyper::{
+        body::Incoming, server::conn::http1, service::service_fn, Method, Request, Response,
+        StatusCode,
+    };
     use hyper_util::rt::TokioIo;
     use juniper::{
         http::tests as http_tests,
@@ -397,8 +401,12 @@ mod tests {
         }
     }
 
-    async fn run_hyper_integration(is_sync: bool) {
-        let port = if is_sync { 3002 } else { 3001 };
+    static mut PORT: u16 = 3001;
+    async fn run_hyper_integration(is_sync: bool, is_custom_type: bool) {
+        let port = unsafe {
+            PORT = PORT.wrapping_add(1);
+            PORT
+        } + if is_sync { 1000 } else { 0 };
         let addr = SocketAddr::from(([127, 0, 0, 1], port));
 
         let db = Arc::new(Database::new());
@@ -426,7 +434,7 @@ mod tests {
                         if let Err(e) = http1::Builder::new()
                             .serve_connection(
                                 io,
-                                service_fn(move |req| {
+                                service_fn(move |req: Request<Incoming>| {
                                     let root_node = root_node.clone();
                                     let db = db.clone();
                                     let matches = {
@@ -440,10 +448,30 @@ mod tests {
                                     };
                                     async move {
                                         Ok::<_, Infallible>(if matches {
-                                            if is_sync {
-                                                super::graphql_sync(root_node, db, req).await
+                                            if is_custom_type {
+                                                let (parts, mut body) = req.into_parts();
+                                                let body = {
+                                                    let mut buf = String::new();
+                                                    if let Some(Ok(frame)) = body.frame().await {
+                                                        if let Ok(bytes) = frame.into_data() {
+                                                            buf = String::from_utf8_lossy(&bytes)
+                                                                .to_string();
+                                                        }
+                                                    }
+                                                    buf
+                                                };
+                                                let req = Request::from_parts(parts, body);
+                                                if is_sync {
+                                                    super::graphql_sync(root_node, db, req).await
+                                                } else {
+                                                    super::graphql(root_node, db, req).await
+                                                }
                                             } else {
-                                                super::graphql(root_node, db, req).await
+                                                if is_sync {
+                                                    super::graphql_sync(root_node, db, req).await
+                                                } else {
+                                                    super::graphql(root_node, db, req).await
+                                                }
                                             }
                                         } else {
                                             let mut resp = Response::new(String::new());
@@ -481,11 +509,23 @@ mod tests {
 
     #[tokio::test]
     async fn test_hyper_integration() {
-        run_hyper_integration(false).await
+        run_hyper_integration(false, false).await
     }
 
     #[tokio::test]
     async fn test_sync_hyper_integration() {
-        run_hyper_integration(true).await
+        run_hyper_integration(true, false).await
+    }
+
+    #[tokio::test]
+    /// run test for a custom request type - `Request<Vec<u8>>`
+    async fn test_custom_hyper_integration() {
+        run_hyper_integration(false, false).await
+    }
+
+    #[tokio::test]
+    /// run test for a custom request type - `Request<Vec<u8>>` in sync mode
+    async fn test_custom_sync_hyper_integration() {
+        run_hyper_integration(true, true).await
     }
 }
