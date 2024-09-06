@@ -385,29 +385,35 @@ mod date_scalar {
 
 [Juniper] provides out-of-the-box [GraphQL scalar][0] implementations for some very common [Rust] crates. The types from these crates will be usable in your schemas automatically after enabling the correspondent self-titled [Cargo feature].
 
-| [Rust] type                 | [GraphQL] scalar  | [Cargo feature]  |
-|-----------------------------|-------------------|------------------|
-| [`bigdecimal::BigDecimal`]  | `BigDecimal`      | [`bigdecimal`]   |
-| [`bson::oid::ObjectId`]     | [`ObjectID`]      | [`bson`]         |
-| [`bson::DateTime`]          | [`DateTime`]      | [`bson`]         |
-| [`chrono::NaiveDate`]       | [`LocalDate`]     | [`chrono`]       |
-| [`chrono::NaiveTime`]       | [`LocalTime`]     | [`chrono`]       |
-| [`chrono::NaiveDateTime`]   | [`LocalDateTime`] | [`chrono`]       |
-| [`chrono::DateTime`]        | [`DateTime`]      | [`chrono`]       |
-| [`chrono_tz::Tz`]           | [`TimeZone`]      | [`chrono-tz`]    |
-| [`rust_decimal::Decimal`]   | `Decimal`         | [`rust_decimal`] |
-| [`jiff::civil::Date`]       | [`LocalDate`]     | [`jiff`]         |
-| [`jiff::civil::Time`]       | [`LocalTime`]     | [`jiff`]         |
-| [`jiff::civil::DateTime`]   | [`LocalDateTime`] | [`jiff`]         |
-| [`jiff::Timestamp`]         | [`DateTime`]      | [`jiff`]         |
-| [`jiff::Span`]              | [`Duration`]      | [`jiff`]         |
-| [`time::Date`]              | [`LocalDate`]     | [`time`]         |
-| [`time::Time`]              | [`LocalTime`]     | [`time`]         |
-| [`time::PrimitiveDateTime`] | [`LocalDateTime`] | [`time`]         |
-| [`time::OffsetDateTime`]    | [`DateTime`]      | [`time`]         |
-| [`time::UtcOffset`]         | [`UtcOffset`]     | [`time`]         |
-| [`url::Url`]                | [`URL`]           | [`url`]          |
-| [`uuid::Uuid`]              | [`UUID`]          | [`uuid`]         |
+| [Rust] type                 | [GraphQL] scalar      | [Cargo feature]  |
+|-----------------------------|-----------------------|------------------|
+| [`bigdecimal::BigDecimal`]  | `BigDecimal`          | [`bigdecimal`]   |
+| [`bson::oid::ObjectId`]     | [`ObjectID`]          | [`bson`]         |
+| [`bson::DateTime`]          | [`DateTime`]          | [`bson`]         |
+| [`chrono::NaiveDate`]       | [`LocalDate`]         | [`chrono`]       |
+| [`chrono::NaiveTime`]       | [`LocalTime`]         | [`chrono`]       |
+| [`chrono::NaiveDateTime`]   | [`LocalDateTime`]     | [`chrono`]       |
+| [`chrono::DateTime`]        | [`DateTime`]          | [`chrono`]       |
+| [`chrono_tz::Tz`]           | [`TimeZone`]          | [`chrono-tz`]    |
+| [`rust_decimal::Decimal`]   | `Decimal`             | [`rust_decimal`] |
+| [`jiff::civil::Date`]       | [`LocalDate`]         | [`jiff`]         |
+| [`jiff::civil::Time`]       | [`LocalTime`]         | [`jiff`]         |
+| [`jiff::civil::DateTime`]   | [`LocalDateTime`]     | [`jiff`]         |
+| [`jiff::Timestamp`]         | [`DateTime`]          | [`jiff`]         |
+| [`jiff::Zoned`]             | `ZonedDateTime`       | [`jiff`]         |
+| [`jiff::tz::TimeZone`]      | `TimeZoneOrUtcOffset` | [`jiff`]         |
+| [`jiff::tz::TimeZone`]      | [`TimeZone`] [^n1]    | [`jiff`]         |
+| [`jiff::tz::Offset`]        | [`UtcOffset`]         | [`jiff`]         |
+| [`jiff::Span`]              | [`Duration`]          | [`jiff`]         |
+| [`time::Date`]              | [`LocalDate`]         | [`time`]         |
+| [`time::Time`]              | [`LocalTime`]         | [`time`]         |
+| [`time::PrimitiveDateTime`] | [`LocalDateTime`]     | [`time`]         |
+| [`time::OffsetDateTime`]    | [`DateTime`]          | [`time`]         |
+| [`time::UtcOffset`]         | [`UtcOffset`]         | [`time`]         |
+| [`url::Url`]                | [`URL`]               | [`url`]          |
+| [`uuid::Uuid`]              | [`UUID`]              | [`uuid`]         |
+
+[^n1]: Conversion supported via newtype [`integrations::jiff::TimeZone`][10].
 
 
 
@@ -425,7 +431,6 @@ mod date_scalar {
 [`chrono-tz`]: https://docs.rs/chrono-tz
 [`chrono_tz::Tz`]: https://docs.rs/chrono-tz/latest/chrono_tz/enum.Tz.html
 [`DateTime`]: https://graphql-scalars.dev/docs/scalars/date-time
-[`Decimal`]: https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html
 [`Duration`]: https://graphql-scalars.dev/docs/scalars/duration
 [`ID`]: https://spec.graphql.org/October2021#sec-ID
 [`jiff`]: https://docs.rs/jiff
@@ -434,11 +439,15 @@ mod date_scalar {
 [`jiff::civil::Time`]: https://docs.rs/jiff/latest/jiff/civil/struct.Time.html
 [`jiff::Span`]: https://docs.rs/jiff/latest/jiff/struct.Span.html
 [`jiff::Timestamp`]: https://docs.rs/jiff/latest/jiff/struct.Timestamp.html
+[`jiff::tz::Offset`]: https://docs.rs/jiff/latest/jiff/tz/struct.Offset.html
+[`jiff::tz::TimeZone`]: https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html
+[`jiff::Zoned`]: https://docs.rs/jiff/latest/jiff/struct.Zoned.html
 [`LocalDate`]: https://graphql-scalars.dev/docs/scalars/local-date
 [`LocalDateTime`]: https://graphql-scalars.dev/docs/scalars/local-date-time
 [`LocalTime`]: https://graphql-scalars.dev/docs/scalars/local-time
 [`ObjectID`]: https://the-guild.dev/graphql/scalars/docs/scalars/object-id
 [`rust_decimal`]: https://docs.rs/rust_decimal
+[`rust_decimal::Decimal`]: https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html
 [`ScalarValue`]: https://docs.rs/juniper/0.16.1/juniper/trait.ScalarValue.html
 [`serde`]: https://docs.rs/serde
 [`time`]: https://docs.rs/time
@@ -472,3 +481,4 @@ mod date_scalar {
 [7]: https://spec.graphql.org/October2021#sec-Value-Resolution
 [8]: https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLScalar.html
 [9]: https://docs.rs/juniper/0.16.1/juniper/attr.graphql_scalar.html
+[10]: https://docs.rs/juniper/0.16.1/juniper/integrations/jiff/struct.TimeZone.html
