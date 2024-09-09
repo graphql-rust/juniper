@@ -516,11 +516,15 @@ mod date_scalar {
 <tr><td><a href="https://docs.rs/chrono/latest/chrono/naive/struct.NaiveDateTime.html"><code>chrono::NaiveDateTime</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/local-date-time"><code>LocalDateTime</code></a></td><td><a href="https://docs.rs/chrono"><code>chrono</code></a></td></tr>
 <tr><td><a href="https://docs.rs/chrono/latest/chrono/struct.DateTime.html"><code>chrono::DateTime</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/date-time"><code>DateTime</code></a></td><td><a href="https://docs.rs/chrono"><code>chrono</code></a></td></tr>
 <tr><td><a href="https://docs.rs/chrono-tz/latest/chrono_tz/enum.Tz.html"><code>chrono_tz::Tz</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/time-zone"><code>TimeZone</code></a></td><td><a href="https://docs.rs/chrono-tz"><code>chrono-tz</code></a></td></tr>
-<tr><td>[<code>rust_decimal::Decimal</code>]</td><td><code>Decimal</code></td><td><a href="https://docs.rs/rust_decimal"><code>rust_decimal</code></a></td></tr>
+<tr><td><a href="https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html"><code>rust_decimal::Decimal</code></a></td><td><code>Decimal</code></td><td><a href="https://docs.rs/rust_decimal"><code>rust_decimal</code></a></td></tr>
 <tr><td><a href="https://docs.rs/jiff/latest/jiff/civil/struct.Date.html"><code>jiff::civil::Date</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/local-date"><code>LocalDate</code></a></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
 <tr><td><a href="https://docs.rs/jiff/latest/jiff/civil/struct.Time.html"><code>jiff::civil::Time</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/local-time"><code>LocalTime</code></a></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
 <tr><td><a href="https://docs.rs/jiff/latest/jiff/civil/struct.DateTime.html"><code>jiff::civil::DateTime</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/local-date-time"><code>LocalDateTime</code></a></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
 <tr><td><a href="https://docs.rs/jiff/latest/jiff/struct.Timestamp.html"><code>jiff::Timestamp</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/date-time"><code>DateTime</code></a></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
+<tr><td><a href="https://docs.rs/jiff/latest/jiff/struct.Zoned.html"><code>jiff::Zoned</code></a></td><td><code>ZonedDateTime</code></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
+<tr><td><a href="https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html"><code>jiff::tz::TimeZone</code></a></td><td><code>TimeZoneOrUtcOffset</code></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
+<tr><td><a href="https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html"><code>jiff::tz::TimeZone</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/time-zone"><code>TimeZone</code></a> <sup class="footnote-reference"><a href="#n1">1</a></sup></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
+<tr><td><a href="https://docs.rs/jiff/latest/jiff/tz/struct.Offset.html"><code>jiff::tz::Offset</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/utc-offset"><code>UtcOffset</code></a></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
 <tr><td><a href="https://docs.rs/jiff/latest/jiff/struct.Span.html"><code>jiff::Span</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/duration"><code>Duration</code></a></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
 <tr><td><a href="https://docs.rs/time/latest/time/struct.Date.html"><code>time::Date</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/local-date"><code>LocalDate</code></a></td><td><a href="https://docs.rs/time"><code>time</code></a></td></tr>
 <tr><td><a href="https://docs.rs/time/latest/time/struct.Time.html"><code>time::Time</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/local-time"><code>LocalTime</code></a></td><td><a href="https://docs.rs/time"><code>time</code></a></td></tr>
@@ -531,6 +535,10 @@ mod date_scalar {
 <tr><td><a href="https://docs.rs/uuid/latest/uuid/struct.Uuid.html"><code>uuid::Uuid</code></a></td><td><a href="https://docs.rs/uuid"><code>UUID</code></a></td><td><a href="https://docs.rs/uuid"><code>uuid</code></a></td></tr>
 </tbody></table>
 </div>
+<div class="footnote-definition" id="n1"><sup class="footnote-definition-label">1</sup>
+<p>Conversion supported via newtype <a href="https://docs.rs/juniper/0.16.1/juniper/integrations/jiff/struct.TimeZone.html"><code>integrations::jiff::TimeZone</code></a>.</p>
+</div>
+
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
