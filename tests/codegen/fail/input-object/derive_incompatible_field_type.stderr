@@ -5,14 +5,14 @@ error[E0277]: the trait bound `ObjectA: IsInputType<__S>` is not satisfied
    |            ^^^^^^^ the trait `IsInputType<__S>` is not implemented for `ObjectA`
    |
    = help: the following other types implement trait `IsInputType<S>`:
-             <&T as IsInputType<S>>
-             <Arc<T> as IsInputType<S>>
-             <Box<T> as IsInputType<S>>
-             <ID as IsInputType<__S>>
-             <Object as IsInputType<__S>>
-             <TypeKind as IsInputType<__S>>
-             <Vec<T> as IsInputType<S>>
-             <[T; N] as IsInputType<S>>
+             `&T` implements `IsInputType<S>`
+             `Arc<T>` implements `IsInputType<S>`
+             `Box<T>` implements `IsInputType<S>`
+             `ID` implements `IsInputType<__S>`
+             `Object` implements `IsInputType<__S>`
+             `TypeKind` implements `IsInputType<__S>`
+             `Vec<T>` implements `IsInputType<S>`
+             `[T; N]` implements `IsInputType<S>`
            and $N others
 
 error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
@@ -25,14 +25,14 @@ error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
    |            ^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjectA`
    |
    = help: the following other types implement trait `FromInputValue<S>`:
-             <Arc<T> as FromInputValue<S>>
-             <Box<T> as FromInputValue<S>>
-             <ID as FromInputValue<__S>>
-             <Object as FromInputValue<__S>>
-             <TypeKind as FromInputValue<__S>>
-             <Vec<T> as FromInputValue<S>>
-             <[T; N] as FromInputValue<S>>
-             <bool as FromInputValue<__S>>
+             `Arc<T>` implements `FromInputValue<S>`
+             `Box<T>` implements `FromInputValue<S>`
+             `ID` implements `FromInputValue<__S>`
+             `Object` implements `FromInputValue<__S>`
+             `TypeKind` implements `FromInputValue<__S>`
+             `Vec<T>` implements `FromInputValue<S>`
+             `[T; N]` implements `FromInputValue<S>`
+             `bool` implements `FromInputValue<__S>`
            and $N others
 note: required by a bound in `Registry::<'r, S>::arg`
   --> $WORKSPACE/juniper/src/executor/mod.rs
@@ -50,14 +50,14 @@ error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
   |          ^^^^^^^^^^^^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjectA`
   |
   = help: the following other types implement trait `FromInputValue<S>`:
-            <Arc<T> as FromInputValue<S>>
-            <Box<T> as FromInputValue<S>>
-            <ID as FromInputValue<__S>>
-            <Object as FromInputValue<__S>>
-            <TypeKind as FromInputValue<__S>>
-            <Vec<T> as FromInputValue<S>>
-            <[T; N] as FromInputValue<S>>
-            <bool as FromInputValue<__S>>
+            `Arc<T>` implements `FromInputValue<S>`
+            `Box<T>` implements `FromInputValue<S>`
+            `ID` implements `FromInputValue<__S>`
+            `Object` implements `FromInputValue<__S>`
+            `TypeKind` implements `FromInputValue<__S>`
+            `Vec<T>` implements `FromInputValue<S>`
+            `[T; N]` implements `FromInputValue<S>`
+            `bool` implements `FromInputValue<__S>`
           and $N others
   = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -68,13 +68,13 @@ error[E0277]: the trait bound `ObjectA: ToInputValue<_>` is not satisfied
   |          ^^^^^^^^^^^^^^^^^^ the trait `ToInputValue<_>` is not implemented for `ObjectA`
   |
   = help: the following other types implement trait `ToInputValue<S>`:
-            <&'a T as ToInputValue<S>>
-            <&'a [T] as ToInputValue<S>>
-            <&'a str as ToInputValue<S>>
-            <Arc<T> as ToInputValue<S>>
-            <Box<T> as ToInputValue<S>>
-            <ID as ToInputValue<__S>>
-            <Object as ToInputValue<__S>>
-            <TypeKind as ToInputValue<__S>>
+            `&'a T` implements `ToInputValue<S>`
+            `&'a [T]` implements `ToInputValue<S>`
+            `&'a str` implements `ToInputValue<S>`
+            `Arc<T>` implements `ToInputValue<S>`
+            `Box<T>` implements `ToInputValue<S>`
+            `ID` implements `ToInputValue<__S>`
+            `Object` implements `ToInputValue<__S>`
+            `TypeKind` implements `ToInputValue<__S>`
           and $N others
   = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)
