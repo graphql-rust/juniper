@@ -402,7 +402,7 @@ mod date_scalar {
 | [`jiff::Timestamp`]         | [`DateTime`]          | [`jiff`]         |
 | [`jiff::Zoned`]             | `ZonedDateTime`       | [`jiff`]         |
 | [`jiff::tz::TimeZone`]      | `TimeZoneOrUtcOffset` | [`jiff`]         |
-| [`jiff::tz::TimeZone`]      | [`TimeZone`] [^n1]    | [`jiff`]         |
+| [`jiff::tz::TimeZone`] via [`juniper::integrations::jiff::TimeZone`] | [`TimeZone`] | [`jiff`] |
 | [`jiff::tz::Offset`]        | [`UtcOffset`]         | [`jiff`]         |
 | [`jiff::Span`]              | [`Duration`]          | [`jiff`]         |
 | [`time::Date`]              | [`LocalDate`]         | [`time`]         |
@@ -412,8 +412,6 @@ mod date_scalar {
 | [`time::UtcOffset`]         | [`UtcOffset`]         | [`time`]         |
 | [`url::Url`]                | [`URL`]               | [`url`]          |
 | [`uuid::Uuid`]              | [`UUID`]              | [`uuid`]         |
-
-[^n1]: Conversion supported via newtype [`integrations::jiff::TimeZone`][10].
 
 
 
@@ -442,6 +440,7 @@ mod date_scalar {
 [`jiff::tz::Offset`]: https://docs.rs/jiff/latest/jiff/tz/struct.Offset.html
 [`jiff::tz::TimeZone`]: https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html
 [`jiff::Zoned`]: https://docs.rs/jiff/latest/jiff/struct.Zoned.html
+[`juniper::integrations::jiff::TimeZone`]: https://docs.rs/juniper/0.16.1/juniper/integrations/jiff/struct.TimeZone.html
 [`LocalDate`]: https://graphql-scalars.dev/docs/scalars/local-date
 [`LocalDateTime`]: https://graphql-scalars.dev/docs/scalars/local-date-time
 [`LocalTime`]: https://graphql-scalars.dev/docs/scalars/local-time
@@ -481,4 +480,3 @@ mod date_scalar {
 [7]: https://spec.graphql.org/October2021#sec-Value-Resolution
 [8]: https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLScalar.html
 [9]: https://docs.rs/juniper/0.16.1/juniper/attr.graphql_scalar.html
-[10]: https://docs.rs/juniper/0.16.1/juniper/integrations/jiff/struct.TimeZone.html

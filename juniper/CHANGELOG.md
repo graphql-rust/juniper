@@ -40,7 +40,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - `jiff::civil::DateTime` as `LocalDateTime` scalar. ([#1275])
     - `jiff::Timestamp` as `DateTime` scalar.
     - `jiff::Zoned` as `ZonedDateTime` scalar.
-    - `jiff::tz::TimeZone` as `TimeZoneOrUtcOffset` scalar.
+    - `jiff::tz::TimeZone` as `TimeZoneOrUtcOffset` and `TimeZone` scalars.
     - `jiff::tz::Offset` as `UtcOffset` scalar.
     - `jiff::Span` as `Duration` scalar.
 

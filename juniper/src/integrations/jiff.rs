@@ -2,31 +2,32 @@
 //!
 //! # Supported types
 //!
-//! | Rust type                             | Format                      | GraphQL scalar        |
-//! |---------------------------------------|-----------------------------|-----------------------|
-//! | [`civil::Date`]                       | `yyyy-MM-dd`                | [`LocalDate`][s1]     |
-//! | [`civil::Time`]                       | `HH:mm[:ss[.SSS]]`          | [`LocalTime`][s2]     |
-//! | [`civil::DateTime`]                   | `yyyy-MM-ddTHH:mm:ss`       | [`LocalDateTime`][s3] |
-//! | [`Timestamp`]                         | [RFC 3339] string           | [`DateTime`][s4]      |
-//! | [`Zoned`][^1]                         | [RFC 9557] string           | `ZonedDateTime`       |
-//! | [`tz::TimeZone`][^1]                  | [IANA database][1]/`±hh:mm` | `TimeZoneOrUtcOffset` |
-//! | [`tz::TimeZone`] via [`TimeZone`][^1] | [IANA database][1]          | [`TimeZone`][s5]      |
-//! | [`tz::Offset`]                        | `±hh:mm`                    | [`UtcOffset`][s6]     |
-//! | [`Span`]                              | [ISO 8601] duration         | [`Duration`][s7]      |
+//! | Rust type                              | Format                     | GraphQL scalar        |
+//! |----------------------------------------|----------------------------|-----------------------|
+//! | [`civil::Date`]                        | `yyyy-MM-dd`               | [`LocalDate`][s1]     |
+//! | [`civil::Time`]                        | `HH:mm[:ss[.SSS]]`         | [`LocalTime`][s2]     |
+//! | [`civil::DateTime`]                    | `yyyy-MM-ddTHH:mm:ss`      | [`LocalDateTime`][s3] |
+//! | [`Timestamp`]                          | [RFC 3339] string          | [`DateTime`][s4]      |
+//! | [`Zoned`] [^1]                         | [RFC 9557] string          | `ZonedDateTime`       |
+//! | [`tz::TimeZone`] [^1]                  | [IANA] identifier/`±hh:mm` | `TimeZoneOrUtcOffset` |
+//! | [`tz::TimeZone`] via [`TimeZone`] [^1] | [IANA] identifier          | [`TimeZone`][s5]      |
+//! | [`tz::Offset`]                         | `±hh:mm`                   | [`UtcOffset`][s6]     |
+//! | [`Span`]                               | [ISO 8601] duration        | [`Duration`][s7]      |
+//!
+//! # [`tz::TimeZone`] types
+//!
+//! [`tz::TimeZone`] values can be either [IANA] identifiers or fixed offsets, corresponding to
+//! GraphQL scalars [`TimeZone`][s5] and [`UtcOffset`][s6] accordingly. While a [`UtcOffset`][s6]
+//! GraphQL scalar can be serialized from a [`tz::Offset`] directly, the newtype [`TimeZone`]
+//! handles serialization to a [`TimeZone`][s5] GraphQL scalar, with implementations [`TryFrom`] and
+//! [`Into`] a [`tz::TimeZone`].
+//!
+//! In addition, a [`tz::TimeZone`] serializes to a `TimeZoneOrUtcOffset` GraphQL scalar, containing
+//! either an [IANA] identifier or a fixed offset for clients being able to consume both values.
 //!
 //! [^1]: For these, crate [`jiff`] must be installed with a feature flag that provides access to
-//! the Time Zone Database (e.g. by using the crate's default feature flags). See [`jiff` time zone
-//! features][tz] for details.
-//!
-//! # Time zone types
-//!
-//! `tz::TimeZone` values can be IANA time zone identifiers or fixed offsets, corresponding to
-//! GraphQL scalars [`TimeZone`][s5] and [`UtcOffset`][s6]. While `UtcOffset` can be serialized from
-//! [`tz::Offset`] directly, newtype [`TimeZone`] handles serialization to `TimeZone`, with
-//! [`TryFrom`] and [`Into`] implementations from and to `tz::TimeZone`.
-//!
-//! In addition, `tz::TimeZone` serializes to `TimeZoneOrUtcOffset` which is a GraphQL scalar that
-//! contains either an IANA identifier or a fixed offset for clients that can consume both values.
+//! the [IANA Time Zone Database][IANA] (e.g. by using the crate's default feature flags).
+//! See [`jiff` time zone features][1] for details.
 //!
 //! [`civil::Date`]: jiff::civil::Date
 //! [`civil::DateTime`]: jiff::civil::DateTime
@@ -36,6 +37,7 @@
 //! [`tz::Offset`]: jiff::tz::Offset
 //! [`tz::TimeZone`]: jiff::tz::TimeZone
 //! [`Zoned`]: jiff::Zoned
+//! [IANA]: http://iana.org/time-zones
 //! [ISO 8601]: https://en.wikipedia.org/wiki/ISO_8601#Durations
 //! [RFC 3339]: https://datatracker.ietf.org/doc/html/rfc3339#section-5.6
 //! [RFC 9557]: https://datatracker.ietf.org/doc/html/rfc9557#section-4.1
@@ -46,8 +48,7 @@
 //! [s5]: https://graphql-scalars.dev/docs/scalars/time-zone
 //! [s6]: https://graphql-scalars.dev/docs/scalars/utc-offset
 //! [s7]: https://graphql-scalars.dev/docs/scalars/duration
-//! [tz]: https://docs.rs/jiff/latest/jiff/index.html#time-zone-features
-//! [1]: http://www.iana.org/time-zones
+//! [1]: https://docs.rs/jiff/latest/jiff/index.html#time-zone-features
 
 use std::{error::Error, fmt, str};
 
@@ -264,7 +265,6 @@ mod date_time {
 /// Time zone aware instant in time.
 ///
 /// Can be thought of as combination of the following types, all rolled into one:
-///
 /// - [`Timestamp`][3] for indicating precise instant in time.
 /// - [`DateTime`][4] for indicating "civil" calendar date and clock time.
 /// - [`TimeZone`][5] for indicating how to apply time zone transitions while performing arithmetic.
@@ -281,6 +281,7 @@ mod date_time {
 #[graphql_scalar(
     with = zoned_date_time,
     parse_token(String),
+    specified_by_url = "https://datatracker.ietf.org/doc/html/rfc9557#section-4.1",
 )]
 pub type ZonedDateTime = jiff::Zoned;
 
@@ -348,14 +349,20 @@ mod duration {
     }
 }
 
-/// Representation of time zone or UTC offset.
+/// Representation of a time zone or UTC offset.
 ///
-/// [IANA database][1] or `±hh:mm`.
+/// Can be one of three possible representations:
+/// - Identifier from the [IANA Time Zone Database][0].
+/// - Fixed offset from UTC (`±hh:mm`).
+///
+/// May be seen as a combination of both [`TimeZone`][3] and [`UtcOffset` scalars][4].
 ///
 /// See also [`jiff::tz::TimeZone`][2] for details.
 ///
-/// [1]: http://www.iana.org/time-zones
+/// [0]: http://iana.org/time-zones
 /// [2]: https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html
+/// [3]: https://graphql-scalars.dev/docs/scalars/time-zone
+/// [4]: https://graphql-scalars.dev/docs/scalars/utc-offset
 #[graphql_scalar(
     with = time_zone_or_utc_offset,
     parse_token(String),
@@ -365,7 +372,7 @@ pub type TimeZoneOrUtcOffset = jiff::tz::TimeZone;
 mod time_zone_or_utc_offset {
     use super::*;
 
-    /// Format of a `TimeZoneOrUtcOffset` scalar.
+    /// Format of a [`TimeZoneOrUtcOffset`] scalar.
     const FORMAT: &str = "%:V";
 
     pub(super) fn to_output<S>(v: &TimeZoneOrUtcOffset) -> Value<S>
@@ -376,8 +383,7 @@ mod time_zone_or_utc_offset {
             || {
                 // If no IANA time zone identifier is available, fall back to displaying the time
                 // offset directly (using format `[+-]HH:MM[:SS]` from RFC 9557, e.g. `+05:30`).
-                //
-                // <https://github.com/graphql-rust/juniper/pull/1278#discussion_r1719161686>
+                // See: https://github.com/graphql-rust/juniper/pull/1278#discussion_r1719161686
                 jiff::Zoned::now()
                     .with_time_zone(v.clone())
                     .strftime(FORMAT)
@@ -395,50 +401,51 @@ mod time_zone_or_utc_offset {
             .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| {
                 TimeZoneOrUtcOffset::get(s)
-                    .map_err(TimeZoneError::InvalidTimeZone)
+                    .map_err(TimeZoneParsingError::InvalidTimeZone)
                     .or_else(|_| utc_offset::utc_offset_from_str(s).map(TimeZoneOrUtcOffset::fixed))
                     .map_err(|e| format!("Invalid `TimeZoneOrUtcOffset`: {e}"))
             })
     }
 }
 
-/// Error while handling [`TimeZone`] value.
+/// Error parsing a [`TimeZone`] value.
 #[derive(Clone)]
-pub enum TimeZoneError {
-    /// Identifier could not be parsed by [`tz::TimeZone::get`](jiff::tz::TimeZone::get).
+pub enum TimeZoneParsingError {
+    /// Identifier cannot not be parsed by the [`jiff::tz::TimeZone::get()`] method.
     InvalidTimeZone(jiff::Error),
+
     /// GraphQL scalar [`TimeZone`] requires `tz::TimeZone` with IANA name.
     MissingIanaName(jiff::tz::TimeZone),
 }
 
-impl fmt::Debug for TimeZoneError {
+impl fmt::Debug for TimeZoneParsingError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidTimeZone(err) => write!(f, "TimeZoneError::InvalidTimeZone({err:?})"),
-            Self::MissingIanaName(_value) => write!(f, "TimeZoneError::MissingIanaName(..)"),
+            Self::InvalidTimeZone(e) => write!(f, "TimeZoneParsingError::InvalidTimeZone({e:?})"),
+            Self::MissingIanaName(_) => write!(f, "TimeZoneParsingError::MissingIanaName(..)"),
         }
     }
 }
 
-impl fmt::Display for TimeZoneError {
+impl fmt::Display for TimeZoneParsingError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidTimeZone(err) => err.fmt(f),
-            Self::MissingIanaName(_value) => write!(f, "missing IANA name"),
+            Self::InvalidTimeZone(e) => e.fmt(f),
+            Self::MissingIanaName(..) => write!(f, "missing IANA name"),
         }
     }
 }
 
-impl Error for TimeZoneError {
+impl Error for TimeZoneParsingError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            Self::InvalidTimeZone(err) => Some(err),
-            Self::MissingIanaName(_) => None,
+            Self::InvalidTimeZone(e) => Some(e),
+            Self::MissingIanaName(..) => None,
         }
     }
 }
 
-/// Representation of time zone.
+/// Representation of a time zone from the [IANA Time Zone Database][0].
 ///
 /// A set of rules for determining the civil time, via an offset from UTC, in a particular
 /// geographic region. In many cases, the offset in a particular time zone can vary over the course
@@ -448,6 +455,7 @@ impl Error for TimeZoneError {
 ///
 /// See also [`jiff::tz::TimeZone`][2] for details.
 ///
+/// [0]: http://iana.org/time-zones
 /// [1]: https://graphql-scalars.dev/docs/scalars/time-zone
 /// [2]: https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html
 #[graphql_scalar(
@@ -459,21 +467,22 @@ impl Error for TimeZoneError {
 pub struct TimeZone(jiff::tz::TimeZone);
 
 impl TryFrom<jiff::tz::TimeZone> for TimeZone {
-    type Error = TimeZoneError;
+    type Error = TimeZoneParsingError;
 
     fn try_from(value: jiff::tz::TimeZone) -> Result<Self, Self::Error> {
         if value.iana_name().is_none() {
-            return Err(TimeZoneError::MissingIanaName(value));
+            return Err(TimeZoneParsingError::MissingIanaName(value));
         }
         Ok(Self(value))
     }
 }
 
 impl str::FromStr for TimeZone {
-    type Err = TimeZoneError;
+    type Err = TimeZoneParsingError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        let value = jiff::tz::TimeZone::get(value).map_err(TimeZoneError::InvalidTimeZone)?;
+        let value =
+            jiff::tz::TimeZone::get(value).map_err(TimeZoneParsingError::InvalidTimeZone)?;
         value.try_into()
     }
 }
@@ -482,8 +491,10 @@ impl fmt::Display for TimeZone {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0
             .iana_name()
-            // PANIC: We made sure that IANA name is available when constructing `Self`.
-            .unwrap_or_else(|| panic!("Failed to display `TimeZone`: no IANA name"))
+            .unwrap_or_else(|| {
+                // PANIC: We made sure that IANA name is available when constructing `Self`.
+                panic!("failed to display `TimeZone`: no IANA name")
+            })
             .fmt(f)
     }
 }
@@ -495,8 +506,6 @@ impl From<TimeZone> for jiff::tz::TimeZone {
 }
 
 mod time_zone {
-    use std::str::FromStr as _;
-
     use super::*;
 
     pub(super) fn to_output<S>(v: &TimeZone) -> Value<S>
@@ -512,11 +521,11 @@ mod time_zone {
     {
         v.as_string_value()
             .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| TimeZone::from_str(s).map_err(|e| format!("Invalid `TimeZone`: {e}")))
+            .and_then(|s| s.parse().map_err(|e| format!("Invalid `TimeZone`: {e}")))
     }
 }
 
-/// Represents fixed time zone offset.
+/// Representation of a fixed time zone offset.
 ///
 /// [`UtcOffset` scalar][1] compliant.
 ///
@@ -547,20 +556,16 @@ mod utc_offset {
         Ok(offset)
     }
 
-    fn utc_offset_to_string(value: jiff::tz::Offset) -> String {
-        let mut buf = String::new();
-        let tm = jiff::fmt::strtime::BrokenDownTime::from(
-            &jiff::Zoned::now().with_time_zone(jiff::tz::TimeZone::fixed(value)),
-        );
-        tm.format(FORMAT, &mut buf).unwrap();
-        buf
-    }
-
     pub(super) fn to_output<S>(v: &UtcOffset) -> Value<S>
     where
         S: ScalarValue,
     {
-        Value::scalar(utc_offset_to_string(*v))
+        let mut buf = String::new();
+        let tm = jiff::fmt::strtime::BrokenDownTime::from(
+            &jiff::Zoned::now().with_time_zone(jiff::tz::TimeZone::fixed(*v)),
+        );
+        tm.format(FORMAT, &mut buf).unwrap();
+        Value::scalar(buf)
     }
 
     pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<UtcOffset, String>
