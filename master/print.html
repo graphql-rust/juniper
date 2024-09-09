@@ -2481,7 +2481,7 @@ mod date_scalar {
 <tr><td><a href="https://docs.rs/jiff/latest/jiff/struct.Timestamp.html"><code>jiff::Timestamp</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/date-time"><code>DateTime</code></a></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
 <tr><td><a href="https://docs.rs/jiff/latest/jiff/struct.Zoned.html"><code>jiff::Zoned</code></a></td><td><code>ZonedDateTime</code></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
 <tr><td><a href="https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html"><code>jiff::tz::TimeZone</code></a></td><td><code>TimeZoneOrUtcOffset</code></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
-<tr><td><a href="https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html"><code>jiff::tz::TimeZone</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/time-zone"><code>TimeZone</code></a> <sup class="footnote-reference"><a href="#n1">1</a></sup></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
+<tr><td><a href="https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html"><code>jiff::tz::TimeZone</code></a> via <a href="https://docs.rs/juniper/0.16.1/juniper/integrations/jiff/struct.TimeZone.html"><code>juniper::integrations::jiff::TimeZone</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/time-zone"><code>TimeZone</code></a></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
 <tr><td><a href="https://docs.rs/jiff/latest/jiff/tz/struct.Offset.html"><code>jiff::tz::Offset</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/utc-offset"><code>UtcOffset</code></a></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
 <tr><td><a href="https://docs.rs/jiff/latest/jiff/struct.Span.html"><code>jiff::Span</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/duration"><code>Duration</code></a></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
 <tr><td><a href="https://docs.rs/time/latest/time/struct.Date.html"><code>time::Date</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/local-date"><code>LocalDate</code></a></td><td><a href="https://docs.rs/time"><code>time</code></a></td></tr>
@@ -2492,11 +2492,7 @@ mod date_scalar {
 <tr><td><a href="https://docs.rs/url/latest/url/struct.Url.html"><code>url::Url</code></a></td><td><a href="https://docs.rs/url"><code>URL</code></a></td><td><a href="https://docs.rs/url"><code>url</code></a></td></tr>
 <tr><td><a href="https://docs.rs/uuid/latest/uuid/struct.Uuid.html"><code>uuid::Uuid</code></a></td><td><a href="https://docs.rs/uuid"><code>UUID</code></a></td><td><a href="https://docs.rs/uuid"><code>uuid</code></a></td></tr>
 </tbody></table>
-</div>
-<div class="footnote-definition" id="n1"><sup class="footnote-definition-label">1</sup>
-<p>Conversion supported via newtype <a href="https://docs.rs/juniper/0.16.1/juniper/integrations/jiff/struct.TimeZone.html"><code>integrations::jiff::TimeZone</code></a>.</p>
-</div>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="schema-1"><a class="header" href="#schema-1">Schema</a></h1>
+</div><div style="break-before: page; page-break-before: always;"></div><h1 id="schema-1"><a class="header" href="#schema-1">Schema</a></h1>
 <p><strong><a href="https://docs.rs/juniper">Juniper</a> follows a <a href="https://www.apollographql.com/blog/backend/architecture/schema-first-vs-code-only-graphql#code-only">code-first</a> approach to define a <a href="https://graphql.org">GraphQL</a> schema.</strong></p>
 <blockquote>
 <p><strong>TIP</strong>: For a <a href="https://www.apollographql.com/blog/backend/architecture/schema-first-vs-code-only-graphql#schema-first">schema-first</a> approach, consider using a <a href="https://docs.rs/juniper-from-schema"><code>juniper-from-schema</code></a> crate for generating a <a href="https://docs.rs/juniper"><code>juniper</code></a>-based code from a <a href="https://graphql.org/learn/schema">schema</a> file.</p>
