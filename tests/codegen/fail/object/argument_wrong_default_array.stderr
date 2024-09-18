@@ -5,14 +5,14 @@ error[E0277]: the trait bound `[bool; 2]: From<[bool; 3]>` is not satisfied
   | ^^^^^^^^^^^^^^^^^ the trait `From<[bool; 3]>` is not implemented for `[bool; 2]`, which is required by `[bool; 3]: Into<_>`
   |
   = help: the following other types implement trait `From<T>`:
-            <[T; 10] as From<(T, T, T, T, T, T, T, T, T, T)>>
-            <[T; 11] as From<(T, T, T, T, T, T, T, T, T, T, T)>>
-            <[T; 12] as From<(T, T, T, T, T, T, T, T, T, T, T, T)>>
-            <[T; 1] as From<(T,)>>
-            <[T; 2] as From<(T, T)>>
-            <[T; 3] as From<(T, T, T)>>
-            <[T; 4] as From<(T, T, T, T)>>
-            <[T; 5] as From<(T, T, T, T, T)>>
+            `[T; 10]` implements `From<(T, T, T, T, T, T, T, T, T, T)>`
+            `[T; 11]` implements `From<(T, T, T, T, T, T, T, T, T, T, T)>`
+            `[T; 12]` implements `From<(T, T, T, T, T, T, T, T, T, T, T, T)>`
+            `[T; 1]` implements `From<(T,)>`
+            `[T; 2]` implements `From<(T, T)>`
+            `[T; 3]` implements `From<(T, T, T)>`
+            `[T; 4]` implements `From<(T, T, T, T)>`
+            `[T; 5]` implements `From<(T, T, T, T, T)>`
           and $N others
   = note: required for `[bool; 3]` to implement `Into<[bool; 2]>`
   = note: this error originates in the attribute macro `graphql_object` (in Nightly builds, run with -Z macro-backtrace for more info)
