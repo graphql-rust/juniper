@@ -401,12 +401,7 @@ mod tests {
         }
     }
 
-    static mut PORT: u16 = 3001;
-    async fn run_hyper_integration(is_sync: bool, is_custom_type: bool) {
-        let port = unsafe {
-            PORT = PORT.wrapping_add(1);
-            PORT
-        } + if is_sync { 1000 } else { 0 };
+    async fn run_hyper_integration(port: u16, is_sync: bool, is_custom_type: bool) {
         let addr = SocketAddr::from(([127, 0, 0, 1], port));
 
         let db = Arc::new(Database::new());
@@ -509,23 +504,23 @@ mod tests {
 
     #[tokio::test]
     async fn test_hyper_integration() {
-        run_hyper_integration(false, false).await
+        run_hyper_integration(3000, false, false).await
     }
 
     #[tokio::test]
     async fn test_sync_hyper_integration() {
-        run_hyper_integration(true, false).await
+        run_hyper_integration(3001, true, false).await
     }
 
     #[tokio::test]
     /// run test for a custom request type - `Request<Vec<u8>>`
     async fn test_custom_hyper_integration() {
-        run_hyper_integration(false, false).await
+        run_hyper_integration(3002, false, false).await
     }
 
     #[tokio::test]
     /// run test for a custom request type - `Request<Vec<u8>>` in sync mode
     async fn test_custom_sync_hyper_integration() {
-        run_hyper_integration(true, true).await
+        run_hyper_integration(3003, true, true).await
     }
 }
