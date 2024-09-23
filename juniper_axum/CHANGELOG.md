@@ -6,6 +6,18 @@ All user visible changes to `juniper_axum` crate will be documented in this file
 
 
 
+## master
+
+### Added
+
+- Building on `wasm32-unknown-unknown` and `wasm32-wasi` targets. ([#1283], [#1282])
+
+[#1282]: /../../issues/1282
+[#1283]: /../../pull/1283
+
+
+
+
 ## [0.1.1] · 2024-10-28
 [0.1.1]: /../../tree/juniper_axum-v0.1.1/juniper_axum
 

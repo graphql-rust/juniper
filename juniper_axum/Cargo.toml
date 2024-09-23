@@ -25,7 +25,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 subscriptions = ["axum/ws", "juniper_graphql_ws/graphql-ws", "dep:futures"]
 
 [dependencies]
-axum = "0.7"
+axum = { version = "0.7", features = ["json", "query"], default-features = false }
 futures = { version = "0.3.22", optional = true }
 juniper = { version = "0.16.0", path = "../juniper", default-features = false }
 juniper_graphql_ws = { version = "0.4.0", path = "../juniper_graphql_ws", features = ["graphql-transport-ws"] }
