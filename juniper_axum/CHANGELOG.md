@@ -12,7 +12,13 @@ All user visible changes to `juniper_axum` crate will be documented in this file
 
 - Bumped up [MSRV] to 1.75. ([#1272])
 
+### Added
+
+- Building on `wasm32-unknown-unknown` and `wasm32-wasi` targets. ([#1283], [#1282])
+
 [#1272]: /../../pull/1272
+[#1282]: /../../issues/1282
+[#1283]: /../../pull/1283
 
 
 
