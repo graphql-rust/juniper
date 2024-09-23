@@ -111,7 +111,7 @@ search = "docs.rs/juniper/[^/]+/"
 replace = "docs.rs/juniper/{{version}}/"
 [[pre-release-replacements]]
 file = "../book/src/types/scalars.md"
-exactly = 3
+exactly = 4
 search = "docs.rs/juniper/[^/]+/"
 replace = "docs.rs/juniper/{{version}}/"
 [[pre-release-replacements]]

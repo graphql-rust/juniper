@@ -12,7 +12,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 ### BC Breaks
 
-- Upgraded [`chrono-tz` crate] integration to [0.9 version](https://github.com/chronotope/chrono-tz/releases/tag/v0.9.0). ([#1252])
+- Upgraded [`chrono-tz` crate] integration to [0.10 version](https://github.com/chronotope/chrono-tz/releases/tag/v0.10.0). ([#1252], [#1284])
 - Bumped up [MSRV] to 1.75. ([#1272])
 - Corrected compliance with newer [graphql-scalars.dev] specs: ([#1275], [#1277])
     - Switched `LocalDateTime` scalars to `yyyy-MM-ddTHH:mm:ss` format in types:
@@ -40,7 +40,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - `jiff::civil::DateTime` as `LocalDateTime` scalar. ([#1275])
     - `jiff::Timestamp` as `DateTime` scalar.
     - `jiff::Zoned` as `ZonedDateTime` scalar.
-    - `jiff::tz::TimeZone` as `TimeZoneOrUtcOffset` scalar.
+    - `jiff::tz::TimeZone` as `TimeZoneOrUtcOffset` and `TimeZone` scalars.
     - `jiff::tz::Offset` as `UtcOffset` scalar.
     - `jiff::Span` as `Duration` scalar.
 
@@ -57,6 +57,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1278]: /../../pull/1278
 [#1279]: /../../pull/1279
 [#1281]: /../../pull/1281
+[#1284]: /../../pull/1284
 
 
 
