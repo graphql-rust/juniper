@@ -10,9 +10,11 @@ All user visible changes to `juniper_hyper` crate will be documented in this fil
 
 ### BC Breaks
 
-- Bumped up [MSRV] to 1.75. ([#1272])
+- Bumped up [MSRV] to 1.79. ([#1263])
+- Made `hyper::Request` in `graphql()` and `graphql_sync()` functions generic over `B: hyper::body::Body`. ([#1263], [#1102])
 
-[#1272]: /../../pull/1272
+[#1102]: /../../issues/1102
+[#1263]: /../../pull/1263
 
 
 
