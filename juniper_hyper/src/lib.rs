@@ -15,10 +15,10 @@ use juniper::{
 use serde_json::error::Error as SerdeError;
 use url::form_urlencoded;
 
-pub async fn graphql_sync<CtxT, QueryT, MutationT, SubscriptionT, S, T>(
+pub async fn graphql_sync<CtxT, QueryT, MutationT, SubscriptionT, S, B>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
-    req: Request<T>,
+    req: Request<B>,
 ) -> Response<String>
 where
     QueryT: GraphQLType<S, Context = CtxT>,
@@ -29,7 +29,7 @@ where
     SubscriptionT::TypeInfo: Sync,
     CtxT: Sync,
     S: ScalarValue + Send + Sync,
-    T: Body<Error: fmt::Display>,
+    B: Body<Error: fmt::Display>,
 {
     match parse_req(req).await {
         Ok(req) => execute_request_sync(root_node, context, req).await,
@@ -37,10 +37,10 @@ where
     }
 }
 
-pub async fn graphql<CtxT, QueryT, MutationT, SubscriptionT, S, T>(
+pub async fn graphql<CtxT, QueryT, MutationT, SubscriptionT, S, B>(
     root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
-    req: Request<T>,
+    req: Request<B>,
 ) -> Response<String>
 where
     QueryT: GraphQLTypeAsync<S, Context = CtxT>,
@@ -51,7 +51,7 @@ where
     SubscriptionT::TypeInfo: Sync,
     CtxT: Sync,
     S: ScalarValue + Send + Sync,
-    T: Body<Error: fmt::Display>,
+    B: Body<Error: fmt::Display>,
 {
     match parse_req(req).await {
         Ok(req) => execute_request(root_node, context, req).await,
@@ -59,10 +59,10 @@ where
     }
 }
 
-async fn parse_req<S, T>(req: Request<T>) -> Result<GraphQLBatchRequest<S>, Response<String>>
+async fn parse_req<S, B>(req: Request<B>) -> Result<GraphQLBatchRequest<S>, Response<String>>
 where
     S: ScalarValue,
-    T: Body<Error: fmt::Display>,
+    B: Body<Error: fmt::Display>,
 {
     match *req.method() {
         Method::GET => parse_get_req(req),
@@ -82,10 +82,10 @@ where
     .map_err(render_error)
 }
 
-fn parse_get_req<S, T>(req: Request<T>) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError<T>>
+fn parse_get_req<S, B>(req: Request<B>) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError<B>>
 where
     S: ScalarValue,
-    T: Body,
+    B: Body,
 {
     req.uri()
         .query()
@@ -97,12 +97,12 @@ where
         })
 }
 
-async fn parse_post_json_req<S, T>(
-    body: T,
-) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError<T>>
+async fn parse_post_json_req<S, B>(
+    body: B,
+) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError<B>>
 where
     S: ScalarValue,
-    T: Body,
+    B: Body,
 {
     let chunk = body
         .collect()
@@ -116,12 +116,12 @@ where
         .map_err(GraphQLRequestError::BodyJSONError)
 }
 
-async fn parse_post_graphql_req<S, T>(
-    body: T,
-) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError<T>>
+async fn parse_post_graphql_req<S, B>(
+    body: B,
+) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError<B>>
 where
     S: ScalarValue,
-    T: Body,
+    B: Body,
 {
     let chunk = body
         .collect()
@@ -157,9 +157,9 @@ pub async fn playground(
     resp
 }
 
-fn render_error<T>(err: GraphQLRequestError<T>) -> Response<String>
+fn render_error<B>(err: GraphQLRequestError<B>) -> Response<String>
 where
-    T: Body<Error: fmt::Display>,
+    B: Body<Error: fmt::Display>,
 {
     let mut resp = new_response(StatusCode::BAD_REQUEST);
     *resp.body_mut() = err.to_string();
@@ -228,12 +228,12 @@ where
     resp
 }
 
-fn gql_request_from_get<S, T>(
+fn gql_request_from_get<S, B>(
     input: &str,
-) -> Result<JuniperGraphQLRequest<S>, GraphQLRequestError<T>>
+) -> Result<JuniperGraphQLRequest<S>, GraphQLRequestError<B>>
 where
     S: ScalarValue,
-    T: Body,
+    B: Body,
 {
     let mut query = None;
     let mut operation_name = None;
@@ -274,7 +274,7 @@ where
     }
 }
 
-fn invalid_err<T: Body>(parameter_name: &str) -> GraphQLRequestError<T> {
+fn invalid_err<B: Body>(parameter_name: &str) -> GraphQLRequestError<B> {
     GraphQLRequestError::Invalid(format!(
         "`{parameter_name}` parameter is specified multiple times",
     ))
@@ -295,8 +295,8 @@ fn new_html_response(code: StatusCode) -> Response<String> {
     resp
 }
 
-enum GraphQLRequestError<T: Body> {
-    BodyHyper(T::Error),
+enum GraphQLRequestError<B: Body> {
+    BodyHyper(B::Error),
     BodyUtf8(FromUtf8Error),
     BodyJSONError(SerdeError),
     Variables(SerdeError),
@@ -304,10 +304,10 @@ enum GraphQLRequestError<T: Body> {
 }
 
 // NOTE: Manual implementation instead of `#[derive(Debug)]` is used to omit imposing unnecessary
-//       `T: Debug` bound on the implementation.
-impl<T> fmt::Debug for GraphQLRequestError<T>
+//       `B: Debug` bound on the implementation.
+impl<B> fmt::Debug for GraphQLRequestError<B>
 where
-    T: Body<Error: fmt::Debug>,
+    B: Body<Error: fmt::Debug>,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -320,9 +320,9 @@ where
     }
 }
 
-impl<T> fmt::Display for GraphQLRequestError<T>
+impl<B> fmt::Display for GraphQLRequestError<B>
 where
-    T: Body<Error: fmt::Display>,
+    B: Body<Error: fmt::Display>,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -335,9 +335,9 @@ where
     }
 }
 
-impl<T> Error for GraphQLRequestError<T>
+impl<B> Error for GraphQLRequestError<B>
 where
-    T: Body<Error: Error + 'static>,
+    B: Body<Error: Error + 'static>,
 {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {

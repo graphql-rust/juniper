@@ -11,7 +11,7 @@ All user visible changes to `juniper_hyper` crate will be documented in this fil
 ### BC Breaks
 
 - Bumped up [MSRV] to 1.79. ([#1263])
-- Made `hyper::Request` in `graphql()` and `graphql_sync()` functions generic over `T: hyper::body::Body`. ([#1263], [#1102])
+- Made `hyper::Request` in `graphql()` and `graphql_sync()` functions generic over `B: hyper::body::Body`. ([#1263], [#1102])
 
 [#1102]: /../../issues/1102
 [#1263]: /../../pull/1263
