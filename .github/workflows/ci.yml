@@ -274,6 +274,7 @@ jobs:
       matrix:
         crate:
           - juniper
+          - juniper_axum
         target:
           - wasm32-unknown-unknown
           - wasm32-wasi
@@ -289,10 +290,13 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
           target: ${{ matrix.target }}
 
+      - name: Switch Cargo workspace to `resolver = "2"`
+        run: sed -i 's/resolver = "1"/resolver = "2"/' Cargo.toml
+
       - run: cargo check --target ${{ matrix.target }} -p ${{ matrix.crate }}
-                   ${{ matrix.target == 'wasm32-unknown-unknown'
-                       && '--features js'
-                       || '' }}
+                   ${{ (matrix.crate == 'juniper' && matrix.target == 'wasm32-unknown-unknown')
+                    && '--features js'
+                    || '' }}
 
 
 
