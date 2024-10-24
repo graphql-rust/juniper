@@ -6,7 +6,7 @@ use axum::{
     async_trait,
     body::Body,
     extract::{FromRequest, FromRequestParts, Query},
-    http::{HeaderValue, Method, Request, StatusCode},
+    http::{header, HeaderValue, Method, Request, StatusCode},
     response::{IntoResponse as _, Response},
     Json, RequestExt as _,
 };
@@ -85,7 +85,7 @@ where
     async fn from_request(mut req: Request<Body>, state: &State) -> Result<Self, Self::Rejection> {
         let content_type = req
             .headers()
-            .get("content-type")
+            .get(header::CONTENT_TYPE)
             .map(HeaderValue::to_str)
             .transpose()
             .map_err(|_| {
@@ -122,7 +122,7 @@ where
                                 .into_response()
                         })
                 }),
-            (&Method::POST, Some("application/json")) => {
+            (&Method::POST, Some(x)) if x.starts_with("application/json") => {
                 Json::<GraphQLBatchRequest<S>>::from_request(req, state)
                     .await
                     .map(|req| Self(req.0))
@@ -130,14 +130,16 @@ where
                         (StatusCode::BAD_REQUEST, format!("Invalid JSON body: {e}")).into_response()
                     })
             }
-            (&Method::POST, Some("application/graphql")) => String::from_request(req, state)
-                .await
-                .map(|body| {
-                    Self(GraphQLBatchRequest::Single(GraphQLRequest::new(
-                        body, None, None,
-                    )))
-                })
-                .map_err(|_| (StatusCode::BAD_REQUEST, "Not valid UTF-8 body").into_response()),
+            (&Method::POST, Some(x)) if x.starts_with("application/graphql") => {
+                String::from_request(req, state)
+                    .await
+                    .map(|body| {
+                        Self(GraphQLBatchRequest::Single(GraphQLRequest::new(
+                            body, None, None,
+                        )))
+                    })
+                    .map_err(|_| (StatusCode::BAD_REQUEST, "Not valid UTF-8 body").into_response())
+            }
             (&Method::POST, _) => Err((
                 StatusCode::UNSUPPORTED_MEDIA_TYPE,
                 "`Content-Type` header is expected to be either `application/json` or \
