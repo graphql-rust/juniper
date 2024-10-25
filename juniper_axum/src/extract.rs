@@ -249,9 +249,41 @@ mod juniper_request_tests {
     }
 
     #[tokio::test]
+    async fn from_json_post_request_with_charset() {
+        let req = Request::post("/")
+            .header("content-type", "application/json; charset=utf-8")
+            .body(Body::from(r#"{"query": "{ add(a: 2, b: 3) }"}"#))
+            .unwrap_or_else(|e| panic!("cannot build `Request`: {e}"));
+
+        let expected = JuniperRequest(GraphQLBatchRequest::Single(GraphQLRequest::new(
+            "{ add(a: 2, b: 3) }".to_string(),
+            None,
+            None,
+        )));
+
+        assert_eq!(do_from_request(req).await, expected);
+    }
+
+    #[tokio::test]
     async fn from_graphql_post_request() {
         let req = Request::post("/")
             .header("content-type", "application/graphql")
+            .body(Body::from(r#"{ add(a: 2, b: 3) }"#))
+            .unwrap_or_else(|e| panic!("cannot build `Request`: {e}"));
+
+        let expected = JuniperRequest(GraphQLBatchRequest::Single(GraphQLRequest::new(
+            "{ add(a: 2, b: 3) }".to_string(),
+            None,
+            None,
+        )));
+
+        assert_eq!(do_from_request(req).await, expected);
+    }
+
+    #[tokio::test]
+    async fn from_graphql_post_request_with_charset() {
+        let req = Request::post("/")
+            .header("content-type", "application/graphql; charset=utf-8")
             .body(Body::from(r#"{ add(a: 2, b: 3) }"#))
             .unwrap_or_else(|e| panic!("cannot build `Request`: {e}"));
 

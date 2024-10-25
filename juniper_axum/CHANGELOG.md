@@ -16,6 +16,10 @@ All user visible changes to `juniper_axum` crate will be documented in this file
 
 - Building on `wasm32-unknown-unknown` and `wasm32-wasi` targets. ([#1283], [#1282])
 
+### Fixed
+
+- `Content-Type` header reading full value instead of just the media type. ([#1288])
+
 [#1272]: /../../pull/1272
 [#1282]: /../../issues/1282
 [#1283]: /../../pull/1283
