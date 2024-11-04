@@ -385,11 +385,12 @@ pub mod subscriptions {
             future::{self, Either},
             sink::SinkExt,
             stream::StreamExt,
+            FutureExt,
         },
         GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue,
     };
     use juniper_graphql_ws::{ArcSchema, ClientMessage, Connection, Init};
-    use std::{convert::Infallible, fmt, sync::Arc};
+    use std::{convert::Infallible, fmt, future::Future, sync::Arc};
 
     struct Message(warp::ws::Message);
 
@@ -477,6 +478,91 @@ pub mod subscriptions {
             Either::Left((r, _)) => r.map_err(|e| e.into()),
             Either::Right((r, _)) => r,
         }
+    }
+
+    /// Serves the graphql-ws protocol over a WebSocket connection.
+    ///
+    /// The `init` argument is used to provide the context and additional configuration for
+    /// connections. This can be a `juniper_graphql_ws::ConnectionConfig` if the context and
+    /// configuration are already known, or it can be a closure that gets executed asynchronously
+    /// when the client sends the ConnectionInit message. Using a closure allows you to perform
+    /// authentication based on the parameters provided by the client.
+    pub async fn serve_graphql_ws_with_graceful_shutdown<
+        Query,
+        Mutation,
+        Subscription,
+        CtxT,
+        S,
+        I,
+    >(
+        websocket: warp::ws::WebSocket,
+        root_node: Arc<RootNode<'static, Query, Mutation, Subscription, S>>,
+        init: I,
+        signal: impl Future<Output = ()> + Send + 'static,
+    ) -> Result<(), Error>
+    where
+        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Query::TypeInfo: Send + Sync,
+        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+        Mutation::TypeInfo: Send + Sync,
+        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+        Subscription::TypeInfo: Send + Sync,
+        CtxT: Unpin + Send + Sync + 'static,
+        S: ScalarValue + Send + Sync + 'static,
+        I: Init<S, CtxT> + Send,
+    {
+        let (mut ws_tx, mut ws_rx) = websocket.split();
+        let (mut s_tx, mut s_rx) = Connection::new(ArcSchema(root_node), init).split();
+        let mut shutdown_signal = signal.boxed();
+
+        let exit_cause = loop {
+            tokio::select! {
+                tx_msg = s_rx.next() => {
+                    if let Some(tx_msg) = tx_msg {
+                        let tx_msg = serde_json::to_string(&tx_msg)
+                            .map(|t| warp::ws::Message::text(t))
+                            .map_err(|e| Error::Serde(e));
+
+                        if let Err(e) = match tx_msg {
+                            Ok(tx_msg) => ws_tx.send(tx_msg).await.map_err(Error::from),
+                            Err(e) => Err(Error::from(e))
+                        } {
+                            break Some(Err(e));
+                        }
+                    } else {
+                        break None;
+                    }
+                }
+                rx_msg = ws_rx.next() => {
+                    if let Some(Ok(rx_msg)) = rx_msg {
+                        if let Err(e) = s_tx.send(Message(rx_msg)).await {
+                            break Some(Err(Error::from(e)));
+                        }
+                    } else {
+                        break rx_msg.and_then(|o| Some(o.map_err(Error::from)));
+                    }
+                }
+                _ = &mut shutdown_signal => {
+                    break None;
+                }
+            }
+        };
+
+        let mut exit_result = Ok(());
+
+        match exit_cause {
+            Some(Ok(_)) => {}
+            Some(Err(e)) => {
+                exit_result = Err(e);
+            }
+            None => {}
+        }
+
+        // We know these are halves of the same websocket, unwrapping is okay
+        let websocket = ws_tx.reunite(ws_rx).unwrap();
+        let _ = websocket.close().await;
+
+        exit_result
     }
 }
 
