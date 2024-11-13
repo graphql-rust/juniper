@@ -6,6 +6,7 @@
 [![codecov](https://codecov.io/gh/graphql-rust/juniper/branch/master/graph/badge.svg)](https://codecov.io/gh/graphql-rust/juniper)
 [![Crates.io](https://img.shields.io/crates/v/juniper.svg?maxAge=2592000)](https://crates.io/crates/juniper)
 [![Gitter chat](https://badges.gitter.im/juniper-graphql/gitter.svg)](https://gitter.im/juniper-graphql/Lobby)
+[![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20Juniper%20Guru-006BFF)](https://gurubase.io/g/juniper)
 
 ---
 
