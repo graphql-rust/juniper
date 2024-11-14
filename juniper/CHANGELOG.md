@@ -46,7 +46,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 ### Changed
 
-- Updated [GraphiQL] to [3.7.1 version](https://github.com/graphql/graphiql/blob/graphiql%403.7.1/packages/graphiql/CHANGELOG.md#371). ([#1279])
+- Updated [GraphiQL] to [3.7.2 version](https://github.com/graphql/graphiql/blob/graphiql%403.7.2/packages/graphiql/CHANGELOG.md#372). ([#1292])
 
 [#1252]: /../../pull/1252
 [#1270]: /../../issues/1270
@@ -55,9 +55,9 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1275]: /../../pull/1275
 [#1277]: /../../pull/1277
 [#1278]: /../../pull/1278
-[#1279]: /../../pull/1279
 [#1281]: /../../pull/1281
 [#1284]: /../../pull/1284
+[#1292]: /../../pull/1292
 
 
 
