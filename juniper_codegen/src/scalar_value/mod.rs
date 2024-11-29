@@ -507,7 +507,7 @@ impl<'a> IsVariantGeneric<'a> {
     }
 }
 
-impl<'ast, 'gen> Visit<'ast> for IsVariantGeneric<'gen> {
+impl<'ast> Visit<'ast> for IsVariantGeneric<'_> {
     fn visit_path(&mut self, path: &'ast syn::Path) {
         if let Some(ident) = path.get_ident() {
             let is_generic = self.generics.params.iter().any(|par| {

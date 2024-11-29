@@ -360,7 +360,7 @@ fn unification_error(
     )
 }
 
-impl<'a> fmt::Display for Path<'a> {
+impl fmt::Display for Path<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Path::Root => write!(f, ""),

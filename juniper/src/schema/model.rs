@@ -56,7 +56,7 @@ pub struct SchemaType<'a, S> {
     directives: FnvHashMap<String, DirectiveType<'a, S>>,
 }
 
-impl<'a, S> Context for SchemaType<'a, S> {}
+impl<S> Context for SchemaType<'_, S> {}
 
 #[derive(Clone)]
 pub enum TypeType<'a, S: 'a> {
@@ -96,8 +96,8 @@ pub enum DirectiveLocation {
     EnumValue,
 }
 
-impl<'a, QueryT, MutationT, SubscriptionT>
-    RootNode<'a, QueryT, MutationT, SubscriptionT, DefaultScalarValue>
+impl<QueryT, MutationT, SubscriptionT>
+    RootNode<'_, QueryT, MutationT, SubscriptionT, DefaultScalarValue>
 where
     QueryT: GraphQLType<DefaultScalarValue, TypeInfo = ()>,
     MutationT: GraphQLType<DefaultScalarValue, TypeInfo = ()>,
@@ -683,7 +683,7 @@ impl fmt::Display for DirectiveLocation {
     }
 }
 
-impl<'a, S> fmt::Display for TypeType<'a, S> {
+impl<S> fmt::Display for TypeType<'_, S> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Concrete(t) => f.write_str(t.name().unwrap()),

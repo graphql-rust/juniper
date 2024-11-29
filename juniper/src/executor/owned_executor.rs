@@ -25,7 +25,7 @@ pub struct OwnedExecutor<'a, CtxT, S> {
     pub(super) field_path: Arc<FieldPath<'a>>,
 }
 
-impl<'a, CtxT, S> Clone for OwnedExecutor<'a, CtxT, S>
+impl<CtxT, S> Clone for OwnedExecutor<'_, CtxT, S>
 where
     S: Clone,
 {

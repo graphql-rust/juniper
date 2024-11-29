@@ -250,7 +250,7 @@ where
     }
 }
 
-impl<'a, S> ToInputValue<S> for &'a str
+impl<S> ToInputValue<S> for &str
 where
     S: ScalarValue,
 {

@@ -277,7 +277,7 @@ where
     }
 }
 
-impl<'a, T, S> ToInputValue<S> for &'a [T]
+impl<T, S> ToInputValue<S> for &[T]
 where
     T: ToInputValue<S>,
     S: ScalarValue,

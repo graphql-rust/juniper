@@ -94,7 +94,7 @@ impl<'de> Deserialize<'de> for MyScalarValue {
     fn deserialize<D: Deserializer<'de>>(de: D) -> Result<Self, D::Error> {
         struct Visitor;
 
-        impl<'de> de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = MyScalarValue;
 
             fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

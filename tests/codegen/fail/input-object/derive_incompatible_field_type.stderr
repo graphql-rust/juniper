@@ -68,9 +68,9 @@ error[E0277]: the trait bound `ObjectA: ToInputValue<_>` is not satisfied
   |          ^^^^^^^^^^^^^^^^^^ the trait `ToInputValue<_>` is not implemented for `ObjectA`
   |
   = help: the following other types implement trait `ToInputValue<S>`:
-            `&'a T` implements `ToInputValue<S>`
-            `&'a [T]` implements `ToInputValue<S>`
-            `&'a str` implements `ToInputValue<S>`
+            `&T` implements `ToInputValue<S>`
+            `&[T]` implements `ToInputValue<S>`
+            `&str` implements `ToInputValue<S>`
             `Arc<T>` implements `ToInputValue<S>`
             `Box<T>` implements `ToInputValue<S>`
             `ID` implements `ToInputValue<__S>`

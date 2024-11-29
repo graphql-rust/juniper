@@ -110,7 +110,7 @@ where
     }
 }
 
-impl<'e, S, T> GraphQLType<S> for &'e T
+impl<S, T> GraphQLType<S> for &T
 where
     T: GraphQLType<S> + ?Sized,
     S: ScalarValue,
@@ -127,7 +127,7 @@ where
     }
 }
 
-impl<'e, S, T> GraphQLValue<S> for &'e T
+impl<S, T> GraphQLValue<S> for &T
 where
     S: ScalarValue,
     T: GraphQLValue<S> + ?Sized,
@@ -169,7 +169,7 @@ where
     }
 }
 
-impl<'e, S, T> GraphQLValueAsync<S> for &'e T
+impl<S, T> GraphQLValueAsync<S> for &T
 where
     T: GraphQLValueAsync<S> + ?Sized,
     T::TypeInfo: Sync,
@@ -196,7 +196,7 @@ where
     }
 }
 
-impl<'a, T, S> ToInputValue<S> for &'a T
+impl<T, S> ToInputValue<S> for &T
 where
     S: fmt::Debug,
     T: ToInputValue<S>,

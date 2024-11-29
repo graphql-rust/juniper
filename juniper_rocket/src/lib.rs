@@ -254,7 +254,7 @@ pub struct GraphQLContext<'f, S: ScalarValue> {
     errors: Errors<'f>,
 }
 
-impl<'f, S: ScalarValue> GraphQLContext<'f, S> {
+impl<S: ScalarValue> GraphQLContext<'_, S> {
     fn query(&mut self, value: String) {
         if self.query.is_some() {
             let error = Error::from(ErrorKind::Duplicate).with_name("query");

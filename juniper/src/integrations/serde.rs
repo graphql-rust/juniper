@@ -289,7 +289,7 @@ impl<'de> Deserialize<'de> for DefaultScalarValue {
     fn deserialize<D: Deserializer<'de>>(de: D) -> Result<Self, D::Error> {
         struct Visitor;
 
-        impl<'de> de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = DefaultScalarValue;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {

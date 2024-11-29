@@ -47,7 +47,7 @@ pub(crate) trait ParseBufferExt {
         P: Default + Parse + Token;
 }
 
-impl<'a> ParseBufferExt for ParseBuffer<'a> {
+impl ParseBufferExt for ParseBuffer<'_> {
     fn try_parse<T: Default + Parse + Token>(&self) -> syn::Result<Option<T>> {
         Ok(if self.is_next::<T>() {
             Some(self.parse()?)
@@ -312,7 +312,7 @@ impl GenericsExt for syn::Generics {
 /// [`Type`]: syn::Type
 struct ReplaceWithDefaults<'a>(&'a syn::Generics);
 
-impl<'a> VisitMut for ReplaceWithDefaults<'a> {
+impl VisitMut for ReplaceWithDefaults<'_> {
     fn visit_generic_argument_mut(&mut self, arg: &mut syn::GenericArgument) {
         match arg {
             syn::GenericArgument::Lifetime(lf) => {

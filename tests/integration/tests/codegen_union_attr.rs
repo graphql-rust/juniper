@@ -1097,7 +1097,7 @@ mod external_resolver {
 
     type DynCharacter<'a> = dyn Character + prelude::Send + prelude::Sync + 'a;
 
-    impl<'a> DynCharacter<'a> {
+    impl DynCharacter<'_> {
         fn as_droid<'db>(&self, db: &'db Database) -> prelude::Option<&'db Droid> {
             db.droid.as_ref()
         }

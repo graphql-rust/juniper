@@ -17,8 +17,8 @@ use crate::schema::{
     model::{DirectiveLocation, DirectiveType, RootNode, SchemaType, TypeType},
 };
 
-impl<'a, S, QueryT, MutationT, SubscriptionT> GraphQLType<S>
-    for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
+impl<S, QueryT, MutationT, SubscriptionT> GraphQLType<S>
+    for RootNode<'_, QueryT, MutationT, SubscriptionT, S>
 where
     S: ScalarValue,
     QueryT: GraphQLType<S>,
@@ -37,8 +37,8 @@ where
     }
 }
 
-impl<'a, S, QueryT, MutationT, SubscriptionT> GraphQLValue<S>
-    for RootNode<'a, QueryT, MutationT, SubscriptionT, S>
+impl<S, QueryT, MutationT, SubscriptionT> GraphQLValue<S>
+    for RootNode<'_, QueryT, MutationT, SubscriptionT, S>
 where
     S: ScalarValue,
     QueryT: GraphQLType<S>,

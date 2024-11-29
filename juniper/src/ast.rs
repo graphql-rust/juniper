@@ -194,7 +194,7 @@ pub trait ToInputValue<S = DefaultScalarValue>: Sized {
     fn to_input_value(&self) -> InputValue<S>;
 }
 
-impl<'a> Type<'a> {
+impl Type<'_> {
     /// Get the name of a named type.
     ///
     /// Only applies to named types; lists will return `None`.
@@ -221,7 +221,7 @@ impl<'a> Type<'a> {
     }
 }
 
-impl<'a> fmt::Display for Type<'a> {
+impl fmt::Display for Type<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Named(n) => write!(f, "{n}"),
