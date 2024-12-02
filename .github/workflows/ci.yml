@@ -277,7 +277,7 @@ jobs:
           - juniper_axum
         target:
           - wasm32-unknown-unknown
-          - wasm32-wasi
+          - wasm32-wasip1
         toolchain:
           - stable
           - beta
