@@ -52,7 +52,7 @@ impl Query {
     }
 }
 
-fn scalar_meta<T>(name: &'static str) -> MetaType
+fn scalar_meta<T>(name: &'static str) -> MetaType<'static>
 where
     T: FromInputValue<DefaultScalarValue> + ParseScalarValue<DefaultScalarValue>,
     T::Error: IntoFieldError,

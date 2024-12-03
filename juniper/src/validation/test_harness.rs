@@ -875,7 +875,13 @@ where
     }
 }
 
-pub fn validate<'a, Q, M, Sub, F, S>(r: Q, m: M, s: Sub, q: &'a str, visit_fn: F) -> Vec<RuleError>
+pub(crate) fn validate<'a, Q, M, Sub, F, S>(
+    r: Q,
+    m: M,
+    s: Sub,
+    q: &'a str,
+    visit_fn: F,
+) -> Vec<RuleError>
 where
     S: ScalarValue + 'a,
     Q: GraphQLType<S, TypeInfo = ()>,
@@ -931,7 +937,7 @@ where
     ctx.into_errors()
 }
 
-pub fn expect_passes_rule<'a, V, F, S>(factory: F, q: &'a str)
+pub(crate) fn expect_passes_rule<'a, V, F, S>(factory: F, q: &'a str)
 where
     S: ScalarValue + 'a,
     V: Visitor<'a, S> + 'a,
@@ -940,15 +946,7 @@ where
     expect_passes_rule_with_schema(QueryRoot, MutationRoot, SubscriptionRoot, factory, q);
 }
 
-pub fn expect_passes_fn<'a, F, S>(visit_fn: F, q: &'a str)
-where
-    S: ScalarValue + 'a,
-    F: FnOnce(&mut ValidatorContext<'a, S>, &'a Document<S>),
-{
-    expect_passes_fn_with_schema(QueryRoot, MutationRoot, SubscriptionRoot, visit_fn, q);
-}
-
-pub fn expect_passes_rule_with_schema<'a, Q, M, Sub, V, F, S>(
+pub(crate) fn expect_passes_rule_with_schema<'a, Q, M, Sub, V, F, S>(
     r: Q,
     m: M,
     s: Sub,
@@ -973,28 +971,7 @@ pub fn expect_passes_rule_with_schema<'a, Q, M, Sub, V, F, S>(
     }
 }
 
-pub fn expect_passes_fn_with_schema<'a, Q, M, Sub, F, S>(
-    r: Q,
-    m: M,
-    s: Sub,
-    visit_fn: F,
-    q: &'a str,
-) where
-    S: ScalarValue + 'a,
-    Q: GraphQLType<S, TypeInfo = ()>,
-    M: GraphQLType<S, TypeInfo = ()>,
-    Sub: GraphQLType<S, TypeInfo = ()>,
-    F: FnOnce(&mut ValidatorContext<'a, S>, &'a Document<S>),
-{
-    let errs = validate(r, m, s, q, visit_fn);
-
-    if !errs.is_empty() {
-        print_errors(&errs);
-        panic!("Expected `visit_fn` to pass, but errors found");
-    }
-}
-
-pub fn expect_fails_rule<'a, V, F, S>(factory: F, q: &'a str, expected_errors: &[RuleError])
+pub(crate) fn expect_fails_rule<'a, V, F, S>(factory: F, q: &'a str, expected_errors: &[RuleError])
 where
     S: ScalarValue + 'a,
     V: Visitor<'a, S> + 'a,
@@ -1003,7 +980,7 @@ where
     expect_fails_rule_with_schema(QueryRoot, MutationRoot, factory, q, expected_errors);
 }
 
-pub fn expect_fails_fn<'a, F, S>(visit_fn: F, q: &'a str, expected_errors: &[RuleError])
+pub(crate) fn expect_fails_fn<'a, F, S>(visit_fn: F, q: &'a str, expected_errors: &[RuleError])
 where
     S: ScalarValue + 'a,
     F: FnOnce(&mut ValidatorContext<'a, S>, &'a Document<S>),
@@ -1011,7 +988,7 @@ where
     expect_fails_fn_with_schema(QueryRoot, MutationRoot, visit_fn, q, expected_errors);
 }
 
-pub fn expect_fails_rule_with_schema<'a, Q, M, V, F, S>(
+pub(crate) fn expect_fails_rule_with_schema<'a, Q, M, V, F, S>(
     r: Q,
     m: M,
     factory: F,
@@ -1048,7 +1025,7 @@ pub fn expect_fails_rule_with_schema<'a, Q, M, V, F, S>(
     }
 }
 
-pub fn expect_fails_fn_with_schema<'a, Q, M, F, S>(
+pub(crate) fn expect_fails_fn_with_schema<'a, Q, M, F, S>(
     r: Q,
     m: M,
     visit_fn: F,
