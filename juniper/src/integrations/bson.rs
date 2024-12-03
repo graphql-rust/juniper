@@ -138,6 +138,17 @@ mod date_time_test {
                     .unwrap(),
             ),
             (
+                "2014-11-28 21:00:09z",
+                DateTime::builder()
+                    .year(2014)
+                    .month(11)
+                    .day(28)
+                    .hour(21)
+                    .second(9)
+                    .build()
+                    .unwrap(),
+            ),
+            (
                 "2014-11-28T21:00:09+00:00",
                 DateTime::builder()
                     .year(2014)
@@ -150,6 +161,18 @@ mod date_time_test {
             ),
             (
                 "2014-11-28T21:00:09.05+09:00",
+                DateTime::builder()
+                    .year(2014)
+                    .month(11)
+                    .day(28)
+                    .hour(12)
+                    .second(9)
+                    .millisecond(50)
+                    .build()
+                    .unwrap(),
+            ),
+            (
+                "2014-11-28 21:00:09.05+09:00",
                 DateTime::builder()
                     .year(2014)
                     .month(11)
@@ -181,7 +204,6 @@ mod date_time_test {
             graphql_input_value!("56:34:22"),
             graphql_input_value!("56:34:22.000"),
             graphql_input_value!("1996-12-1914:23:43"),
-            graphql_input_value!("1996-12-19 14:23:43Z"),
             graphql_input_value!("1996-12-19T14:23:43"),
             graphql_input_value!("1996-12-19T14:23:43ZZ"),
             graphql_input_value!("1996-12-19T14:23:43.543"),
