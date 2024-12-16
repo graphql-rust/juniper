@@ -43,7 +43,7 @@ futures = "0.3.22"
 juniper = { version = "0.16", path = "../juniper", features = ["expose-test-schema"] }
 tokio = { version = "1.20", features = ["macros", "net", "rt-multi-thread", "time"] }
 tokio-stream = "0.1"
-tokio-tungstenite = "0.24"
+tokio-tungstenite = "0.25"
 tower-service = "0.3"
 tracing = "0.1"
 tracing-subscriber = "0.3"
