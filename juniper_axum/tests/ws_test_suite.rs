@@ -75,7 +75,7 @@ impl TestApp {
     ) -> Result<(), anyhow::Error> {
         match message {
             WsIntegrationMessage::Send(msg) => websocket
-                .send(Message::Text(msg.to_string()))
+                .send(Message::Text(msg.to_string().into()))
                 .await
                 .map_err(|e| anyhow!("Could not send message: {e}"))
                 .map(drop),
@@ -88,7 +88,7 @@ impl TestApp {
                     None => Err(anyhow!("No message received")),
                     Some(Err(e)) => Err(anyhow!("WebSocket error: {e}")),
                     Some(Ok(Message::Text(json))) => {
-                        let actual: serde_json::Value = serde_json::from_str(&json)
+                        let actual: serde_json::Value = serde_json::from_str(json.as_str())
                             .map_err(|e| anyhow!("Cannot deserialize received message: {e}"))?;
                         if actual != expected {
                             return Err(anyhow!(
