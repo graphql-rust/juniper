@@ -165,7 +165,7 @@ where
 /// whether to send a 200 or 400 HTTP status code.
 #[derive(Clone, Debug, PartialEq)]
 pub struct GraphQLResponse<S = DefaultScalarValue>(
-    Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError>,
+    pub Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError>,
 );
 
 impl<S> GraphQLResponse<S>
