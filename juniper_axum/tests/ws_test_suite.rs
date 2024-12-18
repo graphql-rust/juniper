@@ -88,7 +88,7 @@ impl TestApp {
                     None => Err(anyhow!("No message received")),
                     Some(Err(e)) => Err(anyhow!("WebSocket error: {e}")),
                     Some(Ok(Message::Text(json))) => {
-                        let actual: serde_json::Value = serde_json::from_str(json.as_str())
+                        let actual: serde_json::Value = serde_json::from_str(&*json)
                             .map_err(|e| anyhow!("Cannot deserialize received message: {e}"))?;
                         if actual != expected {
                             return Err(anyhow!(
@@ -101,7 +101,7 @@ impl TestApp {
                     Some(Ok(Message::Close(Some(frame)))) => {
                         let actual = serde_json::json!({
                             "code": u16::from(frame.code),
-                            "description": frame.reason,
+                            "description": *frame.reason,
                         });
                         if actual != expected {
                             return Err(anyhow!(
