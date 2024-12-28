@@ -3,7 +3,6 @@
 use std::fmt;
 
 use axum::{
-    async_trait,
     body::Body,
     extract::{FromRequest, FromRequestParts, Query},
     http::{header, HeaderValue, Method, Request, StatusCode},
@@ -70,7 +69,6 @@ pub struct JuniperRequest<S = DefaultScalarValue>(pub GraphQLBatchRequest<S>)
 where
     S: ScalarValue;
 
-#[async_trait]
 impl<S, State> FromRequest<State> for JuniperRequest<S>
 where
     S: ScalarValue,
