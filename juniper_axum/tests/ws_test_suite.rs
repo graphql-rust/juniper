@@ -88,7 +88,7 @@ impl TestApp {
                     None => Err(anyhow!("No message received")),
                     Some(Err(e)) => Err(anyhow!("WebSocket error: {e}")),
                     Some(Ok(Message::Text(json))) => {
-                        let actual: serde_json::Value = serde_json::from_str(&*json)
+                        let actual: serde_json::Value = serde_json::from_str(&json)
                             .map_err(|e| anyhow!("Cannot deserialize received message: {e}"))?;
                         if actual != expected {
                             return Err(anyhow!(
