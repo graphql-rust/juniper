@@ -11,6 +11,7 @@ All user visible changes to `juniper_axum` crate will be documented in this file
 ### BC Breaks
 
 - Bumped up [MSRV] to 1.75. ([#1272])
+- Upgraded to 0.8 version of [`axum` crate]. ([#1303])
 
 ### Added
 
@@ -19,6 +20,7 @@ All user visible changes to `juniper_axum` crate will be documented in this file
 [#1272]: /../../pull/1272
 [#1282]: /../../issues/1282
 [#1283]: /../../pull/1283
+[#1303]: /../../pull/1303
 
 
 
