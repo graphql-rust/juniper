@@ -1171,6 +1171,81 @@ mod duration_test {
     }
 
     #[test]
+    fn parses_jiff_friendly_input() {
+        for (raw, expected) in [
+            ("40d", 40.days()),
+            ("40 days", 40.days()),
+            ("1y1d", 1.year().days(1)),
+            ("1yr 1d", 1.year().days(1)),
+            ("3d4h59m", 3.days().hours(4).minutes(59)),
+            ("3 days, 4 hours, 59 minutes", 3.days().hours(4).minutes(59)),
+            ("3d 4h 59m", 3.days().hours(4).minutes(59)),
+            ("2h30m", 2.hours().minutes(30)),
+            ("2h 30m", 2.hours().minutes(30)),
+            ("1mo", 1.month()),
+            ("1w", 1.week()),
+            ("1 week", 1.week()),
+            ("1w4d", 1.week().days(4)),
+            ("1 wk 4 days", 1.week().days(4)),
+            ("1m", 1.minute()),
+            ("0.0021s", 2.milliseconds().microseconds(100)),
+            ("0s", 0.seconds()),
+            ("0d", 0.seconds()),
+            ("0 days", 0.seconds()),
+            (
+                "1y1mo1d1h1m1.1s",
+                1.year()
+                    .months(1)
+                    .days(1)
+                    .hours(1)
+                    .minutes(1)
+                    .seconds(1)
+                    .milliseconds(100),
+            ),
+            (
+                "1yr 1mo 1day 1hr 1min 1.1sec",
+                1.year()
+                    .months(1)
+                    .days(1)
+                    .hours(1)
+                    .minutes(1)
+                    .seconds(1)
+                    .milliseconds(100),
+            ),
+            (
+                "1 year, 1 month, 1 day, 1 hour, 1 minute 1.1 seconds",
+                1.year()
+                    .months(1)
+                    .days(1)
+                    .hours(1)
+                    .minutes(1)
+                    .seconds(1)
+                    .milliseconds(100),
+            ),
+            (
+                "1 year, 1 month, 1 day, 01:01:01.1",
+                1.year()
+                    .months(1)
+                    .days(1)
+                    .hours(1)
+                    .minutes(1)
+                    .seconds(1)
+                    .milliseconds(100),
+            ),
+        ] {
+            let input: InputValue = graphql_input_value!((raw));
+            let parsed = Duration::from_input_value(&input);
+
+            assert!(
+                parsed.is_ok(),
+                "failed to parse `{raw}`: {:?}",
+                parsed.unwrap_err(),
+            );
+            assert_eq!(parsed.unwrap(), expected, "input: {raw}");
+        }
+    }
+
+    #[test]
     fn fails_on_invalid_input() {
         for input in [
             graphql_input_value!("12"),
@@ -1178,7 +1253,6 @@ mod duration_test {
             graphql_input_value!("P0"),
             graphql_input_value!("PT"),
             graphql_input_value!("PTS"),
-            graphql_input_value!("56:34:22"),
             graphql_input_value!("1996-12-19"),
             graphql_input_value!("1996-12-19T14:23:43"),
             graphql_input_value!("1996-12-19T14:23:43Z"),
