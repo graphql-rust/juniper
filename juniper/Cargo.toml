@@ -78,7 +78,7 @@ void = { version = "1.0.2", optional = true }
 [dev-dependencies]
 bencher = "0.1.2"
 chrono = { version = "0.4.30", features = ["alloc"], default-features = false }
-jiff = { version = "0.1.16", features = ["tzdb-bundle-always"], default-features = false }
+jiff = { version = "0.1", features = ["tzdb-bundle-always"], default-features = false }
 pretty_assertions = "1.0.0"
 serde_json = "1.0.18"
 serial_test = "3.0"
