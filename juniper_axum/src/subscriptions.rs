@@ -488,7 +488,7 @@ where
             Ok(match output {
                 graphql_transport_ws::Output::Message(msg) => {
                     serde_json::to_string(&msg)
-                        .map(ws::Message::Text)
+                        .map(ws::Message::text)
                         .unwrap_or_else(|e| {
                             ws::Message::Close(Some(ws::CloseFrame {
                                 code: 1011, // CloseCode::Error
@@ -618,7 +618,7 @@ where
     let output = s_rx
         .map(|msg| {
             Ok(serde_json::to_string(&msg)
-                .map(ws::Message::Text)
+                .map(ws::Message::text)
                 .unwrap_or_else(|e| {
                     ws::Message::Close(Some(ws::CloseFrame {
                         code: 1011, // CloseCode::Error
