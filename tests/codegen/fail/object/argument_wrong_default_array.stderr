@@ -2,7 +2,7 @@ error[E0277]: the trait bound `[bool; 2]: From<[bool; 3]>` is not satisfied
  --> fail/object/argument_wrong_default_array.rs:5:1
   |
 5 | #[graphql_object]
-  | ^^^^^^^^^^^^^^^^^ the trait `From<[bool; 3]>` is not implemented for `[bool; 2]`, which is required by `[bool; 3]: Into<_>`
+  | ^^^^^^^^^^^^^^^^^ the trait `From<[bool; 3]>` is not implemented for `[bool; 2]`
   |
   = help: the following other types implement trait `From<T>`:
             `[T; 10]` implements `From<(T, T, T, T, T, T, T, T, T, T)>`

@@ -417,13 +417,13 @@ pub const fn fnv1a128(str: Name) -> u128 {
 /// Length __in bytes__ of the [`format_type!`] macro result.
 #[must_use]
 pub const fn type_len_with_wrapped_val(ty: Type, val: WrappedValue) -> usize {
-    let mut len = ty.as_bytes().len() + "!".as_bytes().len(); // Type!
+    let mut len = ty.len() + "!".len(); // Type!
 
     let mut curr = val;
     while curr % 10 != 0 {
         match curr % 10 {
-            2 => len -= "!".as_bytes().len(),   // remove !
-            3 => len += "[]!".as_bytes().len(), // [Type]!
+            2 => len -= "!".len(),   // remove !
+            3 => len += "[]!".len(), // [Type]!
             _ => {}
         }
         curr /= 10;
