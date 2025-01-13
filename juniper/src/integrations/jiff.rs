@@ -1280,9 +1280,9 @@ mod duration_test {
                     .minutes(1)
                     .seconds(1)
                     .milliseconds(100),
-                graphql_input_value!("P1y1m1dT1h1m1.1s"),
+                graphql_input_value!("P1Y1M1DT1H1M1.1S"),
             ),
-            ((-5).days(), graphql_input_value!("-P5d")),
+            ((-5).days(), graphql_input_value!("-P5D")),
         ] {
             let actual: InputValue = val.to_input_value();
 
@@ -1674,7 +1674,7 @@ mod integration_test {
                     "zonedDateTime": "2014-11-28T12:00:09.05-05:00[America/New_York]",
                     "timeZone": "Asia/Tokyo",
                     "utcOffset": "+10:00",
-                    "duration": "P1y1m1dT1h1m1.1s",
+                    "duration": "P1Y1M1DT1H1M1.1S",
                 }),
                 vec![],
             )),
