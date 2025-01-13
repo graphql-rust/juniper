@@ -8,12 +8,18 @@ All user visible changes to `juniper_axum` crate will be documented in this file
 
 ## master
 
+### BC Breaks
+
+- Upgraded to 0.8 version of [`axum` crate]. ([#1303], [#1306])
+
 ### Added
 
 - Building on `wasm32-unknown-unknown` and `wasm32-wasi` targets. ([#1283], [#1282])
 
 [#1282]: /../../issues/1282
 [#1283]: /../../pull/1283
+[#1303]: /../../pull/1303
+[#1306]: /../../pull/1306
 
 
 
