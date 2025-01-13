@@ -6,7 +6,8 @@ All user visible changes to `juniper_axum` crate will be documented in this file
 
 
 
-## master
+## [0.2.0] · 2025-01-13
+[0.2.0]: /../../tree/juniper_axum-v0.2.0/juniper_axum
 
 ### BC Breaks
 
