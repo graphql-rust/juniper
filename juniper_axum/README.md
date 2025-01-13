@@ -6,7 +6,7 @@
 [![CI](https://github.com/graphql-rust/juniper/workflows/CI/badge.svg?branch=master "CI")](https://github.com/graphql-rust/juniper/actions?query=workflow%3ACI+branch%3Amaster)
 [![Rust 1.75+](https://img.shields.io/badge/rustc-1.75+-lightgray.svg "Rust 1.75+")](https://blog.rust-lang.org/2023/12/28/Rust-1.75.0.html)
 
-- [Changelog](https://github.com/graphql-rust/juniper/blob/juniper_axum-v0.1.1/juniper_axum/CHANGELOG.md)
+- [Changelog](https://github.com/graphql-rust/juniper/blob/juniper_axum-v0.2.0/juniper_axum/CHANGELOG.md)
 
 [`axum`] web server integration for [`juniper`] ([GraphQL] implementation for [Rust]).
 
@@ -31,7 +31,7 @@ Check [`examples/simple.rs`][1] and [`examples/custom.rs`][1] for example code o
 
 ## License
 
-This project is licensed under [BSD 2-Clause License](https://github.com/graphql-rust/juniper/blob/juniper_axum-v0.1.1/juniper_axum/LICENSE).
+This project is licensed under [BSD 2-Clause License](https://github.com/graphql-rust/juniper/blob/juniper_axum-v0.2.0/juniper_axum/LICENSE).
 
 
 
@@ -43,5 +43,5 @@ This project is licensed under [BSD 2-Clause License](https://github.com/graphql
 [Juniper Book]: https://graphql-rust.github.io/juniper
 [Rust]: https://www.rust-lang.org
 
-[1]: https://github.com/graphql-rust/juniper/blob/juniper_axum-v0.1.1/juniper_axum/examples/simple.rs
-[2]: https://github.com/graphql-rust/juniper/blob/juniper_axum-v0.1.1/juniper_axum/examples/custom.rs
+[1]: https://github.com/graphql-rust/juniper/blob/juniper_axum-v0.2.0/juniper_axum/examples/simple.rs
+[2]: https://github.com/graphql-rust/juniper/blob/juniper_axum-v0.2.0/juniper_axum/examples/custom.rs

@@ -11,13 +11,23 @@ All user visible changes to `juniper_axum` crate will be documented in this file
 ### BC Breaks
 
 - Bumped up [MSRV] to 1.75. ([#1272])
+
+[#1272]: /../../pull/1272
+
+
+
+
+## [0.2.0] · 2025-01-13
+[0.2.0]: /../../tree/juniper_axum-v0.2.0/juniper_axum
+
+### BC Breaks
+
 - Upgraded to 0.8 version of [`axum` crate]. ([#1303], [#1306])
 
 ### Added
 
 - Building on `wasm32-unknown-unknown` and `wasm32-wasi` targets. ([#1283], [#1282])
 
-[#1272]: /../../pull/1272
 [#1282]: /../../issues/1282
 [#1283]: /../../pull/1283
 [#1303]: /../../pull/1303
