@@ -85,12 +85,13 @@ impl Subscription {
                        Second result will be an error."
     )]
     async fn random_human(context: &Database) -> RandomHumanStream {
+        use rand::{rngs::StdRng, Rng as _, SeedableRng as _};
+
         let mut counter = 0;
 
         let context = (*context).clone();
 
-        use rand::{rngs::StdRng, Rng, SeedableRng};
-        let mut rng = StdRng::from_entropy();
+        let mut rng = StdRng::from_os_rng();
         let mut interval = tokio::time::interval(Duration::from_secs(5));
         let stream = async_stream::stream! {
             counter += 1;
@@ -102,7 +103,7 @@ impl Subscription {
                         graphql_value!("some additional string"),
                     ))
                 } else {
-                    let random_id = rng.gen_range(1000..1005).to_string();
+                    let random_id = rng.random_range(1000..1005).to_string();
                     let human = context.get_human(&random_id).unwrap().clone();
 
                     yield Ok(RandomHuman {
