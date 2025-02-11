@@ -34,7 +34,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 ### Added
 
-- [`jiff` crate] integration behind `jiff` [Cargo feature]: ([#1271], [#1278], [#1270])
+- [`jiff` crate] integration behind `jiff` [Cargo feature]: ([#1271], [#1278], [#1270], [#1311])
     - `jiff::civil::Date` as `LocalDate` scalar.
     - `jiff::civil::Time` as `LocalTime` scalar.
     - `jiff::civil::DateTime` as `LocalDateTime` scalar. ([#1275])
@@ -58,6 +58,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1281]: /../../pull/1281
 [#1284]: /../../pull/1284
 [#1300]: /../../pull/1300
+[#1311]: /../../pull/1311
 
 
 
