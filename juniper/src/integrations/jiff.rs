@@ -373,7 +373,7 @@ mod time_zone_or_utc_offset {
     use super::*;
 
     /// Format of a [`TimeZoneOrUtcOffset`] scalar.
-    const FORMAT: &str = "%:V";
+    const FORMAT: &str = "%:Q";
 
     pub(super) fn to_output<S>(v: &TimeZoneOrUtcOffset) -> Value<S>
     where
@@ -1159,7 +1159,7 @@ mod duration_test {
             ),
         ] {
             let input: InputValue = graphql_input_value!((raw));
-            let parsed = Duration::from_input_value(&input);
+            let parsed = Duration::from_input_value(&input).map(Duration::fieldwise);
 
             assert!(
                 parsed.is_ok(),
@@ -1234,7 +1234,7 @@ mod duration_test {
             ),
         ] {
             let input: InputValue = graphql_input_value!((raw));
-            let parsed = Duration::from_input_value(&input);
+            let parsed = Duration::from_input_value(&input).map(Duration::fieldwise);
 
             assert!(
                 parsed.is_ok(),
