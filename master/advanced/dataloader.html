@@ -159,13 +159,13 @@
 </blockquote>
 <p>In <a href="https://www.rust-lang.org">Rust</a> ecosystem, DataLoader pattern is introduced with the <a href="https://docs.rs/crate/dataloader"><code>dataloader</code> crate</a>, naturally usable with <a href="https://docs.rs/juniper">Juniper</a>.</p>
 <p>Let's remake our <a href="n_plus_1.html">example of N+1 problem</a>, so it's solved by applying the DataLoader pattern:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate anyhow;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate anyhow;
 </span><span class="boring">extern crate dataloader;
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">use std::{collections::HashMap, sync::Arc};
 </span><span class="boring">use anyhow::anyhow;
 </span><span class="boring">use dataloader::non_cached::Loader;
-</span><span class="boring">use juniper::{graphql_object, GraphQLObject};
+</span><span class="boring">use juniper::{GraphQLObject, graphql_object};
 </span><span class="boring">
 </span><span class="boring">type CultId = i32;
 </span><span class="boring">type UserId = i32;

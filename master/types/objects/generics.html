@@ -160,8 +160,8 @@
 </ul>
 <p>This poses a restriction on what we can expose in <a href="https://graphql.org">GraphQL</a> from <a href="https://www.rust-lang.org">Rust</a>: no generic structs can be exposed - all type parameters must be bound. For example, we cannot expose <code>Result&lt;T, E&gt;</code> as a <a href="https://spec.graphql.org/October2021#sec-Types">GraphQL type</a>, but we <em>can</em> expose <code>Result&lt;User, String&gt;</code> as a <a href="https://spec.graphql.org/October2021#sec-Types">GraphQL type</a>.</p>
 <p>Let's make a slightly more compact but generic implementation of <a href="error/schema.html#example-non-struct-objects">the last schema error example</a>:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
-</span><span class="boring">use juniper::{graphql_object, GraphQLObject};
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{GraphQLObject, graphql_object};
 </span><span class="boring">
 </span>#[derive(GraphQLObject)] 
 struct User { 

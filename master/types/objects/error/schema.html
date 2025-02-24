@@ -163,8 +163,8 @@
 <p>Critical errors are returned from resolvers as <a href="https://spec.graphql.org/October2021#sec-Errors.Field-errors">field errors</a> (from the <a href="field.html">previous chapter</a>). Recoverable errors are part of a <a href="https://graphql.org/learn/schema">GraphQL schema</a> and can be handled gracefully by clients. Similar to <a href="https://www.rust-lang.org">Rust</a>, <a href="https://graphql.org">GraphQL</a> allows similar error models with <a href="https://spec.graphql.org/October2021#sec-Unions">unions</a> (see <a href="../../unions.html">"Unions" chapter</a>).</p>
 <h3 id="example-simple"><a class="header" href="#example-simple">Example: Simple</a></h3>
 <p>In this example, basic input validation is implemented with <a href="https://spec.graphql.org/October2021#sec-Types">GraphQL types</a>. <a href="https://spec.graphql.org/October2021#sec-String">Strings</a> are used to identify the problematic <a href="https://spec.graphql.org/October2021#sec-Language.Fields">field</a> name. Errors for a particular <a href="https://spec.graphql.org/October2021#sec-Language.Fields">field</a> are also returned as a <a href="https://spec.graphql.org/October2021#sec-String">string</a>.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
-</span><span class="boring">use juniper::{graphql_object, GraphQLObject, GraphQLUnion};
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{GraphQLObject, GraphQLUnion, graphql_object};
 </span><span class="boring">
 </span>#[derive(GraphQLObject)]
 pub struct Item {
@@ -247,8 +247,8 @@ possible to return a unique string identifier and have the client present a loca
 <h3 id="example-complex"><a class="header" href="#example-complex">Example: Complex</a></h3>
 <p>Instead of using <a href="https://spec.graphql.org/October2021#sec-String">strings</a> to propagate errors, it is possible to use <a href="https://spec.graphql.org/October2021#sec-Types">GraphQL type system</a> to describe the errors more precisely.</p>
 <p>For each fallible <a href="https://spec.graphql.org/October2021#sec-Language.Arguments">input argument</a> we create a <a href="https://spec.graphql.org/October2021#sec-Language.Fields">field</a> in a <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a>. The <a href="https://spec.graphql.org/October2021#sec-Language.Fields">field</a> is set if the validation for that particular <a href="https://spec.graphql.org/October2021#sec-Language.Arguments">argument</a> fails.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
-</span><span class="boring">use juniper::{graphql_object, GraphQLObject, GraphQLUnion};
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{GraphQLObject, GraphQLUnion, graphql_object};
 </span><span class="boring">
 </span>#[derive(GraphQLObject)]
 pub struct Item {
@@ -316,8 +316,8 @@ impl Mutation {
 <h3 id="example-complex-with-critical-errors"><a class="header" href="#example-complex-with-critical-errors">Example: Complex with critical errors</a></h3>
 <p>Our examples so far have only included non-critical errors. Providing errors inside a <a href="https://graphql.org/learn/schema">GraphQL schema</a> still allows us to return unexpected critical errors when they occur.</p>
 <p>In the following example, a theoretical database could fail and would generate errors. Since it is not common for a database to fail, the corresponding error is returned as a <a href="https://spec.graphql.org/October2021#sec-Errors.Field-errors">critical error</a>:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
-</span><span class="boring">use juniper::{graphql_object, graphql_value, FieldError, GraphQLObject, GraphQLUnion, ScalarValue};
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{FieldError, GraphQLObject, GraphQLUnion, ScalarValue, graphql_object, graphql_value};
 </span><span class="boring">
 </span>#[derive(GraphQLObject)]
 pub struct Item {
@@ -384,8 +384,8 @@ impl Mutation {
 <h3 id="example-non-struct-objects"><a class="header" href="#example-non-struct-objects">Example: Non-struct <a href="https://spec.graphql.org/October2021#sec-Objects">objects</a></a></h3>
 <p>Up until now, we've only looked at mapping <a href="https://doc.rust-lang.org/reference/items/structs.html">structs</a> to <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL objects</a>. However, any <a href="https://www.rust-lang.org">Rust</a> type can be exposed a <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a>.</p>
 <p>Using <code>Result</code>-like <a href="https://spec.graphql.org/October2021#sec-Errors.Field-errors">enums</a> can be a useful way of reporting validation errors from a mutation:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
-</span><span class="boring">use juniper::{graphql_object, GraphQLObject};
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{GraphQLObject, graphql_object};
 </span><span class="boring">
 </span>#[derive(GraphQLObject)] 
 struct User { 

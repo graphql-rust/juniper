@@ -177,7 +177,7 @@
 </ol>
 <p>There are some situations where it's useful to know which one exactly has been provided.</p>
 <p>For example, let's say we have a function that allows users to perform a "patch" operation on themselves. Let's say our users can optionally have favorite and least favorite numbers, and the input for that might look like this:</p>
-<pre><pre class="playground"><code class="language-rust edition2021">/// Updates user attributes. Fields that are [`None`] are left as-is.
+<pre><pre class="playground"><code class="language-rust edition2024">/// Updates user attributes. Fields that are [`None`] are left as-is.
 struct UserPatch {
     /// If [`Some`], updates the user's favorite number.
     favorite_number: Option&lt;Option&lt;i32&gt;&gt;,
@@ -198,8 +198,8 @@ struct UserPatch {
 </code></pre>
 <p>The last two cases rely on being able to distinguish between <a href="https://spec.graphql.org/October2021#sel-EAFdRDHAAEJDAoBxzT">explicit and implicit <code>null</code></a>.</p>
 <p>Unfortunately, plain <code>Option</code> is not capable to distinguish them. That's why in <a href="https://docs.rs/juniper">Juniper</a>, this can be done using the <a href="https://docs.rs/juniper/0.16.1/juniper/enum.Nullable.html"><code>Nullable</code></a> type:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
-</span>use juniper::{graphql_object, FieldResult, GraphQLInputObject, Nullable};
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
+</span>use juniper::{FieldResult, GraphQLInputObject, Nullable, graphql_object};
 
 #[derive(GraphQLInputObject)]
 struct UserPatchInput {

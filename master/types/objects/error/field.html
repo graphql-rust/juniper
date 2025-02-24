@@ -160,9 +160,9 @@
 </ul>
 <p><a href="https://docs.rs/juniper">Juniper</a> does not do anything about panicking, it naturally bubbles up to the surrounding code/framework and can be dealt with there.</p>
 <p>For recoverable errors, <a href="https://docs.rs/juniper">Juniper</a> works well with the <a href="https://doc.rust-lang.org/stable/std/result/enum.Result.html">built-in <code>Result</code> type</a>. You can use the <a href="https://doc.rust-lang.org/book/ch09-02-recoverable-errors-with-result.html#a-shortcut-for-propagating-errors-the--operator"><code>?</code> operator</a> and things will work as you expect them to:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use std::{fs::File, io::Read, path::PathBuf, str};
-</span><span class="boring">use juniper::{graphql_object, FieldResult};
+</span><span class="boring">use juniper::{FieldResult, graphql_object};
 </span><span class="boring">
 </span>struct Example {
     filename: PathBuf,
@@ -239,8 +239,8 @@ impl Example {
 </code></pre>
 <h2 id="additional-information"><a class="header" href="#additional-information">Additional information</a></h2>
 <p>Sometimes it's desirable to return additional structured error information to clients. This can be accomplished by implementing the <a href="https://docs.rs/juniper/0.16.1/juniper/executor/trait.IntoFieldError.html"><code>IntoFieldError</code> trait</a>:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#[macro_use] extern crate juniper;
-</span><span class="boring">use juniper::{graphql_object, FieldError, IntoFieldError, ScalarValue};
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#[macro_use] extern crate juniper;
+</span><span class="boring">use juniper::{FieldError, IntoFieldError, ScalarValue, graphql_object};
 </span><span class="boring">
 </span>enum CustomError {
     WhateverNotSet,

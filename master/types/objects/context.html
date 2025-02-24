@@ -155,7 +155,7 @@
                         <h1 id="context"><a class="header" href="#context">Context</a></h1>
 <p><em>Context</em> is a feature in <a href="https://docs.rs/juniper">Juniper</a> that lets <a href="https://spec.graphql.org/October2021#sec-Language.Fields">field</a> resolvers access global data, most commonly database connections or authentication information.</p>
 <p>Let's say that we have a simple <code>User</code>s database in a <code>HashMap</code>:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(dead_code)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(dead_code)]
 </span><span class="boring">use std::collections::HashMap;
 </span><span class="boring">
 </span>struct Database {
@@ -170,7 +170,7 @@ struct User {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>We would like to define a <code>friends</code> <a href="https://spec.graphql.org/October2021#sec-Language.Fields">field</a> on <code>User</code> that returns a list of <code>User</code> <a href="https://spec.graphql.org/October2021#sec-Objects">objects</a>. In order to write such a <a href="https://spec.graphql.org/October2021#sec-Language.Fields">field</a> we need to query a <code>Database</code>. To accomplish this we must first mark the <code>Database</code> as a valid context type and then assign it to the <code>User</code> <a href="https://spec.graphql.org/October2021#sec-Objects">object</a>. To gain access to the context in the <code>friends</code> <a href="https://spec.graphql.org/October2021#sec-Language.Fields">field</a>, we need to specify an argument with the same type as the specified context:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use std::collections::HashMap;
 </span><span class="boring">use juniper::graphql_object;
 </span><span class="boring">
@@ -229,7 +229,7 @@ impl User {
 <h3 id="mutating-and-mutable-references"><a class="header" href="#mutating-and-mutable-references">Mutating and mutable references</a></h3>
 <p>Context cannot be a mutable reference as <a href="https://spec.graphql.org/October2021#sec-Language.Fields">fields</a> may be resolved concurrently. If something in the context requires a mutable reference, the context type should leverage the <a href="https://doc.rust-lang.org/reference/interior-mutability.html#interior-mutability"><em>interior mutability</em> pattern</a> (e.g. use <code>RwLock</code>, <code>RefCell</code> or similar).</p>
 <p>For example, when using async runtime with <a href="https://en.wikipedia.org/wiki/Work_stealing">work stealing</a> (like <a href="https://docs.rs/tokio"><code>tokio</code></a>), which obviously requires thread safety in addition, we will need to use a corresponding async version of <code>RwLock</code>:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">extern crate tokio;
 </span><span class="boring">use std::collections::HashMap;
 </span><span class="boring">use juniper::graphql_object;

@@ -158,7 +158,7 @@
 <p><a href="https://spec.graphql.org/October2021#sec-Enums">Enums</a> are not references for a numeric value, but are unique values in their own right. They may serialize as a string: the name of the represented value.</p>
 </blockquote>
 <p>With <a href="https://docs.rs/juniper">Juniper</a> a <a href="https://spec.graphql.org/October2021#sec-Enums">GraphQL enum</a> may be defined by using the <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLEnum.html"><code>#[derive(GraphQLEnum)]</code></a> attribute on a <a href="https://doc.rust-lang.org/reference/items/enumerations.html">Rust enum</a> as long as its variants do not have any fields:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLEnum;
 </span><span class="boring">
 </span>#[derive(GraphQLEnum)]
@@ -171,7 +171,7 @@ enum Episode {
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="renaming"><a class="header" href="#renaming">Renaming</a></h3>
 <p>By default, <a href="https://doc.rust-lang.org/reference/items/enumerations.html">enum</a> variants are converted from <a href="https://www.rust-lang.org">Rust</a>'s standard <code>PascalCase</code> naming convention into <a href="https://graphql.org">GraphQL</a>'s <code>SCREAMING_SNAKE_CASE</code> convention:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLEnum;
 </span><span class="boring">
 </span>#[derive(GraphQLEnum)]
@@ -183,7 +183,7 @@ enum Episode {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>We can override the name by using the <code>#[graphql(name = "...")]</code> attribute:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLEnum;
 </span><span class="boring">
 </span>#[derive(GraphQLEnum)]
@@ -197,7 +197,7 @@ enum Episode {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>Or provide a different renaming policy for all the <a href="https://doc.rust-lang.org/reference/items/enumerations.html">enum</a> variants:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLEnum;
 </span><span class="boring">
 </span>#[derive(GraphQLEnum)]
@@ -214,7 +214,7 @@ enum Episode {
 </blockquote>
 <h3 id="documentation-and-deprecation"><a class="header" href="#documentation-and-deprecation">Documentation and deprecation</a></h3>
 <p>Just like when <a href="objects/index.html#documentation">defining GraphQL objects</a>, the <a href="https://spec.graphql.org/October2021#sec-Enums">GraphQL enum</a> type and its values could be <a href="https://spec.graphql.org/October2021#sec-Descriptions">documented</a> and <a href="https://spec.graphql.org/October2021#sec--deprecated">deprecated</a> via <code>#[graphql(description = "...")]</code> and <code>#[graphql(deprecated = "...")]</code>/<a href="https://doc.rust-lang.org/reference/attributes/diagnostics.html#the-deprecated-attribute"><code>#[deprecated]</code></a> attributes:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLEnum;
 </span><span class="boring">
 </span>/// This doc comment is visible only in Rust API docs.
@@ -246,7 +246,7 @@ enum StarWarsEpisode {
 </blockquote>
 <h3 id="ignoring"><a class="header" href="#ignoring">Ignoring</a></h3>
 <p>By default, all <a href="https://doc.rust-lang.org/reference/items/enumerations.html">enum</a> variants are included in the generated <a href="https://spec.graphql.org/October2021#sec-Enums">GraphQL enum</a> type as values. To prevent including a specific variant, annotate it with the <code>#[graphql(ignore)]</code> attribute:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(dead_code)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(dead_code)]
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLEnum;
 </span><span class="boring">

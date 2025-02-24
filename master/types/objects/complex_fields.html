@@ -161,8 +161,8 @@
 <li>Using some other (non-<a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a>) <a href="https://www.rust-lang.org">Rust</a> type to represent a <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a>.</li>
 </ul>
 <p>To support these more complicated use cases, we need a way to define a <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL field</a> as a function. In <a href="https://docs.rs/juniper">Juniper</a> this is achievable by placing the <a href="https://docs.rs/juniper/0.16.1/juniper/attr.graphql_object.html"><code>#[graphql_object]</code> attribute</a> on an <a href="https://doc.rust-lang.org/reference/items/implementations.html#inherent-implementations"><code>impl</code> block</a>, which turns its methods into <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL fields</a>:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
-</span><span class="boring">use juniper::{graphql_object, GraphQLObject};
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{GraphQLObject, graphql_object};
 </span><span class="boring">
 </span>#[derive(GraphQLObject)]
 struct Person {
@@ -190,7 +190,7 @@ impl House {
 </blockquote>
 <h3 id="default-arguments"><a class="header" href="#default-arguments">Default arguments</a></h3>
 <p>Though <a href="https://www.rust-lang.org">Rust</a> doesn't have the notion of default arguments, <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL arguments</a> are able to have default values. These default values are used when a GraphQL operation doesn't specify the argument explicitly. In <a href="https://docs.rs/juniper">Juniper</a>, defining a default value for a <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL argument</a> is enabled by the <code>#[graphql(default)]</code> attribute:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::graphql_object;
 </span><span class="boring">
 </span>struct Person;
@@ -215,7 +215,7 @@ impl Person {
 <h3 id="renaming"><a class="header" href="#renaming">Renaming</a></h3>
 <p>Like with the <a href="index.html#renaming"><code>#[derive(GraphQLObject)]</code> attribute on structs</a>, <a href="https://spec.graphql.org/October2021#sec-Language.Fields">field</a> names are converted from <a href="https://www.rust-lang.org">Rust</a>'s standard <code>snake_case</code> naming convention into <a href="https://graphql.org">GraphQL</a>'s <code>camelCase</code> convention.</p>
 <p>We can override the name by using the <code>#[graphql(name = "...")]</code> attribute:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::graphql_object;
 </span><span class="boring">
 </span>struct Person;
@@ -234,7 +234,7 @@ impl Person { // exposed as `PersonObject` in GraphQL schema
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>Or provide a different renaming policy for all the defined <a href="https://spec.graphql.org/October2021#sec-Language.Fields">fields</a>:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::graphql_object;
 </span><span class="boring">
 </span>struct Person;
@@ -255,7 +255,7 @@ impl Person {
 </blockquote>
 <h3 id="documentation-and-deprecation"><a class="header" href="#documentation-and-deprecation">Documentation and deprecation</a></h3>
 <p>Similarly, <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL fields</a> may also be <a href="https://spec.graphql.org/October2021#sec-Descriptions">documented</a> and <a href="https://spec.graphql.org/October2021#sec--deprecated">deprecated</a> via <code>#[graphql(description = "...")]</code> and <code>#[graphql(deprecated = "...")]</code>/<a href="https://doc.rust-lang.org/reference/attributes/diagnostics.html#the-deprecated-attribute"><code>#[deprecated]</code></a> attributes:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::graphql_object;
 </span><span class="boring">
 </span>struct Person;
@@ -299,7 +299,7 @@ impl Person {
 </blockquote>
 <h3 id="ignoring"><a class="header" href="#ignoring">Ignoring</a></h3>
 <p>By default, all methods of an <a href="https://doc.rust-lang.org/reference/items/implementations.html#inherent-implementations"><code>impl</code> block</a> are exposed as <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL fields</a>. If a method should not be exposed as a <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL field</a>, it should be defined in a separate <a href="https://doc.rust-lang.org/reference/items/implementations.html#inherent-implementations"><code>impl</code> block</a> or marked with the <code>#[graphql(ignore)]</code> attribute:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(dead_code)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(dead_code)]
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::graphql_object;
 </span><span class="boring">

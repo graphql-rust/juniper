@@ -158,9 +158,9 @@
 <p>A <a href="https://spec.graphql.org/October2021#sec-Input-Objects">GraphQL input object</a> defines a set of input fields; the input fields are either <a href="https://spec.graphql.org/October2021#sec-Scalars">scalars</a>, <a href="https://spec.graphql.org/October2021#sec-Enums">enums</a>, or other <a href="https://spec.graphql.org/October2021#sec-Input-Objects">input objects</a>. This allows <a href="https://spec.graphql.org/October2021#sec-Language.Arguments">arguments</a> to accept arbitrarily complex structs.</p>
 </blockquote>
 <p>In <a href="https://docs.rs/juniper">Juniper</a>, defining a <a href="https://spec.graphql.org/October2021#sec-Input-Objects">GraphQL input object</a> is quite straightforward and similar to how <a href="objects/index.html">trivial GraphQL objects are defined</a> - by using the <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLInputObject.html"><code>#[derive(GraphQLInputObject)]</code> attribute</a> on a <a href="https://doc.rust-lang.org/reference/items/structs.html">Rust struct</a>:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused_variables)]
 </span><span class="boring">extern crate juniper;
-</span><span class="boring">use juniper::{graphql_object, GraphQLInputObject, GraphQLObject};
+</span><span class="boring">use juniper::{GraphQLInputObject, GraphQLObject, graphql_object};
 </span><span class="boring">
 </span>#[derive(GraphQLInputObject)]
 struct Coordinate {
@@ -183,7 +183,7 @@ impl Root {
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="renaming"><a class="header" href="#renaming">Renaming</a></h3>
 <p>Just as with <a href="objects/index.html#renaming">defining GraphQL objects</a>, by default <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a> fields are converted from <a href="https://www.rust-lang.org">Rust</a>'s standard <code>snake_case</code> naming convention into <a href="https://graphql.org">GraphQL</a>'s <code>camelCase</code> convention:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLInputObject;
 </span><span class="boring">
 </span>#[derive(GraphQLInputObject)]
@@ -194,7 +194,7 @@ struct Person {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>We can override the name by using the <code>#[graphql(name = "...")]</code> attribute:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLInputObject;
 </span><span class="boring">
 </span>#[derive(GraphQLInputObject)]
@@ -208,7 +208,7 @@ struct Person {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>Or provide a different renaming policy for all the <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a> fields:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLInputObject;
 </span><span class="boring">
 </span>#[derive(GraphQLInputObject)]
@@ -225,7 +225,7 @@ struct Person {
 </blockquote>
 <h3 id="documentation"><a class="header" href="#documentation">Documentation</a></h3>
 <p>Similarly, <a href="https://spec.graphql.org/October2021#sec-Descriptions">GraphQL descriptions</a> may be provided by either using <a href="https://doc.rust-lang.org/reference/comments.html#doc-comments">Rust doc comments</a> or with the <code>#[graphql(description = "...")]</code> attribute:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLInputObject;
 </span><span class="boring">
 </span>/// This doc comment is visible only in Rust API docs.
@@ -251,7 +251,7 @@ struct Person {
 <blockquote>
 <p><strong>WARNING</strong>: Ignored fields must either implement <code>Default</code> or be annotated with the <code>#[graphql(default = &lt;expression&gt;)]</code> argument.</p>
 </blockquote>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLInputObject;
 </span><span class="boring">
 </span>enum System {

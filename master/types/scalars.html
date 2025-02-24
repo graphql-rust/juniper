@@ -175,8 +175,8 @@
 <p><a href="https://spec.graphql.org/October2021#sec-Scalars.Custom-Scalars">Custom scalars</a> can be defined in <a href="https://docs.rs/juniper">Juniper</a> by using either <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLScalar.html"><code>#[derive(GraphQLScalar)]</code></a> or <a href="https://docs.rs/juniper/0.16.1/juniper/attr.graphql_scalar.html"><code>#[graphql_scalar]</code></a> attributes, which do work pretty much the same way (except, <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLScalar.html"><code>#[derive(GraphQLScalar)]</code></a> cannot be used on <a href="https://doc.rust-lang.org/reference/items/type-aliases.html">type aliases</a>).</p>
 <h3 id="transparent-delegation"><a class="header" href="#transparent-delegation">Transparent delegation</a></h3>
 <p>Quite often, we want to create a <a href="https://spec.graphql.org/October2021#sec-Scalars.Custom-Scalars">custom GraphQL scalar</a> type by just wrapping an existing one, inheriting all its behavior. In <a href="https://www.rust-lang.org">Rust</a>, this is often called as <a href="https://rust-unofficial.github.io/patterns/patterns/behavioural/newtype.html">"newtype pattern"</a>. This may be achieved by providing a <code>#[graphql(transparent)]</code> attribute to the definition:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
-</span><span class="boring">use juniper::{graphql_scalar, GraphQLScalar};
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{GraphQLScalar, graphql_scalar};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
 #[graphql(transparent)]
@@ -194,7 +194,7 @@ pub struct MessageId {
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>That's it, now the <code>UserId</code> and <code>MessageId</code> <a href="https://spec.graphql.org/October2021#sec-Scalars">scalars</a> can be used in <a href="https://graphql.org/learn/schema">GraphQL schema</a>.</p>
 <p>We may also customize the definition, to provide more information about our <a href="https://spec.graphql.org/October2021#sec-Scalars.Custom-Scalars">custom scalar</a> in <a href="https://graphql.org/learn/schema">GraphQL schema</a>:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLScalar;
 </span><span class="boring">
 </span>/// You can use a Rust doc comment to specify a description in GraphQL schema.
@@ -215,7 +215,7 @@ pub struct UserId(String);
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="resolving"><a class="header" href="#resolving">Resolving</a></h3>
 <p>In case we need to customize <a href="https://spec.graphql.org/October2021#sec-Value-Resolution">resolving</a> of a <a href="https://spec.graphql.org/October2021#sec-Scalars.Custom-Scalars">custom GraphQL scalar</a> value (change the way it gets executed), the <code>#[graphql(to_output_with = &lt;fn path&gt;)]</code> attribute is the way to do so:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{GraphQLScalar, ScalarValue, Value};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
@@ -231,7 +231,7 @@ fn to_output&lt;S: ScalarValue&gt;(v: &amp;Incremented) -&gt; Value&lt;S&gt; {
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="input-value-parsing"><a class="header" href="#input-value-parsing">Input value parsing</a></h3>
 <p>Customization of a <a href="https://spec.graphql.org/October2021#sec-Scalars.Custom-Scalars">custom GraphQL scalar</a> value parsing is possible via <code>#[graphql(from_input_with = &lt;fn path&gt;)]</code> attribute:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{GraphQLScalar, InputValue, ScalarValue};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
@@ -263,7 +263,7 @@ impl UserId {
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="token-parsing"><a class="header" href="#token-parsing">Token parsing</a></h3>
 <p>Customization of which tokens a <a href="https://spec.graphql.org/October2021#sec-Scalars">custom GraphQL scalar</a> type should be parsed from, is possible via <code>#[graphql(parse_token_with = &lt;fn path&gt;)]</code> or <code>#[graphql(parse_token(&lt;types&gt;)]</code> attributes:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
 </span><span class="boring">    GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
 </span><span class="boring">    ScalarValue, ScalarToken, Value,
@@ -308,7 +308,7 @@ fn parse_token&lt;S: ScalarValue&gt;(value: ScalarToken&lt;'_&gt;) -&gt; ParseSc
 </blockquote>
 <h3 id="full-behavior"><a class="header" href="#full-behavior">Full behavior</a></h3>
 <p>Instead of providing all custom functions separately, it's possible to provide a module holding the appropriate <code>to_output()</code>, <code>from_input()</code> and <code>parse_token()</code> functions via <code>#[graphql(with = &lt;module path&gt;)]</code> attribute:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
 </span><span class="boring">    GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
 </span><span class="boring">    ScalarValue, ScalarToken, Value,
@@ -346,7 +346,7 @@ mod string_or_int {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>A regular <code>impl</code> block is also suitable for that:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
 </span><span class="boring">    GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
 </span><span class="boring">    ScalarValue, ScalarToken, Value,
@@ -388,7 +388,7 @@ impl StringOrInt {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>At the same time, any custom function still may be specified separately, if required:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
 </span><span class="boring">    GraphQLScalar, InputValue, ParseScalarResult, ScalarValue,
 </span><span class="boring">    ScalarToken, Value
@@ -439,7 +439,7 @@ mod string_or_int {
 <blockquote>
 <p><strong>NOTE</strong>: To satisfy <a href="https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules">orphan rules</a>, we should provide a local <a href="https://docs.rs/juniper/0.16.1/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> implementation.</p>
 </blockquote>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">mod date {
 </span><span class="boring">   pub struct Date;
 </span><span class="boring">   impl std::str::FromStr for Date {
@@ -458,7 +458,7 @@ mod string_or_int {
 </span><span class="boring">}
 </span><span class="boring">
 </span><span class="boring">use juniper::DefaultScalarValue as CustomScalarValue;
-</span>use juniper::{graphql_scalar, InputValue, ScalarValue, Value};
+</span>use juniper::{InputValue, ScalarValue, Value, graphql_scalar};
 
 #[graphql_scalar(
     with = date_scalar, 

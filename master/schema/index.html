@@ -169,9 +169,9 @@
 <blockquote>
 <p><strong>TIP</strong>: If <a href="https://spec.graphql.org/October2021#sel-FAHTRHCAACCuE9yD">mutation</a>/<a href="https://spec.graphql.org/October2021#sel-FAHTRJCAACC3EhsX">subscription</a> functionality is not needed, consider using the predefined <a href="https://docs.rs/juniper/0.16.1/juniper/struct.EmptyMutation.html"><code>EmptyMutation</code></a>/<a href="https://docs.rs/juniper/0.16.1/juniper/struct.EmptySubscription.html"><code>EmptySubscription</code></a> types for stubbing them in a <a href="https://docs.rs/juniper/0.16.1/juniper/struct.RootNode.html"><code>RootNode</code></a>.</p>
 </blockquote>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
-</span><span class="boring">    graphql_object, EmptySubscription, FieldResult, GraphQLObject, RootNode,
+</span><span class="boring">    EmptySubscription, FieldResult, GraphQLObject, RootNode, graphql_object,
 </span><span class="boring">};
 </span><span class="boring">
 </span>#[derive(GraphQLObject)] 
@@ -210,7 +210,7 @@ type Schema = RootNode&lt;'static, Query, Mutation, EmptySubscription&gt;;
 <p>Many tools in <a href="https://graphql.org">GraphQL</a> ecosystem require a <a href="https://graphql.org/learn/schema">schema</a> definition to operate on. With <a href="https://docs.rs/juniper">Juniper</a> we can export our <a href="https://spec.graphql.org/October2021#sec-Schema">GraphQL schema</a> defined in <a href="https://www.rust-lang.org">Rust</a> code either represented in the <a href="https://graphql.org/learn/schema#type-language">GraphQL schema language</a> or in <a href="https://www.json.org">JSON</a>.</p>
 <h3 id="sdl-schema-definition-language"><a class="header" href="#sdl-schema-definition-language">SDL (schema definition language)</a></h3>
 <p>To generate an <a href="https://graphql.org/learn/schema#type-language">SDL (schema definition language)</a> representation of a <a href="https://spec.graphql.org/October2021#sec-Schema">GraphQL schema</a> defined in <a href="https://www.rust-lang.org">Rust</a> code, the <a href="https://docs.rs/juniper/0.16.1/juniper/struct.RootNode.html#method.as_sdl"><code>as_sdl()</code> method</a> should be used for the direct extraction (requires enabling the <code>schema-language</code> <a href="https://docs.rs/juniper">Juniper</a> feature):</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
 </span><span class="boring">    graphql_object, EmptyMutation, EmptySubscription, FieldResult, RootNode,
 </span><span class="boring">};
@@ -249,7 +249,7 @@ type Query {
 }</code></pre></pre>
 <h3 id="json"><a class="header" href="#json">JSON</a></h3>
 <p>To export a <a href="https://spec.graphql.org/October2021#sec-Schema">GraphQL schema</a> defined in <a href="https://www.rust-lang.org">Rust</a> code as <a href="https://www.json.org">JSON</a> (often referred to as <code>schema.json</code>), the specially crafted <a href="https://docs.rs/crate/juniper/latest/source/src/introspection/query.graphql">introspection query</a> should be issued. <a href="https://docs.rs/juniper">Juniper</a> provides a <a href="https://docs.rs/juniper/0.16.1/juniper/fn.introspect.html">convenience <code>introspect()</code> function</a> to <a href="introspection.html">introspect</a> the entire <a href="https://spec.graphql.org/October2021#sec-Schema">schema</a>, which result can be serialized into <a href="https://www.json.org">JSON</a>:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">extern crate serde_json;
 </span><span class="boring">use juniper::{
 </span><span class="boring">    graphql_object, EmptyMutation, EmptySubscription, GraphQLObject,

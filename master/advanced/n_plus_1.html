@@ -154,12 +154,12 @@
                     <main>
                         <h1 id="n1-problem"><a class="header" href="#n1-problem">N+1 problem</a></h1>
 <p>A common issue with <a href="https://graphql.org">GraphQL</a> server implementations is how the <a href="https://spec.graphql.org/October2021#sec-Executing-Fields">resolvers</a> query their datasource. With a naive and straightforward approach we quickly run into the N+1 problem, resulting in a large number of unnecessary database queries or <a href="https://en.wikipedia.org/wiki/HTTP">HTTP</a> requests.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate anyhow;
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">use anyhow::anyhow;
-</span><span class="boring">use juniper::{graphql_object, GraphQLObject};
+</span><span class="boring">use juniper::{GraphQLObject, graphql_object};
 </span><span class="boring">
 </span><span class="boring">type CultId = i32;
 </span><span class="boring">type UserId = i32;

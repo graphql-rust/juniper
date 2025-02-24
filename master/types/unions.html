@@ -158,7 +158,7 @@
 </blockquote>
 <p>From the server's point of view, <a href="https://spec.graphql.org/October2021#sec-Unions">GraphQL unions</a> are somewhat similar to <a href="https://spec.graphql.org/October2021#sec-Interfaces">interfaces</a>: the main difference is that they don't contain fields on their own, and so, we only need to represent a value, <em>dispatchable</em> into concrete <a href="https://spec.graphql.org/October2021#sec-Objects">objects</a>.</p>
 <p>Obviously, the most straightforward approach to express <a href="https://spec.graphql.org/October2021#sec-Unions">GraphQL unions</a> in <a href="https://www.rust-lang.org">Rust</a> is to use <a href="https://doc.rust-lang.org/reference/items/enumerations.html#enumerations">enums</a>. In <a href="https://docs.rs/juniper">Juniper</a> this may be done by using <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLUnion.html"><code>#[derive(GraphQLInterface)]</code></a> attribute on them:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate derive_more;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate derive_more;
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">use derive_more::From;
 </span><span class="boring">use juniper::{GraphQLObject, GraphQLUnion};
@@ -185,7 +185,7 @@ enum Character {
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="renaming"><a class="header" href="#renaming">Renaming</a></h3>
 <p>Just as with <a href="objects/index.html#renaming">renaming GraphQL objects</a>, we can override the default <a href="https://spec.graphql.org/October2021#sec-Unions">union</a> name by using the <code>#[graphql(name = "...")]</code> attribute:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{GraphQLObject, GraphQLUnion};
 </span><span class="boring">
 </span><span class="boring">#[derive(GraphQLObject)]
@@ -213,7 +213,7 @@ enum Character { // exposed as `CharacterUnion` in GraphQL schema
 </blockquote>
 <h3 id="documentation"><a class="header" href="#documentation">Documentation</a></h3>
 <p>Similarly to <a href="objects/index.html#documentation">documenting GraphQL objects</a>, we can <a href="https://spec.graphql.org/October2021#sec-Descriptions">document</a> a <a href="https://spec.graphql.org/October2021#sec-Unions">GraphQL union</a> via <code>#[graphql(description = "...")]</code> attribute or <a href="https://doc.rust-lang.org/reference/comments.html#doc-comments">Rust doc comments</a>:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{GraphQLObject, GraphQLUnion};
 </span><span class="boring">
 </span><span class="boring">#[derive(GraphQLObject)]
@@ -254,7 +254,7 @@ enum Person {
 <h3 id="ignoring"><a class="header" href="#ignoring">Ignoring</a></h3>
 <p>In some rare situations we may want to omit exposing an <a href="https://doc.rust-lang.org/reference/items/enumerations.html#enumerations">enum</a> variant in a <a href="https://graphql.org/learn/schema">GraphQL schema</a>. <a href="enums.html#ignoring">Similarly to GraphQL enums</a>, we can just annotate the variant with the <code>#[graphql(ignore)]</code> attribute.</p>
 <p>As an example, let's consider the situation where we need to bind some type parameter <code>T</code> for doing interesting type-level stuff in our resolvers. To achieve this we need to have <code>PhantomData&lt;T&gt;</code>, but we don't want it exposed in the GraphQL schema.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate derive_more;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate derive_more;
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">use std::marker::PhantomData;
 </span><span class="boring">use derive_more::From;

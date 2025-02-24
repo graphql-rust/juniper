@@ -169,7 +169,7 @@
 }
 </code></pre>
 <p>You might create the corresponding Rust model type like this:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>struct User {
     id: i32,
@@ -183,7 +183,7 @@ field. It can't get the country without loading it from the database...</p>
 this library takes a different approach.</p>
 <p>What if we created separate structs for the database models and the GraphQL models? Something
 like this:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">fn main() {}
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">fn main() {}
 </span><span class="boring">
 </span>mod models {
     pub struct User {
