@@ -7,10 +7,11 @@ use quote::ToTokens;
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _};
 
 use crate::common::{
+    SpanContainer,
     diagnostic::{self, ResultExt as _},
     field,
     parse::TypeExt as _,
-    rename, scalar, SpanContainer,
+    rename, scalar,
 };
 
 use super::{Attr, Definition, Query};

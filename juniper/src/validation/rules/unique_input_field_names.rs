@@ -1,11 +1,11 @@
 use std::collections::hash_map::{Entry, HashMap};
 
 use crate::{
+    Span,
     ast::InputValue,
     parser::{SourcePosition, Spanning},
     validation::{ValidatorContext, Visitor},
     value::ScalarValue,
-    Span,
 };
 
 pub struct UniqueInputFieldNames<'a> {
@@ -64,7 +64,7 @@ mod tests {
 
     use crate::{
         parser::SourcePosition,
-        validation::{expect_fails_rule, expect_passes_rule, RuleError},
+        validation::{RuleError, expect_fails_rule, expect_passes_rule},
         value::DefaultScalarValue,
     };
 

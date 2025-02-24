@@ -4,11 +4,11 @@ use std::{
 };
 
 use crate::{
+    ExecutionError, Executor, Selection, Variables,
     ast::Fragment,
     executor::FieldPath,
     parser::SourcePosition,
     schema::model::{SchemaType, TypeType},
-    ExecutionError, Executor, Selection, Variables,
 };
 
 /// [`Executor`] owning all its variables. Can be used after [`Executor`] was

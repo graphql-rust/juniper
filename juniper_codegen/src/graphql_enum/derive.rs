@@ -6,7 +6,7 @@ use proc_macro2::TokenStream;
 use quote::ToTokens as _;
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
-use crate::common::{diagnostic, rename, scalar, SpanContainer};
+use crate::common::{SpanContainer, diagnostic, rename, scalar};
 
 use super::{ContainerAttr, Definition, ValueDefinition, VariantAttr};
 
@@ -18,9 +18,7 @@ pub(crate) fn expand(input: TokenStream) -> syn::Result<TokenStream> {
     let ast = syn::parse2::<syn::DeriveInput>(input)?;
     let attr = ContainerAttr::from_attrs("graphql", &ast.attrs)?;
 
-    let data = if let syn::Data::Enum(data) = &ast.data {
-        data
-    } else {
+    let syn::Data::Enum(data) = &ast.data else {
         return Err(ERR.custom_error(ast.span(), "can only be derived on enums"));
     };
 

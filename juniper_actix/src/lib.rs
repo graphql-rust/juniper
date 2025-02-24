@@ -1,18 +1,19 @@
-#![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
+#![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
 #![deny(missing_docs)]
 #![deny(warnings)]
 
 use actix_web::{
-    error::JsonPayloadError, http::Method, web, Error, FromRequest, HttpMessage, HttpRequest,
-    HttpResponse,
+    Error, FromRequest, HttpMessage, HttpRequest, HttpResponse, error::JsonPayloadError,
+    http::Method, web,
 };
 use juniper::{
-    http::{
-        graphiql::graphiql_source, playground::playground_source, GraphQLBatchRequest,
-        GraphQLRequest,
-    },
     ScalarValue,
+    http::{
+        GraphQLBatchRequest, GraphQLRequest, graphiql::graphiql_source,
+        playground::playground_source,
+    },
 };
 use serde::Deserialize;
 
@@ -170,12 +171,13 @@ pub mod subscriptions {
     use std::{fmt, pin::pin, sync::Arc};
 
     use actix_web::{
+        HttpRequest, HttpResponse,
         http::header::{HeaderName, HeaderValue},
-        web, HttpRequest, HttpResponse,
+        web,
     };
-    use futures::{future, SinkExt as _, StreamExt as _};
+    use futures::{SinkExt as _, StreamExt as _, future};
     use juniper::{GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue};
-    use juniper_graphql_ws::{graphql_transport_ws, graphql_ws, ArcSchema, Init};
+    use juniper_graphql_ws::{ArcSchema, Init, graphql_transport_ws, graphql_ws};
 
     /// Serves by auto-selecting between the
     /// [legacy `graphql-ws` GraphQL over WebSocket Protocol][old] and the
@@ -445,18 +447,18 @@ mod tests {
 
     use actix_http::body::MessageBody;
     use actix_web::{
+        App,
         dev::ServiceResponse,
         http,
         http::header::{ACCEPT, CONTENT_TYPE},
         test::{self, TestRequest},
         web::Data,
-        App,
     };
     use futures::future;
     use juniper::{
-        http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
-        tests::fixtures::starwars::schema::{Database, Query},
         EmptyMutation, EmptySubscription, RootNode,
+        http::tests::{HttpIntegration, TestResponse, run_http_test_suite},
+        tests::fixtures::starwars::schema::{Database, Query},
     };
 
     use super::*;
@@ -641,8 +643,8 @@ mod tests {
     #[actix_web::rt::test]
     async fn batch_request_works() {
         use juniper::{
-            tests::fixtures::starwars::schema::{Database, Query},
             EmptyMutation, EmptySubscription, RootNode,
+            tests::fixtures::starwars::schema::{Database, Query},
         };
 
         let schema: Schema = RootNode::new(
@@ -766,12 +768,12 @@ mod tests {
 mod subscription_tests {
     use actix_http::ws;
     use actix_test::start;
-    use actix_web::{web, App, Error, HttpRequest, HttpResponse};
+    use actix_web::{App, Error, HttpRequest, HttpResponse, web};
     use juniper::{
-        futures::{SinkExt, StreamExt},
-        http::tests::{graphql_transport_ws, graphql_ws, WsIntegration, WsIntegrationMessage},
-        tests::fixtures::starwars::schema::{Database, Query, Subscription},
         EmptyMutation, LocalBoxFuture,
+        futures::{SinkExt, StreamExt},
+        http::tests::{WsIntegration, WsIntegrationMessage, graphql_transport_ws, graphql_ws},
+        tests::fixtures::starwars::schema::{Database, Query, Subscription},
     };
     use juniper_graphql_ws::ConnectionConfig;
     use tokio::time::timeout;

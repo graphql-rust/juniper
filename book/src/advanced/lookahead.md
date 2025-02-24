@@ -8,7 +8,7 @@ In [GraphQL], look-ahead machinery allows us to introspect the currently [execut
 In [Juniper], it's represented by the [`Executor::look_ahead()`][20] method.
 ```rust
 # extern crate juniper;
-# use juniper::{graphql_object, Executor, GraphQLObject, ScalarValue};
+# use juniper::{Executor, GraphQLObject, ScalarValue, graphql_object};
 #
 # type UserId = i32;
 #

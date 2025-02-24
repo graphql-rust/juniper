@@ -4,7 +4,7 @@
 //! [#1054](https://github.com/graphql-rust/juniper/pull/1054) for details.
 
 use juniper::{
-    graphql_object, graphql_value, graphql_vars, EmptyMutation, EmptySubscription, RootNode,
+    EmptyMutation, EmptySubscription, RootNode, graphql_object, graphql_value, graphql_vars,
 };
 
 macro_rules! impl_id {

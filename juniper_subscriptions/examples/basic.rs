@@ -4,8 +4,8 @@ use std::pin::Pin;
 
 use futures::{Stream, StreamExt};
 use juniper::{
-    graphql_object, graphql_subscription, http::GraphQLRequest, DefaultScalarValue, EmptyMutation,
-    FieldError, RootNode, SubscriptionCoordinator,
+    DefaultScalarValue, EmptyMutation, FieldError, RootNode, SubscriptionCoordinator,
+    graphql_object, graphql_subscription, http::GraphQLRequest,
 };
 use juniper_subscriptions::Coordinator;
 

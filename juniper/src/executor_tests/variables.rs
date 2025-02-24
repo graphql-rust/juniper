@@ -1,4 +1,6 @@
 use crate::{
+    GraphQLError::ValidationError,
+    GraphQLInputObject, GraphQLScalar, InputValue, ScalarValue, Value,
     executor::Variables,
     graphql_object, graphql_value, graphql_vars,
     parser::SourcePosition,
@@ -6,8 +8,6 @@ use crate::{
     types::scalars::{EmptyMutation, EmptySubscription},
     validation::RuleError,
     value::{DefaultScalarValue, Object},
-    GraphQLError::ValidationError,
-    GraphQLInputObject, GraphQLScalar, InputValue, ScalarValue, Value,
 };
 
 #[derive(Debug, GraphQLScalar)]

@@ -1,14 +1,14 @@
 //! This example demonstrates asynchronous subscriptions with [`warp`].
 
-use std::{env, pin::Pin, sync::Arc, time::Duration};
+use std::{pin::Pin, sync::Arc, time::Duration};
 
 use futures::Stream;
 use juniper::{
-    graphql_object, graphql_subscription, graphql_value, EmptyMutation, FieldError, GraphQLEnum,
-    RootNode,
+    EmptyMutation, FieldError, GraphQLEnum, RootNode, graphql_object, graphql_subscription,
+    graphql_value,
 };
 use juniper_graphql_ws::ConnectionConfig;
-use warp::{http::Response, Filter};
+use warp::{Filter, http::Response};
 
 #[derive(Clone)]
 struct Context;
@@ -140,8 +140,7 @@ fn schema() -> Schema {
 
 #[tokio::main]
 async fn main() {
-    env::set_var("RUST_LOG", "subscription");
-    env_logger::init();
+    env_logger::builder().parse_filters("subscription").init();
 
     let log = warp::log("subscription");
     let homepage = warp::path::end().map(|| {

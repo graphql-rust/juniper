@@ -1,6 +1,7 @@
 use std::{fmt, sync::Arc};
 
 use crate::{
+    BoxFuture,
     ast::{FromInputValue, InputValue, Selection, ToInputValue},
     executor::{ExecutionResult, Executor, Registry},
     schema::meta::MetaType,
@@ -9,7 +10,6 @@ use crate::{
         base::{Arguments, GraphQLType, GraphQLValue},
     },
     value::ScalarValue,
-    BoxFuture,
 };
 
 impl<S, T> GraphQLType<S> for Box<T>

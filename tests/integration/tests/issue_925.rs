@@ -4,8 +4,8 @@
 
 use futures::stream::BoxStream;
 use juniper::{
-    graphql_object, graphql_subscription, graphql_value, graphql_vars, EmptyMutation, FieldError,
-    GraphQLObject, IntoFieldError, Object, ScalarValue, Value,
+    EmptyMutation, FieldError, GraphQLObject, IntoFieldError, Object, ScalarValue, Value,
+    graphql_object, graphql_subscription, graphql_value, graphql_vars,
 };
 
 #[derive(GraphQLObject)]

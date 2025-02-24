@@ -1,4 +1,5 @@
-#![doc = include_str!("../README.md")]
+#![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
+#![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
 #![recursion_limit = "1024"]
 
 // NOTICE: Unfortunately this macro MUST be defined here, in the crate's root module, because Rust

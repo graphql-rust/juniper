@@ -4,12 +4,12 @@ use juniper::IntoFieldError;
 use std::{borrow::Cow, fmt};
 
 use crate::{
+    FieldError,
     ast::{FromInputValue, InputValue, Type},
     parser::{ParseError, ScalarToken},
     schema::model::SchemaType,
     types::base::TypeKind,
     value::{DefaultScalarValue, ParseScalarValue},
-    FieldError,
 };
 
 /// Whether an item is deprecated, with context.

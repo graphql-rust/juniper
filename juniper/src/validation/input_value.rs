@@ -345,7 +345,7 @@ fn is_absent_or_null<S>(v: Option<&InputValue<S>>) -> bool
 where
     S: ScalarValue,
 {
-    v.map_or(true, InputValue::is_null)
+    v.is_none_or(InputValue::is_null)
 }
 
 fn unification_error(

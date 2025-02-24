@@ -145,7 +145,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        msrv: ["1.75.0"]
+        msrv: ["1.85.0"]
         crate:
           - juniper_codegen
           - juniper
@@ -153,17 +153,13 @@ jobs:
           - juniper_graphql_ws
           - juniper_actix
           - juniper_axum
-          #- juniper_hyper
+          - juniper_hyper
           - juniper_rocket
           - juniper_warp
         os:
           - ubuntu
           - macOS
           - windows
-        include:
-          - { msrv: "1.79.0", crate: "juniper_hyper", os: "ubuntu" }
-          - { msrv: "1.79.0", crate: "juniper_hyper", os: "macOS" }
-          - { msrv: "1.79.0", crate: "juniper_hyper", os: "windows" }
     runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/checkout@v4

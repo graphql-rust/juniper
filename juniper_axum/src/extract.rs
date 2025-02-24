@@ -3,15 +3,15 @@
 use std::fmt;
 
 use axum::{
+    Json, RequestExt as _,
     body::Body,
     extract::{FromRequest, FromRequestParts, Query},
-    http::{header, HeaderValue, Method, Request, StatusCode},
+    http::{HeaderValue, Method, Request, StatusCode, header},
     response::{IntoResponse as _, Response},
-    Json, RequestExt as _,
 };
 use juniper::{
-    http::{GraphQLBatchRequest, GraphQLRequest},
     DefaultScalarValue, ScalarValue,
+    http::{GraphQLBatchRequest, GraphQLRequest},
 };
 use serde::Deserialize;
 

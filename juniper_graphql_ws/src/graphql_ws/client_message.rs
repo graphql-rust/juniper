@@ -53,7 +53,7 @@ pub enum ClientMessage<S> {
 
 #[cfg(test)]
 mod test {
-    use juniper::{graphql_vars, DefaultScalarValue};
+    use juniper::{DefaultScalarValue, graphql_vars};
 
     use super::*;
 

@@ -2,11 +2,11 @@ use std::pin::Pin;
 
 use futures::{Stream, StreamExt, TryFutureExt};
 use juniper::{
+    EmptyMutation, FieldError, OperationType, RootNode,
     executor::{execute_validated_query_async, get_operation, resolve_validated_subscription},
     graphql_object, graphql_subscription, graphql_vars,
     parser::parse_document_source,
-    validation::{validate_input_values, visit_all_rules, ValidatorContext},
-    EmptyMutation, FieldError, OperationType, RootNode,
+    validation::{ValidatorContext, validate_input_values, visit_all_rules},
 };
 
 pub struct Context;

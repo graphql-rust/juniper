@@ -4,7 +4,7 @@
 //! [0]: https://spec.graphql.org/October2021#DefaultValue
 
 use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
+use quote::{ToTokens, quote};
 use syn::{
     parse::{Parse, ParseStream},
     token,

@@ -1,6 +1,7 @@
 use std::mem;
 
 use crate::{
+    FieldError, GraphQLInputObject, IntoFieldError,
     ast::{Document, FromInputValue, InputValue},
     executor::Registry,
     parser::parse_document_source,
@@ -12,9 +13,8 @@ use crate::{
         base::{GraphQLType, GraphQLValue},
         scalars::ID,
     },
-    validation::{visit, MultiVisitorNil, RuleError, ValidatorContext, Visitor},
+    validation::{MultiVisitorNil, RuleError, ValidatorContext, Visitor, visit},
     value::ScalarValue,
-    FieldError, GraphQLInputObject, IntoFieldError,
 };
 
 struct Being;

@@ -3,13 +3,13 @@
 use std::{any::TypeId, marker::PhantomData, mem};
 
 use proc_macro2::{Span, TokenStream};
-use quote::{quote, ToTokens};
+use quote::{ToTokens, quote};
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
 use crate::common::{
-    diagnostic, field,
+    SpanContainer, diagnostic, field,
     parse::{self, TypeExt as _},
-    path_eq_single, rename, scalar, SpanContainer,
+    path_eq_single, rename, scalar,
 };
 
 use super::{Attr, Definition, Query};

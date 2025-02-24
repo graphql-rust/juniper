@@ -7,7 +7,7 @@ use crate::{
     },
     parser::Spanning,
     schema::meta::Argument,
-    validation::{multi_visitor::MultiVisitorCons, ValidatorContext, Visitor},
+    validation::{ValidatorContext, Visitor, multi_visitor::MultiVisitorCons},
     value::ScalarValue,
 };
 

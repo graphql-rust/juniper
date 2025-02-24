@@ -574,7 +574,9 @@ impl<'a, S> LookAheadSelection<'a, S> {
     ///
     /// [arguments]: https://spec.graphql.org/October2021#sec-Language.Arguments
     /// [selection]: https://spec.graphql.org/October2021#sec-Selection-Sets
-    pub fn arguments(&self) -> impl DoubleEndedIterator<Item = LookAheadArgument<'a, S>> {
+    pub fn arguments(
+        &self,
+    ) -> impl DoubleEndedIterator<Item = LookAheadArgument<'a, S>> + use<'a, S> {
         let opt_arguments = match self.source {
             SelectionSource::Field(f) => f.arguments.as_ref(),
             _ => None,

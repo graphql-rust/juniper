@@ -7,8 +7,8 @@
 pub mod common;
 
 use juniper::{
-    execute, graphql_object, graphql_value, graphql_vars, DefaultScalarValue, Executor, FieldError,
-    FieldResult, GraphQLInputObject, GraphQLObject, IntoFieldError, ScalarValue,
+    DefaultScalarValue, Executor, FieldError, FieldResult, GraphQLInputObject, GraphQLObject,
+    IntoFieldError, ScalarValue, execute, graphql_object, graphql_value, graphql_vars,
 };
 
 use self::common::util::{schema, schema_with_scalar};

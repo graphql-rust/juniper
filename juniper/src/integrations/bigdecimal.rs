@@ -10,7 +10,7 @@
 
 use std::str::FromStr as _;
 
-use crate::{graphql_scalar, InputValue, ScalarValue, Value};
+use crate::{InputValue, ScalarValue, Value, graphql_scalar};
 
 /// Big decimal type.
 ///
@@ -62,7 +62,7 @@ mod bigdecimal_scalar {
 mod test {
     use std::str::FromStr as _;
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::BigDecimal;
 

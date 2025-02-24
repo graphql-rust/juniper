@@ -3,7 +3,7 @@ use std::fmt;
 use proc_macro2::Span;
 
 pub(crate) use self::polyfill::{
-    abort_if_dirty, emit_error, entry_point, entry_point_with_preserved_body, Diagnostic, ResultExt,
+    Diagnostic, ResultExt, abort_if_dirty, emit_error, entry_point, entry_point_with_preserved_body,
 };
 
 /// URL of the GraphQL specification (October 2021 Edition).
@@ -92,11 +92,11 @@ mod polyfill {
 
     use std::{
         cell::{Cell, RefCell},
-        panic::{catch_unwind, resume_unwind, UnwindSafe},
+        panic::{UnwindSafe, catch_unwind, resume_unwind},
     };
 
     use proc_macro2::{Span, TokenStream};
-    use quote::{quote, quote_spanned, ToTokens};
+    use quote::{ToTokens, quote, quote_spanned};
 
     /// Representation of a single diagnostic message.
     #[derive(Debug)]

@@ -1,6 +1,6 @@
 use juniper::{
-    graphql_object, DefaultScalarValue, EmptyMutation, EmptySubscription, ExecutionError,
-    FieldError, GraphQLEnum, GraphQLObject, RootNode, Value, Variables,
+    DefaultScalarValue, EmptyMutation, EmptySubscription, ExecutionError, FieldError, GraphQLEnum,
+    GraphQLObject, RootNode, Value, Variables, graphql_object,
 };
 
 pub type QueryResult = Result<

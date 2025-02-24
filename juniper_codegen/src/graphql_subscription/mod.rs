@@ -5,7 +5,7 @@
 pub mod attr;
 
 use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
+use quote::{ToTokens, quote};
 use syn::parse_quote;
 
 use crate::{common::field, graphql_object::Definition};

@@ -3,8 +3,8 @@
 pub mod common;
 
 use juniper::{
-    execute, graphql_interface, graphql_object, graphql_value, graphql_vars, DefaultScalarValue,
-    FieldError, FieldResult, GraphQLObject, GraphQLUnion, IntoFieldError, ScalarValue, ID,
+    DefaultScalarValue, FieldError, FieldResult, GraphQLObject, GraphQLUnion, ID, IntoFieldError,
+    ScalarValue, execute, graphql_interface, graphql_object, graphql_value, graphql_vars,
 };
 
 use self::common::util::{schema, schema_with_scalar};
@@ -2836,21 +2836,25 @@ mod branching_subtyping {
         fn crew(&self) -> ConnectionValue {
             match self {
                 Self::Luke => HumanConnection {
-                    nodes: vec![Luke {
-                        id: ID::new("1"),
-                        home_planet: "earth".into(),
-                        father: "SPOILER".into(),
-                    }
-                    .into()],
+                    nodes: vec![
+                        Luke {
+                            id: ID::new("1"),
+                            home_planet: "earth".into(),
+                            father: "SPOILER".into(),
+                        }
+                        .into(),
+                    ],
                 }
                 .into(),
                 Self::R2D2 => DroidConnection {
-                    nodes: vec![R2D2 {
-                        id: ID::new("2"),
-                        primary_function: "roll".into(),
-                        charge: 146.0,
-                    }
-                    .into()],
+                    nodes: vec![
+                        R2D2 {
+                            id: ID::new("2"),
+                            primary_function: "roll".into(),
+                            charge: 146.0,
+                        }
+                        .into(),
+                    ],
                 }
                 .into(),
             }

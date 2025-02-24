@@ -10,9 +10,10 @@ All user visible changes to `juniper_axum` crate will be documented in this file
 
 ### BC Breaks
 
-- Bumped up [MSRV] to 1.75. ([#1272])
+- Bumped up [MSRV] to 1.85. ([#1272], [todo])
 
 [#1272]: /../../pull/1272
+[todo]: /../../commit/todo
 
 
 

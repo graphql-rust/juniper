@@ -9,7 +9,7 @@
 //! [`Uuid`]: uuid::Uuid
 //! [s1]: https://graphql-scalars.dev/docs/scalars/uuid
 
-use crate::{graphql_scalar, InputValue, ScalarValue, Value};
+use crate::{InputValue, ScalarValue, Value, graphql_scalar};
 
 /// [Universally Unique Identifier][0] (UUID).
 ///
@@ -46,7 +46,7 @@ mod uuid_scalar {
 mod test {
     use uuid::Uuid;
 
-    use crate::{graphql_input_value, FromInputValue, InputValue};
+    use crate::{FromInputValue, InputValue, graphql_input_value};
 
     #[test]
     fn uuid_from_input() {

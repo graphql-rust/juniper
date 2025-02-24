@@ -52,7 +52,7 @@
 
 use std::{error::Error, fmt, str};
 
-use crate::{graphql_scalar, InputValue, ScalarValue, Value};
+use crate::{InputValue, ScalarValue, Value, graphql_scalar};
 
 /// Representation of a civil date in the Gregorian calendar.
 ///
@@ -580,7 +580,7 @@ mod utc_offset {
 
 #[cfg(test)]
 mod local_date_test {
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::LocalDate;
 
@@ -650,7 +650,7 @@ mod local_date_test {
 
 #[cfg(test)]
 mod local_time_test {
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::LocalTime;
 
@@ -732,7 +732,7 @@ mod local_time_test {
 
 #[cfg(test)]
 mod local_date_time_test {
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::LocalDateTime;
 
@@ -814,7 +814,7 @@ mod local_date_time_test {
 mod date_time_test {
     use jiff::{civil, tz::TimeZone};
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::DateTime;
 
@@ -940,7 +940,7 @@ mod date_time_test {
 mod zoned_date_time_test {
     use jiff::{civil, tz, tz::TimeZone};
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::ZonedDateTime;
 
@@ -1126,7 +1126,7 @@ mod zoned_date_time_test {
 mod duration_test {
     use jiff::ToSpan as _;
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::Duration;
 
@@ -1295,7 +1295,7 @@ mod duration_test {
 mod time_zone_or_utc_offset_test {
     use jiff::tz;
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::TimeZoneOrUtcOffset;
 
@@ -1411,7 +1411,7 @@ mod time_zone_or_utc_offset_test {
 mod time_zone_test {
     use jiff::tz;
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::TimeZone;
 
@@ -1524,7 +1524,7 @@ mod time_zone_test {
 mod utc_offset_test {
     use jiff::tz;
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::UtcOffset;
 
@@ -1584,7 +1584,7 @@ mod utc_offset_test {
 
 #[cfg(test)]
 mod integration_test {
-    use jiff::{civil, tz, ToSpan as _};
+    use jiff::{ToSpan as _, civil, tz};
 
     use crate::{
         execute, graphql_object, graphql_value, graphql_vars,

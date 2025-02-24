@@ -8,11 +8,11 @@ pub mod common;
 
 use std::pin::Pin;
 
-use futures::{future, stream, FutureExt as _};
+use futures::{FutureExt as _, future, stream};
 use juniper::{
-    execute, graphql_object, graphql_subscription, graphql_value, graphql_vars,
-    resolve_into_stream, DefaultScalarValue, EmptyMutation, Executor, FieldError, FieldResult,
-    GraphQLInputObject, GraphQLType, IntoFieldError, RootNode, ScalarValue,
+    DefaultScalarValue, EmptyMutation, Executor, FieldError, FieldResult, GraphQLInputObject,
+    GraphQLType, IntoFieldError, RootNode, ScalarValue, execute, graphql_object,
+    graphql_subscription, graphql_value, graphql_vars, resolve_into_stream,
 };
 
 use self::common::util::extract_next;

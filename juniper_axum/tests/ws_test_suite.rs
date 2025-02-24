@@ -3,12 +3,12 @@
 use std::{net::SocketAddr, sync::Arc};
 
 use anyhow::anyhow;
-use axum::{routing::get, Extension, Router};
+use axum::{Extension, Router, routing::get};
 use futures::{SinkExt, StreamExt};
 use juniper::{
-    http::tests::{graphql_transport_ws, graphql_ws, WsIntegration, WsIntegrationMessage},
-    tests::fixtures::starwars::schema::{Database, Query, Subscription},
     EmptyMutation, LocalBoxFuture, RootNode,
+    http::tests::{WsIntegration, WsIntegrationMessage, graphql_transport_ws, graphql_ws},
+    tests::fixtures::starwars::schema::{Database, Query, Subscription},
 };
 use juniper_axum::subscriptions;
 use juniper_graphql_ws::ConnectionConfig;
@@ -16,7 +16,7 @@ use tokio::{
     net::{TcpListener, TcpStream},
     time::timeout,
 };
-use tokio_tungstenite::{connect_async, tungstenite::Message, MaybeTlsStream, WebSocketStream};
+use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async, tungstenite::Message};
 
 type Schema = RootNode<'static, Query, EmptyMutation<Database>, Subscription>;
 

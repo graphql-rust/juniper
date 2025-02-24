@@ -3,8 +3,8 @@
 pub mod common;
 
 use juniper::{
-    execute, graphql_object, graphql_value, graphql_vars, parser::SourcePosition, GraphQLError,
-    GraphQLInputObject, RuleError,
+    GraphQLError, GraphQLInputObject, RuleError, execute, graphql_object, graphql_value,
+    graphql_vars, parser::SourcePosition,
 };
 
 use self::common::util::schema;

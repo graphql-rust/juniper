@@ -2,17 +2,18 @@ use std::{fmt, marker::PhantomData};
 
 use indexmap::IndexMap;
 use serde::{
+    Deserialize, Serialize,
     de::{self, Deserializer, IntoDeserializer as _},
     ser::{SerializeMap as _, Serializer},
-    serde_if_integer128, Deserialize, Serialize,
+    serde_if_integer128,
 };
 
 use crate::{
+    DefaultScalarValue, GraphQLError, Object, Value,
     ast::InputValue,
     executor::ExecutionError,
     parser::{ParseError, SourcePosition, Spanning},
     validation::RuleError,
-    DefaultScalarValue, GraphQLError, Object, Value,
 };
 
 impl<T: Serialize> Serialize for ExecutionError<T> {
@@ -352,10 +353,10 @@ mod tests {
     use serde_json::{from_str, to_string};
 
     use crate::{
+        FieldError, Value,
         ast::InputValue,
         graphql_input_value,
         value::{DefaultScalarValue, Object},
-        FieldError, Value,
     };
 
     use super::{ExecutionError, GraphQLError};

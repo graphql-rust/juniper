@@ -1,10 +1,10 @@
 use crate::{
+    Operation, OperationType, Selection,
     ast::Field,
     parser::Spanning,
     schema::meta::MetaType,
     validation::{ValidatorContext, Visitor},
     value::ScalarValue,
-    Operation, OperationType, Selection,
 };
 
 pub struct FieldsOnCorrectType;
@@ -78,7 +78,7 @@ mod tests {
 
     use crate::{
         parser::SourcePosition,
-        validation::{expect_fails_rule, expect_passes_rule, RuleError},
+        validation::{RuleError, expect_fails_rule, expect_passes_rule},
         value::DefaultScalarValue,
     };
 

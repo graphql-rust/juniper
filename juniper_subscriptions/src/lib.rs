@@ -1,4 +1,5 @@
-#![doc = include_str!("../README.md")]
+#![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
+#![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
 #![deny(missing_docs)]
 #![deny(warnings)]
 
@@ -7,11 +8,11 @@ use std::{
     task::{self, Poll},
 };
 
-use futures::{future, stream, FutureExt as _, Stream, StreamExt as _, TryFutureExt as _};
+use futures::{FutureExt as _, Stream, StreamExt as _, TryFutureExt as _, future, stream};
 use juniper::{
-    http::GraphQLRequest, BoxFuture, ExecutionError, ExecutionOutput, GraphQLError,
-    GraphQLSubscriptionType, GraphQLTypeAsync, Object, ScalarValue, SubscriptionConnection,
-    SubscriptionCoordinator, Value, ValuesStream,
+    BoxFuture, ExecutionError, ExecutionOutput, GraphQLError, GraphQLSubscriptionType,
+    GraphQLTypeAsync, Object, ScalarValue, SubscriptionConnection, SubscriptionCoordinator, Value,
+    ValuesStream, http::GraphQLRequest,
 };
 
 /// Simple [`SubscriptionCoordinator`] implementation:
@@ -244,10 +245,10 @@ where
 mod whole_responses_stream {
     use std::task::Poll;
 
-    use futures::{stream, StreamExt as _};
+    use futures::{StreamExt as _, stream};
     use juniper::{
-        graphql_value, DefaultScalarValue, ExecutionError, ExecutionOutput, FieldError, Object,
-        Value, ValuesStream,
+        DefaultScalarValue, ExecutionError, ExecutionOutput, FieldError, Object, Value,
+        ValuesStream, graphql_value,
     };
 
     use super::whole_responses_stream;

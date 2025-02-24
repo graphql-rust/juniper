@@ -216,8 +216,8 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
         #[graphql(default = false)] include_deprecated: Option<bool>,
     ) -> Option<Vec<&Field<S>>> {
         match self {
-            TypeType::Concrete(&MetaType::Interface(InterfaceMeta { ref fields, .. }))
-            | TypeType::Concrete(&MetaType::Object(ObjectMeta { ref fields, .. })) => Some(
+            TypeType::Concrete(MetaType::Interface(InterfaceMeta { fields, .. }))
+            | TypeType::Concrete(MetaType::Object(ObjectMeta { fields, .. })) => Some(
                 fields
                     .iter()
                     .filter(|f| {
@@ -240,10 +240,9 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
 
     fn input_fields(&self) -> Option<&[Argument<S>]> {
         match self {
-            TypeType::Concrete(&MetaType::InputObject(InputObjectMeta {
-                ref input_fields,
-                ..
-            })) => Some(input_fields.as_slice()),
+            TypeType::Concrete(MetaType::InputObject(InputObjectMeta { input_fields, .. })) => {
+                Some(input_fields.as_slice())
+            }
             _ => None,
         }
     }
@@ -251,13 +250,11 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
     fn interfaces<'s>(&self, context: &'s SchemaType<'a, S>) -> Option<Vec<TypeType<'s, S>>> {
         match self {
             TypeType::Concrete(
-                &MetaType::Object(ObjectMeta {
-                    ref interface_names,
-                    ..
+                MetaType::Object(ObjectMeta {
+                    interface_names, ..
                 })
-                | &MetaType::Interface(InterfaceMeta {
-                    ref interface_names,
-                    ..
+                | MetaType::Interface(InterfaceMeta {
+                    interface_names, ..
                 }),
             ) => Some(
                 interface_names
@@ -271,17 +268,14 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
 
     fn possible_types<'s>(&self, context: &'s SchemaType<'a, S>) -> Option<Vec<TypeType<'s, S>>> {
         match self {
-            TypeType::Concrete(&MetaType::Union(UnionMeta {
-                ref of_type_names, ..
-            })) => Some(
+            TypeType::Concrete(MetaType::Union(UnionMeta { of_type_names, .. })) => Some(
                 of_type_names
                     .iter()
                     .filter_map(|tn| context.type_by_name(tn))
                     .collect(),
             ),
-            TypeType::Concrete(&MetaType::Interface(InterfaceMeta {
-                name: ref iface_name,
-                ..
+            TypeType::Concrete(MetaType::Interface(InterfaceMeta {
+                name: iface_name, ..
             })) => {
                 let mut type_names = context
                     .types
@@ -319,7 +313,7 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
         #[graphql(default = false)] include_deprecated: Option<bool>,
     ) -> Option<Vec<&EnumValue>> {
         match self {
-            TypeType::Concrete(&MetaType::Enum(EnumMeta { ref values, .. })) => Some(
+            TypeType::Concrete(MetaType::Enum(EnumMeta { values, .. })) => Some(
                 values
                     .iter()
                     .filter(|f| {

@@ -10,7 +10,7 @@ Using a plain [Rust struct][struct] for representing a [GraphQL object][0] is ea
 To support these more complicated use cases, we need a way to define a [GraphQL field][4] as a function. In [Juniper] this is achievable by placing the [`#[graphql_object]` attribute][3] on an [`impl` block][6], which turns its methods into [GraphQL fields][4]:
 ```rust
 # extern crate juniper;
-# use juniper::{graphql_object, GraphQLObject};
+# use juniper::{GraphQLObject, graphql_object};
 #
 #[derive(GraphQLObject)]
 struct Person {

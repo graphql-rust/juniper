@@ -13,7 +13,7 @@
 //! [s1]: https://graphql-scalars.dev/docs/scalars/object-id
 //! [s4]: https://graphql-scalars.dev/docs/scalars/date-time
 
-use crate::{graphql_scalar, InputValue, ScalarValue, Value};
+use crate::{InputValue, ScalarValue, Value, graphql_scalar};
 
 /// [BSON ObjectId][0] represented as a HEX string.
 ///
@@ -92,7 +92,7 @@ mod date_time {
 mod test {
     use bson::oid::ObjectId;
 
-    use crate::{graphql_input_value, FromInputValue, InputValue};
+    use crate::{FromInputValue, InputValue, graphql_input_value};
 
     #[test]
     fn objectid_from_input() {
@@ -108,7 +108,7 @@ mod test {
 
 #[cfg(test)]
 mod date_time_test {
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::DateTime;
 

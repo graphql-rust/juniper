@@ -3,7 +3,7 @@
 //! [1]: https://spec.graphql.org/October2021#sec-Scalars
 
 use proc_macro2::{Literal, TokenStream};
-use quote::{format_ident, quote, ToTokens, TokenStreamExt};
+use quote::{ToTokens, TokenStreamExt, format_ident, quote};
 use syn::{
     ext::IdentExt as _,
     parse::{Parse, ParseStream},
@@ -15,12 +15,12 @@ use syn::{
 use url::Url;
 
 use crate::common::{
-    filter_attrs,
+    AttrNames, Description, SpanContainer, filter_attrs,
     parse::{
-        attr::{err, OptionExt as _},
         ParseBufferExt as _,
+        attr::{OptionExt as _, err},
     },
-    scalar, AttrNames, Description, SpanContainer,
+    scalar,
 };
 
 pub mod attr;

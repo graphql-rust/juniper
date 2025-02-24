@@ -1,7 +1,7 @@
 use crate::{
     ast::{Arguments, Definition, Field, Operation, OperationType, OwnedDocument, Selection},
     graphql_input_value,
-    parser::{document::parse_document_source, ParseError, SourcePosition, Spanning, Token},
+    parser::{ParseError, SourcePosition, Spanning, Token, document::parse_document_source},
     schema::model::SchemaType,
     types::scalars::{EmptyMutation, EmptySubscription},
     validation::test_harness::{MutationRoot, QueryRoot, SubscriptionRoot},

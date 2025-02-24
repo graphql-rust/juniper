@@ -3,7 +3,7 @@
 
 #![allow(clippy::disallowed_names)]
 
-use juniper::{graphql_object, graphql_vars, EmptyMutation, EmptySubscription, GraphQLObject};
+use juniper::{EmptyMutation, EmptySubscription, GraphQLObject, graphql_object, graphql_vars};
 
 struct Query;
 

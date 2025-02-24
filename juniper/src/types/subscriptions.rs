@@ -1,11 +1,11 @@
 use serde::Serialize;
 
 use crate::{
-    http::GraphQLRequest,
-    parser::Spanning,
-    types::base::{is_excluded, merge_key_into, GraphQLType, GraphQLValue},
     Arguments, BoxFuture, DefaultScalarValue, ExecutionError, Executor, FieldError, Object,
     ScalarValue, Selection, Value, ValuesStream,
+    http::GraphQLRequest,
+    parser::Spanning,
+    types::base::{GraphQLType, GraphQLValue, is_excluded, merge_key_into},
 };
 
 /// Represents the result of executing a GraphQL operation (after parsing and validating has been
@@ -281,10 +281,7 @@ where
 
     for selection in selection_set {
         match selection {
-            Selection::Field(Spanning {
-                item: ref f,
-                ref span,
-            }) => {
+            Selection::Field(Spanning { item: f, span }) => {
                 if is_excluded(&f.directives, executor.variables()) {
                     continue;
                 }
@@ -347,10 +344,7 @@ where
                 }
             }
 
-            Selection::FragmentSpread(Spanning {
-                item: ref spread,
-                ref span,
-            }) => {
+            Selection::FragmentSpread(Spanning { item: spread, span }) => {
                 if is_excluded(&spread.directives, executor.variables()) {
                     continue;
                 }
@@ -386,8 +380,8 @@ where
             }
 
             Selection::InlineFragment(Spanning {
-                item: ref fragment,
-                ref span,
+                item: fragment,
+                span,
             }) => {
                 if is_excluded(&fragment.directives, executor.variables()) {
                     continue;

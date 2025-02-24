@@ -1,11 +1,11 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::{
+    Span,
     ast::{Definition, Document, Fragment, FragmentSpread, Operation},
     parser::Spanning,
     validation::{ValidatorContext, Visitor},
     value::ScalarValue,
-    Span,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -133,7 +133,7 @@ mod tests {
 
     use crate::{
         parser::SourcePosition,
-        validation::{expect_fails_rule, expect_passes_rule, RuleError},
+        validation::{RuleError, expect_fails_rule, expect_passes_rule},
         value::DefaultScalarValue,
     };
 

@@ -23,11 +23,11 @@
 //! [s5]: https://graphql-scalars.dev/docs/scalars/utc-offset
 
 use time::{
-    format_description::{well_known::Rfc3339, BorrowedFormatItem},
+    format_description::{BorrowedFormatItem, well_known::Rfc3339},
     macros::format_description,
 };
 
-use crate::{graphql_scalar, InputValue, ScalarValue, Value};
+use crate::{InputValue, ScalarValue, Value, graphql_scalar};
 
 /// Date in the proleptic Gregorian calendar (without time zone).
 ///
@@ -262,7 +262,7 @@ mod utc_offset {
 mod local_date_test {
     use time::macros::date;
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::LocalDate;
 
@@ -326,7 +326,7 @@ mod local_date_test {
 mod local_time_test {
     use time::macros::time;
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::LocalTime;
 
@@ -401,7 +401,7 @@ mod local_time_test {
 mod local_date_time_test {
     use time::macros::datetime;
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::LocalDateTime;
 
@@ -478,7 +478,7 @@ mod local_date_time_test {
 mod date_time_test {
     use time::macros::datetime;
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::DateTime;
 
@@ -572,7 +572,7 @@ mod date_time_test {
 mod utc_offset_test {
     use time::macros::offset;
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::UtcOffset;
 

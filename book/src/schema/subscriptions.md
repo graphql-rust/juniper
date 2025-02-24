@@ -12,7 +12,7 @@ The [subscription root][3] is just a [GraphQL object][4], similar to the [query 
 # extern crate juniper;
 # use std::pin::Pin;
 # use futures::Stream;
-# use juniper::{graphql_object, graphql_subscription, FieldError};
+# use juniper::{FieldError, graphql_object, graphql_subscription};
 #
 # #[derive(Clone)]
 # pub struct Database;

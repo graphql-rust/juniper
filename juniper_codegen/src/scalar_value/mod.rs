@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 
 use proc_macro2::{Literal, TokenStream};
-use quote::{quote, ToTokens, TokenStreamExt as _};
+use quote::{ToTokens, TokenStreamExt as _, quote};
 use syn::{
     parse::{Parse, ParseStream},
     parse_quote,
@@ -13,9 +13,8 @@ use syn::{
 };
 
 use crate::common::{
-    diagnostic, filter_attrs,
-    parse::{attr::err, ParseBufferExt as _},
-    SpanContainer,
+    SpanContainer, diagnostic, filter_attrs,
+    parse::{ParseBufferExt as _, attr::err},
 };
 
 /// [`diagnostic::Scope`] of errors for `#[derive(ScalarValue)]` macro.

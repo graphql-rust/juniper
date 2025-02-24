@@ -4,7 +4,7 @@ use proc_macro2::TokenStream;
 use quote::ToTokens;
 use syn::{parse_quote, spanned::Spanned};
 
-use crate::common::{diagnostic, scalar, SpanContainer};
+use crate::common::{SpanContainer, diagnostic, scalar};
 
 use super::{Attr, Definition, Field, Methods, ParseToken, TypeOrIdent};
 
@@ -63,9 +63,7 @@ pub(super) fn parse_derived_methods(ast: &syn::DeriveInput, attr: &Attr) -> syn:
             })
         }
         (to_output, from_input, parse_token, None, true) => {
-            let data = if let syn::Data::Struct(data) = &ast.data {
-                data
-            } else {
+            let syn::Data::Struct(data) = &ast.data else {
                 return Err(ERR.custom_error(
                     ast.span(),
                     "`transparent` attribute argument requires exactly 1 field",

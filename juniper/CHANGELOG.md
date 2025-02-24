@@ -13,7 +13,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 ### BC Breaks
 
 - Upgraded [`chrono-tz` crate] integration to [0.10 version](https://github.com/chronotope/chrono-tz/releases/tag/v0.10.0). ([#1252], [#1284])
-- Bumped up [MSRV] to 1.75. ([#1272])
+- Bumped up [MSRV] to 1.85. ([#1272], [todo])
 - Corrected compliance with newer [graphql-scalars.dev] specs: ([#1275], [#1277])
     - Switched `LocalDateTime` scalars to `yyyy-MM-ddTHH:mm:ss` format in types:
         - `chrono::NaiveDateTime`.
@@ -59,6 +59,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1284]: /../../pull/1284
 [#1300]: /../../pull/1300
 [#1311]: /../../pull/1311
+[todo]: /../../commit/todo
 
 
 

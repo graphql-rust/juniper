@@ -1,6 +1,6 @@
 use juniper::{
-    execute, graphql_object, graphql_value, graphql_vars, EmptyMutation, EmptySubscription,
-    GraphQLInputObject, RootNode, Value,
+    EmptyMutation, EmptySubscription, GraphQLInputObject, RootNode, Value, execute, graphql_object,
+    graphql_value, graphql_vars,
 };
 
 pub struct Query;

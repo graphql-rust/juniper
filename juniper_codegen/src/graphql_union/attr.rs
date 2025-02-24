@@ -3,14 +3,14 @@
 use std::mem;
 
 use proc_macro2::{Span, TokenStream};
-use quote::{quote, ToTokens as _};
+use quote::{ToTokens as _, quote};
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _};
 
-use crate::common::{diagnostic, parse, path_eq_single, scalar, SpanContainer};
+use crate::common::{SpanContainer, diagnostic, parse, path_eq_single, scalar};
 
 use super::{
-    all_variants_different, emerge_union_variants_from_attr, Attr, Definition, VariantAttr,
-    VariantDefinition,
+    Attr, Definition, VariantAttr, VariantDefinition, all_variants_different,
+    emerge_union_variants_from_attr,
 };
 
 /// [`diagnostic::Scope`] of errors for `#[graphql_union]` macro.

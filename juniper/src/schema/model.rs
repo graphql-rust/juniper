@@ -5,12 +5,12 @@ use fnv::FnvHashMap;
 use graphql_parser::schema::Document;
 
 use crate::{
+    GraphQLEnum,
     ast::Type,
     executor::{Context, Registry},
     schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta},
     types::{base::GraphQLType, name::Name},
     value::{DefaultScalarValue, ScalarValue},
-    GraphQLEnum,
 };
 
 /// Root query node of a schema
@@ -249,7 +249,7 @@ where
     #[must_use]
     pub fn as_document(&'a self) -> Document<'a, &'a str> {
         use crate::schema::translate::{
-            graphql_parser::GraphQLParserTranslator, SchemaTranslator as _,
+            SchemaTranslator as _, graphql_parser::GraphQLParserTranslator,
         };
 
         GraphQLParserTranslator::translate_schema(&self.schema)
@@ -757,7 +757,7 @@ mod concrete_type_sort {
 mod root_node_test {
     #[cfg(feature = "schema-language")]
     mod as_document {
-        use crate::{graphql_object, EmptyMutation, EmptySubscription, RootNode};
+        use crate::{EmptyMutation, EmptySubscription, RootNode, graphql_object};
 
         struct Query;
 
@@ -796,8 +796,8 @@ mod root_node_test {
     #[cfg(feature = "schema-language")]
     mod as_sdl {
         use crate::{
-            graphql_object, EmptyMutation, EmptySubscription, GraphQLEnum, GraphQLInputObject,
-            GraphQLObject, GraphQLUnion, RootNode,
+            EmptyMutation, EmptySubscription, GraphQLEnum, GraphQLInputObject, GraphQLObject,
+            GraphQLUnion, RootNode, graphql_object,
         };
 
         #[derive(GraphQLObject, Default)]

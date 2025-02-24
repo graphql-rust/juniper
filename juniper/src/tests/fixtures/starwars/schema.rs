@@ -2,7 +2,7 @@
 
 use std::{collections::HashMap, pin::Pin};
 
-use crate::{graphql_interface, graphql_object, graphql_subscription, Context, GraphQLEnum};
+use crate::{Context, GraphQLEnum, graphql_interface, graphql_object, graphql_subscription};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Query;

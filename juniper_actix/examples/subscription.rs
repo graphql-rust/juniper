@@ -1,19 +1,18 @@
 //! This example demonstrates asynchronous subscriptions with [`actix_web`].
 
-use std::{env, pin::Pin, time::Duration};
+use std::{pin::Pin, time::Duration};
 
 use actix_cors::Cors;
 use actix_web::{
+    App, Error, HttpRequest, HttpResponse, HttpServer, Responder,
     http::header,
     middleware,
     web::{self, Data},
-    App, Error, HttpRequest, HttpResponse, HttpServer, Responder,
 };
 
 use juniper::{
-    graphql_subscription, graphql_value,
+    EmptyMutation, FieldError, GraphQLObject, RootNode, graphql_subscription, graphql_value,
     tests::fixtures::starwars::schema::{Database, Query},
-    EmptyMutation, FieldError, GraphQLObject, RootNode,
 };
 use juniper_actix::{graphiql_handler, graphql_handler, playground_handler, subscriptions};
 use juniper_graphql_ws::ConnectionConfig;
@@ -85,7 +84,7 @@ impl Subscription {
                        Second result will be an error."
     )]
     async fn random_human(context: &Database) -> RandomHumanStream {
-        use rand::{rngs::StdRng, Rng as _, SeedableRng as _};
+        use rand::{Rng as _, SeedableRng as _, rngs::StdRng};
 
         let mut counter = 0;
 
@@ -120,8 +119,9 @@ impl Subscription {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    env::set_var("RUST_LOG", "info");
-    env_logger::init();
+    env_logger::builder()
+        .filter_level(log::LevelFilter::Info)
+        .init();
 
     HttpServer::new(move || {
         App::new()

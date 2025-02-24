@@ -1,4 +1,5 @@
-#![doc = include_str!("../README.md")]
+#![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
+#![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(missing_docs)]
 
@@ -9,18 +10,18 @@ pub mod subscriptions;
 use std::{collections::HashMap, fmt, str, sync::Arc};
 
 use juniper::{
-    http::{GraphQLBatchRequest, GraphQLRequest},
     ScalarValue,
+    http::{GraphQLBatchRequest, GraphQLRequest},
 };
 use tokio::task;
 use warp::{
+    Filter,
     body::{self, BodyDeserializeError},
     http::{self, StatusCode},
     hyper::body::Bytes,
     query,
     reject::{self, Reject, Rejection},
     reply::{self, Reply},
-    Filter,
 };
 
 use self::response::JuniperResponse;
@@ -274,8 +275,8 @@ where
 }
 
 /// Extracts a [`GraphQLBatchRequest`] from a POST `application/json` HTTP request.
-fn post_json_extractor<S>(
-) -> impl Filter<Extract = (GraphQLBatchRequest<S>,), Error = Rejection> + Clone + Send
+fn post_json_extractor<S>()
+-> impl Filter<Extract = (GraphQLBatchRequest<S>,), Error = Rejection> + Clone + Send
 where
     S: ScalarValue + Send,
 {
@@ -283,14 +284,14 @@ where
 }
 
 /// Extracts a [`GraphQLBatchRequest`] from a POST `application/graphql` HTTP request.
-fn post_graphql_extractor<S>(
-) -> impl Filter<Extract = (GraphQLBatchRequest<S>,), Error = Rejection> + Clone + Send
+fn post_graphql_extractor<S>()
+-> impl Filter<Extract = (GraphQLBatchRequest<S>,), Error = Rejection> + Clone + Send
 where
     S: ScalarValue + Send,
 {
     warp::post()
         .and(body::bytes())
-        .and_then(|body: Bytes| async move {
+        .and_then(async |body: Bytes| {
             let query = str::from_utf8(body.as_ref())
                 .map_err(|e| reject::custom(FilterError::NonUtf8Body(e)))?;
             let req = GraphQLRequest::new(query.into(), None, None);
@@ -299,14 +300,14 @@ where
 }
 
 /// Extracts a [`GraphQLBatchRequest`] from a GET HTTP request.
-fn get_query_extractor<S>(
-) -> impl Filter<Extract = (GraphQLBatchRequest<S>,), Error = Rejection> + Clone + Send
+fn get_query_extractor<S>()
+-> impl Filter<Extract = (GraphQLBatchRequest<S>,), Error = Rejection> + Clone + Send
 where
     S: ScalarValue + Send,
 {
     warp::get()
         .and(query::query())
-        .and_then(|mut qry: HashMap<String, String>| async move {
+        .and_then(async |mut qry: HashMap<String, String>| {
             let req = GraphQLRequest::new(
                 qry.remove("query")
                     .ok_or_else(|| reject::custom(FilterError::MissingPathQuery))?,
@@ -457,15 +458,14 @@ mod tests {
         use std::future;
 
         use juniper::{
+            EmptyMutation, EmptySubscription,
             http::GraphQLBatchRequest,
             tests::fixtures::starwars::schema::{Database, Query},
-            EmptyMutation, EmptySubscription,
         };
         use warp::{
-            http,
+            Filter as _, Reply, http,
             reject::{self, Reject},
             test::request,
-            Filter as _, Reply,
         };
 
         use super::super::make_graphql_filter;
@@ -507,8 +507,8 @@ mod tests {
         #[tokio::test]
         async fn rejects_fast_when_context_extractor_fails() {
             use std::sync::{
-                atomic::{AtomicBool, Ordering},
                 Arc,
+                atomic::{AtomicBool, Ordering},
             };
 
             #[derive(Clone, Copy, Debug)]
@@ -617,7 +617,7 @@ mod tests {
     }
 
     mod graphiql_filter {
-        use warp::{http, test::request, Filter as _};
+        use warp::{Filter as _, http, test::request};
 
         use super::super::{graphiql_filter, graphiql_response};
 
@@ -682,7 +682,7 @@ mod tests {
     }
 
     mod playground_filter {
-        use warp::{http, test::request, Filter as _};
+        use warp::{Filter as _, http, test::request};
 
         use super::super::playground_filter;
 

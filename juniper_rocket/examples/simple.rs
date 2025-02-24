@@ -1,8 +1,8 @@
 use juniper::{
-    tests::fixtures::starwars::schema::{Database, Query},
     EmptyMutation, EmptySubscription, RootNode,
+    tests::fixtures::starwars::schema::{Database, Query},
 };
-use rocket::{response::content::RawHtml, routes, State};
+use rocket::{State, response::content::RawHtml, routes};
 
 type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 

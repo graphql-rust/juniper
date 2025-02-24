@@ -37,7 +37,7 @@ We can create [custom scalars][2] for other primitive values, but they are still
 Quite often, we want to create a [custom GraphQL scalar][2] type by just wrapping an existing one, inheriting all its behavior. In [Rust], this is often called as ["newtype pattern"][3]. This may be achieved by providing a `#[graphql(transparent)]` attribute to the definition:
 ```rust
 # extern crate juniper;
-# use juniper::{graphql_scalar, GraphQLScalar};
+# use juniper::{GraphQLScalar, graphql_scalar};
 #
 #[derive(GraphQLScalar)]
 #[graphql(transparent)]
@@ -352,7 +352,7 @@ For implementing [custom scalars][2] on foreign types there is [`#[graphql_scala
 # }
 #
 # use juniper::DefaultScalarValue as CustomScalarValue;
-use juniper::{graphql_scalar, InputValue, ScalarValue, Value};
+use juniper::{InputValue, ScalarValue, Value, graphql_scalar};
 
 #[graphql_scalar(
     with = date_scalar, 

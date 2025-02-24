@@ -1,8 +1,8 @@
 [package]
 name = "juniper_actix"
 version = "0.6.0"
-edition = "2021"
-rust-version = "1.75"
+edition = "2024"
+rust-version = "1.85"
 description = "`juniper` GraphQL integration with `actix-web`."
 license = "BSD-2-Clause"
 authors = [

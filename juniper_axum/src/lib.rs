@@ -1,5 +1,6 @@
-#![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
+#![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
 #![deny(missing_docs)]
 
 pub mod extract;
@@ -97,10 +98,10 @@ where
 ///
 /// [`Handler`]: axum::handler::Handler
 /// [GraphiQL]: https://github.com/graphql/graphiql
-pub fn graphiql<'a>(
+pub fn graphiql<'a, T: Into<Option<&'a str>>>(
     graphql_endpoint_url: &str,
-    subscriptions_endpoint_url: impl Into<Option<&'a str>>,
-) -> impl FnOnce() -> future::Ready<Html<String>> + Clone + Send {
+    subscriptions_endpoint_url: T,
+) -> impl FnOnce() -> future::Ready<Html<String>> + Clone + Send + use<T> {
     let html = Html(juniper::http::graphiql::graphiql_source(
         graphql_endpoint_url,
         subscriptions_endpoint_url.into(),
@@ -125,10 +126,10 @@ pub fn graphiql<'a>(
 ///
 /// [`Handler`]: axum::handler::Handler
 /// [GraphQL Playground]: https://github.com/prisma/graphql-playground
-pub fn playground<'a>(
+pub fn playground<'a, T: Into<Option<&'a str>>>(
     graphql_endpoint_url: &str,
-    subscriptions_endpoint_url: impl Into<Option<&'a str>>,
-) -> impl FnOnce() -> future::Ready<Html<String>> + Clone + Send {
+    subscriptions_endpoint_url: T,
+) -> impl FnOnce() -> future::Ready<Html<String>> + Clone + Send + use<T> {
     let html = Html(juniper::http::playground::playground_source(
         graphql_endpoint_url,
         subscriptions_endpoint_url.into(),

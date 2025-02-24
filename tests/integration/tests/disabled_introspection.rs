@@ -2,8 +2,8 @@
 
 use futures::stream;
 use juniper::{
-    execute, graphql_object, graphql_subscription, graphql_vars, resolve_into_stream, GraphQLError,
-    RootNode,
+    GraphQLError, RootNode, execute, graphql_object, graphql_subscription, graphql_vars,
+    resolve_into_stream,
 };
 
 pub struct Query;

@@ -12,6 +12,7 @@ use fnv::FnvHashMap;
 use futures::Stream;
 
 use crate::{
+    GraphQLError,
     ast::{
         Definition, Document, Fragment, FromInputValue, InputValue, Operation, OperationType,
         Selection, ToInputValue, Type,
@@ -32,7 +33,6 @@ use crate::{
         subscriptions::{GraphQLSubscriptionType, GraphQLSubscriptionValue},
     },
     value::{DefaultScalarValue, ParseScalarValue, ScalarValue, Value},
-    GraphQLError,
 };
 
 pub use self::{
@@ -701,7 +701,7 @@ where
                 // Search the parent's fields to find this field within the selection set.
                 p.iter().find_map(|x| {
                     match x {
-                        Selection::Field(ref field) => {
+                        Selection::Field(field) => {
                             let field = &field.item;
                             // TODO: support excludes.
                             let name = field.name.item;

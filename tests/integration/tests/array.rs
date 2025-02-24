@@ -1,6 +1,6 @@
 use juniper::{
-    graphql_object, graphql_value, graphql_vars, EmptyMutation, EmptySubscription,
-    GraphQLInputObject, RootNode,
+    EmptyMutation, EmptySubscription, GraphQLInputObject, RootNode, graphql_object, graphql_value,
+    graphql_vars,
 };
 
 mod as_output_field {

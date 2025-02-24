@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use juniper::{graphql_object, GraphQLInputObject};
+use juniper::{GraphQLInputObject, graphql_object};
 
 struct Query;
 

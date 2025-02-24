@@ -4,7 +4,7 @@ use proc_macro2::{Span, TokenStream};
 
 use crate::{
     common::parse,
-    graphql_object::{attr::expand_on_impl, Attr},
+    graphql_object::{Attr, attr::expand_on_impl},
 };
 
 use super::Subscription;

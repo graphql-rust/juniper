@@ -1,4 +1,5 @@
 use crate::{
+    Span,
     ast::{
         Directive, Document, Field, Fragment, FragmentSpread, InlineFragment, InputValue,
         Operation, Selection, VariableDefinition,
@@ -6,7 +7,6 @@ use crate::{
     parser::Spanning,
     validation::ValidatorContext,
     value::ScalarValue,
-    Span,
 };
 
 #[doc(hidden)]

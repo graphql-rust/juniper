@@ -3,6 +3,7 @@ use std::{char, fmt, marker::PhantomData, ops::Deref, rc::Rc, thread::JoinHandle
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    GraphQLScalar,
     ast::{InputValue, Selection, ToInputValue},
     executor::{ExecutionResult, Executor, Registry},
     graphql_scalar,
@@ -15,7 +16,6 @@ use crate::{
         subscriptions::GraphQLSubscriptionValue,
     },
     value::{ParseScalarResult, ScalarValue, Value},
-    GraphQLScalar,
 };
 
 /// An ID as defined by the GraphQL specification
@@ -119,7 +119,7 @@ mod impl_string_scalar {
                         Some(s) => {
                             return Err(ParseError::LexerError(LexerError::UnknownEscapeSequence(
                                 format!("\\{s}"),
-                            )))
+                            )));
                         }
                         None => return Err(ParseError::LexerError(LexerError::UnterminatedString)),
                     },

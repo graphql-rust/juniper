@@ -2,8 +2,8 @@
 //! See [#945](https://github.com/graphql-rust/juniper/issues/945) for details.
 
 use juniper::{
-    graphql_object, graphql_value, graphql_vars, EmptyMutation, EmptySubscription, GraphQLObject,
-    GraphQLUnion,
+    EmptyMutation, EmptySubscription, GraphQLObject, GraphQLUnion, graphql_object, graphql_value,
+    graphql_vars,
 };
 
 struct Query;
