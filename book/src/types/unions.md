@@ -5,7 +5,7 @@ Unions
 
 From the server's point of view, [GraphQL unions][0] are somewhat similar to [interfaces][12]: the main difference is that they don't contain fields on their own, and so, we only need to represent a value, _dispatchable_ into concrete [objects][10].
 
-Obviously, the most straightforward approach to express [GraphQL unions][0] in [Rust] is to use [enums][22]. In [Juniper] this may be done by using [`#[derive(GraphQLInterface)]`][2] attribute on them:
+Obviously, the most straightforward approach to express [GraphQL unions][0] in [Rust] is to use [enums][22]. In [Juniper] this may be done by using [`#[derive(GraphQLUnion)]`][2] attribute on them:
 ```rust
 # extern crate derive_more;
 # extern crate juniper;
