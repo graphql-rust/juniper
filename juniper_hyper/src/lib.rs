@@ -1,16 +1,17 @@
-#![doc = include_str!("../README.md")]
+#![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
+#![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
 
 use std::{error::Error, fmt, string::FromUtf8Error, sync::Arc};
 
 use http_body_util::BodyExt as _;
 use hyper::{
+    Method, Request, Response, StatusCode,
     body::Body,
     header::{self, HeaderValue},
-    Method, Request, Response, StatusCode,
 };
 use juniper::{
-    http::{GraphQLBatchRequest, GraphQLRequest as JuniperGraphQLRequest, GraphQLRequest},
     GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync, InputValue, RootNode, ScalarValue,
+    http::{GraphQLBatchRequest, GraphQLRequest as JuniperGraphQLRequest, GraphQLRequest},
 };
 use serde_json::error::Error as SerdeError;
 use url::form_urlencoded;
@@ -358,14 +359,14 @@ mod tests {
 
     use http_body_util::BodyExt as _;
     use hyper::{
-        body::Incoming, server::conn::http1, service::service_fn, Method, Request, Response,
-        StatusCode,
+        Method, Request, Response, StatusCode, body::Incoming, server::conn::http1,
+        service::service_fn,
     };
     use hyper_util::rt::TokioIo;
     use juniper::{
+        EmptyMutation, EmptySubscription, RootNode,
         http::tests as http_tests,
         tests::fixtures::starwars::schema::{Database, Query},
-        EmptyMutation, EmptySubscription, RootNode,
     };
     use reqwest::blocking::Response as ReqwestResponse;
     use tokio::{net::TcpListener, task, time::sleep};

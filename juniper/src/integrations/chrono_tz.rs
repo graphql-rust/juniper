@@ -11,7 +11,7 @@
 //! [1]: http://www.iana.org/time-zones
 //! [s1]: https://graphql-scalars.dev/docs/scalars/time-zone
 
-use crate::{graphql_scalar, InputValue, ScalarValue, Value};
+use crate::{InputValue, ScalarValue, Value, graphql_scalar};
 
 /// Timezone based on [`IANA` database][0].
 ///
@@ -57,7 +57,7 @@ mod test {
     mod from_input_value {
         use super::TimeZone;
 
-        use crate::{graphql_input_value, FromInputValue, InputValue, IntoFieldError};
+        use crate::{FromInputValue, InputValue, IntoFieldError, graphql_input_value};
 
         fn tz_input_test(raw: &'static str, expected: Result<TimeZone, &str>) {
             let input: InputValue = graphql_input_value!((raw));

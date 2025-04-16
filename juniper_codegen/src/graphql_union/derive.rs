@@ -1,18 +1,19 @@
 //! Code generation for `#[derive(GraphQLUnion)]` macro.
 
 use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
-use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned as _, Data, Fields};
+use quote::{ToTokens, quote};
+use syn::{Data, Fields, ext::IdentExt as _, parse_quote, spanned::Spanned as _};
 
 use crate::common::{
+    SpanContainer,
     diagnostic::{self, ResultExt as _},
     parse::TypeExt as _,
-    scalar, SpanContainer,
+    scalar,
 };
 
 use super::{
-    all_variants_different, emerge_union_variants_from_attr, Attr, Definition, VariantAttr,
-    VariantDefinition,
+    Attr, Definition, VariantAttr, VariantDefinition, all_variants_different,
+    emerge_union_variants_from_attr,
 };
 
 /// [`diagnostic::Scope`] of errors for `#[derive(GraphQLUnion)]` macro.
@@ -155,7 +156,7 @@ fn parse_variant_from_enum_variant(
     } else {
         parse_quote! {
             match self {
-                #enum_ident::#var_ident(ref v) => ::core::option::Option::Some(v),
+                #enum_ident::#var_ident(v) => ::core::option::Option::Some(v),
                 _ => ::core::option::Option::None,
             }
         }

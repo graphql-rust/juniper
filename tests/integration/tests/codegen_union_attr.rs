@@ -3,8 +3,8 @@
 pub mod common;
 
 use juniper::{
-    execute, graphql_object, graphql_union, graphql_value, graphql_vars, DefaultScalarValue,
-    GraphQLObject, ScalarValue,
+    DefaultScalarValue, GraphQLObject, ScalarValue, execute, graphql_object, graphql_union,
+    graphql_value, graphql_vars,
 };
 
 use self::common::util::{schema, schema_with_scalar};
@@ -1097,7 +1097,7 @@ mod external_resolver {
 
     type DynCharacter<'a> = dyn Character + prelude::Send + prelude::Sync + 'a;
 
-    impl<'a> DynCharacter<'a> {
+    impl DynCharacter<'_> {
         fn as_droid<'db>(&self, db: &'db Database) -> prelude::Option<&'db Droid> {
             db.droid.as_ref()
         }

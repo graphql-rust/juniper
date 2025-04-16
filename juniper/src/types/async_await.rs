@@ -11,7 +11,7 @@ use crate::{
 
 use crate::BoxFuture;
 
-use super::base::{is_excluded, merge_key_into, Arguments, GraphQLType, GraphQLValue};
+use super::base::{Arguments, GraphQLType, GraphQLValue, is_excluded, merge_key_into};
 
 /// Extension of [`GraphQLValue`] trait with asynchronous queries/mutations resolvers.
 ///

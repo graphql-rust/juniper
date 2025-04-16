@@ -52,7 +52,7 @@
 
 use std::{error::Error, fmt, str};
 
-use crate::{graphql_scalar, InputValue, ScalarValue, Value};
+use crate::{InputValue, ScalarValue, Value, graphql_scalar};
 
 /// Representation of a civil date in the Gregorian calendar.
 ///
@@ -373,7 +373,7 @@ mod time_zone_or_utc_offset {
     use super::*;
 
     /// Format of a [`TimeZoneOrUtcOffset`] scalar.
-    const FORMAT: &str = "%:V";
+    const FORMAT: &str = "%:Q";
 
     pub(super) fn to_output<S>(v: &TimeZoneOrUtcOffset) -> Value<S>
     where
@@ -580,7 +580,7 @@ mod utc_offset {
 
 #[cfg(test)]
 mod local_date_test {
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::LocalDate;
 
@@ -650,7 +650,7 @@ mod local_date_test {
 
 #[cfg(test)]
 mod local_time_test {
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::LocalTime;
 
@@ -732,7 +732,7 @@ mod local_time_test {
 
 #[cfg(test)]
 mod local_date_time_test {
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::LocalDateTime;
 
@@ -814,7 +814,7 @@ mod local_date_time_test {
 mod date_time_test {
     use jiff::{civil, tz::TimeZone};
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::DateTime;
 
@@ -940,7 +940,7 @@ mod date_time_test {
 mod zoned_date_time_test {
     use jiff::{civil, tz, tz::TimeZone};
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::ZonedDateTime;
 
@@ -1126,7 +1126,7 @@ mod zoned_date_time_test {
 mod duration_test {
     use jiff::ToSpan as _;
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::Duration;
 
@@ -1159,7 +1159,82 @@ mod duration_test {
             ),
         ] {
             let input: InputValue = graphql_input_value!((raw));
-            let parsed = Duration::from_input_value(&input);
+            let parsed = Duration::from_input_value(&input).map(Duration::fieldwise);
+
+            assert!(
+                parsed.is_ok(),
+                "failed to parse `{raw}`: {:?}",
+                parsed.unwrap_err(),
+            );
+            assert_eq!(parsed.unwrap(), expected, "input: {raw}");
+        }
+    }
+
+    #[test]
+    fn parses_jiff_friendly_input() {
+        for (raw, expected) in [
+            ("40d", 40.days()),
+            ("40 days", 40.days()),
+            ("1y1d", 1.year().days(1)),
+            ("1yr 1d", 1.year().days(1)),
+            ("3d4h59m", 3.days().hours(4).minutes(59)),
+            ("3 days, 4 hours, 59 minutes", 3.days().hours(4).minutes(59)),
+            ("3d 4h 59m", 3.days().hours(4).minutes(59)),
+            ("2h30m", 2.hours().minutes(30)),
+            ("2h 30m", 2.hours().minutes(30)),
+            ("1mo", 1.month()),
+            ("1w", 1.week()),
+            ("1 week", 1.week()),
+            ("1w4d", 1.week().days(4)),
+            ("1 wk 4 days", 1.week().days(4)),
+            ("1m", 1.minute()),
+            ("0.0021s", 2.milliseconds().microseconds(100)),
+            ("0s", 0.seconds()),
+            ("0d", 0.seconds()),
+            ("0 days", 0.seconds()),
+            (
+                "1y1mo1d1h1m1.1s",
+                1.year()
+                    .months(1)
+                    .days(1)
+                    .hours(1)
+                    .minutes(1)
+                    .seconds(1)
+                    .milliseconds(100),
+            ),
+            (
+                "1yr 1mo 1day 1hr 1min 1.1sec",
+                1.year()
+                    .months(1)
+                    .days(1)
+                    .hours(1)
+                    .minutes(1)
+                    .seconds(1)
+                    .milliseconds(100),
+            ),
+            (
+                "1 year, 1 month, 1 day, 1 hour, 1 minute 1.1 seconds",
+                1.year()
+                    .months(1)
+                    .days(1)
+                    .hours(1)
+                    .minutes(1)
+                    .seconds(1)
+                    .milliseconds(100),
+            ),
+            (
+                "1 year, 1 month, 1 day, 01:01:01.1",
+                1.year()
+                    .months(1)
+                    .days(1)
+                    .hours(1)
+                    .minutes(1)
+                    .seconds(1)
+                    .milliseconds(100),
+            ),
+        ] {
+            let input: InputValue = graphql_input_value!((raw));
+            let parsed = Duration::from_input_value(&input).map(Duration::fieldwise);
 
             assert!(
                 parsed.is_ok(),
@@ -1178,7 +1253,6 @@ mod duration_test {
             graphql_input_value!("P0"),
             graphql_input_value!("PT"),
             graphql_input_value!("PTS"),
-            graphql_input_value!("56:34:22"),
             graphql_input_value!("1996-12-19"),
             graphql_input_value!("1996-12-19T14:23:43"),
             graphql_input_value!("1996-12-19T14:23:43Z"),
@@ -1206,9 +1280,9 @@ mod duration_test {
                     .minutes(1)
                     .seconds(1)
                     .milliseconds(100),
-                graphql_input_value!("P1y1m1dT1h1m1.1s"),
+                graphql_input_value!("P1Y1M1DT1H1M1.1S"),
             ),
-            ((-5).days(), graphql_input_value!("-P5d")),
+            ((-5).days(), graphql_input_value!("-P5D")),
         ] {
             let actual: InputValue = val.to_input_value();
 
@@ -1221,7 +1295,7 @@ mod duration_test {
 mod time_zone_or_utc_offset_test {
     use jiff::tz;
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::TimeZoneOrUtcOffset;
 
@@ -1337,7 +1411,7 @@ mod time_zone_or_utc_offset_test {
 mod time_zone_test {
     use jiff::tz;
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::TimeZone;
 
@@ -1450,7 +1524,7 @@ mod time_zone_test {
 mod utc_offset_test {
     use jiff::tz;
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::UtcOffset;
 
@@ -1510,7 +1584,7 @@ mod utc_offset_test {
 
 #[cfg(test)]
 mod integration_test {
-    use jiff::{civil, tz, ToSpan as _};
+    use jiff::{ToSpan as _, civil, tz};
 
     use crate::{
         execute, graphql_object, graphql_value, graphql_vars,
@@ -1600,7 +1674,7 @@ mod integration_test {
                     "zonedDateTime": "2014-11-28T12:00:09.05-05:00[America/New_York]",
                     "timeZone": "Asia/Tokyo",
                     "utcOffset": "+10:00",
-                    "duration": "P1y1m1dT1h1m1.1s",
+                    "duration": "P1Y1M1DT1H1M1.1S",
                 }),
                 vec![],
             )),

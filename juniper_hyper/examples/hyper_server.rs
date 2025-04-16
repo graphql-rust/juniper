@@ -1,18 +1,19 @@
-use std::{convert::Infallible, env, error::Error, net::SocketAddr, sync::Arc};
+use std::{convert::Infallible, error::Error, net::SocketAddr, sync::Arc};
 
-use hyper::{server::conn::http1, service::service_fn, Method, Response, StatusCode};
+use hyper::{Method, Response, StatusCode, server::conn::http1, service::service_fn};
 use hyper_util::rt::TokioIo;
 use juniper::{
-    tests::fixtures::starwars::schema::{Database, Query},
     EmptyMutation, EmptySubscription, RootNode,
+    tests::fixtures::starwars::schema::{Database, Query},
 };
 use juniper_hyper::{graphiql, graphql, playground};
 use tokio::net::TcpListener;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
-    env::set_var("RUST_LOG", "info");
-    pretty_env_logger::init();
+    pretty_env_logger::formatted_builder()
+        .filter_level(log::LevelFilter::Info)
+        .init();
 
     let db = Arc::new(Database::new());
     let root_node = Arc::new(RootNode::new(

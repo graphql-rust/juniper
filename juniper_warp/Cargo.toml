@@ -1,8 +1,8 @@
 [package]
 name = "juniper_warp"
 version = "0.8.0"
-edition = "2021"
-rust-version = "1.75"
+edition = "2024"
+rust-version = "1.85"
 description = "`juniper` GraphQL integration with `warp`."
 license = "BSD-2-Clause"
 authors = [

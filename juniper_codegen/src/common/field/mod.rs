@@ -15,12 +15,12 @@ use syn::{
 };
 
 use crate::common::{
-    deprecation, filter_attrs,
+    Description, SpanContainer, deprecation, filter_attrs,
     parse::{
-        attr::{err, OptionExt as _},
         ParseBufferExt as _,
+        attr::{OptionExt as _, err},
     },
-    scalar, Description, SpanContainer,
+    scalar,
 };
 
 pub(crate) use self::arg::OnMethod as MethodArgument;

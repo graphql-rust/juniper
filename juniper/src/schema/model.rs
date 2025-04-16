@@ -5,12 +5,12 @@ use fnv::FnvHashMap;
 use graphql_parser::schema::Document;
 
 use crate::{
+    GraphQLEnum,
     ast::Type,
     executor::{Context, Registry},
     schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta},
     types::{base::GraphQLType, name::Name},
     value::{DefaultScalarValue, ScalarValue},
-    GraphQLEnum,
 };
 
 /// Root query node of a schema
@@ -56,7 +56,7 @@ pub struct SchemaType<'a, S> {
     directives: FnvHashMap<String, DirectiveType<'a, S>>,
 }
 
-impl<'a, S> Context for SchemaType<'a, S> {}
+impl<S> Context for SchemaType<'_, S> {}
 
 #[derive(Clone)]
 pub enum TypeType<'a, S: 'a> {
@@ -96,8 +96,8 @@ pub enum DirectiveLocation {
     EnumValue,
 }
 
-impl<'a, QueryT, MutationT, SubscriptionT>
-    RootNode<'a, QueryT, MutationT, SubscriptionT, DefaultScalarValue>
+impl<QueryT, MutationT, SubscriptionT>
+    RootNode<'_, QueryT, MutationT, SubscriptionT, DefaultScalarValue>
 where
     QueryT: GraphQLType<DefaultScalarValue, TypeInfo = ()>,
     MutationT: GraphQLType<DefaultScalarValue, TypeInfo = ()>,
@@ -249,7 +249,7 @@ where
     #[must_use]
     pub fn as_document(&'a self) -> Document<'a, &'a str> {
         use crate::schema::translate::{
-            graphql_parser::GraphQLParserTranslator, SchemaTranslator as _,
+            SchemaTranslator as _, graphql_parser::GraphQLParserTranslator,
         };
 
         GraphQLParserTranslator::translate_schema(&self.schema)
@@ -683,7 +683,7 @@ impl fmt::Display for DirectiveLocation {
     }
 }
 
-impl<'a, S> fmt::Display for TypeType<'a, S> {
+impl<S> fmt::Display for TypeType<'_, S> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Concrete(t) => f.write_str(t.name().unwrap()),
@@ -757,7 +757,7 @@ mod concrete_type_sort {
 mod root_node_test {
     #[cfg(feature = "schema-language")]
     mod as_document {
-        use crate::{graphql_object, EmptyMutation, EmptySubscription, RootNode};
+        use crate::{EmptyMutation, EmptySubscription, RootNode, graphql_object};
 
         struct Query;
 
@@ -796,8 +796,8 @@ mod root_node_test {
     #[cfg(feature = "schema-language")]
     mod as_sdl {
         use crate::{
-            graphql_object, EmptyMutation, EmptySubscription, GraphQLEnum, GraphQLInputObject,
-            GraphQLObject, GraphQLUnion, RootNode,
+            EmptyMutation, EmptySubscription, GraphQLEnum, GraphQLInputObject, GraphQLObject,
+            GraphQLUnion, RootNode, graphql_object,
         };
 
         #[derive(GraphQLObject, Default)]

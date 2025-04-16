@@ -4,12 +4,12 @@ use juniper::IntoFieldError;
 use std::{borrow::Cow, fmt};
 
 use crate::{
+    FieldError,
     ast::{FromInputValue, InputValue, Type},
     parser::{ParseError, ScalarToken},
     schema::model::SchemaType,
     types::base::TypeKind,
     value::{DefaultScalarValue, ParseScalarValue},
-    FieldError,
 };
 
 /// Whether an item is deprecated, with context.
@@ -181,7 +181,7 @@ pub struct Field<'a, S> {
     pub deprecation_status: DeprecationStatus,
 }
 
-impl<'a, S> Field<'a, S> {
+impl<S> Field<'_, S> {
     /// Returns true if the type is built-in to GraphQL.
     pub fn is_builtin(&self) -> bool {
         // "used exclusively by GraphQL’s introspection system"
@@ -202,7 +202,7 @@ pub struct Argument<'a, S> {
     pub default_value: Option<InputValue<S>>,
 }
 
-impl<'a, S> Argument<'a, S> {
+impl<S> Argument<'_, S> {
     /// Returns true if the type is built-in to GraphQL.
     pub fn is_builtin(&self) -> bool {
         // "used exclusively by GraphQL’s introspection system"
@@ -770,7 +770,7 @@ impl EnumValue {
     }
 }
 
-impl<'a, S: fmt::Debug> fmt::Debug for ScalarMeta<'a, S> {
+impl<S: fmt::Debug> fmt::Debug for ScalarMeta<'_, S> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("ScalarMeta")
             .field("name", &self.name)
@@ -779,7 +779,7 @@ impl<'a, S: fmt::Debug> fmt::Debug for ScalarMeta<'a, S> {
     }
 }
 
-impl<'a, S: fmt::Debug> fmt::Debug for EnumMeta<'a, S> {
+impl<S: fmt::Debug> fmt::Debug for EnumMeta<'_, S> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("EnumMeta")
             .field("name", &self.name)
@@ -789,7 +789,7 @@ impl<'a, S: fmt::Debug> fmt::Debug for EnumMeta<'a, S> {
     }
 }
 
-impl<'a, S: fmt::Debug> fmt::Debug for InputObjectMeta<'a, S> {
+impl<S: fmt::Debug> fmt::Debug for InputObjectMeta<'_, S> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("InputObjectMeta")
             .field("name", &self.name)

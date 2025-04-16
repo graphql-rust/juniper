@@ -1,11 +1,10 @@
 use std::{iter, pin::Pin};
 
-use futures::{stream, StreamExt as _};
+use futures::{StreamExt as _, stream};
 
 use crate::{
-    graphql_object, graphql_subscription, graphql_value, http::GraphQLRequest, Context,
-    DefaultScalarValue, EmptyMutation, ExecutionError, FieldError, GraphQLObject, Object, RootNode,
-    Value,
+    Context, DefaultScalarValue, EmptyMutation, ExecutionError, FieldError, GraphQLObject, Object,
+    RootNode, Value, graphql_object, graphql_subscription, graphql_value, http::GraphQLRequest,
 };
 
 #[derive(Debug, Clone)]
@@ -33,7 +32,7 @@ impl MyQuery {
 type Schema =
     RootNode<'static, MyQuery, EmptyMutation<MyContext>, MySubscription, DefaultScalarValue>;
 
-fn run<O>(f: impl std::future::Future<Output = O>) -> O {
+fn run<O>(f: impl Future<Output = O>) -> O {
     let rt = tokio::runtime::Runtime::new().unwrap();
 
     rt.block_on(f)

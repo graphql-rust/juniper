@@ -383,7 +383,7 @@ macro_rules! graphql_input_value {
 
 #[cfg(test)]
 mod tests {
-    use indexmap::{indexmap, IndexMap};
+    use indexmap::{IndexMap, indexmap};
 
     type V = crate::InputValue;
 

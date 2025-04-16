@@ -5,7 +5,7 @@ pub(crate) mod deprecation;
 mod description;
 pub(crate) mod diagnostic;
 pub(crate) mod field;
-pub(crate) mod gen;
+pub(crate) mod generate;
 pub(crate) mod parse;
 pub(crate) mod rename;
 pub(crate) mod scalar;

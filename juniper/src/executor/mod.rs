@@ -12,6 +12,7 @@ use fnv::FnvHashMap;
 use futures::Stream;
 
 use crate::{
+    GraphQLError,
     ast::{
         Definition, Document, Fragment, FromInputValue, InputValue, Operation, OperationType,
         Selection, ToInputValue, Type,
@@ -32,7 +33,6 @@ use crate::{
         subscriptions::{GraphQLSubscriptionType, GraphQLSubscriptionValue},
     },
     value::{DefaultScalarValue, ParseScalarValue, ScalarValue, Value},
-    GraphQLError,
 };
 
 pub use self::{
@@ -273,7 +273,7 @@ impl<S> IntoFieldError<S> for std::convert::Infallible {
     }
 }
 
-impl<'a, S> IntoFieldError<S> for &'a str {
+impl<S> IntoFieldError<S> for &str {
     fn into_field_error(self) -> FieldError<S> {
         FieldError::<S>::from(self)
     }
@@ -285,7 +285,7 @@ impl<S> IntoFieldError<S> for String {
     }
 }
 
-impl<'a, S> IntoFieldError<S> for Cow<'a, str> {
+impl<S> IntoFieldError<S> for Cow<'_, str> {
     fn into_field_error(self) -> FieldError<S> {
         FieldError::<S>::from(self)
     }
@@ -403,7 +403,7 @@ pub trait FromContext<T> {
 /// Marker trait for types that can act as context objects for `GraphQL` types.
 pub trait Context {}
 
-impl<'a, C: Context> Context for &'a C {}
+impl<C: Context> Context for &C {}
 
 static NULL_CONTEXT: () = ();
 
@@ -701,7 +701,7 @@ where
                 // Search the parent's fields to find this field within the selection set.
                 p.iter().find_map(|x| {
                     match x {
-                        Selection::Field(ref field) => {
+                        Selection::Field(field) => {
                             let field = &field.item;
                             // TODO: support excludes.
                             let name = field.name.item;
@@ -755,7 +755,7 @@ where
     }
 }
 
-impl<'a> FieldPath<'a> {
+impl FieldPath<'_> {
     fn construct_path(&self, acc: &mut Vec<String>) {
         match self {
             FieldPath::Root(_) => (),

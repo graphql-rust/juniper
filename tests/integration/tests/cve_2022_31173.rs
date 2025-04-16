@@ -18,7 +18,7 @@
 use std::iter;
 
 use itertools::Itertools as _;
-use juniper::{graphql_object, graphql_vars, EmptyMutation, EmptySubscription};
+use juniper::{EmptyMutation, EmptySubscription, graphql_object, graphql_vars};
 
 struct Query;
 

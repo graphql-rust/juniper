@@ -7,8 +7,8 @@
 pub mod common;
 
 use juniper::{
-    execute, graphql_object, graphql_value, graphql_vars, DefaultScalarValue, Executor, FieldError,
-    FieldResult, GraphQLInputObject, GraphQLObject, IntoFieldError, ScalarValue,
+    DefaultScalarValue, Executor, FieldError, FieldResult, GraphQLInputObject, GraphQLObject,
+    IntoFieldError, ScalarValue, execute, graphql_object, graphql_value, graphql_vars,
 };
 
 use self::common::util::{schema, schema_with_scalar};
@@ -617,6 +617,7 @@ mod generic_lifetime_async {
         home_planet: &'p str,
     }
 
+    #[allow(clippy::needless_lifetimes)] // required by codegen
     #[graphql_object]
     impl<'p> Human<'p, i32> {
         async fn id(&self) -> i32 {
@@ -628,6 +629,7 @@ mod generic_lifetime_async {
         }
     }
 
+    #[allow(clippy::needless_lifetimes)] // required by codegen
     #[graphql_object(name = "HumanString")]
     impl<'id, 'p> Human<'p, &'id str> {
         async fn id(&self) -> &str {
@@ -724,6 +726,7 @@ mod nested_generic_lifetime_async {
         primary_function: &'p str,
     }
 
+    #[allow(clippy::needless_lifetimes)] // required by codegen
     #[graphql_object]
     impl<'p> Droid<'p, i32> {
         async fn id(&self) -> i32 {
@@ -735,6 +738,7 @@ mod nested_generic_lifetime_async {
         }
     }
 
+    #[allow(clippy::needless_lifetimes)] // required by codegen
     #[graphql_object(name = "DroidString")]
     impl<'id, 'p> Droid<'p, &'id str> {
         async fn id(&self) -> &str {
@@ -751,6 +755,7 @@ mod nested_generic_lifetime_async {
         home_planet: &'p str,
     }
 
+    #[allow(clippy::needless_lifetimes)] // required by codegen
     #[graphql_object]
     impl<'p> Human<'p, i32> {
         async fn id(&self) -> i32 {
@@ -769,6 +774,7 @@ mod nested_generic_lifetime_async {
         }
     }
 
+    #[allow(clippy::needless_lifetimes)] // required by codegen
     #[graphql_object(name = "HumanString")]
     impl<'id, 'p> Human<'p, &'id str> {
         async fn id(&self) -> &str {

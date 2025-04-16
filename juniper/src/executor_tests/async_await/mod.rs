@@ -1,6 +1,6 @@
 use crate::{
-    graphql_object, graphql_value, graphql_vars, EmptyMutation, EmptySubscription, GraphQLEnum,
-    RootNode, Value,
+    EmptyMutation, EmptySubscription, GraphQLEnum, RootNode, Value, graphql_object, graphql_value,
+    graphql_vars,
 };
 
 #[derive(GraphQLEnum)]

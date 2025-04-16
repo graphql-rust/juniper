@@ -1,6 +1,6 @@
 use juniper::{
-    graphql_object, graphql_value, graphql_vars, EmptyMutation, EmptySubscription,
-    GraphQLInputObject, Nullable, Variables,
+    EmptyMutation, EmptySubscription, GraphQLInputObject, Nullable, Variables, graphql_object,
+    graphql_value, graphql_vars,
 };
 
 pub struct Context;

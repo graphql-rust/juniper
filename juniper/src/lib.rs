@@ -1,5 +1,6 @@
-#![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
+#![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
 // Due to `schema_introspection` test.
 #![cfg_attr(test, recursion_limit = "256")]
 #![warn(missing_docs)]
@@ -22,8 +23,8 @@ pub use futures::future::{BoxFuture, LocalBoxFuture};
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
 pub use juniper_codegen::{
-    graphql_interface, graphql_object, graphql_scalar, graphql_subscription, graphql_union,
     GraphQLEnum, GraphQLInputObject, GraphQLInterface, GraphQLObject, GraphQLScalar, GraphQLUnion,
+    graphql_interface, graphql_object, graphql_scalar, graphql_subscription, graphql_union,
 };
 
 #[doc(hidden)]
@@ -59,8 +60,8 @@ use crate::{
     introspection::{INTROSPECTION_QUERY, INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS},
     parser::parse_document_source,
     validation::{
-        rules, validate_input_values, visit as visit_rule, visit_all_rules, MultiVisitorNil,
-        ValidatorContext,
+        MultiVisitorNil, ValidatorContext, rules, validate_input_values, visit as visit_rule,
+        visit_all_rules,
     },
 };
 

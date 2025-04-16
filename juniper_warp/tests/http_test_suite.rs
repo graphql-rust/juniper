@@ -1,14 +1,14 @@
 use futures::TryStreamExt as _;
 use juniper::{
-    http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
-    tests::fixtures::starwars::schema::{Database, Query},
     EmptyMutation, EmptySubscription, RootNode,
+    http::tests::{HttpIntegration, TestResponse, run_http_test_suite},
+    tests::fixtures::starwars::schema::{Database, Query},
 };
 use juniper_warp::{make_graphql_filter, make_graphql_filter_sync};
 use warp::{
-    body,
-    filters::{path, BoxedFilter},
-    http, reply, Filter as _,
+    Filter as _, body,
+    filters::{BoxedFilter, path},
+    http, reply,
 };
 
 struct TestWarpIntegration {
@@ -60,7 +60,7 @@ impl TestWarpIntegration {
 
 impl HttpIntegration for TestWarpIntegration {
     fn get(&self, url: &str) -> TestResponse {
-        use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
+        use percent_encoding::{AsciiSet, CONTROLS, utf8_percent_encode};
         use url::Url;
 
         /// https://url.spec.whatwg.org/#query-state

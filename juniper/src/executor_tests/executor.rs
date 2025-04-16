@@ -373,12 +373,12 @@ mod dynamic_context_switching {
     use indexmap::IndexMap;
 
     use crate::{
+        Executor, ScalarValue,
         executor::{Context, ExecutionError, FieldError, FieldResult},
         graphql_object, graphql_value, graphql_vars,
         parser::SourcePosition,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
-        Executor, ScalarValue,
     };
 
     struct Schema;
@@ -996,10 +996,9 @@ mod propagates_errors_to_nullable_fields {
 
 mod named_operations {
     use crate::{
-        graphql_object, graphql_value, graphql_vars,
+        GraphQLError, graphql_object, graphql_value, graphql_vars,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
-        GraphQLError,
     };
 
     struct Schema;

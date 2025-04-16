@@ -13,7 +13,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 ### BC Breaks
 
 - Upgraded [`chrono-tz` crate] integration to [0.10 version](https://github.com/chronotope/chrono-tz/releases/tag/v0.10.0). ([#1252], [#1284])
-- Bumped up [MSRV] to 1.75. ([#1272])
+- Bumped up [MSRV] to 1.85. ([#1272], [todo])
 - Corrected compliance with newer [graphql-scalars.dev] specs: ([#1275], [#1277])
     - Switched `LocalDateTime` scalars to `yyyy-MM-ddTHH:mm:ss` format in types:
         - `chrono::NaiveDateTime`.
@@ -34,7 +34,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 ### Added
 
-- [`jiff` crate] integration behind `jiff` [Cargo feature]: ([#1271], [#1278], [#1270])
+- [`jiff` crate] integration behind `jiff` [Cargo feature]: ([#1271], [#1278], [#1270], [#1311])
     - `jiff::civil::Date` as `LocalDate` scalar.
     - `jiff::civil::Time` as `LocalTime` scalar.
     - `jiff::civil::DateTime` as `LocalDateTime` scalar. ([#1275])
@@ -46,7 +46,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 ### Changed
 
-- Updated [GraphiQL] to [3.7.1 version](https://github.com/graphql/graphiql/blob/graphiql%403.7.1/packages/graphiql/CHANGELOG.md#371). ([#1279])
+- Updated [GraphiQL] to [3.8.3 version](https://github.com/graphql/graphiql/blob/graphiql%403.8.3/packages/graphiql/CHANGELOG.md#383). ([#1300])
 
 [#1252]: /../../pull/1252
 [#1270]: /../../issues/1270
@@ -55,9 +55,11 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1275]: /../../pull/1275
 [#1277]: /../../pull/1277
 [#1278]: /../../pull/1278
-[#1279]: /../../pull/1279
 [#1281]: /../../pull/1281
 [#1284]: /../../pull/1284
+[#1300]: /../../pull/1300
+[#1311]: /../../pull/1311
+[todo]: /../../commit/todo
 
 
 

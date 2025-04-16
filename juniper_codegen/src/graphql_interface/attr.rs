@@ -7,12 +7,12 @@ use quote::quote;
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
 use crate::common::{
-    diagnostic, field,
+    SpanContainer, diagnostic, field,
     parse::{self, TypeExt as _},
-    path_eq_single, rename, scalar, SpanContainer,
+    path_eq_single, rename, scalar,
 };
 
-use super::{enum_idents, Attr, Definition};
+use super::{Attr, Definition, enum_idents};
 
 /// [`diagnostic::Scope`] of errors for `#[graphql_interface]` macro.
 const ERR: diagnostic::Scope = diagnostic::Scope::InterfaceAttr;

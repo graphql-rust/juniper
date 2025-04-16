@@ -23,7 +23,7 @@ use std::fmt;
 
 use chrono::{FixedOffset, TimeZone};
 
-use crate::{graphql_scalar, InputValue, ScalarValue, Value};
+use crate::{InputValue, ScalarValue, Value, graphql_scalar};
 
 /// Date in the proleptic Gregorian calendar (without time zone).
 ///
@@ -342,7 +342,7 @@ impl FromFixedOffset for chrono_tz::Tz {
 
 #[cfg(test)]
 mod local_date_test {
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::LocalDate;
 
@@ -413,7 +413,7 @@ mod local_date_test {
 
 #[cfg(test)]
 mod local_time_test {
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::LocalTime;
 
@@ -501,7 +501,7 @@ mod local_time_test {
 mod local_date_time_test {
     use chrono::naive::{NaiveDate, NaiveTime};
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::LocalDateTime;
 
@@ -594,11 +594,11 @@ mod local_date_time_test {
 #[cfg(test)]
 mod date_time_test {
     use chrono::{
-        naive::{NaiveDate, NaiveDateTime, NaiveTime},
         FixedOffset,
+        naive::{NaiveDate, NaiveDateTime, NaiveTime},
     };
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::DateTime;
 

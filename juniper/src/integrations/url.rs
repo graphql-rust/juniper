@@ -9,7 +9,7 @@
 //! [`Url`]: url::Url
 //! [s1]: https://graphql-scalars.dev/docs/scalars/url
 
-use crate::{graphql_scalar, InputValue, ScalarValue, Value};
+use crate::{InputValue, ScalarValue, Value, graphql_scalar};
 
 /// [Standard URL][0] format as specified in [RFC 3986].
 ///
@@ -47,7 +47,7 @@ mod url_scalar {
 mod test {
     use url::Url;
 
-    use crate::{graphql_input_value, InputValue};
+    use crate::{InputValue, graphql_input_value};
 
     #[test]
     fn url_from_input() {

@@ -4,9 +4,9 @@ use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::{parse_quote, spanned::Spanned};
 
-use crate::common::{diagnostic, parse, scalar, SpanContainer};
+use crate::common::{SpanContainer, diagnostic, parse, scalar};
 
-use super::{derive::parse_derived_methods, Attr, Definition, Methods, ParseToken, TypeOrIdent};
+use super::{Attr, Definition, Methods, ParseToken, TypeOrIdent, derive::parse_derived_methods};
 
 /// [`diagnostic::Scope`] of errors for `#[graphql_scalar]` macro.
 const ERR: diagnostic::Scope = diagnostic::Scope::ScalarAttr;

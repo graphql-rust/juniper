@@ -1,4 +1,6 @@
 use crate::{
+    GraphQLEnum,
+    GraphQLError::ValidationError,
     executor::Variables,
     graphql_value, graphql_vars,
     parser::SourcePosition,
@@ -6,8 +8,6 @@ use crate::{
     types::scalars::{EmptyMutation, EmptySubscription},
     validation::RuleError,
     value::{DefaultScalarValue, Object},
-    GraphQLEnum,
-    GraphQLError::ValidationError,
 };
 
 #[derive(GraphQLEnum, Debug)]

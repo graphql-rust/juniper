@@ -1,8 +1,8 @@
 [package]
 name = "juniper_graphql_ws"
 version = "0.4.0"
-edition = "2021"
-rust-version = "1.75"
+edition = "2024"
+rust-version = "1.85"
 description = "GraphQL over WebSocket Protocol implementations for `juniper` crate."
 license = "BSD-2-Clause"
 authors = [

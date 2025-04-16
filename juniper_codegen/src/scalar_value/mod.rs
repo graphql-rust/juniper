@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 
 use proc_macro2::{Literal, TokenStream};
-use quote::{quote, ToTokens, TokenStreamExt as _};
+use quote::{ToTokens, TokenStreamExt as _, quote};
 use syn::{
     parse::{Parse, ParseStream},
     parse_quote,
@@ -13,9 +13,8 @@ use syn::{
 };
 
 use crate::common::{
-    diagnostic, filter_attrs,
-    parse::{attr::err, ParseBufferExt as _},
-    SpanContainer,
+    SpanContainer, diagnostic, filter_attrs,
+    parse::{ParseBufferExt as _, attr::err},
 };
 
 /// [`diagnostic::Scope`] of errors for `#[derive(ScalarValue)]` macro.
@@ -507,7 +506,7 @@ impl<'a> IsVariantGeneric<'a> {
     }
 }
 
-impl<'ast, 'gen> Visit<'ast> for IsVariantGeneric<'gen> {
+impl<'ast> Visit<'ast> for IsVariantGeneric<'_> {
     fn visit_path(&mut self, path: &'ast syn::Path) {
         if let Some(ident) = path.get_ident() {
             let is_generic = self.generics.params.iter().any(|par| {

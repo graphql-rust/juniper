@@ -7,7 +7,7 @@ A common issue with [GraphQL] server implementations is how the [resolvers][2] q
 # extern crate anyhow;
 # extern crate juniper;
 # use anyhow::anyhow;
-# use juniper::{graphql_object, GraphQLObject};
+# use juniper::{GraphQLObject, graphql_object};
 #
 # type CultId = i32;
 # type UserId = i32;

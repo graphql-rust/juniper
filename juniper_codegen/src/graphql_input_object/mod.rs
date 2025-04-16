@@ -5,7 +5,7 @@
 pub(crate) mod derive;
 
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote, ToTokens};
+use quote::{ToTokens, format_ident, quote};
 use syn::{
     ext::IdentExt as _,
     parse::{Parse, ParseStream},
@@ -15,12 +15,12 @@ use syn::{
 };
 
 use crate::common::{
-    default, filter_attrs,
+    Description, SpanContainer, default, filter_attrs,
     parse::{
-        attr::{err, OptionExt as _},
         ParseBufferExt as _,
+        attr::{OptionExt as _, err},
     },
-    rename, scalar, Description, SpanContainer,
+    rename, scalar,
 };
 
 /// Available arguments behind `#[graphql]` attribute placed on a Rust struct

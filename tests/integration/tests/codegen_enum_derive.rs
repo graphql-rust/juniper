@@ -3,8 +3,8 @@
 pub mod common;
 
 use juniper::{
-    execute, graphql_object, graphql_value, graphql_vars, parser::SourcePosition,
-    DefaultScalarValue, ExecutionError, FieldError, GraphQLEnum, ScalarValue,
+    DefaultScalarValue, ExecutionError, FieldError, GraphQLEnum, ScalarValue, execute,
+    graphql_object, graphql_value, graphql_vars, parser::SourcePosition,
 };
 
 use self::common::util::{schema, schema_with_scalar};

@@ -23,11 +23,11 @@
 //! [s5]: https://graphql-scalars.dev/docs/scalars/utc-offset
 
 use time::{
-    format_description::{well_known::Rfc3339, BorrowedFormatItem},
+    format_description::{BorrowedFormatItem, well_known::Rfc3339},
     macros::format_description,
 };
 
-use crate::{graphql_scalar, InputValue, ScalarValue, Value};
+use crate::{InputValue, ScalarValue, Value, graphql_scalar};
 
 /// Date in the proleptic Gregorian calendar (without time zone).
 ///
@@ -262,7 +262,7 @@ mod utc_offset {
 mod local_date_test {
     use time::macros::date;
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::LocalDate;
 
@@ -326,7 +326,7 @@ mod local_date_test {
 mod local_time_test {
     use time::macros::time;
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::LocalTime;
 
@@ -401,7 +401,7 @@ mod local_time_test {
 mod local_date_time_test {
     use time::macros::datetime;
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::LocalDateTime;
 
@@ -478,7 +478,7 @@ mod local_date_time_test {
 mod date_time_test {
     use time::macros::datetime;
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::DateTime;
 
@@ -490,12 +490,17 @@ mod date_time_test {
                 datetime!(2014-11-28 21:00:09 +9),
             ),
             ("2014-11-28T21:00:09Z", datetime!(2014-11-28 21:00:09 +0)),
+            ("2014-11-28 21:00:09z", datetime!(2014-11-28 21:00:09 +0)),
             (
                 "2014-11-28T21:00:09+00:00",
                 datetime!(2014-11-28 21:00:09 +0),
             ),
             (
                 "2014-11-28T21:00:09.05+09:00",
+                datetime!(2014-11-28 12:00:09.05 +0),
+            ),
+            (
+                "2014-11-28 21:00:09.05+09:00",
                 datetime!(2014-11-28 12:00:09.05 +0),
             ),
         ] {
@@ -519,7 +524,6 @@ mod date_time_test {
             graphql_input_value!("56:34:22"),
             graphql_input_value!("56:34:22.000"),
             graphql_input_value!("1996-12-1914:23:43"),
-            graphql_input_value!("1996-12-19 14:23:43Z"),
             graphql_input_value!("1996-12-19T14:23:43"),
             graphql_input_value!("1996-12-19T14:23:43ZZ"),
             graphql_input_value!("1996-12-19T14:23:43.543"),
@@ -568,7 +572,7 @@ mod date_time_test {
 mod utc_offset_test {
     use time::macros::offset;
 
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::UtcOffset;
 

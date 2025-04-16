@@ -1,9 +1,8 @@
 use crate::{
-    graphql_value, graphql_vars,
+    GraphQLEnum, graphql_value, graphql_vars,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Object, Value},
-    GraphQLEnum,
 };
 
 /*

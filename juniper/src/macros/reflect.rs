@@ -44,11 +44,11 @@ pub trait BaseType<S> {
     const NAME: Type;
 }
 
-impl<'a, S, T: BaseType<S> + ?Sized> BaseType<S> for &'a T {
+impl<S, T: BaseType<S> + ?Sized> BaseType<S> for &T {
     const NAME: Type = T::NAME;
 }
 
-impl<'ctx, S, T> BaseType<S> for (&'ctx T::Context, T)
+impl<S, T> BaseType<S> for (&T::Context, T)
 where
     S: ScalarValue,
     T: BaseType<S> + GraphQLValue<S>,
@@ -105,11 +105,11 @@ pub trait BaseSubTypes<S> {
     const NAMES: Types;
 }
 
-impl<'a, S, T: BaseSubTypes<S> + ?Sized> BaseSubTypes<S> for &'a T {
+impl<S, T: BaseSubTypes<S> + ?Sized> BaseSubTypes<S> for &T {
     const NAMES: Types = T::NAMES;
 }
 
-impl<'ctx, S, T> BaseSubTypes<S> for (&'ctx T::Context, T)
+impl<S, T> BaseSubTypes<S> for (&T::Context, T)
 where
     S: ScalarValue,
     T: BaseSubTypes<S> + GraphQLValue<S>,
@@ -205,7 +205,7 @@ pub trait WrappedType<S> {
     const VALUE: WrappedValue;
 }
 
-impl<'ctx, S, T: WrappedType<S>> WrappedType<S> for (&'ctx T::Context, T)
+impl<S, T: WrappedType<S>> WrappedType<S> for (&T::Context, T)
 where
     S: ScalarValue,
     T: GraphQLValue<S>,
@@ -237,7 +237,7 @@ impl<S, T: WrappedType<S>, const N: usize> WrappedType<S> for [T; N] {
     const VALUE: u128 = T::VALUE * 10 + 3;
 }
 
-impl<'a, S, T: WrappedType<S> + ?Sized> WrappedType<S> for &'a T {
+impl<S, T: WrappedType<S> + ?Sized> WrappedType<S> for &T {
     const VALUE: u128 = T::VALUE;
 }
 
@@ -417,13 +417,13 @@ pub const fn fnv1a128(str: Name) -> u128 {
 /// Length __in bytes__ of the [`format_type!`] macro result.
 #[must_use]
 pub const fn type_len_with_wrapped_val(ty: Type, val: WrappedValue) -> usize {
-    let mut len = ty.as_bytes().len() + "!".as_bytes().len(); // Type!
+    let mut len = ty.len() + "!".len(); // Type!
 
     let mut curr = val;
     while curr % 10 != 0 {
         match curr % 10 {
-            2 => len -= "!".as_bytes().len(),   // remove !
-            3 => len += "[]!".as_bytes().len(), // [Type]!
+            2 => len -= "!".len(),   // remove !
+            3 => len += "[]!".len(), // [Type]!
             _ => {}
         }
         curr /= 10;

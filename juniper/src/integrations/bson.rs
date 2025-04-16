@@ -13,7 +13,7 @@
 //! [s1]: https://graphql-scalars.dev/docs/scalars/object-id
 //! [s4]: https://graphql-scalars.dev/docs/scalars/date-time
 
-use crate::{graphql_scalar, InputValue, ScalarValue, Value};
+use crate::{InputValue, ScalarValue, Value, graphql_scalar};
 
 /// [BSON ObjectId][0] represented as a HEX string.
 ///
@@ -92,7 +92,7 @@ mod date_time {
 mod test {
     use bson::oid::ObjectId;
 
-    use crate::{graphql_input_value, FromInputValue, InputValue};
+    use crate::{FromInputValue, InputValue, graphql_input_value};
 
     #[test]
     fn objectid_from_input() {
@@ -108,7 +108,7 @@ mod test {
 
 #[cfg(test)]
 mod date_time_test {
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, ToInputValue as _};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::DateTime;
 
@@ -128,6 +128,17 @@ mod date_time_test {
             ),
             (
                 "2014-11-28T21:00:09Z",
+                DateTime::builder()
+                    .year(2014)
+                    .month(11)
+                    .day(28)
+                    .hour(21)
+                    .second(9)
+                    .build()
+                    .unwrap(),
+            ),
+            (
+                "2014-11-28 21:00:09z",
                 DateTime::builder()
                     .year(2014)
                     .month(11)
@@ -160,6 +171,18 @@ mod date_time_test {
                     .build()
                     .unwrap(),
             ),
+            (
+                "2014-11-28 21:00:09.05+09:00",
+                DateTime::builder()
+                    .year(2014)
+                    .month(11)
+                    .day(28)
+                    .hour(12)
+                    .second(9)
+                    .millisecond(50)
+                    .build()
+                    .unwrap(),
+            ),
         ] {
             let input: InputValue = graphql_input_value!((raw));
             let parsed = DateTime::from_input_value(&input);
@@ -181,7 +204,6 @@ mod date_time_test {
             graphql_input_value!("56:34:22"),
             graphql_input_value!("56:34:22.000"),
             graphql_input_value!("1996-12-1914:23:43"),
-            graphql_input_value!("1996-12-19 14:23:43Z"),
             graphql_input_value!("1996-12-19T14:23:43"),
             graphql_input_value!("1996-12-19T14:23:43ZZ"),
             graphql_input_value!("1996-12-19T14:23:43.543"),

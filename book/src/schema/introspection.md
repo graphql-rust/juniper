@@ -32,8 +32,8 @@ Because [introspection][0] queries are just regular [GraphQL queries][2], [Junip
 ```rust
 # extern crate juniper;
 # use juniper::{
-#     graphql_object, graphql_vars, EmptyMutation, EmptySubscription, GraphQLError,
-#     RootNode,
+#     EmptyMutation, EmptySubscription, GraphQLError, RootNode,
+#     graphql_object, graphql_vars,
 # };
 #
 pub struct Query;

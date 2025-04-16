@@ -4,17 +4,16 @@ pub mod graphiql;
 pub mod playground;
 
 use serde::{
-    de,
+    Deserialize, Serialize, de,
     ser::{self, SerializeMap},
-    Deserialize, Serialize,
 };
 
 use crate::{
+    FieldError, GraphQLError, GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync, RootNode,
+    Value, Variables,
     ast::InputValue,
     executor::{ExecutionError, ValuesStream},
     value::{DefaultScalarValue, ScalarValue},
-    FieldError, GraphQLError, GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync, RootNode,
-    Value, Variables,
 };
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
@@ -661,7 +660,7 @@ pub mod tests {
     pub mod graphql_ws {
         use serde_json::json;
 
-        use super::{WsIntegration, WsIntegrationMessage, WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT};
+        use super::{WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT, WsIntegration, WsIntegrationMessage};
 
         #[allow(missing_docs)]
         pub async fn run_test_suite<T: WsIntegration>(integration: &T) {
@@ -790,7 +789,7 @@ pub mod tests {
     pub mod graphql_transport_ws {
         use serde_json::json;
 
-        use super::{WsIntegration, WsIntegrationMessage, WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT};
+        use super::{WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT, WsIntegration, WsIntegrationMessage};
 
         #[allow(missing_docs)]
         pub async fn run_test_suite<T: WsIntegration>(integration: &T) {

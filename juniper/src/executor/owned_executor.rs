@@ -4,11 +4,11 @@ use std::{
 };
 
 use crate::{
+    ExecutionError, Executor, Selection, Variables,
     ast::Fragment,
     executor::FieldPath,
     parser::SourcePosition,
     schema::model::{SchemaType, TypeType},
-    ExecutionError, Executor, Selection, Variables,
 };
 
 /// [`Executor`] owning all its variables. Can be used after [`Executor`] was
@@ -25,7 +25,7 @@ pub struct OwnedExecutor<'a, CtxT, S> {
     pub(super) field_path: Arc<FieldPath<'a>>,
 }
 
-impl<'a, CtxT, S> Clone for OwnedExecutor<'a, CtxT, S>
+impl<CtxT, S> Clone for OwnedExecutor<'_, CtxT, S>
 where
     S: Clone,
 {

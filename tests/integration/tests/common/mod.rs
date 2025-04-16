@@ -1,14 +1,14 @@
 use std::fmt;
 
 use juniper::ScalarValue;
-use serde::{de, Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, de};
 
 /// Common utilities used across tests.
 pub mod util {
     use futures::StreamExt as _;
     use juniper::{
-        graphql_value, DefaultScalarValue, EmptyMutation, EmptySubscription, ExecutionError,
-        GraphQLError, GraphQLType, RootNode, ScalarValue, Value, ValuesStream,
+        DefaultScalarValue, EmptyMutation, EmptySubscription, ExecutionError, GraphQLError,
+        GraphQLType, RootNode, ScalarValue, Value, ValuesStream, graphql_value,
     };
 
     pub fn schema<'q, C, Q>(
@@ -94,7 +94,7 @@ impl<'de> Deserialize<'de> for MyScalarValue {
     fn deserialize<D: Deserializer<'de>>(de: D) -> Result<Self, D::Error> {
         struct Visitor;
 
-        impl<'de> de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = MyScalarValue;
 
             fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

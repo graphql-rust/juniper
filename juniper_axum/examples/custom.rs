@@ -6,14 +6,14 @@
 use std::{net::SocketAddr, sync::Arc};
 
 use axum::{
+    Extension, Router,
     extract::WebSocketUpgrade,
     response::{Html, Response},
-    routing::{get, on, MethodFilter},
-    Extension, Router,
+    routing::{MethodFilter, get, on},
 };
 use juniper::{
-    tests::fixtures::starwars::schema::{Database, Query, Subscription},
     EmptyMutation, RootNode,
+    tests::fixtures::starwars::schema::{Database, Query, Subscription},
 };
 use juniper_axum::{
     extract::JuniperRequest, graphiql, playground, response::JuniperResponse, subscriptions,

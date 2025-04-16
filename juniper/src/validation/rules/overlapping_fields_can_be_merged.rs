@@ -111,11 +111,7 @@ impl<'a> PairSet<'a> {
 
     fn contains(&self, a: &'a str, b: &'a str, mutex: bool) -> bool {
         if let Some(result) = self.data.get(a).and_then(|s| s.get(b)) {
-            if !mutex {
-                !result
-            } else {
-                true
-            }
+            if !mutex { !result } else { true }
         } else {
             false
         }
@@ -761,7 +757,7 @@ fn format_reason(reason: &ConflictReasonMessage) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{error_message, factory, ConflictReason, ConflictReasonMessage::*};
+    use super::{ConflictReason, ConflictReasonMessage::*, error_message, factory};
 
     use crate::{
         executor::Registry,
@@ -775,8 +771,8 @@ mod tests {
     use crate::{
         parser::SourcePosition,
         validation::{
-            expect_fails_rule, expect_fails_rule_with_schema, expect_passes_rule,
-            expect_passes_rule_with_schema, RuleError,
+            RuleError, expect_fails_rule, expect_fails_rule_with_schema, expect_passes_rule,
+            expect_passes_rule_with_schema,
         },
         value::{DefaultScalarValue, ScalarValue},
     };

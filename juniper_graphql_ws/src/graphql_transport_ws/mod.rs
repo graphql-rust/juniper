@@ -19,14 +19,14 @@ use std::{
 };
 
 use juniper::{
-    futures::{
-        channel::oneshot,
-        future::{self, BoxFuture, Either, Future, FutureExt, TryFutureExt},
-        stream::{self, BoxStream, SelectAll, StreamExt},
-        task::{Context, Poll, Waker},
-        Sink, Stream,
-    },
     GraphQLError, RuleError, ScalarValue,
+    futures::{
+        Sink, Stream,
+        channel::oneshot,
+        future::{self, BoxFuture, Either, FutureExt as _, TryFutureExt as _},
+        stream::{self, BoxStream, SelectAll, StreamExt as _},
+        task::{Context, Poll, Waker},
+    },
 };
 
 use super::{ConnectionConfig, Init, Schema};
@@ -208,7 +208,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
 
                                 // Combine this with our oneshot channel so that the stream ends if the
                                 // oneshot is ever fired.
-                                let s = stream::unfold((rx, s.boxed()), |(rx, mut s)| async move {
+                                let s = stream::unfold((rx, s.boxed()), async |(rx, mut s)| {
                                     let next = match future::select(rx, s.next()).await {
                                         Either::Left(_) => None,
                                         Either::Right((r, rx)) => r.map(|r| (r, rx)),
@@ -365,45 +365,43 @@ impl<S: Schema> Stream for SubscriptionStart<S> {
                         .boxed(),
                     };
                 }
-                SubscriptionStartState::ResolvingIntoStream {
-                    ref id,
-                    ref mut future,
-                } => match future.as_mut().poll(cx) {
-                    Poll::Ready(r) => match r {
-                        Ok(stream) => {
-                            *state = SubscriptionStartState::Streaming {
-                                id: id.clone(),
-                                stream,
+                SubscriptionStartState::ResolvingIntoStream { id, future } => {
+                    match future.as_mut().poll(cx) {
+                        Poll::Ready(r) => match r {
+                            Ok(stream) => {
+                                *state = SubscriptionStartState::Streaming {
+                                    id: id.clone(),
+                                    stream,
+                                }
                             }
-                        }
-                        Err(e) => {
-                            return Poll::Ready(Some(Output::Message(ServerMessage::Error {
+                            Err(e) => {
+                                return Poll::Ready(Some(Output::Message(ServerMessage::Error {
+                                    id: id.clone(),
+                                    payload: ErrorPayload::new(Box::new(params.clone()), e),
+                                })));
+                            }
+                        },
+                        Poll::Pending => return Poll::Pending,
+                    }
+                }
+                SubscriptionStartState::Streaming { id, stream } => {
+                    match Pin::new(stream).poll_next(cx) {
+                        Poll::Ready(Some(output)) => {
+                            return Poll::Ready(Some(Output::Message(ServerMessage::Next {
                                 id: id.clone(),
-                                payload: ErrorPayload::new(Box::new(params.clone()), e),
+                                payload: NextPayload {
+                                    data: output.data,
+                                    errors: output.errors,
+                                },
                             })));
                         }
-                    },
-                    Poll::Pending => return Poll::Pending,
-                },
-                SubscriptionStartState::Streaming {
-                    ref id,
-                    ref mut stream,
-                } => match Pin::new(stream).poll_next(cx) {
-                    Poll::Ready(Some(output)) => {
-                        return Poll::Ready(Some(Output::Message(ServerMessage::Next {
-                            id: id.clone(),
-                            payload: NextPayload {
-                                data: output.data,
-                                errors: output.errors,
-                            },
-                        })));
+                        Poll::Ready(None) => {
+                            *state = SubscriptionStartState::Terminated;
+                            return Poll::Ready(None);
+                        }
+                        Poll::Pending => return Poll::Pending,
                     }
-                    Poll::Ready(None) => {
-                        *state = SubscriptionStartState::Terminated;
-                        return Poll::Ready(None);
-                    }
-                    Poll::Pending => return Poll::Pending,
-                },
+                }
                 SubscriptionStartState::Terminated => return Poll::Ready(None),
             }
         }
@@ -469,19 +467,17 @@ where
     fn poll_sink(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<(), &'static str>> {
         match &mut self.sink_state {
             ConnectionSinkState::Ready { .. } => Poll::Ready(Ok(())),
-            ConnectionSinkState::HandlingMessage { ref mut result } => {
-                match Pin::new(result).poll(cx) {
-                    Poll::Ready((state, reactions)) => {
-                        self.reactions.push(reactions);
-                        self.sink_state = ConnectionSinkState::Ready { state };
-                        if let Some(waker) = self.stream_waker.take() {
-                            waker.wake();
-                        }
-                        Poll::Ready(Ok(()))
+            ConnectionSinkState::HandlingMessage { result } => match Pin::new(result).poll(cx) {
+                Poll::Ready((state, reactions)) => {
+                    self.reactions.push(reactions);
+                    self.sink_state = ConnectionSinkState::Ready { state };
+                    if let Some(waker) = self.stream_waker.take() {
+                        waker.wake();
                     }
-                    Poll::Pending => Poll::Pending,
+                    Poll::Ready(Ok(()))
                 }
-            }
+                Poll::Pending => Poll::Pending,
+            },
             ConnectionSinkState::Closed => Poll::Ready(Err("polled after close")),
         }
     }
@@ -597,6 +593,8 @@ mod test {
     use std::{convert::Infallible, io, sync::Arc, time::Duration};
 
     use juniper::{
+        DefaultScalarValue, EmptyMutation, FieldError, FieldResult, GraphQLError, RootNode,
+        Variables,
         futures::{
             future::{self, FutureExt as _},
             sink::SinkExt,
@@ -604,8 +602,6 @@ mod test {
         },
         graphql_input_value, graphql_object, graphql_subscription, graphql_value, graphql_vars,
         parser::{ParseError, Spanning},
-        DefaultScalarValue, EmptyMutation, FieldError, FieldResult, GraphQLError, RootNode,
-        Variables,
     };
 
     use super::{Connection, ConnectionConfig, NextPayload, Output, SubscribePayload};

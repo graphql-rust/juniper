@@ -3,16 +3,15 @@
 use std::fmt;
 
 use axum::{
-    async_trait,
+    Json, RequestExt as _,
     body::Body,
     extract::{FromRequest, FromRequestParts, Query},
-    http::{header, HeaderValue, Method, Request, StatusCode},
+    http::{HeaderValue, Method, Request, StatusCode, header},
     response::{IntoResponse as _, Response},
-    Json, RequestExt as _,
 };
 use juniper::{
-    http::{GraphQLBatchRequest, GraphQLRequest},
     DefaultScalarValue, ScalarValue,
+    http::{GraphQLBatchRequest, GraphQLRequest},
 };
 use serde::Deserialize;
 
@@ -70,7 +69,6 @@ pub struct JuniperRequest<S = DefaultScalarValue>(pub GraphQLBatchRequest<S>)
 where
     S: ScalarValue;
 
-#[async_trait]
 impl<S, State> FromRequest<State> for JuniperRequest<S>
 where
     S: ScalarValue,

@@ -1,6 +1,6 @@
 //! [`JuniperResponse`] definition.
 
-use juniper::{http::GraphQLBatchResponse, DefaultScalarValue, ScalarValue};
+use juniper::{DefaultScalarValue, ScalarValue, http::GraphQLBatchResponse};
 use warp::{
     http::{self, StatusCode},
     reply::{self, Reply},

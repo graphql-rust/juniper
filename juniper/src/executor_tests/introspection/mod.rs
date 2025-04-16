@@ -6,10 +6,9 @@ mod input_object;
 use self::input_object::{NamedPublic, NamedPublicWithDescription};
 
 use crate::{
-    graphql_interface, graphql_object, graphql_value, graphql_vars,
+    GraphQLEnum, GraphQLScalar, graphql_interface, graphql_object, graphql_value, graphql_vars,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
-    GraphQLEnum, GraphQLScalar,
 };
 
 #[derive(GraphQLEnum)]

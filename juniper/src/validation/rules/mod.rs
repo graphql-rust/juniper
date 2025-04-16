@@ -30,7 +30,7 @@ use std::fmt::Debug;
 
 use crate::{
     ast::Document,
-    validation::{visit, MultiVisitorNil, ValidatorContext},
+    validation::{MultiVisitorNil, ValidatorContext, visit},
     value::ScalarValue,
 };
 
@@ -81,9 +81,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::{parser::SourcePosition, DefaultScalarValue};
+    use crate::{DefaultScalarValue, parser::SourcePosition};
 
-    use crate::validation::{expect_fails_fn, RuleError};
+    use crate::validation::{RuleError, expect_fails_fn};
 
     #[test]
     fn handles_recursive_fragments() {

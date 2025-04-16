@@ -15,7 +15,7 @@ Let's remake our [example of N+1 problem](n_plus_1.md), so it's solved by applyi
 # use std::{collections::HashMap, sync::Arc};
 # use anyhow::anyhow;
 # use dataloader::non_cached::Loader;
-# use juniper::{graphql_object, GraphQLObject};
+# use juniper::{GraphQLObject, graphql_object};
 #
 # type CultId = i32;
 # type UserId = i32;

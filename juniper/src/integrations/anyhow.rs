@@ -67,8 +67,8 @@ mod test {
     use serial_test::serial;
 
     use crate::{
-        execute, graphql_object, graphql_value, graphql_vars, parser::SourcePosition,
-        EmptyMutation, EmptySubscription, RootNode,
+        EmptyMutation, EmptySubscription, RootNode, execute, graphql_object, graphql_value,
+        graphql_vars, parser::SourcePosition,
     };
 
     #[tokio::test]
@@ -84,7 +84,10 @@ mod test {
         }
 
         let prev_env = env::var("RUST_BACKTRACE").ok();
-        env::set_var("RUST_BACKTRACE", "1");
+        // SAFETY: This is safe, because this test runs isolated due to being `#[serial]`.
+        unsafe {
+            env::set_var("RUST_BACKTRACE", "1");
+        }
 
         const DOC: &str = r#"{
             err
@@ -125,7 +128,10 @@ mod test {
         );
 
         if let Some(val) = prev_env {
-            env::set_var("RUST_BACKTRACE", val);
+            // SAFETY: This is safe, because this test runs isolated due to being `#[serial]`.
+            unsafe {
+                env::set_var("RUST_BACKTRACE", val);
+            }
         }
     }
 }

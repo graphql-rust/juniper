@@ -2,8 +2,8 @@
 //! See [#798](https://github.com/graphql-rust/juniper/issues/798) for details.
 
 use juniper::{
-    graphql_interface, graphql_object, graphql_value, graphql_vars, EmptyMutation,
-    EmptySubscription, GraphQLObject, GraphQLUnion, RootNode,
+    EmptyMutation, EmptySubscription, GraphQLObject, GraphQLUnion, RootNode, graphql_interface,
+    graphql_object, graphql_value, graphql_vars,
 };
 
 #[allow(dead_code)]

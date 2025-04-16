@@ -1,6 +1,7 @@
 use std::{boxed::Box, collections::BTreeMap};
 
 use graphql_parser::{
+    Pos,
     query::{Directive as ExternalDirective, Number as ExternalNumber, Type as ExternalType},
     schema::{
         Definition, Document, EnumType as ExternalEnum, EnumValue as ExternalEnumValue,
@@ -10,7 +11,6 @@ use graphql_parser::{
         TypeDefinition as ExternalTypeDefinition, UnionType as ExternalUnionType,
         Value as ExternalValue,
     },
-    Pos,
 };
 
 use crate::{
@@ -301,11 +301,9 @@ fn generate_directives<'a, T>(status: &DeprecationStatus) -> Vec<ExternalDirecti
 where
     T: Text<'a>,
 {
-    if let Some(d) = deprecation_to_directive(status) {
-        vec![d]
-    } else {
-        vec![]
-    }
+    deprecation_to_directive(status)
+        .map(|d| vec![d])
+        .unwrap_or_default()
 }
 
 /// Sorts the provided [`Document`] in the "type-then-name" manner.

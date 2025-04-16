@@ -104,7 +104,7 @@ mod tests {
 
     use crate::{
         parser::SourcePosition,
-        validation::{expect_fails_rule, expect_passes_rule, RuleError},
+        validation::{RuleError, expect_fails_rule, expect_passes_rule},
         value::DefaultScalarValue,
     };
 

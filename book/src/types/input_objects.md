@@ -9,7 +9,7 @@ In [Juniper], defining a [GraphQL input object][0] is quite straightforward and 
 ```rust
 # #![allow(unused_variables)]
 # extern crate juniper;
-# use juniper::{graphql_object, GraphQLInputObject, GraphQLObject};
+# use juniper::{GraphQLInputObject, GraphQLObject, graphql_object};
 #
 #[derive(GraphQLInputObject)]
 struct Coordinate {

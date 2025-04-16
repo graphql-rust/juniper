@@ -1,12 +1,12 @@
 #![deny(unused_variables)]
 
 use crate::{
+    GraphQLInputObject,
     ast::{FromInputValue, InputValue},
     graphql_input_value, graphql_object, graphql_value, graphql_vars,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Object, Value},
-    GraphQLInputObject,
 };
 
 struct Root;

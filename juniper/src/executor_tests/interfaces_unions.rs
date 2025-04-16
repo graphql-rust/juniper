@@ -1,9 +1,8 @@
 mod interface {
     use crate::{
-        graphql_interface, graphql_object,
+        GraphQLObject, graphql_interface, graphql_object,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
-        GraphQLObject,
     };
 
     #[allow(dead_code)] // TODO: Consider this for the GraphQL interfaces in the expansion.
