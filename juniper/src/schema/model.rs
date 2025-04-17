@@ -66,6 +66,7 @@ pub enum TypeType<'a, S: 'a> {
 }
 
 #[derive(Debug)]
+/// Used to describe GraphQL directives
 pub struct DirectiveType<'a, S> {
     pub name: String,
     pub description: Option<String>,
@@ -108,6 +109,7 @@ where
     pub fn new(query: QueryT, mutation: MutationT, subscription: SubscriptionT) -> Self {
         Self::new_with_info(query, mutation, subscription, (), (), ())
     }
+
 }
 
 impl<'a, QueryT, MutationT, SubscriptionT, S> RootNode<'a, QueryT, MutationT, SubscriptionT, S>
@@ -126,6 +128,44 @@ where
     ) -> Self {
         RootNode::new_with_info(query, mutation, subscription, (), (), ())
     }
+
+    /// ```rust 
+    ///  use juniper::{
+    ///      graphql_object, graphql_vars, EmptyMutation, EmptySubscription, GraphQLError,
+    ///      RootNode, DirectiveLocation , DirectiveType
+    ///  };
+    /// 
+    /// struct Query{}
+    /// 
+    /// #[graphql_object]
+    /// impl Query {
+    ///    pub fn hello() -> String {
+    ///       "Hello".to_string()
+    ///    }  
+    /// }
+    /// 
+    /// type Schema = RootNode<'static, Query, EmptyMutation, EmptySubscription>;
+    ///
+    /// let schema = Schema::new_with_directives(Query {}, EmptyMutation::new(), EmptySubscription::new()
+    ///                           ,vec![ DirectiveType::new("my_directive", &[DirectiveLocation::Query] , &[] , false )]);
+    /// 
+    /// let query = "query @my_directive { hello }";
+    ///
+    /// match juniper::execute_sync(query, None, &schema, &graphql_vars! {}, &()) {
+    ///     Err(GraphQLError::ValidationError(errs)) => { panic!("should not give an error"); }
+    ///     res => {}
+    /// }
+    /// 
+    ///  let query = "query @non_existing_directive { hello }";
+    ///
+    /// match juniper::execute_sync(query, None, &schema, &graphql_vars! {}, &()) {
+    ///     Err(GraphQLError::ValidationError(errs)) => {  }
+    ///     res => { panic!("should give an error"); }
+    /// }
+    /// ```
+    pub fn new_with_directives(query: QueryT, mutation: MutationT, subscription: SubscriptionT,directives:Vec<DirectiveType<'a,S>>) -> Self {
+        Self::new_with_info_directives(query, mutation, subscription, (), (), (),directives)
+    }
 }
 
 impl<'a, S, QueryT, MutationT, SubscriptionT> RootNode<'a, QueryT, MutationT, SubscriptionT, S>
@@ -135,6 +175,7 @@ where
     SubscriptionT: GraphQLType<S>,
     S: ScalarValue + 'a,
 {
+
     /// Construct a new root node from query and mutation nodes,
     /// while also providing type info objects for the query and
     /// mutation types.
@@ -155,6 +196,41 @@ where
                 &mutation_info,
                 &subscription_info,
             ),
+            query_info,
+            mutation_info,
+            subscription_info,
+            introspection_disabled: false,
+        }
+    }
+
+     /// Construct a new root node from query and mutation nodes,
+    /// while also providing type info objects for the query and
+    /// mutation types and custom directives
+    pub fn new_with_info_directives(
+        query_obj: QueryT,
+        mutation_obj: MutationT,
+        subscription_obj: SubscriptionT,
+        query_info: QueryT::TypeInfo,
+        mutation_info: MutationT::TypeInfo,
+        subscription_info: SubscriptionT::TypeInfo,
+        directives: Vec<DirectiveType<'a,S>>
+    ) -> Self {
+
+        let mut schema_type = SchemaType::new::<QueryT, MutationT, SubscriptionT>(
+            &query_info,
+            &mutation_info,
+            &subscription_info,
+        );
+
+        for directive in directives {
+            schema_type.add_directive(directive);
+        }
+
+        Self {
+            query_type: query_obj,
+            mutation_type: mutation_obj,
+            subscription_type: subscription_obj,
+            schema: schema_type,
             query_info,
             mutation_info,
             subscription_info,
@@ -585,6 +661,8 @@ impl<'a, S> DirectiveType<'a, S>
 where
     S: ScalarValue + 'a,
 {
+    /// Create a new graphql directive 
+  
     pub fn new(
         name: &str,
         locations: &[DirectiveLocation],

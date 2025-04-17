@@ -80,8 +80,9 @@ pub use crate::{
     macros::helper::subscription::{ExtractTypeFromStream, IntoFieldResult},
     parser::{ParseError, ScalarToken, Span, Spanning},
     schema::{
+        meta::Argument,
         meta,
-        model::{RootNode, SchemaType},
+        model::{RootNode, SchemaType , DirectiveType,DirectiveLocation },
     },
     types::{
         async_await::{GraphQLTypeAsync, GraphQLValueAsync},
