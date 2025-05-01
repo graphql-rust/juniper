@@ -2,15 +2,18 @@ version: 2
 updates:
   - package-ecosystem: cargo
     directory: /
+    labels: ["enhancement", "rust", "k::dependencies"]
     schedule:
       interval: daily
 
   - package-ecosystem: github-actions
     directory: /
+    labels: ["enhancement", "github_actions", "k::dependencies"]
     schedule:
       interval: daily
 
   - package-ecosystem: npm
     directory: /juniper/
+    labels: ["enhancement", "javascript", "k::dependencies", "k::integration"]
     schedule:
       interval: daily
