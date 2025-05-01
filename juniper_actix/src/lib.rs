@@ -1,8 +1,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
 #![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
-#![deny(missing_docs)]
-#![deny(warnings)]
+#![warn(missing_docs)]
 
 use actix_web::{
     Error, FromRequest, HttpMessage, HttpRequest, HttpResponse, error::JsonPayloadError,
