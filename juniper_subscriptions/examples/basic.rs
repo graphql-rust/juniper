@@ -1,5 +1,3 @@
-#![deny(warnings)]
-
 use std::pin::Pin;
 
 use futures::{Stream, StreamExt};

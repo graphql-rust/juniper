@@ -356,7 +356,11 @@ impl<S: Schema> Stream for SubscriptionStart<S> {
                                 (*params).subscribe_payload.operation_name.as_deref(),
                                 (*params).schema.root_node(),
                                 &(*params).subscribe_payload.variables,
-                                &(*params).config.context,
+                                #[expect( // required by `dangerous_implicit_autorefs` rustc lint
+                                    clippy::needless_borrow,
+                                    reason = "required by `dangerous_implicit_autorefs` rustc lint"
+                                )]
+                                &(&(*params).config).context,
                             )
                         }
                         .map_ok(|(stream, errors)| {
