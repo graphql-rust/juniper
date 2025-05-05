@@ -666,7 +666,7 @@ mod tests {
             );
             let body = String::from_utf8(response.body().to_vec()).unwrap();
 
-            assert!(body.contains("var JUNIPER_URL = '/dogs-api/graphql';"));
+            assert!(body.contains("const JUNIPER_URL = '/dogs-api/graphql';"));
         }
 
         #[tokio::test]
