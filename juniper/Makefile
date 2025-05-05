@@ -36,12 +36,12 @@ GRAPHQL_PLAYGROUND_VER ?= $(strip \
 
 graphiql:
 	$(eval graphiql-react-ver := $(strip \
-		$(shell curl -fL https://raw.githubusercontent.com/graphql/graphiql/refs/tags/graphiql%40$(GRAPHIQL_VER)/packages/graphiql/package.json \
+		$(shell curl -fsL https://raw.githubusercontent.com/graphql/graphiql/refs/tags/graphiql%40$(GRAPHIQL_VER)/packages/graphiql/package.json \
 		        | grep -m1 '"@graphiql/react": "' | cut -d '"' -f4 | cut -d '^' -f2)))
 	$(eval graphiql-toolkit-ver := $(strip \
-		$(shell curl -fL https://raw.githubusercontent.com/graphql/graphiql/refs/tags/graphiql%40$(GRAPHIQL_VER)/packages/graphiql/package.json \
+		$(shell curl -fsL https://raw.githubusercontent.com/graphql/graphiql/refs/tags/graphiql%40$(GRAPHIQL_VER)/packages/graphiql/package.json \
 		        | grep -m1 '"@graphiql/toolkit": "' | cut -d '"' -f4 | cut -d '^' -f2)))
-	curl -fL -o src/http/graphiql.html \
+	curl -fsL -o src/http/graphiql.html \
 		https://raw.githubusercontent.com/graphql/graphiql/graphiql%40$(GRAPHIQL_VER)/examples/graphiql-cdn/index.html
 	$(sed-i) 's|esm.sh/graphiql@4.0.0|esm.sh/graphiql@$(GRAPHIQL_VER)|g' \
 		src/http/graphiql.html
