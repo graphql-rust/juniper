@@ -68,7 +68,7 @@ graphiql:
 #	make graphql-playground
 
 graphql-playground:
-	curl -fL -o src/http/playground.html \
+	curl -fsL -o src/http/playground.html \
 		https://raw.githubusercontent.com/graphql/graphql-playground/graphql-playground-react%40$(GRAPHQL_PLAYGROUND_VER)/packages/graphql-playground-html/withAnimation.html
 	$(sed-i) 's|cdn.jsdelivr.net/npm/graphql-playground-react/|cdn.jsdelivr.net/npm/graphql-playground-react@$(GRAPHQL_PLAYGROUND_VER)/|g' \
 		src/http/playground.html
