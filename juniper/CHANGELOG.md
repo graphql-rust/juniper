@@ -46,7 +46,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 ### Changed
 
-- Updated [GraphiQL] to [4.0.2 version](https://github.com/graphql/graphiql/blob/graphiql%404.0.2/packages/graphiql/CHANGELOG.md#402). ([#1316])
+- Upgraded [GraphiQL] to [4.0.2 version](https://github.com/graphql/graphiql/blob/graphiql%404.0.2/packages/graphiql/CHANGELOG.md#402). ([#1316])
 
 [#1252]: /../../pull/1252
 [#1270]: /../../issues/1270
