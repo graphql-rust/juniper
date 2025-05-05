@@ -302,7 +302,7 @@ impl Person {
 </blockquote>
 <h3 id="ignoring"><a class="header" href="#ignoring">Ignoring</a></h3>
 <p>By default, all methods of an <a href="https://doc.rust-lang.org/reference/items/implementations.html#inherent-implementations"><code>impl</code> block</a> are exposed as <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL fields</a>. If a method should not be exposed as a <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL field</a>, it should be defined in a separate <a href="https://doc.rust-lang.org/reference/items/implementations.html#inherent-implementations"><code>impl</code> block</a> or marked with the <code>#[graphql(ignore)]</code> attribute:</p>
-<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(dead_code)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![expect(dead_code, reason = "example")]
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::graphql_object;
 </span><span class="boring">

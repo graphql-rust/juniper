@@ -161,7 +161,7 @@
 <p>A <a href="https://spec.graphql.org/October2021#sec-Input-Objects">GraphQL input object</a> defines a set of input fields; the input fields are either <a href="https://spec.graphql.org/October2021#sec-Scalars">scalars</a>, <a href="https://spec.graphql.org/October2021#sec-Enums">enums</a>, or other <a href="https://spec.graphql.org/October2021#sec-Input-Objects">input objects</a>. This allows <a href="https://spec.graphql.org/October2021#sec-Language.Arguments">arguments</a> to accept arbitrarily complex structs.</p>
 </blockquote>
 <p>In <a href="https://docs.rs/juniper">Juniper</a>, defining a <a href="https://spec.graphql.org/October2021#sec-Input-Objects">GraphQL input object</a> is quite straightforward and similar to how <a href="objects/index.html">trivial GraphQL objects are defined</a> - by using the <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLInputObject.html"><code>#[derive(GraphQLInputObject)]</code> attribute</a> on a <a href="https://doc.rust-lang.org/reference/items/structs.html">Rust struct</a>:</p>
-<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![expect(unused_variables, reason = "example")]
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{GraphQLInputObject, GraphQLObject, graphql_object};
 </span><span class="boring">
