@@ -8,6 +8,10 @@ mod for_minimal_versions_check_only {
     use pear as _;
     use tempfile as _;
 }
+#[cfg(test)]
+mod for_tests_only {
+    use futures as _;
+}
 
 use std::{borrow::Cow, io::Cursor};
 

@@ -31,6 +31,7 @@ pear = "0.2.4"
 tempfile = "3.3"
 
 [dev-dependencies]
+futures = "0.3.22"
 juniper = { version = "0.16", path = "../juniper", features = ["expose-test-schema"] }
 
 [lints.clippy]

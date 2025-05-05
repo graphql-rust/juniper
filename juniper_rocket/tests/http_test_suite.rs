@@ -1,3 +1,7 @@
+//! [`HttpIntegration`] testing for [`juniper`].
+
+#![expect(unused_crate_dependencies, reason = "single test case")]
+
 use futures::executor;
 use juniper::{
     EmptyMutation, EmptySubscription, RootNode,
