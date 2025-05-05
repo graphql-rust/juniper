@@ -5,7 +5,7 @@ _Context_ is a feature in [Juniper] that lets [field][4] resolvers access global
 
 Let's say that we have a simple `User`s database in a `HashMap`:
 ```rust
-# #![allow(dead_code)]
+# #![expect(dead_code, reason = "example")]
 # use std::collections::HashMap;
 #
 struct Database {

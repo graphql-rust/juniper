@@ -112,7 +112,7 @@ enum StarWarsEpisode {
 
 By default, all [enum][3] variants are included in the generated [GraphQL enum][0] type as values. To prevent including a specific variant, annotate it with the `#[graphql(ignore)]` attribute:
 ```rust
-# #![allow(dead_code)]
+# #![expect(dead_code, reason = "example")]
 # extern crate juniper;
 # use juniper::GraphQLEnum;
 #
