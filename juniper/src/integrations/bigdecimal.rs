@@ -12,6 +12,11 @@ use std::str::FromStr as _;
 
 use crate::{InputValue, ScalarValue, Value, graphql_scalar};
 
+// TODO: Try remove on upgrade of `bigdecimal` crate.
+mod for_minimal_versions_check_only {
+    use num_bigint as _;
+}
+
 /// Big decimal type.
 ///
 /// Allows storing any real number to arbitrary precision; which avoids common

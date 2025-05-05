@@ -10,7 +10,6 @@ use juniper::{
 use self::common::util::schema;
 
 // Override `std::prelude` items to check whether macros expand hygienically.
-#[allow(unused_imports)]
 use self::common::hygiene::*;
 
 mod trivial {

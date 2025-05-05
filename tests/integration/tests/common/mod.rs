@@ -51,7 +51,7 @@ pub mod util {
     /// If the `input` [`Value`] doesn't represent a [`Value::Object`] containing a [`Stream`].
     ///
     /// [`Stream`]: futures::Stream
-    #[allow(clippy::type_complexity)]
+    #[expect(clippy::type_complexity, reason = "okay for tests")]
     pub async fn extract_next<S: ScalarValue>(
         input: Result<(Value<ValuesStream<'_, S>>, Vec<ExecutionError<S>>), GraphQLError>,
     ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError> {

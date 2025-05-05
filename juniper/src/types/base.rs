@@ -250,7 +250,7 @@ where
     /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     /// [2]: https://spec.graphql.org/October2021#sec-Unions
     /// [3]: https://spec.graphql.org/October2021#sec-Objects
-    #[allow(unused_variables)]
+    #[expect(unused_variables, reason = "nice interface declaration")]
     fn concrete_type_name(&self, context: &Self::Context, info: &Self::TypeInfo) -> String {
         panic!(
             "GraphQLValue::concrete_type_name() must be implemented by unions, interfaces \

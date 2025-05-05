@@ -260,7 +260,7 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 /// attribute's argument, or with regular a Rust `#[deprecated]` attribute.
 ///
 /// ```rust
-/// # #![allow(deprecated)]
+/// # #![expect(deprecated, reason = "example")]
 /// #
 /// # use juniper::GraphQLEnum;
 /// #

@@ -1,4 +1,4 @@
-#![allow(missing_docs)]
+#![expect(missing_docs, reason = "GraphQL schema testing")]
 
 use std::{collections::HashMap, pin::Pin};
 
@@ -80,7 +80,7 @@ pub struct Human {
     name: String,
     friend_ids: Vec<String>,
     appears_in: Vec<Episode>,
-    #[allow(dead_code)]
+    #[expect(dead_code, reason = "to be used yet")]
     secret_backstory: Option<String>,
     home_planet: Option<String>,
 }
@@ -140,7 +140,7 @@ pub struct Droid {
     name: String,
     friend_ids: Vec<String>,
     appears_in: Vec<Episode>,
-    #[allow(dead_code)]
+    #[expect(dead_code, reason = "to be used yet")]
     secret_backstory: Option<String>,
     primary_function: Option<String>,
 }
@@ -311,7 +311,7 @@ impl Database {
     }
 
     pub fn get_character(&self, id: &str) -> Option<CharacterValue> {
-        #[allow(clippy::manual_map)]
+        #[expect(clippy::manual_map, reason = "more readable")]
         if let Some(h) = self.humans.get(id) {
             Some(h.clone().into())
         } else if let Some(d) = self.droids.get(id) {

@@ -91,6 +91,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                         )])
                         .boxed();
 
+                        #[expect(closure_returning_async_block, reason = "not possible")]
                         if keep_alive_interval > Duration::from_secs(0) {
                             s = s
                                 .chain(
@@ -389,7 +390,7 @@ enum ConnectionSinkState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
         state: ConnectionState<S, I>,
     },
     HandlingMessage {
-        #[allow(clippy::type_complexity)]
+        #[expect(clippy::type_complexity, reason = "not really")]
         result: BoxFuture<'static, (ConnectionState<S, I>, BoxStream<'static, Reaction<S>>)>,
     },
     Closed,

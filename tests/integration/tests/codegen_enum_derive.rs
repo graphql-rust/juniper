@@ -10,7 +10,6 @@ use juniper::{
 use self::common::util::{schema, schema_with_scalar};
 
 // Override `std::prelude` items to check whether macros expand hygienically.
-#[allow(unused_imports)]
 use self::common::hygiene::*;
 
 mod trivial {
@@ -125,7 +124,6 @@ mod ignored_variant {
     #[derive(GraphQLEnum)]
     enum Character {
         Human,
-        #[allow(dead_code)]
         #[graphql(ignore)]
         Droid,
     }
@@ -210,7 +208,7 @@ mod ignored_generic_variant {
     enum Character<T> {
         Human,
         Droid,
-        #[allow(dead_code)]
+        #[expect(dead_code, reason = "GraphQL schema testing")]
         #[graphql(ignore)]
         Ignored(T),
     }
@@ -390,7 +388,7 @@ mod description_from_doc_comment {
 }
 
 mod deprecation_from_attr {
-    #![allow(deprecated)]
+    #![expect(deprecated, reason = "GraphQL schema testing")]
 
     use super::*;
 
@@ -492,8 +490,6 @@ mod deprecation_from_attr {
 }
 
 mod deprecation_from_graphql_attr {
-    #![allow(deprecated)]
-
     use super::*;
 
     /// Character doc.
@@ -594,7 +590,7 @@ mod deprecation_from_graphql_attr {
 }
 
 mod explicit_name_description_and_deprecation {
-    #![allow(deprecated)]
+    #![expect(deprecated, reason = "GraphQL schema testing")]
 
     use super::*;
 
@@ -834,7 +830,7 @@ mod explicit_generic_scalar {
     enum Character<S: ScalarValue> {
         Human,
         Droid,
-        #[allow(dead_code)]
+        #[expect(dead_code, reason = "GraphQL schema testing")]
         #[graphql(ignore)]
         Scalar(S),
     }
@@ -900,7 +896,7 @@ mod bounded_generic_scalar {
 mod explicit_custom_context {
     use super::*;
 
-    struct CustomContext(#[allow(dead_code)] prelude::String);
+    struct CustomContext(#[expect(dead_code, reason = "GraphQL schema testing")] prelude::String);
 
     impl juniper::Context for CustomContext {}
 

@@ -15,7 +15,7 @@ pub struct Lexer<'a> {
 /// A single scalar value literal
 ///
 /// This is only used for tagging how the lexer has interpreted a value literal
-#[allow(missing_docs)]
+#[expect(missing_docs, reason = "self-explanatory")]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ScalarToken<'a> {
     String(&'a str),
@@ -24,7 +24,7 @@ pub enum ScalarToken<'a> {
 }
 
 /// A single token in the input source
-#[allow(missing_docs)]
+#[expect(missing_docs, reason = "self-explanatory")]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Token<'a> {
     Name(&'a str),

@@ -28,8 +28,8 @@ type BorrowedSpanning<'a, T> = Spanning<T, &'a Span>;
 /// variables get automatically resolved.
 ///
 /// [0]: https://en.wikipedia.org/wiki/Look-ahead_(backtracking)
+#[expect(missing_docs, reason = "self-explanatory")]
 #[derive(Clone, Debug, PartialEq)]
-#[allow(missing_docs)]
 #[must_use]
 pub enum LookAheadValue<'a, S: ScalarValue + 'a> {
     Null,

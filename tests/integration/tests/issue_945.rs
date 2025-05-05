@@ -22,7 +22,7 @@ impl Query {
 #[derive(GraphQLUnion)]
 enum Character {
     Droid(Droid),
-    #[allow(dead_code)]
+    #[expect(dead_code, reason = "multiple fields required for test")]
     Human(Human),
 }
 

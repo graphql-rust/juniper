@@ -110,11 +110,8 @@ where
 {
     type Item = ExecutionOutput<S>;
 
-    fn poll_next(self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> Poll<Option<Self::Item>> {
-        // this is safe as stream is only mutated here and is not moved anywhere
-        let Connection { stream } = unsafe { self.get_unchecked_mut() };
-        let stream = unsafe { Pin::new_unchecked(stream) };
-        stream.poll_next(cx)
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> Poll<Option<Self::Item>> {
+        self.stream.as_mut().poll_next(cx)
     }
 }
 

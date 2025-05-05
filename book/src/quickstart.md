@@ -27,7 +27,7 @@ Exposing simple enums and structs as [GraphQL] types is just a matter of adding 
 For more advanced mappings, [Juniper] provides multiple macros to map your [Rust] types to a [GraphQL schema][schema]. The most important one is the [`#[graphql_object]` attribute][2] that is used for declaring a [GraphQL object] with resolvers (typically used for declaring [`Query` and `Mutation` roots][1]).
 
 ```rust
-# # ![allow(unused_variables)]
+# #![expect(unused_variables, reason = "example")]
 # extern crate juniper;
 #
 # use std::fmt::Display;

@@ -10,7 +10,6 @@ use juniper::{
 use self::common::util::{schema, schema_with_scalar};
 
 // Override `std::prelude` items to check whether macros expand hygienically.
-#[allow(unused_imports)]
 use self::common::hygiene::*;
 
 #[derive(GraphQLObject)]
@@ -998,7 +997,7 @@ mod inferred_custom_context {
 mod ignored_method {
     use super::*;
 
-    #[allow(dead_code)]
+    #[expect(dead_code, reason = "GraphQL schema testing")]
     #[graphql_union]
     trait Character {
         fn as_human(&self) -> prelude::Option<&Human> {
@@ -1181,7 +1180,7 @@ mod full_featured {
     use super::*;
 
     /// Rust doc.
-    #[allow(dead_code)]
+    #[expect(dead_code, reason = "GraphQL schema testing")]
     #[graphql_union(name = "MyChar")]
     #[graphql_union(description = "My character.")]
     #[graphql_union(context = CustomContext, scalar = DefaultScalarValue)]
