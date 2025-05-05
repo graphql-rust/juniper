@@ -1,6 +1,14 @@
 #![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
 #![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
 
+// TODO: Try remove on upgrade of `rocket` crate.
+mod for_minimal_versions_check_only {
+    use either as _;
+    use inlinable_string as _;
+    use pear as _;
+    use tempfile as _;
+}
+
 use std::{borrow::Cow, io::Cursor};
 
 use rocket::{
