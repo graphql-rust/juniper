@@ -17,8 +17,8 @@ pub fn graphiql_source(
         &format!(
             // language=JavaScript
             "
-      var JUNIPER_URL = '{juniper_url}';
-      var JUNIPER_SUBSCRIPTIONS_URL = '{juniper_subscriptions_url}';
+      const JUNIPER_URL = '{juniper_url}';
+      const JUNIPER_SUBSCRIPTIONS_URL = '{juniper_subscriptions_url}';
 
 {grahiql_js}
 
