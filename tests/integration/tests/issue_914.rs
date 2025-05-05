@@ -1,7 +1,5 @@
-//! Checks that multiple fragments on sub types don't override each other.
+//! Checks that multiple fragments on subtypes don't override each other.
 //! See [#914](https://github.com/graphql-rust/juniper/issues/914) for details.
-
-#![allow(clippy::disallowed_names)]
 
 use juniper::{EmptyMutation, EmptySubscription, GraphQLObject, graphql_object, graphql_vars};
 
@@ -27,6 +25,7 @@ struct Baz {
 
 #[graphql_object]
 impl Query {
+    #[expect(clippy::disallowed_names, reason = "intended")]
     fn foo() -> Foo {
         let baz = Baz { c: 1, d: 2 };
         let bar = Bar { a: 1, b: 2, baz };

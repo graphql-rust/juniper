@@ -5,10 +5,7 @@ edition = "2024"
 publish = false
 
 [dev-dependencies]
-async-trait = "0.1.39"
 chrono = { version = "0.4", default-features = false }
-derive_more = { version = "2.0", features = ["from"] }
-fnv = "1.0"
 futures = "0.3"
 itertools = "0.14"
 juniper = { path = "../../juniper", features = ["chrono"] }
@@ -24,7 +21,5 @@ allow_attributes_without_reason = "warn"
 closure_returning_async_block = "warn"
 future_incompatible = { level = "warn", priority = -1 }
 impl_trait_redundant_captures = "warn"
-missing_docs = "warn"
 non_ascii_idents = "forbid"
 unsafe_code = "forbid"
-unused_crate_dependencies = "warn"

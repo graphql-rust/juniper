@@ -6,7 +6,6 @@ use juniper::{DefaultScalarValue, ScalarValue};
 use serde::{Deserialize, Serialize};
 
 // Override `std::prelude` items to check whether macros expand hygienically.
-#[allow(unused_imports)]
 use self::common::hygiene::*;
 
 mod trivial {

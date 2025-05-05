@@ -3,6 +3,11 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(missing_docs)]
 
+// TODO: Try remove on upgrade of `warp` crate.
+mod for_minimal_versions_check_only {
+    use headers as _;
+}
+
 mod response;
 #[cfg(feature = "subscriptions")]
 pub mod subscriptions;

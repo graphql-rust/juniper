@@ -10,7 +10,6 @@ use juniper::{
 use self::common::util::{schema, schema_with_scalar};
 
 // Override `std::prelude` items to check whether macros expand hygienically.
-#[allow(unused_imports)]
 use self::common::hygiene::*;
 
 mod no_implers {
@@ -2252,7 +2251,7 @@ mod field_return_union_subtyping {
         value: i32,
     }
 
-    #[allow(dead_code)]
+    #[expect(dead_code, reason = "GraphQL schema testing")]
     #[derive(GraphQLUnion)]
     enum KeyFeature {
         Strength(Strength),
@@ -3089,7 +3088,7 @@ mod branching_subtyping {
 mod preserves_visibility {
     use super::*;
 
-    #[allow(dead_code)]
+    #[expect(dead_code, reason = "GraphQL schema testing")]
     type Foo = self::inner::CharacterValue;
 
     pub(crate) mod inner {

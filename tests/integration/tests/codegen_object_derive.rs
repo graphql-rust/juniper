@@ -10,7 +10,6 @@ use juniper::{
 use self::common::util::{schema, schema_with_scalar};
 
 // Override `std::prelude` items to check whether macros expand hygienically.
-#[allow(unused_imports)]
 use self::common::hygiene::*;
 
 mod trivial {
@@ -164,7 +163,7 @@ mod ignored_field {
     #[derive(GraphQLObject)]
     struct Human {
         id: &'static str,
-        #[allow(dead_code)]
+        #[expect(dead_code, reason = "GraphQL schema testing")]
         #[graphql(ignore)]
         planet: &'static str,
     }
@@ -473,7 +472,7 @@ mod deprecation_from_attr {
 
     #[graphql_object]
     impl QueryRoot {
-        #[allow(deprecated)]
+        #[expect(deprecated, reason = "GraphQL schema testing")]
         fn human() -> Human {
             Human {
                 id: "human-32".into(),
@@ -590,7 +589,7 @@ mod explicit_name_description_and_deprecation {
 
     #[graphql_object]
     impl QueryRoot {
-        #[allow(deprecated)]
+        #[expect(deprecated, reason = "GraphQL schema testing")]
         fn human() -> Human {
             Human {
                 id: "human-32".into(),
