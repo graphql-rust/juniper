@@ -1,4 +1,4 @@
-#![allow(missing_docs)]
+//! GraphQL SDL (schema definition language) definitions for test fixtures.
 
 /// The schema as a static/hardcoded GraphQL SDL (schema definition language).
 pub const STATIC_GRAPHQL_SCHEMA_DEFINITION: &str = include_str!("starwars.graphql");

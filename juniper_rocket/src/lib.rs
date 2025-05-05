@@ -247,6 +247,7 @@ impl GraphQLResponse {
     }
 }
 
+/// [`FromForm::Context`] of a [`GraphQLRequest`].
 pub struct GraphQLContext<'f, S: ScalarValue> {
     opts: Options,
     query: Option<String>,

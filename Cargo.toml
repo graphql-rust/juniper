@@ -2,6 +2,7 @@
 resolver = "1" # unifying Cargo features asap for Book tests
 members = [
     "benches",
+    "book",
     "juniper_codegen",
     "juniper",
     "juniper_hyper",

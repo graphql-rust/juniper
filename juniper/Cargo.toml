@@ -84,10 +84,19 @@ serde_json = "1.0.18"
 serial_test = "3.0"
 tokio = { version = "1.0", features = ["macros", "time", "rt-multi-thread"] }
 
+[lints.clippy]
+allow_attributes = "warn"
+allow_attributes_without_reason = "warn"
+[lints.rust]
+closure_returning_async_block = "warn"
+future_incompatible = { level = "warn", priority = -1 }
+impl_trait_redundant_captures = "warn"
+missing_docs = "warn"
+non_ascii_idents = "forbid"
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(nightly)'] }
+unused_crate_dependencies = "warn"
+
 [[bench]]
 name = "bench"
 harness = false
 path = "benches/bench.rs"
-
-[lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(nightly)'] }

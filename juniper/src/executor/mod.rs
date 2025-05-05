@@ -56,7 +56,7 @@ pub struct Registry<'r, S = DefaultScalarValue> {
     pub types: FnvHashMap<Name, MetaType<'r, S>>,
 }
 
-#[allow(missing_docs)]
+#[expect(missing_docs, reason = "self-explanatory")]
 #[derive(Clone)]
 pub enum FieldPath<'a> {
     Root(SourcePosition),
@@ -349,7 +349,6 @@ where
 {
     type Type = T;
 
-    #[allow(clippy::type_complexity)]
     fn into_resolvable(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S> {
         Ok(self.map(|(ctx, v)| (ctx, Some(v))))
     }
@@ -377,7 +376,6 @@ where
 {
     type Type = T;
 
-    #[allow(clippy::type_complexity)]
     fn into_resolvable(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S2> {
         self.map(|o| o.map(|(ctx, v)| (ctx, Some(v))))
             .map_err(FieldError::map_scalar_value)

@@ -3,7 +3,6 @@
 #![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
 // Due to `schema_introspection` test.
 #![cfg_attr(test, recursion_limit = "256")]
-#![warn(missing_docs)]
 
 // Required for using `juniper_codegen` macros inside this crate to resolve
 // absolute `::juniper` path correctly, without errors.
@@ -99,7 +98,7 @@ pub use crate::{
 };
 
 /// An error that prevented query execution
-#[allow(missing_docs)]
+#[expect(missing_docs, reason = "self-explanatory")]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum GraphQLError {
     ParseError(Spanning<ParseError>),

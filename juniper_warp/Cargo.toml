@@ -54,6 +54,18 @@ percent-encoding = "2.1"
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 url = "2.0"
 
+[lints.clippy]
+allow_attributes = "warn"
+allow_attributes_without_reason = "warn"
+[lints.rust]
+closure_returning_async_block = "warn"
+future_incompatible = { level = "warn", priority = -1 }
+impl_trait_redundant_captures = "warn"
+missing_docs = "warn"
+non_ascii_idents = "forbid"
+unsafe_code = "forbid"
+unused_crate_dependencies = "warn"
+
 [[example]]
 name = "subscription"
 required-features = ["subscriptions"]

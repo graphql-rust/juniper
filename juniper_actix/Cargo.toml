@@ -25,10 +25,8 @@ rustdoc-args = ["--cfg", "docsrs"]
 subscriptions = ["dep:actix-ws", "dep:juniper_graphql_ws"]
 
 [dependencies]
-actix-http = "3.2"
 actix-web = "4.4"
 actix-ws = { version = "0.3", optional = true }
-anyhow = "1.0.47"
 futures = "0.3.22"
 juniper = { version = "0.16", path = "../juniper", default-features = false }
 juniper_graphql_ws = { version = "0.4.0", path = "../juniper_graphql_ws", features = ["graphql-transport-ws", "graphql-ws"], optional = true }
@@ -37,16 +35,28 @@ serde_json = "1.0.18"
 
 [dev-dependencies]
 actix-cors = "0.7"
-actix-identity = "0.8"
+actix-http = "3.2"
 actix-rt = "2.0"
 actix-test = "0.1"
+anyhow = "1.0.47"
 async-stream = "0.3"
-bytes = "1.0"
 env_logger = "0.11"
 juniper = { version = "0.16", path = "../juniper", features = ["expose-test-schema"] }
 log = "0.4"
 rand = "0.9"
 tokio = "1.0"
+
+[lints.clippy]
+allow_attributes = "warn"
+allow_attributes_without_reason = "warn"
+[lints.rust]
+closure_returning_async_block = "warn"
+future_incompatible = { level = "warn", priority = -1 }
+impl_trait_redundant_captures = "warn"
+missing_docs = "warn"
+non_ascii_idents = "forbid"
+unsafe_code = "forbid"
+unused_crate_dependencies = "warn"
 
 [[example]]
 name = "subscription"

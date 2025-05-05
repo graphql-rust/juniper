@@ -35,7 +35,7 @@ pub enum Type<'a> {
 /// Lists and objects variants are _spanned_, i.e. they contain a reference to
 /// their position in the source file, if available.
 #[derive(Clone, Debug, PartialEq)]
-#[allow(missing_docs)]
+#[expect(missing_docs, reason = "self-explanatory")]
 pub enum InputValue<S = DefaultScalarValue> {
     Null,
     Scalar(S),
@@ -100,7 +100,7 @@ pub struct InlineFragment<'a, S> {
 /// }
 /// ```
 #[derive(Clone, PartialEq, Debug)]
-#[allow(missing_docs)]
+#[expect(missing_docs, reason = "self-explanatory")]
 pub enum Selection<'a, S = DefaultScalarValue> {
     Field(Spanning<Field<'a, S>>),
     FragmentSpread(Spanning<FragmentSpread<'a, S>>),
@@ -113,7 +113,7 @@ pub struct Directive<'a, S> {
     pub arguments: Option<Spanning<Arguments<'a, S>>>,
 }
 
-#[allow(missing_docs)]
+#[expect(missing_docs, reason = "self-explanatory")]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum OperationType {
     Query,
@@ -121,7 +121,7 @@ pub enum OperationType {
     Subscription,
 }
 
-#[allow(missing_docs)]
+#[expect(missing_docs, reason = "self-explanatory")]
 #[derive(Clone, PartialEq, Debug)]
 pub struct Operation<'a, S> {
     pub operation_type: OperationType,

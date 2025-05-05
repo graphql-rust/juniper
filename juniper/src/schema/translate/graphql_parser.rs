@@ -23,6 +23,11 @@ use crate::{
     value::ScalarValue,
 };
 
+// TODO: Remove on upgrade to 0.4.1 version of `graphql-parser`.
+mod for_minimal_versions_check_only {
+    use void as _;
+}
+
 pub struct GraphQLParserTranslator;
 
 impl<'a, S: 'a, T> From<&'a SchemaType<'a, S>> for Document<'a, T>
