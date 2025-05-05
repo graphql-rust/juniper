@@ -10,7 +10,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GraphiQL 4 with React 19 and GraphiQL Explorer</title>
+    <title>GraphiQL</title>
     <style>
       body {
         margin: 0;
@@ -31,11 +31,11 @@
     </style>
     <link
       rel="stylesheet"
-      href="https://esm.sh/graphiql@4.0.0/dist/style.css"
+      href="https://esm.sh/graphiql@4.0.2/dist/style.css"
     />
     <link
       rel="stylesheet"
-      href="https://esm.sh/@graphiql/plugin-explorer@4.0.0/dist/style.css"
+      href="https://esm.sh/@graphiql/plugin-explorer@4.0.2/dist/style.css"
     />
     <!-- Note: the ?standalone flag bundles the module along with all of its `dependencies`, excluding `peerDependencies`, into a single JavaScript file. -->
     <script type="importmap">
@@ -47,9 +47,9 @@
           "react-dom": "https://esm.sh/react-dom@19.1.0",
           "react-dom/client": "https://esm.sh/react-dom@19.1.0/client",
 
-          "graphiql": "https://esm.sh/graphiql@4.0.0?standalone&external=react,react/jsx-runtime,react-dom,@graphiql/react",
-          "@graphiql/plugin-explorer": "https://esm.sh/@graphiql/plugin-explorer@4.0.0?standalone&external=react,react/jsx-runtime,react-dom,@graphiql/react,graphql",
-          "@graphiql/react": "https://esm.sh/@graphiql/react@0.30.0?standalone&external=react,react/jsx-runtime,react-dom,graphql,@graphiql/toolkit",
+          "graphiql": "https://esm.sh/graphiql@4.0.2?standalone&external=react,react/jsx-runtime,react-dom,@graphiql/react",
+          "@graphiql/plugin-explorer": "https://esm.sh/@graphiql/plugin-explorer@4.0.2?standalone&external=react,react/jsx-runtime,react-dom,@graphiql/react,graphql",
+          "@graphiql/react": "https://esm.sh/@graphiql/react@0.32.0?standalone&external=react,react/jsx-runtime,react-dom,graphql,@graphiql/toolkit",
 
           "@graphiql/toolkit": "https://esm.sh/@graphiql/toolkit@0.11.2?standalone&external=graphql",
           "graphql": "https://esm.sh/graphql@16.11.0"
@@ -57,6 +57,7 @@
       }
     </script>
     <script type="module">
+<!-- inject -->
       // Import React and ReactDOM
       import React from 'react';
       import ReactDOM from 'react-dom/client';
@@ -66,7 +67,8 @@
       import { explorerPlugin } from '@graphiql/plugin-explorer';
 
       const fetcher = createGraphiQLFetcher({
-        url: 'https://countries.trevorblades.com',
+        url: JUNIPER_URL,
+        subscriptionUrl: normalizeSubscriptionEndpoint(JUNIPER_URL, JUNIPER_SUBSCRIPTIONS_URL)
       });
       const explorer = explorerPlugin();
 
