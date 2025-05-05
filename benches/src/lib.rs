@@ -1,3 +1,9 @@
+#[cfg(test)]
+mod for_benches_only {
+    use criterion as _;
+    use tokio as _;
+}
+
 use juniper::{
     DefaultScalarValue, EmptyMutation, EmptySubscription, ExecutionError, FieldError, GraphQLEnum,
     GraphQLObject, RootNode, Value, Variables, graphql_object,
