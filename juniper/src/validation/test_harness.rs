@@ -62,6 +62,7 @@ enum FurColor {
     Spotted,
 }
 
+#[expect(dead_code, reason = "GraphQL schema testing")]
 #[derive(Debug)]
 struct ComplexInput {
     required_field: bool,

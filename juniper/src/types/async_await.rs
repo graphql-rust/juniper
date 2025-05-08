@@ -159,11 +159,13 @@ where
     ))
 }
 
+#[derive(Debug)]
 struct AsyncField<S> {
     name: String,
     value: Option<Value<S>>,
 }
 
+#[derive(Debug)]
 enum AsyncValue<S> {
     Field(AsyncField<S>),
     Nested(Value<S>),
@@ -184,16 +186,17 @@ where
     use futures::stream::{FuturesOrdered, StreamExt as _};
 
     #[enum_derive(Future)]
-    enum AsyncValueFuture<A, B, C, D> {
-        Field(A),
-        FragmentSpread(B),
-        InlineFragment1(C),
-        InlineFragment2(D),
+    enum AsyncValueFuture<F1, F2, FS, IF1, IF2> {
+        Field1(F1),
+        Field2(F2),
+        FragmentSpread(FS),
+        InlineFragment1(IF1),
+        InlineFragment2(IF2),
     }
 
     let mut object = Object::with_capacity(selection_set.len());
 
-    let mut async_values = FuturesOrdered::<AsyncValueFuture<_, _, _, _>>::new();
+    let mut async_values = FuturesOrdered::<AsyncValueFuture<_, _, _, _, _>>::new();
 
     let meta_type = executor
         .schema()
@@ -258,7 +261,7 @@ where
                 let is_non_null = meta_field.field_type.is_non_null();
 
                 let response_name = response_name.to_string();
-                async_values.push_back(AsyncValueFuture::Field(async move {
+                async_values.push_back(AsyncValueFuture::Field1(async move {
                     // TODO: implement custom future type instead of
                     //       two-level boxing.
                     let res = instance
@@ -327,8 +330,23 @@ where
                                 })),
                             ));
                         }
-                    } else if let Err(e) = sub_result {
-                        sub_exec.push_error_at(e, span.start);
+                    } else {
+                        if let Err(e) = sub_result {
+                            sub_exec.push_error_at(e, span.start);
+                        }
+                        // NOTE: Executing a fragment cannot really result in anything other
+                        //       than `Value::Object`, because it represents a set of fields.
+                        //       So, if an error happens or a `Value::Null` is returned, it's an
+                        //       indication that the fragment execution failed somewhere and,
+                        //       because of non-`null` types involved, its error should be
+                        //       propagated to the parent field, which is done here by returning
+                        //       a `Value::Null`.
+                        async_values.push_back(AsyncValueFuture::Field2(future::ready(
+                            AsyncValue::Field(AsyncField {
+                                name: String::new(), // doesn't matter here
+                                value: None,
+                            }),
+                        )));
                     }
                 }
             }
@@ -371,8 +389,23 @@ where
                                     })),
                                 ));
                             }
-                        } else if let Err(e) = sub_result {
-                            sub_exec.push_error_at(e, span.start);
+                        } else {
+                            if let Err(e) = sub_result {
+                                sub_exec.push_error_at(e, span.start);
+                            }
+                            // NOTE: Executing a fragment cannot really result in anything other
+                            //       than `Value::Object`, because it represents a set of fields.
+                            //       So, if an error happens or a `Value::Null` is returned, it's an
+                            //       indication that the fragment execution failed somewhere and,
+                            //       because of non-`null` types involved, its error should be
+                            //       propagated to the parent field, which is done here by returning
+                            //       a `Value::Null`.
+                            async_values.push_back(AsyncValueFuture::Field2(future::ready(
+                                AsyncValue::Field(AsyncField {
+                                    name: String::new(), // doesn't matter here
+                                    value: None,
+                                }),
+                            )));
                         }
                     }
                 } else {
