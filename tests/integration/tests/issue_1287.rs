@@ -67,5 +67,24 @@ async fn error_propagates_same_way() {
     .await
     .unwrap();
 
-    assert_eq!(actual, expected);
+    assert_eq!(actual, expected, "async execution mismatch");
+
+    let (expected, _) = juniper::execute_sync(
+        without_fragment,
+        None,
+        &Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
+        &Variables::new(),
+        &(),
+    )
+    .unwrap();
+    let (actual, _) = juniper::execute_sync(
+        with_fragment,
+        None,
+        &Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()),
+        &Variables::new(),
+        &(),
+    )
+    .unwrap();
+
+    assert_eq!(actual, expected, "sync execution mismatch");
 }

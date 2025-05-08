@@ -330,21 +330,23 @@ where
                                 })),
                             ));
                         }
-                    } else if let Ok(Value::Null) = sub_result {
-                        // NOTE: Executing a fragment cannot really result in a `Value::Null`,
-                        //       because it represents a set of fields, so normal execution always
-                        //       results in a `Value::Object`. However, a `Value::Null` is used here
-                        //       to indicate that fragment execution failed somewhere and, because
-                        //       of non-`null` types involved, its error should be propagated to the
-                        //       parent field.
+                    } else {
+                        if let Err(e) = sub_result {
+                            sub_exec.push_error_at(e, span.start);
+                        }
+                        // NOTE: Executing a fragment cannot really result in anything other
+                        //       than `Value::Object`, because it represents a set of fields.
+                        //       So, if an error happens or a `Value::Null` is returned, it's an
+                        //       indication that the fragment execution failed somewhere and,
+                        //       because of non-`null` types involved, its error should be
+                        //       propagated to the parent field, which is done here by returning
+                        //       a `Value::Null`.
                         async_values.push_back(AsyncValueFuture::Field2(future::ready(
                             AsyncValue::Field(AsyncField {
                                 name: String::new(), // doesn't matter here
                                 value: None,
                             }),
                         )));
-                    } else if let Err(e) = sub_result {
-                        sub_exec.push_error_at(e, span.start);
                     }
                 }
             }
@@ -387,21 +389,23 @@ where
                                     })),
                                 ));
                             }
-                        } else if let Ok(Value::Null) = sub_result {
-                            // NOTE: Executing a fragment cannot really result in a `Value::Null`,
-                            //       because it represents a set of fields, so normal execution 
-                            //       always results in a `Value::Object`. However, a `Value::Null` 
-                            //       is used here to indicate that fragment execution failed 
-                            //       somewhere and, because of non-`null` types involved, its error 
-                            //       should be propagated to the parent field.
+                        } else {
+                            if let Err(e) = sub_result {
+                                sub_exec.push_error_at(e, span.start);
+                            }
+                            // NOTE: Executing a fragment cannot really result in anything other
+                            //       than `Value::Object`, because it represents a set of fields.
+                            //       So, if an error happens or a `Value::Null` is returned, it's an
+                            //       indication that the fragment execution failed somewhere and,
+                            //       because of non-`null` types involved, its error should be
+                            //       propagated to the parent field, which is done here by returning
+                            //       a `Value::Null`.
                             async_values.push_back(AsyncValueFuture::Field2(future::ready(
                                 AsyncValue::Field(AsyncField {
                                     name: String::new(), // doesn't matter here
                                     value: None,
                                 }),
                             )));
-                        } else if let Err(e) = sub_result {
-                            sub_exec.push_error_at(e, span.start);
                         }
                     }
                 } else {
