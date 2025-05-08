@@ -16,8 +16,10 @@ use juniper::{
 use serde_json::error::Error as SerdeError;
 use url::form_urlencoded;
 
+/// Executes synchronously  the provided GraphQL [`Request`] against the provided `schema` in the
+/// provided `context`, returning the encoded [`Response`].
 pub async fn graphql_sync<CtxT, QueryT, MutationT, SubscriptionT, S, B>(
-    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
+    schema: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     req: Request<B>,
 ) -> Response<String>
@@ -33,13 +35,15 @@ where
     B: Body<Error: fmt::Display>,
 {
     match parse_req(req).await {
-        Ok(req) => execute_request_sync(root_node, context, req).await,
+        Ok(req) => execute_request_sync(schema, context, req).await,
         Err(resp) => resp,
     }
 }
 
+/// Executes the provided GraphQL [`Request`] against the provided `schema` in the provided
+/// `context`, returning the encoded [`Response`].
 pub async fn graphql<CtxT, QueryT, MutationT, SubscriptionT, S, B>(
-    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
+    schema: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     req: Request<B>,
 ) -> Response<String>
@@ -55,7 +59,7 @@ where
     B: Body<Error: fmt::Display>,
 {
     match parse_req(req).await {
-        Ok(req) => execute_request(root_node, context, req).await,
+        Ok(req) => execute_request(schema, context, req).await,
         Err(resp) => resp,
     }
 }
@@ -137,6 +141,11 @@ where
     )))
 }
 
+/// Generates a [`Response`] page containing [GraphiQL].
+///
+/// This does not handle routing, so you can mount it on any endpoint.
+///
+/// [GraphiQL]: https://github.com/graphql/graphiql
 pub async fn graphiql(
     graphql_endpoint: &str,
     subscriptions_endpoint: Option<&str>,
@@ -148,6 +157,11 @@ pub async fn graphiql(
     resp
 }
 
+/// Generates a [`Response`] page containing [GraphQL Playground].
+///
+/// This does not handle routing, so you can mount it on any endpoint.
+///
+/// [GraphQL Playground]: https://github.com/prisma/graphql-playground
 pub async fn playground(
     graphql_endpoint: &str,
     subscriptions_endpoint: Option<&str>,
@@ -168,7 +182,7 @@ where
 }
 
 async fn execute_request_sync<CtxT, QueryT, MutationT, SubscriptionT, S>(
-    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
+    schema: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     request: GraphQLBatchRequest<S>,
 ) -> Response<String>
@@ -182,7 +196,7 @@ where
     CtxT: Sync,
     S: ScalarValue + Send + Sync,
 {
-    let res = request.execute_sync(&*root_node, &context);
+    let res = request.execute_sync(&*schema, &context);
     let body = serde_json::to_string_pretty(&res).unwrap();
     let code = if res.is_ok() {
         StatusCode::OK
@@ -199,7 +213,7 @@ where
 }
 
 async fn execute_request<CtxT, QueryT, MutationT, SubscriptionT, S>(
-    root_node: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
+    schema: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     request: GraphQLBatchRequest<S>,
 ) -> Response<String>
@@ -213,7 +227,7 @@ where
     CtxT: Sync,
     S: ScalarValue + Send + Sync,
 {
-    let res = request.execute(&*root_node, &context).await;
+    let res = request.execute(&*schema, &context).await;
     let body = serde_json::to_string_pretty(&res).unwrap();
     let code = if res.is_ok() {
         StatusCode::OK

@@ -62,7 +62,6 @@ enum FurColor {
     Spotted,
 }
 
-#[allow(dead_code)]
 #[derive(Debug)]
 struct ComplexInput {
     required_field: bool,

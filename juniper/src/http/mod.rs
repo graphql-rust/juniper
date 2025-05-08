@@ -361,8 +361,9 @@ impl<S: ScalarValue> GraphQLBatchResponse<S> {
 }
 
 #[cfg(feature = "expose-test-schema")]
-#[allow(missing_docs)]
 pub mod tests {
+    //! HTTP integration tests.
+
     use std::time::Duration;
 
     use serde_json::Value as Json;
@@ -373,8 +374,13 @@ pub mod tests {
     /// the http framework integration we are testing.
     #[derive(Debug)]
     pub struct TestResponse {
+        /// Status code of the HTTP response.
         pub status_code: i32,
+
+        /// Body of the HTTP response, if any.
         pub body: Option<String>,
+
+        /// `Content-Type` header value of the HTTP response.
         pub content_type: String,
     }
 
@@ -393,7 +399,7 @@ pub mod tests {
         fn post_graphql(&self, url: &str, body: &str) -> TestResponse;
     }
 
-    #[allow(missing_docs)]
+    /// Runs integration tests suite for the provided [`HttpIntegration`].
     pub fn run_http_test_suite<T: HttpIntegration>(integration: &T) {
         println!("Running HTTP Test suite for integration");
 
@@ -662,7 +668,10 @@ pub mod tests {
 
         use super::{WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT, WsIntegration, WsIntegrationMessage};
 
-        #[allow(missing_docs)]
+        /// Runs integration tests suite for the [legacy `graphql-ws` GraphQL over WebSocket
+        /// Protocol][0].
+        ///
+        /// [0]:https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
         pub async fn run_test_suite<T: WsIntegration>(integration: &T) {
             println!("Running `graphql-ws` test suite for integration");
 
@@ -791,7 +800,10 @@ pub mod tests {
 
         use super::{WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT, WsIntegration, WsIntegrationMessage};
 
-        #[allow(missing_docs)]
+        /// Runs integration tests suite the [new `graphql-transport-ws` GraphQL over WebSocket
+        /// Protocol][new].
+        ///
+        /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
         pub async fn run_test_suite<T: WsIntegration>(integration: &T) {
             println!("Running `graphql-transport-ws` test suite for integration");
 

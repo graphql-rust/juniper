@@ -8,7 +8,7 @@ use juniper::{
 
 struct Query;
 
-#[allow(dead_code)]
+#[expect(dead_code, reason = "GraphQL schema testing")]
 #[graphql_interface(for = [Human, Droid])]
 trait Character {
     fn id(&self) -> &str;

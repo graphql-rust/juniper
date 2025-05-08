@@ -1,6 +1,6 @@
 //! Tests for `#[graphql_interface]` macro placed on a trait.
 
-#![allow(dead_code)]
+#![expect(dead_code, reason = "GraphQL schema definition")]
 // Assert that `#[graphql_interface]` macro placed on a trait stops Clippy from enforcing `# Errors`
 // and `# Panics` sections in GraphQL descriptions.
 #![deny(clippy::missing_errors_doc, clippy::missing_panics_doc)]
@@ -16,7 +16,6 @@ use juniper::{
 use self::common::util::{schema, schema_with_scalar};
 
 // Override `std::prelude` items to check whether macros expand hygienically.
-#[allow(unused_imports)]
 use self::common::hygiene::*;
 
 mod no_implers {
@@ -2367,7 +2366,7 @@ mod explicit_custom_context {
 
     #[graphql_object(impl = CharacterValue, context = CustomContext)]
     impl Droid {
-        #[allow(clippy::needless_lifetimes)] // intentionally
+        #[expect(clippy::needless_lifetimes, reason = "intentional")]
         async fn id<'a>(&'a self) -> &'a str {
             &self.id
         }
@@ -2376,7 +2375,7 @@ mod explicit_custom_context {
             &self.primary_function
         }
 
-        #[allow(clippy::needless_lifetimes)] // intentionally
+        #[expect(clippy::needless_lifetimes, reason = "intentional")]
         async fn info<'b>(&'b self) -> &'b str {
             &self.primary_function
         }
@@ -2675,7 +2674,7 @@ mod executor {
             &self.home_planet
         }
 
-        #[allow(clippy::needless_lifetimes)] // intentionally
+        #[expect(clippy::needless_lifetimes, reason = "intentional")]
         async fn info<'b>(&'b self, _arg: prelude::Option<i32>) -> &'b str {
             &self.home_planet
         }
@@ -3068,7 +3067,7 @@ mod field_return_union_subtyping {
         value: i32,
     }
 
-    #[allow(dead_code)]
+    #[expect(dead_code, reason = "GraphQL schema testing")]
     #[derive(GraphQLUnion)]
     enum KeyFeature {
         Strength(Strength),
@@ -3898,7 +3897,7 @@ mod branching_subtyping {
 mod preserves_visibility {
     use super::*;
 
-    #[allow(dead_code)]
+    #[expect(dead_code, reason = "GraphQL schema testing")]
     type Foo = self::inner::CharacterValue;
 
     pub(crate) mod inner {

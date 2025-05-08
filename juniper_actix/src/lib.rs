@@ -1,8 +1,6 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
 #![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
-#![deny(missing_docs)]
-#![deny(warnings)]
 
 use actix_web::{
     Error, FromRequest, HttpMessage, HttpRequest, HttpResponse, error::JsonPayloadError,
@@ -528,8 +526,8 @@ mod tests {
             "text/html; charset=utf-8"
         );
         let body = take_response_body_string(resp).await;
-        assert!(body.contains("var JUNIPER_URL = '/dogs-api/graphql';"));
-        assert!(body.contains("var JUNIPER_SUBSCRIPTIONS_URL = '/dogs-api/subscriptions';"))
+        assert!(body.contains("const JUNIPER_URL = '/dogs-api/graphql';"));
+        assert!(body.contains("const JUNIPER_SUBSCRIPTIONS_URL = '/dogs-api/subscriptions';"))
     }
 
     #[actix_web::rt::test]

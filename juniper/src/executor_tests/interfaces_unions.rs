@@ -5,7 +5,8 @@ mod interface {
         types::scalars::{EmptyMutation, EmptySubscription},
     };
 
-    #[allow(dead_code)] // TODO: Consider this for the GraphQL interfaces in the expansion.
+    // TODO: Consider this for the GraphQL interfaces in the expansion.
+    #[expect(dead_code, reason = "GraphQL schema testing")]
     #[graphql_interface(for = [Cat, Dog])]
     trait Pet {
         fn name(&self) -> &str;

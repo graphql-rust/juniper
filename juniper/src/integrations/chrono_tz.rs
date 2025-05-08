@@ -13,6 +13,11 @@
 
 use crate::{InputValue, ScalarValue, Value, graphql_scalar};
 
+// TODO: Try remove on upgrade of `chrono-tz` crate.
+mod for_minimal_versions_check_only {
+    use regex as _;
+}
+
 /// Timezone based on [`IANA` database][0].
 ///
 /// See ["List of tz database time zones"][3] `TZ database name` column for

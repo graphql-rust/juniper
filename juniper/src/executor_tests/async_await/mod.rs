@@ -11,7 +11,6 @@ enum UserKind {
 }
 
 struct User {
-    #[allow(dead_code)]
     id: i32,
     name: String,
     kind: UserKind,

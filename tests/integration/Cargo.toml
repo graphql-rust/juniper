@@ -5,10 +5,7 @@ edition = "2024"
 publish = false
 
 [dev-dependencies]
-async-trait = "0.1.39"
 chrono = { version = "0.4", default-features = false }
-derive_more = { version = "2.0", features = ["from"] }
-fnv = "1.0"
 futures = "0.3"
 itertools = "0.14"
 juniper = { path = "../../juniper", features = ["chrono"] }
@@ -16,3 +13,13 @@ juniper_subscriptions = { path = "../../juniper_subscriptions" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1.0", features = ["rt", "macros", "time"] }
+
+[lints.clippy]
+allow_attributes = "warn"
+allow_attributes_without_reason = "warn"
+[lints.rust]
+closure_returning_async_block = "warn"
+future_incompatible = { level = "warn", priority = -1 }
+impl_trait_redundant_captures = "warn"
+non_ascii_idents = "forbid"
+unsafe_code = "forbid"

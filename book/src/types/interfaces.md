@@ -356,7 +356,7 @@ trait Person {
 
 By default, all [struct][24] fields or [trait][20] methods are considered as [GraphQL fields][4]. If a helper method is needed, or it should be ignored for some reason, then it should be marked with the `#[graphql(ignore)]` attribute:
 ```rust
-# #![allow(dead_code)]
+# #![expect(dead_code, reason = "example")]
 # extern crate juniper;
 # use std::marker::PhantomPinned;
 # use juniper::{graphql_interface, GraphQLInterface};

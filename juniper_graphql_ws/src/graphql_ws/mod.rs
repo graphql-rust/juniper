@@ -91,6 +91,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                         )])
                         .boxed();
 
+                        #[expect(closure_returning_async_block, reason = "not possible")]
                         if keep_alive_interval > Duration::from_secs(0) {
                             s = s
                                 .chain(
@@ -326,7 +327,11 @@ impl<S: Schema> Stream for SubscriptionStart<S> {
                                 (*params).start_payload.operation_name.as_deref(),
                                 (*params).schema.root_node(),
                                 &(*params).start_payload.variables,
-                                &(*params).config.context,
+                                #[expect( // required by `dangerous_implicit_autorefs` rustc lint
+                                    clippy::needless_borrow,
+                                    reason = "required by `dangerous_implicit_autorefs` rustc lint"
+                                )]
+                                &(&(*params).config).context,
                             )
                         }
                         .map_ok(|(stream, errors)| {
@@ -385,7 +390,7 @@ enum ConnectionSinkState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
         state: ConnectionState<S, I>,
     },
     HandlingMessage {
-        #[allow(clippy::type_complexity)]
+        #[expect(clippy::type_complexity, reason = "not really")]
         result: BoxFuture<'static, (ConnectionState<S, I>, BoxStream<'static, Reaction<S>>)>,
     },
     Closed,

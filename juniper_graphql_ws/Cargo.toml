@@ -33,3 +33,14 @@ tokio = { version = "1.0", features = ["macros", "rt", "time"], default-features
 
 [dev-dependencies]
 serde_json = "1.0.18"
+
+[lints.clippy]
+allow_attributes = "warn"
+allow_attributes_without_reason = "warn"
+[lints.rust]
+closure_returning_async_block = "warn"
+future_incompatible = { level = "warn", priority = -1 }
+impl_trait_redundant_captures = "warn"
+missing_docs = "warn"
+non_ascii_idents = "forbid"
+unused_crate_dependencies = "warn"

@@ -10,7 +10,6 @@ use juniper::{
 use self::common::util::{schema, schema_with_scalar};
 
 // Override `std::prelude` items to check whether macros expand hygienically.
-#[allow(unused_imports)]
 use self::common::hygiene::*;
 
 #[derive(GraphQLObject)]
@@ -1097,7 +1096,7 @@ mod external_resolver_enum_variant {
     enum Character {
         A(Human),
         #[graphql(with = Character::as_droid)]
-        B(#[allow(dead_code)] Droid),
+        B(#[expect(dead_code, reason = "GraphQL schema testing")] Droid),
     }
 
     impl Character {

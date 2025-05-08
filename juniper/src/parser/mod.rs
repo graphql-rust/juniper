@@ -1,8 +1,8 @@
 //! Query parser and language utilities
-#![allow(clippy::module_inception)]
 
 mod document;
 mod lexer;
+#[expect(clippy::module_inception, reason = "intended")]
 mod parser;
 mod utils;
 mod value;

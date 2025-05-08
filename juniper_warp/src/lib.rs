@@ -3,6 +3,11 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(missing_docs)]
 
+// TODO: Try remove on upgrade of `warp` crate.
+mod for_minimal_versions_check_only {
+    use headers as _;
+}
+
 mod response;
 #[cfg(feature = "subscriptions")]
 pub mod subscriptions;
@@ -661,7 +666,7 @@ mod tests {
             );
             let body = String::from_utf8(response.body().to_vec()).unwrap();
 
-            assert!(body.contains("var JUNIPER_URL = '/dogs-api/graphql';"));
+            assert!(body.contains("const JUNIPER_URL = '/dogs-api/graphql';"));
         }
 
         #[tokio::test]

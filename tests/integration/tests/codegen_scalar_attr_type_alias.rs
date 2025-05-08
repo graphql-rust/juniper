@@ -16,7 +16,6 @@ use self::common::{
 };
 
 // Override `std::prelude` items to check whether macros expand hygienically.
-#[allow(unused_imports)]
 use self::common::hygiene::*;
 
 mod all_custom_resolvers {

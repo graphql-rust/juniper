@@ -15,6 +15,11 @@
 
 use crate::{InputValue, ScalarValue, Value, graphql_scalar};
 
+// TODO: Try remove on upgrade of `bson` crate.
+mod for_minimal_versions_check_only {
+    use tap as _;
+}
+
 /// [BSON ObjectId][0] represented as a HEX string.
 ///
 /// [`ObjectID` scalar][1] compliant.
