@@ -17,7 +17,7 @@ struct Query;
 #[graphql_object]
 impl Query {
     fn my_object() -> MyObject {
-        MyObject {}
+        MyObject
     }
 
     fn just_a_field() -> i32 {
@@ -36,18 +36,18 @@ async fn error_propagates_same_way() {
     }";
     // language=GraphQL
     let with_fragment = r"
-        query { 
-            myObject { 
-                ...MyObjectFragment 
-            } 
+        query {
+            myObject {
+                ...MyObjectFragment
+            }
             justAField
         }
-        
-        fragment MyObjectFragment on MyObject { 
-            erroringField 
+
+        fragment MyObjectFragment on MyObject {
+            erroringField
         }
     ";
-
+    
     let (expected, _) = juniper::execute(
         without_fragment,
         None,

@@ -9,6 +9,11 @@
 extern crate core;
 extern crate self as juniper;
 
+#[cfg(test)]
+mod for_benches_only {
+    use bencher as _;
+}
+
 use std::fmt;
 
 // These are required by the code generated via the `juniper_codegen` macros.
