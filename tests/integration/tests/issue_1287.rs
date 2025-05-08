@@ -47,7 +47,7 @@ async fn error_propagates_same_way() {
             erroringField
         }
     ";
-    
+
     let (expected, _) = juniper::execute(
         without_fragment,
         None,
