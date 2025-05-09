@@ -43,6 +43,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - `jiff::tz::TimeZone` as `TimeZoneOrUtcOffset` and `TimeZone` scalars.
     - `jiff::tz::Offset` as `UtcOffset` scalar.
     - `jiff::Span` as `Duration` scalar.
+- `http::GraphQLResponse::into_result()` method. ([#1293])
 
 ### Changed
 
@@ -62,6 +63,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1281]: /../../pull/1281
 [#1284]: /../../pull/1284
 [#1287]: /../../issues/1287
+[#1293]: /../../pull/1293
 [#1311]: /../../pull/1311
 [#1316]: /../../pull/1316
 [#1318]: /../../pull/1318
