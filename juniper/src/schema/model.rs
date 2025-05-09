@@ -1,6 +1,7 @@
 use std::{borrow::Cow, fmt};
 
 use fnv::FnvHashMap;
+
 #[cfg(feature = "schema-language")]
 use graphql_parser::schema::Document;
 
@@ -53,7 +54,7 @@ pub struct SchemaType<'a, S> {
     pub(crate) query_type_name: String,
     pub(crate) mutation_type_name: Option<String>,
     pub(crate) subscription_type_name: Option<String>,
-    directives: FnvHashMap<String, DirectiveType<'a, S>>,
+    pub(crate) directives: FnvHashMap<String, DirectiveType<'a, S>>,
 }
 
 impl<S> Context for SchemaType<'_, S> {}
@@ -66,33 +67,51 @@ pub enum TypeType<'a, S: 'a> {
 }
 
 #[derive(Debug)]
+/// Represents a graphql directive
 pub struct DirectiveType<'a, S> {
+    /// required a unique name per schema
     pub name: String,
+    /// optional a description
     pub description: Option<String>,
+    /// required atleast a location
     pub locations: Vec<DirectiveLocation>,
+    /// Optional arguments
     pub arguments: Vec<Argument<'a, S>>,
+    /// Allow repeating a directive
     pub is_repeatable: bool,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, GraphQLEnum)]
 #[graphql(name = "__DirectiveLocation", internal)]
+/// Describes the different allowed locations of a directive
 pub enum DirectiveLocation {
+    /// directive for query
     Query,
+    /// directive for Mutation
     Mutation,
+    /// directive for Subscription
     Subscription,
+    /// directive for Field
     Field,
+    /// directive for Scalar
     Scalar,
     #[graphql(name = "FRAGMENT_DEFINITION")]
+    /// directive for FragmentDefinition
     FragmentDefinition,
     #[graphql(name = "FIELD_DEFINITION")]
+    /// directive for FieldDefinition
     FieldDefinition,
     #[graphql(name = "VARIABLE_DEFINITION")]
+    /// directive for VariableDefinition
     VariableDefinition,
     #[graphql(name = "FRAGMENT_SPREAD")]
+    /// directive for FragmentSpread
     FragmentSpread,
     #[graphql(name = "INLINE_FRAGMENT")]
+    /// directive for InlineFragment
     InlineFragment,
     #[graphql(name = "ENUM_VALUE")]
+    /// directive for Enum
     EnumValue,
 }
 
@@ -104,7 +123,7 @@ where
     SubscriptionT: GraphQLType<DefaultScalarValue, TypeInfo = ()>,
 {
     /// Constructs a new [`RootNode`] from `query`, `mutation` and `subscription` nodes,
-    /// parametrizing it with a [`DefaultScalarValue`].
+    /// parametrizing it with a [`DefaultScalarValue`] .
     pub fn new(query: QueryT, mutation: MutationT, subscription: SubscriptionT) -> Self {
         Self::new_with_info(query, mutation, subscription, (), (), ())
     }
@@ -118,13 +137,66 @@ where
     SubscriptionT: GraphQLType<S, TypeInfo = ()>,
 {
     /// Constructs a new [`RootNode`] from `query`, `mutation` and `subscription` nodes,
-    /// parametrizing it with the provided [`ScalarValue`].
+    /// parametrized it with the provided [`ScalarValue`].
     pub fn new_with_scalar_value(
         query: QueryT,
         mutation: MutationT,
         subscription: SubscriptionT,
     ) -> Self {
         RootNode::new_with_info(query, mutation, subscription, (), (), ())
+    }
+
+    /// Constructs a new [`RootNode`] from `query`, `mutation` and `subscription` nodes,
+    /// parametrized it with a [`ScalarValue`] and directives
+   /// ```rust 
+    ///  use juniper::{
+    ///      graphql_object, graphql_vars, EmptyMutation, EmptySubscription, GraphQLError,
+    ///      RootNode, DirectiveLocation , DirectiveType
+    ///  };
+    /// 
+    /// struct Query{}
+    /// 
+    /// #[graphql_object]
+    /// impl Query {
+    ///    pub fn hello() -> String {
+    ///       "Hello".to_string()
+    ///    }  
+    /// }
+    /// 
+    /// type Schema = RootNode<'static, Query, EmptyMutation, EmptySubscription>;
+    ///
+    /// let schema = Schema::new_with_directives(Query {}, EmptyMutation::new(), EmptySubscription::new()
+    ///                           ,vec![ DirectiveType::new("my_directive", &[DirectiveLocation::Query] , &[] , false )]);
+    /// 
+    /// let query = "query @my_directive { hello }";
+    ///
+    /// match juniper::execute_sync(query, None, &schema, &graphql_vars! {}, &()) {
+    ///     Err(GraphQLError::ValidationError(errs)) => { panic!("should not give an error"); }
+    ///     res => {}
+    /// }
+    /// 
+    ///  let query = "query @non_existing_directive { hello }";
+    ///
+    /// match juniper::execute_sync(query, None, &schema, &graphql_vars! {}, &()) {
+    ///     Err(GraphQLError::ValidationError(errs)) => {  }
+    ///     res => { panic!("should give an error"); }
+    /// }
+    /// ```
+    pub fn new_with_directives(
+        query: QueryT,
+        mutation: MutationT,
+        subscription: SubscriptionT,
+        custom_directives: Vec<DirectiveType<'a, S>>,
+    ) -> Self {
+        Self::new_with_directives_and_info(
+            query,
+            mutation,
+            subscription,
+            custom_directives,
+            (),
+            (),
+            (),
+        )
     }
 }
 
@@ -154,6 +226,34 @@ where
                 &query_info,
                 &mutation_info,
                 &subscription_info,
+            ),
+            query_info,
+            mutation_info,
+            subscription_info,
+            introspection_disabled: false,
+        }
+    }
+
+    /// Construct a new root node with default meta types
+    /// and with custom directives
+    pub fn new_with_directives_and_info(
+        query_obj: QueryT,
+        mutation_obj: MutationT,
+        subscription_obj: SubscriptionT,
+        custom_directives: Vec<DirectiveType<'a, S>>,
+        query_info: QueryT::TypeInfo,
+        mutation_info: MutationT::TypeInfo,
+        subscription_info: SubscriptionT::TypeInfo,
+    ) -> Self {
+        Self {
+            query_type: query_obj,
+            mutation_type: mutation_obj,
+            subscription_type: subscription_obj,
+            schema: SchemaType::new_with_directives::<QueryT, MutationT, SubscriptionT>(
+                &query_info,
+                &mutation_info,
+                &subscription_info,
+                custom_directives.into(),
             ),
             query_info,
             mutation_info,
@@ -257,11 +357,28 @@ where
 }
 
 impl<'a, S> SchemaType<'a, S> {
+    
     /// Create a new schema.
     pub fn new<QueryT, MutationT, SubscriptionT>(
         query_info: &QueryT::TypeInfo,
         mutation_info: &MutationT::TypeInfo,
         subscription_info: &SubscriptionT::TypeInfo,
+    ) -> Self
+    where
+        S: ScalarValue + 'a,
+        QueryT: GraphQLType<S>,
+        MutationT: GraphQLType<S>,
+        SubscriptionT: GraphQLType<S>,
+    {
+        Self::new_with_directives::<QueryT,MutationT,SubscriptionT>(query_info, mutation_info, subscription_info, None)
+    }
+
+    /// Create a new schema with custom directives
+    pub fn new_with_directives<QueryT, MutationT, SubscriptionT>(
+        query_info: &QueryT::TypeInfo,
+        mutation_info: &MutationT::TypeInfo,
+        subscription_info: &SubscriptionT::TypeInfo,
+        custom_directives: Option<Vec<DirectiveType<'a, S>>>,
     ) -> Self
     where
         S: ScalarValue + 'a,
@@ -297,6 +414,12 @@ impl<'a, S> SchemaType<'a, S> {
             "specifiedBy".into(),
             DirectiveType::new_specified_by(&mut registry),
         );
+
+        if let Some(custom_directives) = custom_directives {
+            for custom_directive in custom_directives.into_iter() {
+                directives.insert(custom_directive.name.clone(), custom_directive);
+            }
+        }
 
         let mut meta_fields = vec![
             registry.field::<SchemaType<S>>("__schema", &()),
@@ -585,6 +708,7 @@ impl<'a, S> DirectiveType<'a, S>
 where
     S: ScalarValue + 'a,
 {
+    /// Create a new default directive
     pub fn new(
         name: &str,
         locations: &[DirectiveLocation],
@@ -597,6 +721,15 @@ where
             locations: locations.to_vec(),
             arguments: arguments.to_vec(),
             is_repeatable,
+        }
+    }
+
+    /// skip,include,deprecated,specifiedBy are standard graphQL directive
+    /// wiil not show up in generated scheme
+    pub fn is_builtin(&self) -> bool {
+        match self.name.as_str() {
+            "skip" | "include" | "deprecated" | "specifiedBy" => true,
+            _ => false,
         }
     }
 
@@ -659,6 +792,7 @@ where
         )
     }
 
+    /// Set description of directive
     pub fn description(mut self, description: &str) -> DirectiveType<'a, S> {
         self.description = Some(description.into());
         self

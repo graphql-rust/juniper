@@ -4,16 +4,19 @@ use graphql_parser::{
     Pos,
     query::{Directive as ExternalDirective, Number as ExternalNumber, Type as ExternalType},
     schema::{
-        Definition, Document, EnumType as ExternalEnum, EnumValue as ExternalEnumValue,
-        Field as ExternalField, InputObjectType as ExternalInputObjectType,
-        InputValue as ExternalInputValue, InterfaceType as ExternalInterfaceType,
-        ObjectType as ExternalObjectType, ScalarType as ExternalScalarType, SchemaDefinition, Text,
+        Definition, DirectiveDefinition as ExternalDirectiveDefinition,
+        DirectiveLocation as ExternalDirectiveLocation, Document, EnumType as ExternalEnum,
+        EnumValue as ExternalEnumValue, Field as ExternalField,
+        InputObjectType as ExternalInputObjectType, InputValue as ExternalInputValue,
+        InterfaceType as ExternalInterfaceType, ObjectType as ExternalObjectType,
+        ScalarType as ExternalScalarType, SchemaDefinition, Text,
         TypeDefinition as ExternalTypeDefinition, UnionType as ExternalUnionType,
         Value as ExternalValue,
     },
 };
 
 use crate::{
+    DirectiveLocation,
     ast::{InputValue, Type},
     schema::{
         meta::{Argument, DeprecationStatus, EnumValue, Field, MetaType},
@@ -76,11 +79,56 @@ where
                     .map(|s| From::from(s.as_str())),
             }));
 
+        let mut directives = input
+            .directives
+            .iter()
+            .filter(|(_, directive)| !directive.is_builtin())
+            .map(|(_, directive)| ExternalDirectiveDefinition::<T> {
+                position: Pos::default(),
+                description: directive.description.clone(),
+                name: From::from(directive.name.as_str()),
+                arguments: directive
+                    .arguments
+                    .iter()
+                    .map(GraphQLParserTranslator::translate_argument)
+                    .collect(),
+                repeatable: directive.is_repeatable,
+                locations: directive
+                    .locations
+                    .iter()
+                    .map(GraphQLParserTranslator::translate_location::<S,T>)
+                    .collect(),
+            })
+            .map(Definition::DirectiveDefinition)
+            .collect();
+
+        doc.definitions.append(&mut directives);
+
         doc
     }
 }
 
 impl GraphQLParserTranslator {
+    fn translate_location<'a, S, T>(location: &DirectiveLocation) -> ExternalDirectiveLocation
+    where
+        S: ScalarValue,
+        T: Text<'a>,
+    {
+        match location {
+            DirectiveLocation::Query => ExternalDirectiveLocation::Query,
+            DirectiveLocation::Mutation => ExternalDirectiveLocation::Mutation,
+            DirectiveLocation::Subscription => ExternalDirectiveLocation::Subscription,
+            DirectiveLocation::Field => ExternalDirectiveLocation::Field,
+            DirectiveLocation::Scalar => ExternalDirectiveLocation::Scalar,
+            DirectiveLocation::FragmentDefinition => ExternalDirectiveLocation::FragmentDefinition,
+            DirectiveLocation::FieldDefinition => ExternalDirectiveLocation::FieldDefinition,
+            DirectiveLocation::VariableDefinition => ExternalDirectiveLocation::VariableDefinition,
+            DirectiveLocation::FragmentSpread => ExternalDirectiveLocation::FragmentSpread,
+            DirectiveLocation::InlineFragment => ExternalDirectiveLocation::InlineFragment,
+            DirectiveLocation::EnumValue => ExternalDirectiveLocation::EnumValue,
+        }
+    }
+
     fn translate_argument<'a, S, T>(input: &'a Argument<S>) -> ExternalInputValue<'a, T>
     where
         S: ScalarValue,
