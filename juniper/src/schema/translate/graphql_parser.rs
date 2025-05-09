@@ -5,6 +5,28 @@ use graphql_parser::{Pos, schema};
 use crate::{
     ast,
     schema::{meta, model::SchemaType, translate::SchemaTranslator},
+};
+
+use graphql_parser::{
+    query::{Directive as ExternalDirective, Number as ExternalNumber, Type as ExternalType},
+    schema::{
+        Definition, DirectiveDefinition as ExternalDirectiveDefinition,
+        DirectiveLocation as ExternalDirectiveLocation, Document, EnumType as ExternalEnum,
+        EnumValue as ExternalEnumValue, Field as ExternalField,
+        InputObjectType as ExternalInputObjectType, InputValue as ExternalInputValue,
+        InterfaceType as ExternalInterfaceType, ObjectType as ExternalObjectType,
+        ScalarType as ExternalScalarType, SchemaDefinition, Text,
+        TypeDefinition as ExternalTypeDefinition, UnionType as ExternalUnionType,
+        Value as ExternalValue,
+    },
+};
+
+use crate::{
+    DirectiveLocation,
+    ast::{InputValue, Type},
+    schema::{
+        meta::{Argument, DeprecationStatus, EnumValue, Field, MetaType},
+    },
     value::ScalarValue,
 };
 
@@ -58,11 +80,65 @@ where
             },
         ));
 
+        let mut directives = input
+            .directives
+            .iter()
+            .filter(|(_, directive)| !directive.is_builtin())
+            .map(|(_, directive)| ExternalDirectiveDefinition::<T> {
+                position: Pos::default(),
+                description: directive.description.as_deref().map(Into::into),
+                name: From::from(directive.name.as_str()),
+                arguments: directive
+                    .arguments
+                    .iter()
+                    .map(GraphQLParserTranslator::translate_argument)
+                    .collect(),
+                repeatable: directive.is_repeatable,
+                locations: directive
+                    .locations
+                    .iter()
+                    .map(GraphQLParserTranslator::translate_location::<S,T>)
+                    .collect(),
+            })
+            .map(Definition::DirectiveDefinition)
+            .collect();
+
+        doc.definitions.append(&mut directives);
+
         doc
     }
 }
 
 impl GraphQLParserTranslator {
+
+    fn translate_location<'a, S, T>(location: &DirectiveLocation) -> ExternalDirectiveLocation
+    where
+        S: ScalarValue,
+        T: Text<'a>,
+    {
+        match location {
+            DirectiveLocation::Query => ExternalDirectiveLocation::Query,
+            DirectiveLocation::Mutation => ExternalDirectiveLocation::Mutation,
+            DirectiveLocation::Subscription => ExternalDirectiveLocation::Subscription,
+            DirectiveLocation::Field => ExternalDirectiveLocation::Field,
+            DirectiveLocation::Scalar => ExternalDirectiveLocation::Scalar,
+            DirectiveLocation::FragmentDefinition => ExternalDirectiveLocation::FragmentDefinition,
+            DirectiveLocation::FieldDefinition => ExternalDirectiveLocation::FieldDefinition,
+            DirectiveLocation::VariableDefinition => ExternalDirectiveLocation::VariableDefinition,
+            DirectiveLocation::FragmentSpread => ExternalDirectiveLocation::FragmentSpread,
+            DirectiveLocation::InlineFragment => ExternalDirectiveLocation::InlineFragment,
+            DirectiveLocation::EnumValue => ExternalDirectiveLocation::EnumValue,
+            DirectiveLocation::Schema => ExternalDirectiveLocation::Schema,
+            DirectiveLocation::Object => ExternalDirectiveLocation::Object,
+            DirectiveLocation::ArgumentDefinition => ExternalDirectiveLocation::ArgumentDefinition,
+            DirectiveLocation::Interface => ExternalDirectiveLocation::Interface,
+            DirectiveLocation::Union => ExternalDirectiveLocation::Union,
+            DirectiveLocation::Enum => ExternalDirectiveLocation::Enum,
+            DirectiveLocation::InputObject => ExternalDirectiveLocation::InputObject,
+            DirectiveLocation::InputFieldDefinition => ExternalDirectiveLocation::InputFieldDefinition,
+        }
+    }
+
     fn translate_argument<'a, S, T>(input: &'a meta::Argument<S>) -> schema::InputValue<'a, T>
     where
         S: ScalarValue,
