@@ -47,7 +47,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 ### Changed
 
-- Upgraded [GraphiQL] to [4.0.2 version](https://github.com/graphql/graphiql/blob/graphiql%404.0.2/packages/graphiql/CHANGELOG.md#402). ([#1316])
+- Upgraded [GraphiQL] to [4.0.4 version](https://github.com/graphql/graphiql/blob/graphiql%404.0.4/packages/graphiql/CHANGELOG.md#404). ([#1319])
 
 ### Fixed
 
@@ -65,8 +65,8 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1287]: /../../issues/1287
 [#1293]: /../../pull/1293
 [#1311]: /../../pull/1311
-[#1316]: /../../pull/1316
 [#1318]: /../../pull/1318
+[#1319]: /../../pull/1319
 [1b1fc618]: /../../commit/1b1fc61879ffdd640d741e187dc20678bf7ab295
 
 
