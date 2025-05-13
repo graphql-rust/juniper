@@ -139,7 +139,7 @@ impl GraphQLParserTranslator {
         }
     }
 
-    fn translate_type<'a, T, N: AsRef<str>>(input: &'a Type<N>) -> ExternalType<'a, T>
+    fn translate_type<'a, T>(input: &'a Type<impl AsRef<str>>) -> ExternalType<'a, T>
     where
         T: Text<'a>,
     {

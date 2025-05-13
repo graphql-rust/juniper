@@ -37,9 +37,12 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - Made `DeprecationStatus::reason()` returning `ArcStr`.
     - Removed lifetime parameters from `DirectiveType`.
     - Made `DirectiveType::name` and `DirectiveType::description` using `ArcStr`.
+    - Removed lifetime parameter from `SchemaType` and `Registry`.
     - Made `types::Name` and `types::NameParseError` using `ArcStr` instead of `String`.
+    - Replaced `FromStr` impl of `types::Name` with `types::Name::new()` constructor.
     - Made `GraphQLType::name()` and `GraphQLValue::type_name()` returning `ArcStr`.
     - Removed lifetime parameters from `RootNode`.
+    - Removed lifetime parameters from `ast::Type` and made it generic over string type.
 
 ### Added
 
