@@ -3,6 +3,12 @@
 // TODO: [Object] Type Validation: §4 (interfaces) for objects
 // TODO: [Non-Null] §1 A Non‐Null type must not wrap another Non‐Null type.
 
+#[cfg(test)]
+mod for_codegen_tests_only {
+    use futures as _;
+    use juniper as _;
+}
+
 #[rustversion::stable]
 #[test]
 fn test_failing_compilation() {
