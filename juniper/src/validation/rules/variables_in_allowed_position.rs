@@ -4,8 +4,9 @@ use std::{
 };
 
 use crate::{
-    ast::{Document, Fragment, FragmentSpread, Operation, Type, TypeName, VariableDefinition},
+    ast::{Document, Fragment, FragmentSpread, Operation, Type, VariableDefinition},
     parser::Spanning,
+    schema::model::{AsDynType, DynType},
     validation::{ValidatorContext, Visitor},
     value::ScalarValue,
     Span,
@@ -28,7 +29,7 @@ pub fn factory<'a, S: fmt::Debug>() -> VariableInAllowedPosition<'a, S> {
 
 pub struct VariableInAllowedPosition<'a, S: fmt::Debug + 'a> {
     spreads: HashMap<Scope<'a>, HashSet<&'a str>>,
-    variable_usages: HashMap<Scope<'a>, Vec<(SpannedInput<'a, String>, &'a Type<'a>)>>,
+    variable_usages: HashMap<Scope<'a>, Vec<(SpannedInput<'a, String>, DynType<'a>)>>,
     #[allow(clippy::type_complexity)]
     variable_defs: HashMap<Scope<'a>, Vec<&'a (Spanning<&'a str>, VariableDefinition<'a, S>)>>,
     current_scope: Option<Scope<'a>>,
@@ -87,13 +88,14 @@ impl<'a, S: fmt::Debug> VariableInAllowedPosition<'a, S> {
                         (&Some(_), Type::List(inner, expected_size)) => {
                             Type::NonNullList(inner.clone(), *expected_size)
                         }
-                        (&Some(_), Type::Named(inner)) => {
-                            Type::NonNullNamed(TypeName::Borrowed(inner))
-                        }
+                        (&Some(_), Type::Named(inner)) => Type::NonNullNamed(*inner),
                         (_, ty) => ty.clone(),
                     };
 
-                    if !ctx.schema.is_subtype(&expected_type, var_type) {
+                    if !ctx
+                        .schema
+                        .is_subtype(&expected_type.as_dyn_type(), var_type)
+                    {
                         ctx.report_error(
                             &error_message(var_name.item, expected_type, var_type),
                             &[var_def_name.span.start, var_name.span.start],

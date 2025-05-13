@@ -23,7 +23,7 @@ impl Name {
         }
     }
 
-    /// Validates the provided `input` string to represent a valid [`Name`].
+    /// Validates the provided `input` string to represent a valid [`Name`[.
     #[must_use]
     pub fn is_valid(input: &str) -> bool {
         for (i, c) in input.chars().enumerate() {

@@ -318,9 +318,11 @@ impl<S> SchemaType<S> {
         self.types.get(name)
     }
 
-    pub(crate) fn lookup_type(&self, tpe: &Type<'_>) -> Option<&MetaType<S>> {
+    pub(crate) fn lookup_type<N: AsRef<str>>(&self, tpe: &Type<N>) -> Option<&MetaType<S>> {
         match tpe {
-            Type::Named(name) | Type::NonNullNamed(name) => self.concrete_type_by_name(name),
+            Type::Named(name) | Type::NonNullNamed(name) => {
+                self.concrete_type_by_name(name.as_ref())
+            }
             Type::List(inner, ..) | Type::NonNullList(inner, ..) => self.lookup_type(inner),
         }
     }
@@ -390,18 +392,21 @@ impl<S> SchemaType<S> {
     }
 
     /// Make a type.
-    pub fn make_type(&self, ty: &Type<'_>) -> TypeType<S> {
+    pub fn make_type(&self, ty: &Type<impl AsRef<str>>) -> TypeType<S> {
         match ty {
             Type::List(inner, expected_size) => {
                 TypeType::List(Box::new(self.make_type(inner)), *expected_size)
             }
-            Type::Named(n) => self.type_by_name(n).expect("Type not found in schema"),
+            Type::Named(n) => self
+                .type_by_name(n.as_ref())
+                .expect("Type not found in schema"),
             Type::NonNullList(inner, expected_size) => TypeType::NonNull(Box::new(TypeType::List(
                 Box::new(self.make_type(inner)),
                 *expected_size,
             ))),
             Type::NonNullNamed(n) => TypeType::NonNull(Box::new(
-                self.type_by_name(n).expect("Type not found in schema"),
+                self.type_by_name(n.as_ref())
+                    .expect("Type not found in schema"),
             )),
         }
     }
@@ -471,21 +476,23 @@ impl<S> SchemaType<S> {
     }
 
     /// If the type is a subtype of another type.
-    pub fn is_subtype(&self, sub_type: &Type<'_>, super_type: &Type<'_>) -> bool {
-        if super_type == sub_type {
+    pub fn is_subtype<'b>(&self, sub_type: &DynType<'b>, super_type: &DynType<'b>) -> bool {
+        use DynType::*;
+
+        if super_type.equals(sub_type) {
             return true;
         }
 
         match (super_type, sub_type) {
-            (Type::NonNullNamed(super_name), Type::NonNullNamed(sub_name))
-            | (Type::Named(super_name), Type::Named(sub_name))
-            | (Type::Named(super_name), Type::NonNullNamed(sub_name)) => {
-                self.is_named_subtype(sub_name, super_name)
+            (&NonNullNamed(ref super_name), &NonNullNamed(ref sub_name))
+            | (&Named(ref super_name), &Named(ref sub_name))
+            | (&Named(ref super_name), &NonNullNamed(ref sub_name)) => {
+                self.is_named_subtype(sub_name.as_ref(), super_name.as_ref())
             }
-            (Type::NonNullList(super_inner, ..), Type::NonNullList(sub_inner, ..))
-            | (Type::List(super_inner, ..), Type::List(sub_inner, ..))
-            | (Type::List(super_inner, ..), Type::NonNullList(sub_inner, ..)) => {
-                self.is_subtype(sub_inner, super_inner)
+            (&NonNullList(super_inner, _), &NonNullList(sub_inner, _))
+            | (&List(super_inner, _), &List(sub_inner, _))
+            | (&List(super_inner, _), &NonNullList(sub_inner, _)) => {
+                self.is_subtype(&sub_inner.as_dyn_type(), &super_inner.as_dyn_type())
             }
             _ => false,
         }
@@ -734,6 +741,87 @@ mod concrete_type_sort {
             // NOTE: Other variants will not appear since we're only sorting concrete types.
             | TypeType::List(..)
             | TypeType::NonNull(..) => None,
+        }
+    }
+}
+
+/// Allows seeing [Type] with different name/string representations
+/// as the same type without allocating.
+//
+// TODO: Ideally this type should not exist, but the reason it currently does
+// is that [Type] has a recursive design to allow arbitrary number of list wrappings.
+// The list layout could instead be modelled as a modifier so that type becomes a tuple of (name, modifier).
+//
+// If [Type] is modelled like this it becomes easier to project it as a borrowed version of itself,
+// i.e. [Type<ArcStr>] vs [Type<&str>].
+#[derive(Clone, Copy, Debug)]
+pub enum DynType<'a> {
+    Named(&'a str),
+    List(&'a dyn AsDynType, Option<usize>),
+    NonNullNamed(&'a str),
+    NonNullList(&'a dyn AsDynType, Option<usize>),
+}
+
+impl<'a> DynType<'a> {
+    pub fn equals(&self, other: &DynType) -> bool {
+        match (self, other) {
+            (DynType::Named(n0), DynType::Named(n1)) => n0 == n1,
+            (DynType::List(t0, s0), DynType::List(t1, s1)) => {
+                t0.as_dyn_type().equals(&t1.as_dyn_type()) && s0 == s1
+            }
+            (DynType::NonNullNamed(n0), DynType::NonNullNamed(n1)) => n0 == n1,
+            (DynType::NonNullList(t0, s0), DynType::NonNullList(t1, s1)) => {
+                t0.as_dyn_type().equals(&t1.as_dyn_type()) && s0 == s1
+            }
+            _ => false,
+        }
+    }
+
+    pub fn innermost_name(&self) -> &'a str {
+        match self {
+            Self::Named(n) | Self::NonNullNamed(n) => n,
+            Self::List(l, _) | Self::NonNullList(l, _) => l.as_dyn_type().innermost_name(),
+        }
+    }
+}
+
+impl<'a> fmt::Display for DynType<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Named(n) => write!(f, "{n}"),
+            Self::NonNullNamed(n) => write!(f, "{n}!"),
+            Self::List(t, _) => write!(f, "[{}]", t.as_dyn_type()),
+            Self::NonNullList(t, _) => write!(f, "[{}]!", t.as_dyn_type()),
+        }
+    }
+}
+
+/// Trait for converting a [Type] into [DynType]
+pub trait AsDynType: fmt::Debug {
+    /// Project [self] as a [DynType].
+    ///
+    /// this function should not allocate memory.
+    fn as_dyn_type(&self) -> DynType<'_>;
+}
+
+impl AsDynType for Type<ArcStr> {
+    fn as_dyn_type(&self) -> DynType<'_> {
+        match self {
+            Self::Named(n) => DynType::Named(n.as_str()),
+            Self::List(t, s) => DynType::List(t.as_ref(), *s),
+            Self::NonNullNamed(n) => DynType::NonNullNamed(n.as_str()),
+            Self::NonNullList(t, s) => DynType::NonNullList(t.as_ref(), *s),
+        }
+    }
+}
+
+impl<'a> AsDynType for Type<&'a str> {
+    fn as_dyn_type(&self) -> DynType<'_> {
+        match self {
+            Self::Named(n) => DynType::Named(n),
+            Self::List(t, s) => DynType::List(t.as_ref(), *s),
+            Self::NonNullNamed(n) => DynType::NonNullNamed(n),
+            Self::NonNullList(t, s) => DynType::NonNullList(t.as_ref(), *s),
         }
     }
 }

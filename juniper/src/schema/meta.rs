@@ -1,6 +1,6 @@
 //! Types used to describe a `GraphQL` schema
 
-use std::fmt;
+use std::{borrow::ToOwned, fmt};
 
 use arcstr::ArcStr;
 
@@ -114,7 +114,7 @@ pub type ScalarTokenParseFn<S> = for<'b> fn(ScalarToken<'b>) -> Result<S, ParseE
 #[derive(Debug)]
 pub struct ListMeta {
     #[doc(hidden)]
-    pub of_type: Type<'static>,
+    pub of_type: Type,
 
     #[doc(hidden)]
     pub expected_size: Option<usize>,
@@ -125,7 +125,7 @@ impl ListMeta {
     ///
     /// Specifying `expected_size` will be used to ensure that values of this type will always match
     /// it.
-    pub fn new(of_type: Type<'static>, expected_size: Option<usize>) -> Self {
+    pub fn new(of_type: Type, expected_size: Option<usize>) -> Self {
         Self {
             of_type,
             expected_size,
@@ -142,12 +142,12 @@ impl ListMeta {
 #[derive(Debug)]
 pub struct NullableMeta {
     #[doc(hidden)]
-    pub of_type: Type<'static>,
+    pub of_type: Type,
 }
 
 impl NullableMeta {
     /// Builds a new [`NullableMeta`] type by wrapping the specified [`Type`].
-    pub fn new(of_type: Type<'static>) -> Self {
+    pub fn new(of_type: Type) -> Self {
         Self { of_type }
     }
 
@@ -197,10 +197,10 @@ impl<S> ObjectMeta<S> {
     ///
     /// Overwrites any previously set list of interfaces.
     #[must_use]
-    pub fn interfaces(mut self, interfaces: &[Type<'static>]) -> Self {
+    pub fn interfaces(mut self, interfaces: &[Type]) -> Self {
         self.interface_names = interfaces
             .iter()
-            .map(|t| t.innermost_name().to_owned())
+            .map(|t| t.innermost_name().into())
             .collect();
         self
     }
@@ -302,10 +302,10 @@ impl<S> InterfaceMeta<S> {
     ///
     /// Overwrites any previously set list of interfaces.
     #[must_use]
-    pub fn interfaces(mut self, interfaces: &[Type<'static>]) -> Self {
+    pub fn interfaces(mut self, interfaces: &[Type]) -> Self {
         self.interface_names = interfaces
             .iter()
-            .map(|t| t.innermost_name().to_owned())
+            .map(|t| t.innermost_name().into())
             .collect();
         self
     }
@@ -329,14 +329,11 @@ pub struct UnionMeta {
 
 impl UnionMeta {
     /// Builds a new [`UnionMeta`] type with the specified `name` and possible [`Type`]s.
-    pub fn new(name: impl Into<ArcStr>, of_types: &[Type<'static>]) -> Self {
+    pub fn new(name: impl Into<ArcStr>, of_types: &[Type]) -> Self {
         Self {
             name: name.into(),
             description: None,
-            of_type_names: of_types
-                .iter()
-                .map(|t| t.innermost_name().to_owned())
-                .collect(),
+            of_type_names: of_types.iter().map(|t| t.innermost_name().into()).collect(),
         }
     }
 
@@ -414,7 +411,7 @@ impl<S> InputObjectMeta<S> {
 #[derive(Debug)]
 pub struct PlaceholderMeta {
     #[doc(hidden)]
-    pub of_type: Type<'static>,
+    pub of_type: Type,
 }
 
 /// Metadata for a field
@@ -427,7 +424,7 @@ pub struct Field<S> {
     #[doc(hidden)]
     pub arguments: Option<Vec<Argument<S>>>,
     #[doc(hidden)]
-    pub field_type: Type<'static>,
+    pub field_type: Type,
     #[doc(hidden)]
     pub deprecation_status: DeprecationStatus,
 }
@@ -483,14 +480,14 @@ pub struct Argument<S> {
     #[doc(hidden)]
     pub description: Option<ArcStr>,
     #[doc(hidden)]
-    pub arg_type: Type<'static>,
+    pub arg_type: Type,
     #[doc(hidden)]
     pub default_value: Option<InputValue<S>>,
 }
 
 impl<S> Argument<S> {
     /// Builds a new [`Argument`] of the given [`Type`] with the given `name`.
-    pub fn new(name: impl Into<ArcStr>, arg_type: Type<'static>) -> Self {
+    pub fn new(name: impl Into<ArcStr>, arg_type: Type) -> Self {
         Self {
             name: name.into(),
             description: None,
@@ -705,14 +702,14 @@ impl<S> MetaType<S> {
     }
 
     /// Construct a [`Type`] literal out of this [`MetaType`].
-    pub fn as_type(&self) -> Type<'static> {
+    pub fn as_type(&self) -> Type {
         match self {
             Self::Enum(EnumMeta { name, .. })
             | Self::InputObject(InputObjectMeta { name, .. })
             | Self::Interface(InterfaceMeta { name, .. })
             | Self::Object(ObjectMeta { name, .. })
             | Self::Scalar(ScalarMeta { name, .. })
-            | Self::Union(UnionMeta { name, .. }) => Type::NonNullNamed(name.clone().into()),
+            | Self::Union(UnionMeta { name, .. }) => Type::NonNullNamed(name.clone()),
             Self::List(ListMeta {
                 of_type,
                 expected_size,

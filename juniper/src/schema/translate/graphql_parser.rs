@@ -60,12 +60,15 @@ where
             .push(Definition::SchemaDefinition(SchemaDefinition {
                 position: Pos::default(),
                 directives: vec![],
-                query: Some(input.query_type_name.as_str().into()),
-                mutation: input.mutation_type_name.as_ref().map(|s| s.as_str().into()),
+                query: Some(From::from(input.query_type_name.as_str())),
+                mutation: input
+                    .mutation_type_name
+                    .as_ref()
+                    .map(|s| From::from(s.as_str())),
                 subscription: input
                     .subscription_type_name
                     .as_ref()
-                    .map(|s| s.as_str().into()),
+                    .map(|s| From::from(s.as_str())),
             }));
 
         doc
@@ -81,7 +84,7 @@ impl GraphQLParserTranslator {
         ExternalInputValue {
             position: Pos::default(),
             description: input.description.as_deref().map(Into::into),
-            name: input.name.as_str().into(),
+            name: From::from(input.name.as_str()),
             value_type: GraphQLParserTranslator::translate_type(&input.arg_type),
             default_value: input
                 .default_value
@@ -122,7 +125,7 @@ impl GraphQLParserTranslator {
                 let mut fields = BTreeMap::new();
                 x.iter().for_each(|(name_span, value_span)| {
                     fields.insert(
-                        name_span.item.as_str().into(),
+                        From::from(name_span.item.as_str()),
                         GraphQLParserTranslator::translate_value(&value_span.item),
                     );
                 });
@@ -131,7 +134,7 @@ impl GraphQLParserTranslator {
         }
     }
 
-    fn translate_type<'a, T>(input: &'a Type<'a>) -> ExternalType<'a, T>
+    fn translate_type<'a, T, N: AsRef<str>>(input: &'a Type<N>) -> ExternalType<'a, T>
     where
         T: Text<'a>,
     {
@@ -139,12 +142,12 @@ impl GraphQLParserTranslator {
             Type::List(x, ..) => {
                 ExternalType::ListType(GraphQLParserTranslator::translate_type(x).into())
             }
-            Type::Named(x) => ExternalType::NamedType(x.as_ref().into()),
+            Type::Named(x) => ExternalType::NamedType(From::from(x.as_ref())),
             Type::NonNullList(x, ..) => ExternalType::NonNullType(Box::new(
                 ExternalType::ListType(Box::new(GraphQLParserTranslator::translate_type(x))),
             )),
             Type::NonNullNamed(x) => {
-                ExternalType::NonNullType(Box::new(ExternalType::NamedType(x.as_ref().into())))
+                ExternalType::NonNullType(Box::new(ExternalType::NamedType(From::from(x.as_ref()))))
             }
         }
     }
@@ -265,7 +268,7 @@ impl GraphQLParserTranslator {
 
         ExternalField {
             position: Pos::default(),
-            name: input.name.as_str().into(),
+            name: From::from(input.name.as_str()),
             description: input.description.as_deref().map(Into::into),
             directives: generate_directives(&input.deprecation_status),
             field_type: GraphQLParserTranslator::translate_type(&input.field_type),
@@ -285,7 +288,12 @@ where
             name: "deprecated".into(),
             arguments: reason
                 .as_ref()
-                .map(|rsn| vec![("reason".into(), ExternalValue::String(rsn.as_str().into()))])
+                .map(|rsn| {
+                    vec![(
+                        From::from("reason"),
+                        ExternalValue::String(rsn.as_str().into()),
+                    )]
+                })
                 .unwrap_or_default(),
         }),
     }
