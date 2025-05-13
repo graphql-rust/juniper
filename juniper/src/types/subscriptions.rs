@@ -274,8 +274,7 @@ where
         .concrete_type_by_name(
             instance
                 .type_name(info)
-                .expect("Resolving named type's selection set")
-                .as_ref(),
+                .expect("Resolving named type's selection set"),
         )
         .expect("Type not found in schema");
 

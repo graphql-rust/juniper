@@ -313,7 +313,7 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
                                 interface_names
                                     .iter()
                                     .any(|iname| iname == iface_name)
-                                    .then(|| name.as_ref())
+                                    .then_some(name)
                             } else {
                                 None
                             }

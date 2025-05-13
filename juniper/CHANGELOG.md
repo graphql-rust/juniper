@@ -32,17 +32,38 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - Renamed `ObjectId` scalar to `ObjectID` in types: ([#1277])
         - `bson::oid::ObjectId`.
 - Optimized schema implementation with [`arcstr` crate]: ([#1247], [#819])
-    - Removed lifetime parameters from `MetaType` and its members.
-    - Made `MetaType::name()`, `MetaType::description()` and `MetaType::specified_by_url()` returning `ArcStr`.
-    - Made `DeprecationStatus::reason()` returning `ArcStr`.
-    - Removed lifetime parameters from `DirectiveType`.
-    - Made `DirectiveType::name` and `DirectiveType::description` using `ArcStr`.
-    - Removed lifetime parameter from `SchemaType` and `Registry`.
-    - Made `types::Name` and `types::NameParseError` using `ArcStr` instead of `String`.
-    - Replaced `FromStr` impl of `types::Name` with `types::Name::new()` constructor.
-    - Made `GraphQLType::name()` and `GraphQLValue::type_name()` returning `ArcStr`.
-    - Removed lifetime parameters from `RootNode`.
-    - Removed lifetime parameters from `ast::Type` and made it generic over string type.
+    - `ast::Type`: 
+        - Removed lifetime parameters.
+        - Made it generic over string type.
+    - `MetaType`:
+        - Removed lifetime parameters.
+        - Made `name()`, `description()` and `specified_by_url()` methods returning `ArcStr`.
+    - `EnumMeta`, `InputObjectMeta`, `InterfaceMeta`, `ListMeta`, `NullableMeta`, `ObjectMeta`, `PlaceholderMeta`, `ScalarMeta` and `UnionMeta`:
+        - Removed lifetime parameters.
+    - `meta::Field` and `meta::Argument`:
+        - Removed lifetime parameters.
+    - `meta::EnumValue`:
+        - Made `name` and `description` fields using `ArcStr`.
+    - `DeprecationStatus`:
+        - Made `Deprecated` variant using `ArcStr`.
+        - Made `reason()` method returning `ArcStr`.
+    - `DirectiveType`:
+        - Removed lifetime parameters.
+        - Made `name` and `description` fields using `ArcStr`.
+    - `SchemaType`: 
+        - Removed lifetime parameters.
+        - Made `is_subtype()` method accepting `DynType` instead of `Type`.
+    - `RootNode`:
+        - Removed lifetime parameters.
+    - `Registry`:
+        - Removed lifetime parameters.
+    - `types::Name` and `types::NameParseError`:
+        - Made fields using `ArcStr` instead of `String`.
+        - Replaced `FromStr` impl of `types::Name` with `new()` constructor.
+    - `GraphQLType`:
+        - Made `name()` method returning `ArcStr`.
+    - `GraphQLValue`:
+        - Made `type_name()` method returning `ArcStr`.
 
 ### Added
 

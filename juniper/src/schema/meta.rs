@@ -18,6 +18,7 @@ use crate::{
 pub enum DeprecationStatus {
     /// The field/variant is not deprecated.
     Current,
+
     /// The field/variant is deprecated, with an optional reason
     Deprecated(Option<ArcStr>),
 }

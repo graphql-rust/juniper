@@ -299,8 +299,8 @@ impl<S> SchemaType<S> {
     }
 
     /// Add a description.
-    pub fn set_description(&mut self, description: ArcStr) {
-        self.description = Some(description);
+    pub fn set_description(&mut self, description: impl Into<ArcStr>) {
+        self.description = Some(description.into());
     }
 
     /// Add a directive like `skip` or `include`.
@@ -309,16 +309,16 @@ impl<S> SchemaType<S> {
     }
 
     /// Get a type by name.
-    pub fn type_by_name(&self, name: &str) -> Option<TypeType<S>> {
-        self.types.get(name).map(|t| TypeType::Concrete(t))
+    pub fn type_by_name(&self, name: impl AsRef<str>) -> Option<TypeType<S>> {
+        self.types.get(name.as_ref()).map(|t| TypeType::Concrete(t))
     }
 
     /// Get a concrete type by name.
-    pub fn concrete_type_by_name(&self, name: &str) -> Option<&MetaType<S>> {
-        self.types.get(name)
+    pub fn concrete_type_by_name(&self, name: impl AsRef<str>) -> Option<&MetaType<S>> {
+        self.types.get(name.as_ref())
     }
 
-    pub(crate) fn lookup_type<N: AsRef<str>>(&self, tpe: &Type<N>) -> Option<&MetaType<S>> {
+    pub(crate) fn lookup_type(&self, tpe: &Type<impl AsRef<str>>) -> Option<&MetaType<S>> {
         match tpe {
             Type::Named(name) | Type::NonNullNamed(name) => {
                 self.concrete_type_by_name(name.as_ref())
@@ -745,15 +745,14 @@ mod concrete_type_sort {
     }
 }
 
-/// Allows seeing [Type] with different name/string representations
-/// as the same type without allocating.
-//
-// TODO: Ideally this type should not exist, but the reason it currently does
-// is that [Type] has a recursive design to allow arbitrary number of list wrappings.
-// The list layout could instead be modelled as a modifier so that type becomes a tuple of (name, modifier).
-//
-// If [Type] is modelled like this it becomes easier to project it as a borrowed version of itself,
-// i.e. [Type<ArcStr>] vs [Type<&str>].
+/// Allows seeing [`Type`] with different name/string representations
+/// as the same type without allocation.
+// TODO: Ideally this type should not exist, but the reason it currently does is that `Type` has a
+//       recursive design to allow arbitrary number of list wrappings.
+//       The list layout could instead be modelled as a modifier so that type becomes a tuple of
+//       (name, modifier).
+//       If `Type` is modelled like this it becomes easier to project it as a borrowed version of
+//       itself, i.e. [Type<ArcStr>] vs [Type<&str>].
 #[derive(Clone, Copy, Debug)]
 pub enum DynType<'a> {
     Named(&'a str),
@@ -765,12 +764,12 @@ pub enum DynType<'a> {
 impl<'a> DynType<'a> {
     pub fn equals(&self, other: &DynType) -> bool {
         match (self, other) {
-            (DynType::Named(n0), DynType::Named(n1)) => n0 == n1,
-            (DynType::List(t0, s0), DynType::List(t1, s1)) => {
+            (Self::Named(n0), DynType::Named(n1)) => n0 == n1,
+            (Self::List(t0, s0), DynType::List(t1, s1)) => {
                 t0.as_dyn_type().equals(&t1.as_dyn_type()) && s0 == s1
             }
-            (DynType::NonNullNamed(n0), DynType::NonNullNamed(n1)) => n0 == n1,
-            (DynType::NonNullList(t0, s0), DynType::NonNullList(t1, s1)) => {
+            (Self::NonNullNamed(n0), DynType::NonNullNamed(n1)) => n0 == n1,
+            (Self::NonNullList(t0, s0), DynType::NonNullList(t1, s1)) => {
                 t0.as_dyn_type().equals(&t1.as_dyn_type()) && s0 == s1
             }
             _ => false,
@@ -796,11 +795,11 @@ impl fmt::Display for DynType<'_> {
     }
 }
 
-/// Trait for converting a [Type] into [DynType]
+/// Conversion of a [`Type`] into a [`DynType`].
 pub trait AsDynType: fmt::Debug {
-    /// Project [self] as a [DynType].
+    /// Project this value as a [`DynType`].
     ///
-    /// this function should not allocate memory.
+    /// Should not allocate memory.
     fn as_dyn_type(&self) -> DynType<'_>;
 }
 
