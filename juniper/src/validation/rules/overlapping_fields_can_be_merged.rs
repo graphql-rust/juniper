@@ -61,26 +61,26 @@ impl<K: Eq + Hash + Clone, V> OrderedMap<K, V> {
         }
     }
 
-    fn get<Q: ?Sized>(&self, k: &Q) -> Option<&V>
+    fn get<Q>(&self, k: &Q) -> Option<&V>
     where
         K: Borrow<Q>,
-        Q: Hash + Eq,
+        Q: Hash + Eq + ?Sized,
     {
         self.data.get(k)
     }
 
-    fn get_mut<Q: ?Sized>(&mut self, k: &Q) -> Option<&mut V>
+    fn get_mut<Q>(&mut self, k: &Q) -> Option<&mut V>
     where
         K: Borrow<Q>,
-        Q: Hash + Eq,
+        Q: Hash + Eq + ?Sized,
     {
         self.data.get_mut(k)
     }
 
-    fn contains_key<Q: ?Sized>(&self, k: &Q) -> bool
+    fn contains_key<Q>(&self, k: &Q) -> bool
     where
         K: Borrow<Q>,
-        Q: Hash + Eq,
+        Q: Hash + Eq + ?Sized,
     {
         self.data.contains_key(k)
     }
@@ -113,11 +113,7 @@ impl<'a> PairSet<'a> {
 
     fn contains(&self, a: &'a str, b: &'a str, mutex: bool) -> bool {
         if let Some(result) = self.data.get(a).and_then(|s| s.get(b)) {
-            if !mutex {
-                !result
-            } else {
-                true
-            }
+            if !mutex { !result } else { true }
         } else {
             false
         }
@@ -769,7 +765,7 @@ fn format_reason(reason: &ConflictReasonMessage) -> String {
 mod tests {
     use arcstr::ArcStr;
 
-    use super::{error_message, factory, ConflictReason, ConflictReasonMessage::*};
+    use super::{ConflictReason, ConflictReasonMessage::*, error_message, factory};
 
     use crate::{
         executor::Registry,
@@ -783,8 +779,8 @@ mod tests {
     use crate::{
         parser::SourcePosition,
         validation::{
-            expect_fails_rule, expect_fails_rule_with_schema, expect_passes_rule,
-            expect_passes_rule_with_schema, RuleError,
+            RuleError, expect_fails_rule, expect_fails_rule_with_schema, expect_passes_rule,
+            expect_passes_rule_with_schema,
         },
         value::{DefaultScalarValue, ScalarValue},
     };

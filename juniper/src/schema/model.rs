@@ -6,12 +6,12 @@ use fnv::FnvHashMap;
 use graphql_parser::schema::Document;
 
 use crate::{
+    GraphQLEnum,
     ast::Type,
     executor::{Context, Registry},
     schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta},
     types::{base::GraphQLType, name::Name},
     value::{DefaultScalarValue, ScalarValue},
-    GraphQLEnum,
 };
 
 /// Root query node of a schema
@@ -198,7 +198,7 @@ where
     #[must_use]
     pub fn as_document(&self) -> Document<'_, &str> {
         use crate::schema::translate::{
-            graphql_parser::GraphQLParserTranslator, SchemaTranslator as _,
+            SchemaTranslator as _, graphql_parser::GraphQLParserTranslator,
         };
 
         GraphQLParserTranslator::translate_schema(&self.schema)
@@ -520,7 +520,7 @@ pub enum TypeType<'a, S: 'a> {
     List(Box<TypeType<'a, S>>, Option<usize>),
 }
 
-impl<'a, S> fmt::Display for TypeType<'a, S> {
+impl<S> fmt::Display for TypeType<'_, S> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Concrete(t) => f.write_str(t.name().unwrap()),
@@ -785,7 +785,7 @@ impl<'a> DynType<'a> {
     }
 }
 
-impl<'a> fmt::Display for DynType<'a> {
+impl fmt::Display for DynType<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Named(n) => write!(f, "{n}"),
@@ -815,7 +815,7 @@ impl AsDynType for Type<ArcStr> {
     }
 }
 
-impl<'a> AsDynType for Type<&'a str> {
+impl AsDynType for Type<&str> {
     fn as_dyn_type(&self) -> DynType<'_> {
         match self {
             Self::Named(n) => DynType::Named(n),
@@ -830,7 +830,7 @@ impl<'a> AsDynType for Type<&'a str> {
 mod root_node_test {
     #[cfg(feature = "schema-language")]
     mod as_document {
-        use crate::{graphql_object, EmptyMutation, EmptySubscription, RootNode};
+        use crate::{EmptyMutation, EmptySubscription, RootNode, graphql_object};
 
         struct Query;
 
@@ -869,8 +869,8 @@ mod root_node_test {
     #[cfg(feature = "schema-language")]
     mod as_sdl {
         use crate::{
-            graphql_object, EmptyMutation, EmptySubscription, GraphQLEnum, GraphQLInputObject,
-            GraphQLObject, GraphQLUnion, RootNode,
+            EmptyMutation, EmptySubscription, GraphQLEnum, GraphQLInputObject, GraphQLObject,
+            GraphQLUnion, RootNode, graphql_object,
         };
 
         #[derive(GraphQLObject, Default)]

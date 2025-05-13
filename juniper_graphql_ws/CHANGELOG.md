@@ -6,6 +6,18 @@ All user visible changes to `juniper_graphql_ws` crate will be documented in thi
 
 
 
+## master
+
+### BC Breaks
+
+- Bumped up [MSRV] to 1.85. ([#1272], [todo])
+
+[#1272]: /../../pull/1272
+[todo]: /../../commit/todo
+
+
+
+
 ## [0.4.0] · 2024-03-20
 [0.4.0]: /../../tree/juniper_graphql_ws-v0.4.0/juniper_graphql_ws
 
@@ -44,4 +56,5 @@ See [old CHANGELOG](/../../blob/juniper_graphql_ws-v0.3.0/juniper_graphql_ws/CHA
 [`graphql-ws` npm package]: https://npmjs.com/package/graphql-ws
 [`juniper` crate]: https://docs.rs/juniper
 [`juniper_subscriptions` crate]: https://docs.rs/juniper_subscriptions
+[MSRV]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field
 [Semantic Versioning 2.0.0]: https://semver.org

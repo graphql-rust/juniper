@@ -8,17 +8,16 @@ pub mod common;
 
 use std::pin::Pin;
 
-use futures::{future, stream, FutureExt as _};
+use futures::{FutureExt as _, future, stream};
 use juniper::{
-    execute, graphql_object, graphql_subscription, graphql_value, graphql_vars,
-    resolve_into_stream, DefaultScalarValue, EmptyMutation, Executor, FieldError, FieldResult,
-    GraphQLInputObject, GraphQLType, IntoFieldError, RootNode, ScalarValue,
+    DefaultScalarValue, EmptyMutation, Executor, FieldError, FieldResult, GraphQLInputObject,
+    GraphQLType, IntoFieldError, RootNode, ScalarValue, execute, graphql_object,
+    graphql_subscription, graphql_value, graphql_vars, resolve_into_stream,
 };
 
 use self::common::util::extract_next;
 
 // Override `std::prelude` items to check whether macros expand hygienically.
-#[allow(unused_imports)]
 use self::common::hygiene::*;
 
 struct Query;
@@ -240,7 +239,7 @@ mod ignored_method {
             prelude::Box::pin(stream::once(future::ready("human-32".into())))
         }
 
-        #[allow(dead_code)]
+        #[expect(dead_code, reason = "GraphQL schema testing")]
         #[graphql(ignore)]
         fn planet() -> &'static str {
             "earth"
@@ -729,6 +728,7 @@ mod generic_lifetime {
         home_planet: &'p str,
     }
 
+    #[expect(clippy::needless_lifetimes, reason = "required by codegen")]
     #[graphql_subscription]
     impl<'p> Human<'p, i32> {
         async fn id(&self) -> Stream<'static, i32> {
@@ -741,6 +741,7 @@ mod generic_lifetime {
         }
     }
 
+    #[expect(clippy::needless_lifetimes, reason = "required by codegen")]
     #[graphql_subscription(name = "HumanString")]
     impl<'id, 'p> Human<'p, &'id str> {
         // TODO: Make it work with `Stream<'_, &str>`.
@@ -1539,6 +1540,7 @@ mod explicit_custom_context {
     #[graphql_subscription(context = CustomContext)]
     impl Human {
         // TODO: Make work for `Stream<'c, prelude::String>`.
+        #[expect(clippy::needless_lifetimes, reason = "required by codegen")]
         async fn id<'c>(&self, context: &'c CustomContext) -> Stream<'static, prelude::String> {
             prelude::Box::pin(stream::once(future::ready(context.0.clone())))
         }
@@ -1628,6 +1630,7 @@ mod inferred_custom_context_from_field {
     #[graphql_subscription]
     impl Human {
         // TODO: Make work for `Stream<'c, prelude::String>`.
+        #[expect(clippy::needless_lifetimes, reason = "required by codegen")]
         async fn id<'c>(&self, context: &'c CustomContext) -> Stream<'static, prelude::String> {
             prelude::Box::pin(stream::once(future::ready(context.0.clone())))
         }
@@ -1704,6 +1707,7 @@ mod executor {
     #[graphql_subscription(scalar = S: ScalarValue)]
     impl Human {
         // TODO: Make work for `Stream<'e, &'e str>`.
+        #[expect(clippy::needless_lifetimes, reason = "required by codegen")]
         async fn id<'e, S>(
             &self,
             executor: &'e Executor<'_, '_, (), S>,
@@ -1725,6 +1729,7 @@ mod executor {
         }
 
         // TODO: Make work for `Stream<'e, &'e str>`.
+        #[expect(clippy::needless_lifetimes, reason = "required by codegen")]
         async fn info2<'e, S>(
             _executor: &'e Executor<'_, '_, (), S>,
         ) -> Stream<'static, &'static str> {

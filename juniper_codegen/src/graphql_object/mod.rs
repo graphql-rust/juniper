@@ -8,7 +8,7 @@ pub mod derive;
 use std::{any::TypeId, collections::HashSet, marker::PhantomData};
 
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote, ToTokens};
+use quote::{ToTokens, format_ident, quote};
 use syn::{
     ext::IdentExt as _,
     parse::{Parse, ParseStream},
@@ -18,12 +18,12 @@ use syn::{
 };
 
 use crate::common::{
-    field, filter_attrs, gen,
+    AttrNames, Description, SpanContainer, field, filter_attrs, generate,
     parse::{
-        attr::{err, OptionExt as _},
         GenericsExt as _, ParseBufferExt as _, TypeExt,
+        attr::{OptionExt as _, err},
     },
-    rename, scalar, AttrNames, Description, SpanContainer,
+    rename, scalar,
 };
 
 /// Available arguments behind `#[graphql]` (or `#[graphql_object]`) attribute
@@ -649,7 +649,7 @@ impl Definition<Query> {
                         quote! { &self.#ident }
                     };
 
-                    let resolving_code = gen::sync_resolving_code();
+                    let resolving_code = generate::sync_resolving_code();
 
                     quote! {
                         let res: #res_ty = #res;
@@ -716,7 +716,7 @@ impl Definition<Query> {
                     res = quote! { ::juniper::futures::future::ready(#res) };
                 }
 
-                let resolving_code = gen::async_resolving_code(Some(&res_ty));
+                let resolving_code = generate::async_resolving_code(Some(&res_ty));
 
                 quote! {
                     #[allow(deprecated, non_snake_case)]

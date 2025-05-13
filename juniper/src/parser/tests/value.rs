@@ -1,14 +1,14 @@
 use crate::{
+    GraphQLEnum, GraphQLInputObject, IntoFieldError,
     ast::{FromInputValue, InputValue, Type},
     graphql_input_value,
-    parser::{value::parse_value_literal, Lexer, Parser, SourcePosition, Spanning},
+    parser::{Lexer, Parser, SourcePosition, Spanning, value::parse_value_literal},
     schema::{
         meta::{Argument, EnumMeta, EnumValue, InputObjectMeta, MetaType, ScalarMeta},
         model::SchemaType,
     },
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, ParseScalarValue, ScalarValue},
-    GraphQLEnum, GraphQLInputObject, IntoFieldError,
 };
 
 #[derive(GraphQLEnum)]

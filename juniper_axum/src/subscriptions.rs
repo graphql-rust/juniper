@@ -4,14 +4,14 @@ use std::fmt;
 
 use axum::{
     extract::{
-        ws::{self, WebSocket, WebSocketUpgrade},
         Extension,
+        ws::{self, WebSocket, WebSocketUpgrade},
     },
     response::Response,
 };
-use futures::{future, SinkExt as _, StreamExt as _};
+use futures::{SinkExt as _, StreamExt as _, future};
 use juniper::ScalarValue;
-use juniper_graphql_ws::{graphql_transport_ws, graphql_ws, Init, Schema};
+use juniper_graphql_ws::{Init, Schema, graphql_transport_ws, graphql_ws};
 
 /// Creates a [`Handler`] with the specified [`Schema`], which will serve either the
 /// [legacy `graphql-ws` GraphQL over WebSocket Protocol][old] or the
@@ -488,7 +488,7 @@ where
             Ok(match output {
                 graphql_transport_ws::Output::Message(msg) => {
                     serde_json::to_string(&msg)
-                        .map(ws::Message::Text)
+                        .map(ws::Message::text)
                         .unwrap_or_else(|e| {
                             ws::Message::Close(Some(ws::CloseFrame {
                                 code: 1011, // CloseCode::Error
@@ -618,7 +618,7 @@ where
     let output = s_rx
         .map(|msg| {
             Ok(serde_json::to_string(&msg)
-                .map(ws::Message::Text)
+                .map(ws::Message::text)
                 .unwrap_or_else(|e| {
                     ws::Message::Close(Some(ws::CloseFrame {
                         code: 1011, // CloseCode::Error

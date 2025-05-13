@@ -11,7 +11,7 @@ For recoverable errors, [Juniper] works well with the [built-in `Result` type][1
 ```rust
 # extern crate juniper;
 # use std::{fs::File, io::Read, path::PathBuf, str};
-# use juniper::{graphql_object, FieldResult};
+# use juniper::{FieldResult, graphql_object};
 #
 struct Example {
     filename: PathBuf,
@@ -108,7 +108,7 @@ If the `File::open()` above results in a `std::io::ErrorKind::PermissionDenied`,
 Sometimes it's desirable to return additional structured error information to clients. This can be accomplished by implementing the [`IntoFieldError` trait][23]:
 ```rust
 # #[macro_use] extern crate juniper;
-# use juniper::{graphql_object, FieldError, IntoFieldError, ScalarValue};
+# use juniper::{FieldError, IntoFieldError, ScalarValue, graphql_object};
 #
 enum CustomError {
     WhateverNotSet,

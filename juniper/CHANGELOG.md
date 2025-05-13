@@ -12,7 +12,25 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 ### BC Breaks
 
-- Upgraded [`chrono-tz` crate] integration to [0.9 version](https://github.com/chronotope/chrono-tz/releases/tag/v0.9.0). ([#1252])
+- Upgraded [`chrono-tz` crate] integration to [0.10 version](https://github.com/chronotope/chrono-tz/releases/tag/v0.10.0). ([#1252], [#1284])
+- Bumped up [MSRV] to 1.85. ([#1272], [1b1fc618])
+- Corrected compliance with newer [graphql-scalars.dev] specs: ([#1275], [#1277])
+    - Switched `LocalDateTime` scalars to `yyyy-MM-ddTHH:mm:ss` format in types:
+        - `chrono::NaiveDateTime`.
+        - `time::PrimitiveDateTime`.
+    - Switched from `Date` scalar to `LocalDate` scalar in types:
+        - `chrono::NaiveDate`.
+        - `time::Date`.
+    - Switched from `UtcDateTime` scalar to `DateTime` scalar in types:
+        - `bson::DateTime`.
+    - Corrected `TimeZone` scalar in types:
+        - `chrono_tz::Tz`.
+    - Renamed `Url` scalar to `URL` in types:
+        - `url::Url`.
+    - Renamed `Uuid` scalar to `UUID` in types:
+        - `uuid::Uuid`.
+    - Renamed `ObjectId` scalar to `ObjectID` in types: ([#1277])
+        - `bson::oid::ObjectId`.
 - Optimized schema implementation with [`arcstr` crate]: ([#1247], [#819])
     - Removed lifetime parameters from `MetaType` and its members.
     - Made `MetaType::name()`, `MetaType::description()` and `MetaType::specified_by_url()` returning `ArcStr`.
@@ -23,14 +41,44 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - Made `GraphQLType::name()` and `GraphQLValue::type_name()` returning `ArcStr`.
     - Removed lifetime parameters from `RootNode`.
 
+### Added
+
+- [`jiff` crate] integration behind `jiff` [Cargo feature]: ([#1271], [#1278], [#1270], [#1311])
+    - `jiff::civil::Date` as `LocalDate` scalar.
+    - `jiff::civil::Time` as `LocalTime` scalar.
+    - `jiff::civil::DateTime` as `LocalDateTime` scalar. ([#1275])
+    - `jiff::Timestamp` as `DateTime` scalar.
+    - `jiff::Zoned` as `ZonedDateTime` scalar.
+    - `jiff::tz::TimeZone` as `TimeZoneOrUtcOffset` and `TimeZone` scalars.
+    - `jiff::tz::Offset` as `UtcOffset` scalar.
+    - `jiff::Span` as `Duration` scalar.
+- `http::GraphQLResponse::into_result()` method. ([#1293])
+
 ### Changed
 
-- Updated [GraphiQL] to [3.2.0 version](https://github.com/graphql/graphiql/blob/graphiql%403.2.0/packages/graphiql/CHANGELOG.md#320). ([#1253])
+- Upgraded [GraphiQL] to [4.0.4 version](https://github.com/graphql/graphiql/blob/graphiql%404.0.4/packages/graphiql/CHANGELOG.md#404). ([#1319])
+
+### Fixed
+
+- Incorrect error propagation inside fragments. ([#1318], [#1287])
 
 [#819]: /../../issues/819
 [#1247]: /../../pull/1247
 [#1252]: /../../pull/1252
-[#1253]: /../../pull/1253
+[#1270]: /../../issues/1270
+[#1271]: /../../pull/1271
+[#1272]: /../../pull/1272
+[#1275]: /../../pull/1275
+[#1277]: /../../pull/1277
+[#1278]: /../../pull/1278
+[#1281]: /../../pull/1281
+[#1284]: /../../pull/1284
+[#1287]: /../../issues/1287
+[#1293]: /../../pull/1293
+[#1311]: /../../pull/1311
+[#1318]: /../../pull/1318
+[#1319]: /../../pull/1319
+[1b1fc618]: /../../commit/1b1fc61879ffdd640d741e187dc20678bf7ab295
 
 
 
@@ -232,12 +280,14 @@ See [old CHANGELOG](/../../blob/juniper-v0.15.12/juniper/CHANGELOG.md).
 [`bson` crate]: https://docs.rs/bson
 [`chrono` crate]: https://docs.rs/chrono
 [`chrono-tz` crate]: https://docs.rs/chrono-tz
+[`jiff` crate]: https://docs.rs/jiff
 [`time` crate]: https://docs.rs/time
 [Cargo feature]: https://doc.rust-lang.org/cargo/reference/features.html
 [`graphql-transport-ws` GraphQL over WebSocket Protocol]: https://github.com/enisdenjo/graphql-ws/v5.14.0/PROTOCOL.md 
 [GraphiQL]: https://github.com/graphql/graphiql
 [GraphQL Playground]: https://github.com/prisma/graphql-playground
 [graphql-scalars.dev]: https://graphql-scalars.dev
+[MSRV]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field
 [October 2021]: https://spec.graphql.org/October2021
 [object safety]: https://doc.rust-lang.org/reference/items/traits.html#object-safety
 [orphan rules]: https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules

@@ -1,6 +1,6 @@
 use std::{borrow::Cow, fmt};
 
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
 use crate::parser::{ParseError, ScalarToken};
 

@@ -6,7 +6,6 @@ use juniper::{DefaultScalarValue, ScalarValue};
 use serde::{Deserialize, Serialize};
 
 // Override `std::prelude` items to check whether macros expand hygienically.
-#[allow(unused_imports)]
 use self::common::hygiene::*;
 
 mod trivial {
@@ -27,18 +26,26 @@ mod trivial {
 
     #[test]
     fn into_another() {
-        assert!(CustomScalarValue::from(5)
-            .into_another::<DefaultScalarValue>()
-            .is_type::<i32>());
-        assert!(CustomScalarValue::from(0.5_f64)
-            .into_another::<DefaultScalarValue>()
-            .is_type::<f64>());
-        assert!(CustomScalarValue::from("str".to_owned())
-            .into_another::<DefaultScalarValue>()
-            .is_type::<prelude::String>());
-        assert!(CustomScalarValue::from(true)
-            .into_another::<DefaultScalarValue>()
-            .is_type::<bool>());
+        assert!(
+            CustomScalarValue::from(5)
+                .into_another::<DefaultScalarValue>()
+                .is_type::<i32>()
+        );
+        assert!(
+            CustomScalarValue::from(0.5_f64)
+                .into_another::<DefaultScalarValue>()
+                .is_type::<f64>()
+        );
+        assert!(
+            CustomScalarValue::from("str".to_owned())
+                .into_another::<DefaultScalarValue>()
+                .is_type::<prelude::String>()
+        );
+        assert!(
+            CustomScalarValue::from(true)
+                .into_another::<DefaultScalarValue>()
+                .is_type::<bool>()
+        );
     }
 }
 
@@ -60,18 +67,26 @@ mod named_fields {
 
     #[test]
     fn into_another() {
-        assert!(CustomScalarValue::from(5)
-            .into_another::<DefaultScalarValue>()
-            .is_type::<i32>());
-        assert!(CustomScalarValue::from(0.5_f64)
-            .into_another::<DefaultScalarValue>()
-            .is_type::<f64>());
-        assert!(CustomScalarValue::from("str".to_owned())
-            .into_another::<DefaultScalarValue>()
-            .is_type::<prelude::String>());
-        assert!(CustomScalarValue::from(true)
-            .into_another::<DefaultScalarValue>()
-            .is_type::<bool>());
+        assert!(
+            CustomScalarValue::from(5)
+                .into_another::<DefaultScalarValue>()
+                .is_type::<i32>()
+        );
+        assert!(
+            CustomScalarValue::from(0.5_f64)
+                .into_another::<DefaultScalarValue>()
+                .is_type::<f64>()
+        );
+        assert!(
+            CustomScalarValue::from("str".to_owned())
+                .into_another::<DefaultScalarValue>()
+                .is_type::<prelude::String>()
+        );
+        assert!(
+            CustomScalarValue::from(true)
+                .into_another::<DefaultScalarValue>()
+                .is_type::<bool>()
+        );
     }
 }
 
@@ -97,18 +112,26 @@ mod custom_fn {
 
     #[test]
     fn into_another() {
-        assert!(CustomScalarValue::from(5)
-            .into_another::<DefaultScalarValue>()
-            .is_type::<i32>());
-        assert!(CustomScalarValue::from(0.5_f64)
-            .into_another::<DefaultScalarValue>()
-            .is_type::<f64>());
-        assert!(CustomScalarValue::from("str".to_owned())
-            .into_another::<DefaultScalarValue>()
-            .is_type::<prelude::String>());
-        assert!(CustomScalarValue::from(true)
-            .into_another::<DefaultScalarValue>()
-            .is_type::<bool>());
+        assert!(
+            CustomScalarValue::from(5)
+                .into_another::<DefaultScalarValue>()
+                .is_type::<i32>()
+        );
+        assert!(
+            CustomScalarValue::from(0.5_f64)
+                .into_another::<DefaultScalarValue>()
+                .is_type::<f64>()
+        );
+        assert!(
+            CustomScalarValue::from("str".to_owned())
+                .into_another::<DefaultScalarValue>()
+                .is_type::<prelude::String>()
+        );
+        assert!(
+            CustomScalarValue::from(true)
+                .into_another::<DefaultScalarValue>()
+                .is_type::<bool>()
+        );
     }
 }
 
@@ -131,14 +154,20 @@ mod allow_missing_attributes {
     #[test]
     fn into_another() {
         assert!(CustomScalarValue::Int(5).as_int().is_none());
-        assert!(CustomScalarValue::from(0.5_f64)
-            .into_another::<DefaultScalarValue>()
-            .is_type::<f64>());
-        assert!(CustomScalarValue::from("str".to_owned())
-            .into_another::<DefaultScalarValue>()
-            .is_type::<prelude::String>());
-        assert!(CustomScalarValue::from(true)
-            .into_another::<DefaultScalarValue>()
-            .is_type::<bool>());
+        assert!(
+            CustomScalarValue::from(0.5_f64)
+                .into_another::<DefaultScalarValue>()
+                .is_type::<f64>()
+        );
+        assert!(
+            CustomScalarValue::from("str".to_owned())
+                .into_another::<DefaultScalarValue>()
+                .is_type::<prelude::String>()
+        );
+        assert!(
+            CustomScalarValue::from(true)
+                .into_another::<DefaultScalarValue>()
+                .is_type::<bool>()
+        );
     }
 }

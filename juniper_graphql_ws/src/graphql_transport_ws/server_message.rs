@@ -52,7 +52,7 @@ pub enum ServerMessage<S> {
 
 #[cfg(test)]
 mod test {
-    use juniper::{graphql_value, DefaultScalarValue, GraphQLError};
+    use juniper::{DefaultScalarValue, GraphQLError, graphql_value};
 
     use super::*;
 

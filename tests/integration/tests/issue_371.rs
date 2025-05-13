@@ -5,7 +5,7 @@
 //! Original author of this test is [@davidpdrsn](https://github.com/davidpdrsn).
 
 use juniper::{
-    graphql_object, graphql_vars, EmptyMutation, EmptySubscription, Executor, RootNode, ScalarValue,
+    EmptyMutation, EmptySubscription, Executor, RootNode, ScalarValue, graphql_object, graphql_vars,
 };
 
 pub struct Context;

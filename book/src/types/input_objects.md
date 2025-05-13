@@ -7,9 +7,9 @@ Input objects
 
 In [Juniper], defining a [GraphQL input object][0] is quite straightforward and similar to how [trivial GraphQL objects are defined](objects/index.md) - by using the [`#[derive(GraphQLInputObject)]` attribute][2] on a [Rust struct][struct]:
 ```rust
-# #![allow(unused_variables)]
+# #![expect(unused_variables, reason = "example")]
 # extern crate juniper;
-# use juniper::{graphql_object, GraphQLInputObject, GraphQLObject};
+# use juniper::{GraphQLInputObject, GraphQLObject, graphql_object};
 #
 #[derive(GraphQLInputObject)]
 struct Coordinate {

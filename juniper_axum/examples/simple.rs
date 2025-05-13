@@ -3,12 +3,12 @@
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use axum::{
-    response::Html,
-    routing::{get, on, MethodFilter},
     Extension, Router,
+    response::Html,
+    routing::{MethodFilter, get, on},
 };
 use futures::stream::{BoxStream, StreamExt as _};
-use juniper::{graphql_object, graphql_subscription, EmptyMutation, FieldError, RootNode};
+use juniper::{EmptyMutation, FieldError, RootNode, graphql_object, graphql_subscription};
 use juniper_axum::{graphiql, graphql, playground, ws};
 use juniper_graphql_ws::ConnectionConfig;
 use tokio::{net::TcpListener, time::interval};

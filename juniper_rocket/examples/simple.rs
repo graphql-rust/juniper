@@ -1,8 +1,12 @@
+//! Example demonstrating all possible HTTP endpoints integration for [`rocket`].
+
+#![expect(unused_crate_dependencies, reason = "single example")]
+
 use juniper::{
-    tests::fixtures::starwars::schema::{Database, Query},
     EmptyMutation, EmptySubscription, RootNode,
+    tests::fixtures::starwars::schema::{Database, Query},
 };
-use rocket::{response::content::RawHtml, routes, State};
+use rocket::{State, response::content::RawHtml, routes};
 
 type Schema = RootNode<Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 

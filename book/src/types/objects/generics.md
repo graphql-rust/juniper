@@ -10,7 +10,7 @@ This poses a restriction on what we can expose in [GraphQL] from [Rust]: no gene
 Let's make a slightly more compact but generic implementation of [the last schema error example](error/schema.md#example-non-struct-objects):
 ```rust
 # extern crate juniper;
-# use juniper::{graphql_object, GraphQLObject};
+# use juniper::{GraphQLObject, graphql_object};
 #
 #[derive(GraphQLObject)] 
 struct User { 

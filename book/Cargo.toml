@@ -1,0 +1,20 @@
+[package]
+name = "juniper_book"
+version = "0.0.0"
+edition = "2024"
+authors = ["Kai Ren <tyranron@gmail.com>"]
+publish = false
+
+[dependencies]
+dataloader = "0.18" # for Book only
+
+[lints.clippy]
+allow_attributes = "warn"
+allow_attributes_without_reason = "warn"
+[lints.rust]
+closure_returning_async_block = "warn"
+future_incompatible = { level = "warn", priority = -1 }
+impl_trait_redundant_captures = "warn"
+non_ascii_idents = "forbid"
+unsafe_code = "forbid"
+unused_crate_dependencies = "warn"

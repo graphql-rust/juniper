@@ -1,15 +1,19 @@
+//! [`HttpIntegration`] testing for [`juniper`].
+
+#![expect(unused_crate_dependencies, reason = "single test case")]
+
 use futures::executor;
 use juniper::{
-    http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
-    tests::fixtures::starwars::schema::{Database, Query},
     EmptyMutation, EmptySubscription, RootNode,
+    http::tests::{HttpIntegration, TestResponse, run_http_test_suite},
+    tests::fixtures::starwars::schema::{Database, Query},
 };
 use juniper_rocket::{GraphQLRequest, GraphQLResponse};
 use rocket::{
-    get,
+    Build, Rocket, State, get,
     http::ContentType,
     local::asynchronous::{Client, LocalResponse},
-    post, routes, Build, Rocket, State,
+    post, routes,
 };
 
 type Schema = RootNode<Query, EmptyMutation<Database>, EmptySubscription<Database>>;
@@ -22,47 +26,47 @@ fn bootstrap_rocket() -> Rocket<Build> {
     ))
 }
 
+#[get("/?<request..>")]
+async fn get_handler(
+    context: &State<Database>,
+    request: GraphQLRequest,
+    schema: &State<Schema>,
+) -> GraphQLResponse {
+    request.execute(schema, context).await
+}
+
+#[post("/", data = "<request>")]
+async fn post_handler(
+    context: &State<Database>,
+    request: GraphQLRequest,
+    schema: &State<Schema>,
+) -> GraphQLResponse {
+    request.execute(schema, context).await
+}
+
 fn make_rocket() -> Rocket<Build> {
-    #[get("/?<request..>")]
-    async fn get_handler(
-        context: &State<Database>,
-        request: GraphQLRequest,
-        schema: &State<Schema>,
-    ) -> GraphQLResponse {
-        request.execute(schema, context).await
-    }
-
-    #[post("/", data = "<request>")]
-    async fn post_handler(
-        context: &State<Database>,
-        request: GraphQLRequest,
-        schema: &State<Schema>,
-    ) -> GraphQLResponse {
-        request.execute(schema, context).await
-    }
-
     bootstrap_rocket().mount("/", routes![post_handler, get_handler])
 }
 
+#[get("/?<request..>")]
+fn get_handler_sync(
+    context: &State<Database>,
+    request: GraphQLRequest,
+    schema: &State<Schema>,
+) -> GraphQLResponse {
+    request.execute_sync(schema, context)
+}
+
+#[post("/", data = "<request>")]
+fn post_handler_sync(
+    context: &State<Database>,
+    request: GraphQLRequest,
+    schema: &State<Schema>,
+) -> GraphQLResponse {
+    request.execute_sync(schema, context)
+}
+
 fn make_sync_rocket() -> Rocket<Build> {
-    #[get("/?<request..>")]
-    fn get_handler_sync(
-        context: &State<Database>,
-        request: GraphQLRequest,
-        schema: &State<Schema>,
-    ) -> GraphQLResponse {
-        request.execute_sync(schema, context)
-    }
-
-    #[post("/", data = "<request>")]
-    fn post_handler_sync(
-        context: &State<Database>,
-        request: GraphQLRequest,
-        schema: &State<Schema>,
-    ) -> GraphQLResponse {
-        request.execute_sync(schema, context)
-    }
-
     bootstrap_rocket().mount("/", routes![post_handler_sync, get_handler_sync])
 }
 
@@ -128,18 +132,18 @@ async fn test_sync_rocket_integration() {
     run_http_test_suite(&TestRocketIntegration { client });
 }
 
+#[post("/", data = "<request>")]
+async fn post_graphql_assert_operation_name_handler(
+    context: &State<Database>,
+    request: GraphQLRequest,
+    schema: &State<Schema>,
+) -> GraphQLResponse {
+    assert_eq!(request.operation_names(), vec![Some("TestQuery")]);
+    request.execute(schema, context).await
+}
+
 #[rocket::async_test]
 async fn test_operation_names() {
-    #[post("/", data = "<request>")]
-    async fn post_graphql_assert_operation_name_handler(
-        context: &State<Database>,
-        request: GraphQLRequest,
-        schema: &State<Schema>,
-    ) -> GraphQLResponse {
-        assert_eq!(request.operation_names(), vec![Some("TestQuery")]);
-        request.execute(schema, context).await
-    }
-
     let rocket = bootstrap_rocket().mount("/", routes![post_graphql_assert_operation_name_handler]);
     let client = Client::untracked(rocket).await.expect("valid rocket");
 

@@ -15,12 +15,12 @@ use syn::{
 };
 
 use crate::common::{
-    default, diagnostic, filter_attrs,
+    Description, SpanContainer, default, diagnostic, filter_attrs,
     parse::{
-        attr::{err, OptionExt as _},
         ParseBufferExt as _, TypeExt as _,
+        attr::{OptionExt as _, err},
     },
-    path_eq_single, rename, scalar, Description, SpanContainer,
+    path_eq_single, rename, scalar,
 };
 
 /// Available metadata (arguments) behind `#[graphql]` attribute placed on a

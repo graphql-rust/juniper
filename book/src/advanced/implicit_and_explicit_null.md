@@ -55,7 +55,7 @@ The last two cases rely on being able to distinguish between [explicit and impli
 Unfortunately, plain `Option` is not capable to distinguish them. That's why in [Juniper], this can be done using the [`Nullable`] type:
 ```rust
 # extern crate juniper;
-use juniper::{graphql_object, FieldResult, GraphQLInputObject, Nullable};
+use juniper::{FieldResult, GraphQLInputObject, Nullable, graphql_object};
 
 #[derive(GraphQLInputObject)]
 struct UserPatchInput {

@@ -2,12 +2,12 @@ pub mod common;
 
 use std::pin::Pin;
 
-use futures::{stream, Stream};
+use futures::{Stream, stream};
 use juniper::{
+    EmptyMutation, FieldResult, InputValue, Object, ParseScalarResult, RootNode, Value, Variables,
     execute, graphql_input_value, graphql_object, graphql_scalar, graphql_subscription,
     graphql_vars,
     parser::{ParseError, ScalarToken, Token},
-    EmptyMutation, FieldResult, InputValue, Object, ParseScalarResult, RootNode, Value, Variables,
 };
 
 use self::common::MyScalarValue;

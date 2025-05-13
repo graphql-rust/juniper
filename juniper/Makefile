@@ -35,21 +35,32 @@ GRAPHQL_PLAYGROUND_VER ?= $(strip \
 #	make graphiql
 
 graphiql:
-	curl -fL -o src/http/graphiql.html \
+	$(eval graphiql-plugin-explorer-ver := $(strip \
+		$(shell curl -fsL https://raw.githubusercontent.com/graphql/graphiql/refs/tags/graphiql%40$(GRAPHIQL_VER)/packages/graphiql-plugin-explorer/package.json \
+		        | grep -m1 '"version": "' | cut -d '"' -f4)))
+	$(eval graphiql-react-ver := $(strip \
+		$(shell curl -fsL https://raw.githubusercontent.com/graphql/graphiql/refs/tags/graphiql%40$(GRAPHIQL_VER)/packages/graphiql/package.json \
+		        | grep -m1 '"@graphiql/react": "' | cut -d '"' -f4 | cut -d '^' -f2)))
+	$(eval graphiql-toolkit-ver := $(strip \
+		$(shell curl -fsL https://raw.githubusercontent.com/graphql/graphiql/refs/tags/graphiql%40$(GRAPHIQL_VER)/packages/graphiql/package.json \
+		        | grep -m1 '"@graphiql/toolkit": "' | cut -d '"' -f4 | cut -d '^' -f2)))
+	curl -fsL -o src/http/graphiql.html \
 		https://raw.githubusercontent.com/graphql/graphiql/graphiql%40$(GRAPHIQL_VER)/examples/graphiql-cdn/index.html
-	$(sed-i) 's|unpkg.com/graphiql/|unpkg.com/graphiql@$(GRAPHIQL_VER)/|g' \
+	$(sed-i) 's|esm.sh/graphiql@4.0.0|esm.sh/graphiql@$(GRAPHIQL_VER)|g' \
 		src/http/graphiql.html
-	$(sed-i) 's|react.development.js|react.production.min.js|g' \
+	$(sed-i) 's|esm.sh/@graphiql/plugin-explorer@4.0.0|esm.sh/@graphiql/plugin-explorer@$(graphiql-plugin-explorer-ver)|g' \
 		src/http/graphiql.html
-	$(sed-i) 's|react-dom.development.js|react-dom.production.min.js|g' \
+	$(sed-i) 's|esm.sh/@graphiql/react@0.30.0|esm.sh/@graphiql/react@$(graphiql-react-ver)|g' \
 		src/http/graphiql.html
-	$(sed-i) "s|'https://swapi-graphql.netlify.app/.netlify/functions/index'|JUNIPER_URL|g" \
+	$(sed-i) 's|esm.sh/@graphiql/toolkit@0.11.2|esm.sh/@graphiql/toolkit@$(graphiql-toolkit-ver)|g' \
 		src/http/graphiql.html
-	$(sed-i) "s|url: JUNIPER_URL,|url: JUNIPER_URL,\n        subscriptionUrl: normalizeSubscriptionEndpoint(JUNIPER_URL, JUNIPER_SUBSCRIPTIONS_URL)|" \
+	$(sed-i) "s|'https://countries.trevorblades.com'|JUNIPER_URL|g" \
 		src/http/graphiql.html
-	$(sed-i) 's|<script>|<script>\n<!-- inject -->|' \
+	$(sed-i) 's|url: JUNIPER_URL,|url: JUNIPER_URL,\n        subscriptionUrl: normalizeSubscriptionEndpoint(JUNIPER_URL, JUNIPER_SUBSCRIPTIONS_URL)|' \
 		src/http/graphiql.html
-	$(sed-i) '/X-Example-Header/d' \
+	$(sed-i) 's|<script type="module">|<script type="module">\n<!-- inject -->|' \
+		src/http/graphiql.html
+	$(sed-i) 's|GraphiQL 4 with React 19 and GraphiQL Explorer|GraphiQL|' \
 		src/http/graphiql.html
 
 
@@ -60,7 +71,7 @@ graphiql:
 #	make graphql-playground
 
 graphql-playground:
-	curl -fL -o src/http/playground.html \
+	curl -fsL -o src/http/playground.html \
 		https://raw.githubusercontent.com/graphql/graphql-playground/graphql-playground-react%40$(GRAPHQL_PLAYGROUND_VER)/packages/graphql-playground-html/withAnimation.html
 	$(sed-i) 's|cdn.jsdelivr.net/npm/graphql-playground-react/|cdn.jsdelivr.net/npm/graphql-playground-react@$(GRAPHQL_PLAYGROUND_VER)/|g' \
 		src/http/playground.html

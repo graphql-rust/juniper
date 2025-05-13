@@ -12,25 +12,19 @@ pub fn graphiql_source(
     graphql_endpoint_url: &str,
     subscriptions_endpoint_url: Option<&str>,
 ) -> String {
-    let subscriptions_endpoint = if let Some(sub_url) = subscriptions_endpoint_url {
-        sub_url
-    } else {
-        ""
-    };
-
     include_str!("graphiql.html").replace(
         "<!-- inject -->",
         &format!(
             // language=JavaScript
             "
-      var JUNIPER_URL = '{graphql_url}';
-      var JUNIPER_SUBSCRIPTIONS_URL = '{graphql_subscriptions_url}';
+      const JUNIPER_URL = '{juniper_url}';
+      const JUNIPER_SUBSCRIPTIONS_URL = '{juniper_subscriptions_url}';
 
 {grahiql_js}
 
             ",
-            graphql_url = graphql_endpoint_url,
-            graphql_subscriptions_url = subscriptions_endpoint,
+            juniper_url = graphql_endpoint_url,
+            juniper_subscriptions_url = subscriptions_endpoint_url.unwrap_or_default(),
             grahiql_js = include_str!("graphiql.js"),
         ),
     )

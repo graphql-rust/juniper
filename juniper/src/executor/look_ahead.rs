@@ -28,8 +28,8 @@ type BorrowedSpanning<'a, T> = Spanning<T, &'a Span>;
 /// variables get automatically resolved.
 ///
 /// [0]: https://en.wikipedia.org/wiki/Look-ahead_(backtracking)
+#[expect(missing_docs, reason = "self-explanatory")]
 #[derive(Clone, Debug, PartialEq)]
-#[allow(missing_docs)]
 #[must_use]
 pub enum LookAheadValue<'a, S: ScalarValue + 'a> {
     Null,
@@ -93,17 +93,17 @@ pub struct LookAheadList<'a, S> {
 }
 
 // Implemented manually to omit redundant `S: Clone` trait bound, imposed by `#[derive(Clone)]`.
-impl<'a, S> Clone for LookAheadList<'a, S> {
+impl<S> Clone for LookAheadList<'_, S> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
 // Implemented manually to omit redundant `S: Copy` trait bound, imposed by `#[derive(Copy)]`.
-impl<'a, S> Copy for LookAheadList<'a, S> {}
+impl<S> Copy for LookAheadList<'_, S> {}
 
 // Implemented manually to omit redundant `S: Default` trait bound, imposed by `#[derive(Default)]`.
-impl<'a, S> Default for LookAheadList<'a, S> {
+impl<S> Default for LookAheadList<'_, S> {
     fn default() -> Self {
         Self {
             input_list: &[],
@@ -114,13 +114,13 @@ impl<'a, S> Default for LookAheadList<'a, S> {
 
 // Implemented manually to omit redundant `S: PartialEq` trait bound, imposed by
 // `#[derive(PartialEq)]`.
-impl<'a, S: ScalarValue> PartialEq for LookAheadList<'a, S> {
+impl<S: ScalarValue> PartialEq for LookAheadList<'_, S> {
     fn eq(&self, other: &Self) -> bool {
         self.iter().eq(other.iter())
     }
 }
 
-impl<'a, S: ScalarValue> LookAheadList<'a, S> {
+impl<S: ScalarValue> LookAheadList<'_, S> {
     /// Returns an [`Iterator`] over the items of this [list].
     ///
     /// [list]: https://spec.graphql.org/October2021#sec-List
@@ -179,7 +179,7 @@ pub mod look_ahead_list {
         }
     }
 
-    impl<'a, S: ScalarValue> DoubleEndedIterator for Iter<'a, S> {
+    impl<S: ScalarValue> DoubleEndedIterator for Iter<'_, S> {
         fn next_back(&mut self) -> Option<Self::Item> {
             let vars = self.vars;
             self.slice_iter
@@ -203,16 +203,16 @@ pub struct LookAheadObject<'a, S> {
 }
 
 // Implemented manually to omit redundant `S: Clone` trait bound, imposed by `#[derive(Clone)]`.
-impl<'a, S> Clone for LookAheadObject<'a, S> {
+impl<S> Clone for LookAheadObject<'_, S> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
 // Implemented manually to omit redundant `S: Copy` trait bound, imposed by `#[derive(Copy)]`.
-impl<'a, S> Copy for LookAheadObject<'a, S> {}
+impl<S> Copy for LookAheadObject<'_, S> {}
 
-impl<'a, S> Default for LookAheadObject<'a, S> {
+impl<S> Default for LookAheadObject<'_, S> {
     fn default() -> Self {
         Self {
             input_object: &[],
@@ -221,13 +221,13 @@ impl<'a, S> Default for LookAheadObject<'a, S> {
     }
 }
 
-impl<'a, S: ScalarValue> PartialEq for LookAheadObject<'a, S> {
+impl<S: ScalarValue> PartialEq for LookAheadObject<'_, S> {
     fn eq(&self, other: &Self) -> bool {
         self.iter().eq(other.iter())
     }
 }
 
-impl<'a, S: ScalarValue> LookAheadObject<'a, S> {
+impl<S: ScalarValue> LookAheadObject<'_, S> {
     /// Returns an [`Iterator`] over this [input object]'s fields.
     ///
     /// [input object]: https://spec.graphql.org/October2021#sec-Input-Objects
@@ -301,7 +301,7 @@ pub mod look_ahead_object {
         }
     }
 
-    impl<'a, S: ScalarValue> DoubleEndedIterator for Iter<'a, S> {
+    impl<S: ScalarValue> DoubleEndedIterator for Iter<'_, S> {
         fn next_back(&mut self) -> Option<Self::Item> {
             let vars = self.vars;
             self.slice_iter.next_back().map(move |(key, val)| {
@@ -331,14 +331,14 @@ pub struct LookAheadArgument<'a, S> {
 }
 
 // Implemented manually to omit redundant `S: Clone` trait bound, imposed by `#[derive(Clone)]`.
-impl<'a, S> Clone for LookAheadArgument<'a, S> {
+impl<S> Clone for LookAheadArgument<'_, S> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
 // Implemented manually to omit redundant `S: Copy` trait bound, imposed by `#[derive(Copy)]`.
-impl<'a, S> Copy for LookAheadArgument<'a, S> {}
+impl<S> Copy for LookAheadArgument<'_, S> {}
 
 impl<'a, S> LookAheadArgument<'a, S> {
     /// Returns the name of this [argument].
@@ -386,7 +386,7 @@ pub struct LookAheadChildren<'a, S> {
 }
 
 // Implemented manually to omit redundant `S: Clone` trait bound, imposed by `#[derive(Clone)]`.
-impl<'a, S> Clone for LookAheadChildren<'a, S> {
+impl<S> Clone for LookAheadChildren<'_, S> {
     fn clone(&self) -> Self {
         Self {
             children: self.children.clone(),
@@ -395,7 +395,7 @@ impl<'a, S> Clone for LookAheadChildren<'a, S> {
 }
 
 // Implemented manually to omit redundant `S: Default` trait bound, imposed by `#[derive(Default)]`.
-impl<'a, S> Default for LookAheadChildren<'a, S> {
+impl<S> Default for LookAheadChildren<'_, S> {
     fn default() -> Self {
         Self { children: vec![] }
     }
@@ -472,14 +472,14 @@ pub(super) enum SelectionSource<'a, S> {
 }
 
 // Implemented manually to omit redundant `S: Clone` trait bound, imposed by `#[derive(Clone)]`.
-impl<'a, S> Clone for SelectionSource<'a, S> {
+impl<S> Clone for SelectionSource<'_, S> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
 // Implemented manually to omit redundant `S: Copy` trait bound, imposed by `#[derive(Copy)]`.
-impl<'a, S> Copy for SelectionSource<'a, S> {}
+impl<S> Copy for SelectionSource<'_, S> {}
 
 /// [Selection] of an executed GraphQL query, used in [look-ahead][0] operations.
 ///
@@ -496,14 +496,14 @@ pub struct LookAheadSelection<'a, S> {
 }
 
 // Implemented manually to omit redundant `S: Clone` trait bound, imposed by `#[derive(Clone)]`.
-impl<'a, S> Clone for LookAheadSelection<'a, S> {
+impl<S> Clone for LookAheadSelection<'_, S> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
 // Implemented manually to omit redundant `S: Copy` trait bound, imposed by `#[derive(Copy)]`.
-impl<'a, S> Copy for LookAheadSelection<'a, S> {}
+impl<S> Copy for LookAheadSelection<'_, S> {}
 
 impl<'a, S> LookAheadSelection<'a, S> {
     /// Constructs a new [`LookAheadSelection`] out of the provided params.
@@ -574,7 +574,9 @@ impl<'a, S> LookAheadSelection<'a, S> {
     ///
     /// [arguments]: https://spec.graphql.org/October2021#sec-Language.Arguments
     /// [selection]: https://spec.graphql.org/October2021#sec-Selection-Sets
-    pub fn arguments(&self) -> impl DoubleEndedIterator<Item = LookAheadArgument<'a, S>> {
+    pub fn arguments(
+        &self,
+    ) -> impl DoubleEndedIterator<Item = LookAheadArgument<'a, S>> + use<'a, S> {
         let opt_arguments = match self.source {
             SelectionSource::Field(f) => f.arguments.as_ref(),
             _ => None,
@@ -670,7 +672,7 @@ struct ChildrenBuilder<'a, 'f, S> {
     output: Vec<LookAheadSelection<'a, S>>,
 }
 
-impl<'a, 'f, S: ScalarValue> ChildrenBuilder<'a, 'f, S> {
+impl<'a, S: ScalarValue> ChildrenBuilder<'a, '_, S> {
     fn visit_parent_selection(
         &mut self,
         selection: &'a Selection<'a, S>,

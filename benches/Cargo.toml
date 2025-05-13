@@ -1,18 +1,27 @@
 [package]
 name = "juniper_benchmarks"
 version = "0.0.0"
-edition = "2021"
+edition = "2024"
 authors = ["Christoph Herzog <chris@theduke.at>"]
 publish = false
 
 [dependencies]
-dataloader = "0.17" # for Book only
-futures = "0.3"
 juniper = { path = "../juniper" }
 
 [dev-dependencies]
 criterion = "0.5"
 tokio = { version = "1.0", features = ["rt-multi-thread"] }
+
+[lints.clippy]
+allow_attributes = "warn"
+allow_attributes_without_reason = "warn"
+[lints.rust]
+closure_returning_async_block = "warn"
+future_incompatible = { level = "warn", priority = -1 }
+impl_trait_redundant_captures = "warn"
+non_ascii_idents = "forbid"
+unsafe_code = "forbid"
+unused_crate_dependencies = "warn"
 
 [[bench]]
 name = "benchmark"

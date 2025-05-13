@@ -1,8 +1,7 @@
-use bencher::{benchmark_group, benchmark_main, Bencher};
+use bencher::{Bencher, benchmark_group, benchmark_main};
 use juniper::{
-    execute_sync, graphql_vars,
+    DefaultScalarValue, EmptyMutation, EmptySubscription, RootNode, execute_sync, graphql_vars,
     tests::fixtures::starwars::schema::{Database, Query},
-    DefaultScalarValue, EmptyMutation, EmptySubscription, RootNode,
 };
 
 fn query_type_name(b: &mut Bencher) {

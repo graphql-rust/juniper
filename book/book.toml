@@ -16,4 +16,4 @@ create-missing = false
 git_repository_url = "https://github.com/graphql-rust/juniper"
 
 [rust]
-edition = "2021"
+edition = "2024"

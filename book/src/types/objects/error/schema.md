@@ -17,7 +17,7 @@ Critical errors are returned from resolvers as [field errors][1] (from the [prev
 In this example, basic input validation is implemented with [GraphQL types][7]. [Strings][5] are used to identify the problematic [field][6] name. Errors for a particular [field][6] are also returned as a [string][5].
 ```rust
 # extern crate juniper;
-# use juniper::{graphql_object, GraphQLObject, GraphQLUnion};
+# use juniper::{GraphQLObject, GraphQLUnion, graphql_object};
 #
 #[derive(GraphQLObject)]
 pub struct Item {
@@ -108,7 +108,7 @@ Instead of using [strings][5] to propagate errors, it is possible to use [GraphQ
 For each fallible [input argument][4] we create a [field][6] in a [GraphQL object][10]. The [field][6] is set if the validation for that particular [argument][4] fails.
 ```rust
 # extern crate juniper;
-# use juniper::{graphql_object, GraphQLObject, GraphQLUnion};
+# use juniper::{GraphQLObject, GraphQLUnion, graphql_object};
 #
 #[derive(GraphQLObject)]
 pub struct Item {
@@ -184,7 +184,7 @@ Our examples so far have only included non-critical errors. Providing errors ins
 In the following example, a theoretical database could fail and would generate errors. Since it is not common for a database to fail, the corresponding error is returned as a [critical error][1]:
 ```rust
 # extern crate juniper;
-# use juniper::{graphql_object, graphql_value, FieldError, GraphQLObject, GraphQLUnion, ScalarValue};
+# use juniper::{FieldError, GraphQLObject, GraphQLUnion, ScalarValue, graphql_object, graphql_value};
 #
 #[derive(GraphQLObject)]
 pub struct Item {
@@ -261,7 +261,7 @@ Up until now, we've only looked at mapping [structs][20] to [GraphQL objects][10
 Using `Result`-like [enums][1] can be a useful way of reporting validation errors from a mutation:
 ```rust
 # extern crate juniper;
-# use juniper::{graphql_object, GraphQLObject};
+# use juniper::{GraphQLObject, graphql_object};
 #
 #[derive(GraphQLObject)] 
 struct User { 

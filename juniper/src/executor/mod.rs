@@ -13,6 +13,7 @@ use fnv::FnvHashMap;
 use futures::Stream;
 
 use crate::{
+    GraphQLError,
     ast::{
         Definition, Document, Fragment, FromInputValue, InputValue, Operation, OperationType,
         Selection, ToInputValue, Type,
@@ -33,7 +34,6 @@ use crate::{
         subscriptions::{GraphQLSubscriptionType, GraphQLSubscriptionValue},
     },
     value::{DefaultScalarValue, ParseScalarValue, ScalarValue, Value},
-    GraphQLError,
 };
 
 pub use self::{
@@ -47,7 +47,7 @@ pub use self::{
 mod look_ahead;
 mod owned_executor;
 
-#[allow(missing_docs)]
+#[expect(missing_docs, reason = "self-explanatory")]
 #[derive(Clone)]
 pub enum FieldPath<'a> {
     Root(SourcePosition),
@@ -264,7 +264,7 @@ impl<S> IntoFieldError<S> for std::convert::Infallible {
     }
 }
 
-impl<'a, S> IntoFieldError<S> for &'a str {
+impl<S> IntoFieldError<S> for &str {
     fn into_field_error(self) -> FieldError<S> {
         FieldError::<S>::from(self)
     }
@@ -276,7 +276,7 @@ impl<S> IntoFieldError<S> for String {
     }
 }
 
-impl<'a, S> IntoFieldError<S> for Cow<'a, str> {
+impl<S> IntoFieldError<S> for Cow<'_, str> {
     fn into_field_error(self) -> FieldError<S> {
         FieldError::<S>::from(self)
     }
@@ -340,7 +340,6 @@ where
 {
     type Type = T;
 
-    #[allow(clippy::type_complexity)]
     fn into_resolvable(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S> {
         Ok(self.map(|(ctx, v)| (ctx, Some(v))))
     }
@@ -368,7 +367,6 @@ where
 {
     type Type = T;
 
-    #[allow(clippy::type_complexity)]
     fn into_resolvable(self, _: &'a C) -> FieldResult<Option<(&'a T::Context, Option<T>)>, S2> {
         self.map(|o| o.map(|(ctx, v)| (ctx, Some(v))))
             .map_err(FieldError::map_scalar_value)
@@ -394,7 +392,7 @@ pub trait FromContext<T> {
 /// Marker trait for types that can act as context objects for `GraphQL` types.
 pub trait Context {}
 
-impl<'a, C: Context> Context for &'a C {}
+impl<C: Context> Context for &C {}
 
 static NULL_CONTEXT: () = ();
 
@@ -692,7 +690,7 @@ where
                 // Search the parent's fields to find this field within the selection set.
                 p.iter().find_map(|x| {
                     match x {
-                        Selection::Field(ref field) => {
+                        Selection::Field(field) => {
                             let field = &field.item;
                             // TODO: support excludes.
                             let name = field.name.item;
@@ -746,7 +744,7 @@ where
     }
 }
 
-impl<'a> FieldPath<'a> {
+impl FieldPath<'_> {
     fn construct_path(&self, acc: &mut Vec<String>) {
         match self {
             FieldPath::Root(_) => (),
@@ -886,8 +884,8 @@ where
 
 /// Create new `Executor` and start asynchronous query execution.
 /// Returns `IsSubscription` error if subscription is passed.
-pub async fn execute_validated_query_async<'a, 'b, QueryT, MutationT, SubscriptionT, S>(
-    document: &'b Document<'a, S>,
+pub async fn execute_validated_query_async<'b, QueryT, MutationT, SubscriptionT, S>(
+    document: &'b Document<'_, S>,
     operation: &'b Spanning<Operation<'_, S>>,
     root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,

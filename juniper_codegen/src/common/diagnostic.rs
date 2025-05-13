@@ -3,7 +3,7 @@ use std::fmt;
 use proc_macro2::Span;
 
 pub(crate) use self::polyfill::{
-    abort_if_dirty, emit_error, entry_point, entry_point_with_preserved_body, Diagnostic, ResultExt,
+    Diagnostic, ResultExt, abort_if_dirty, emit_error, entry_point, entry_point_with_preserved_body,
 };
 
 /// URL of the GraphQL specification (October 2021 Edition).
@@ -92,11 +92,11 @@ mod polyfill {
 
     use std::{
         cell::{Cell, RefCell},
-        panic::{catch_unwind, resume_unwind, UnwindSafe},
+        panic::{UnwindSafe, catch_unwind, resume_unwind},
     };
 
     use proc_macro2::{Span, TokenStream};
-    use quote::{quote, quote_spanned, ToTokens};
+    use quote::{ToTokens, quote, quote_spanned};
 
     /// Representation of a single diagnostic message.
     #[derive(Debug)]
@@ -342,12 +342,6 @@ mod polyfill {
         /// Behaves like [`Result::unwrap()`]: if `self` is [`Ok`] yield the contained value,
         /// otherwise abort macro execution.
         fn unwrap_or_abort(self) -> Self::Ok;
-
-        /// Behaves like [`Result::expect()`]: if `self` is [`Ok`] yield the contained value,
-        /// otherwise abort macro execution.
-        ///
-        /// If it aborts then resulting error message will be preceded with the provided `message`.
-        fn expect_or_abort(self, message: &str) -> Self::Ok;
     }
 
     impl<T, E: Into<Diagnostic>> ResultExt for Result<T, E> {
@@ -355,14 +349,6 @@ mod polyfill {
 
         fn unwrap_or_abort(self) -> T {
             self.unwrap_or_else(|e| e.into().abort())
-        }
-
-        fn expect_or_abort(self, message: &str) -> T {
-            self.unwrap_or_else(|e| {
-                let mut d = e.into();
-                d.msg = format!("{message}: {}", d.msg);
-                d.abort()
-            })
         }
     }
 }

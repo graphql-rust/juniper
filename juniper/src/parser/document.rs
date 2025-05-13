@@ -6,8 +6,8 @@ use crate::ast::{
 
 use crate::{
     parser::{
-        value::parse_value_literal, Lexer, OptionParseResult, ParseError, ParseResult, Parser,
-        Spanning, Token, UnlocatedParseResult,
+        Lexer, OptionParseResult, ParseError, ParseResult, Parser, Spanning, Token,
+        UnlocatedParseResult, value::parse_value_literal,
     },
     schema::{
         meta::{Argument, Field as MetaField},
@@ -509,8 +509,7 @@ where
 
 pub fn parse_type<'a>(parser: &mut Parser<'a>) -> ParseResult<Type<&'a str>> {
     let parsed_type = if let Some(Spanning {
-        span: ref start_span,
-        ..
+        span: start_span, ..
     }) = parser.skip(&Token::BracketOpen)?
     {
         let inner_type = parse_type(parser)?;

@@ -24,7 +24,7 @@ Both [query][1] and [mutation][2] objects are regular [GraphQL objects][4], defi
 ```rust
 # extern crate juniper;
 # use juniper::{
-#     graphql_object, EmptySubscription, FieldResult, GraphQLObject, RootNode,
+#     EmptySubscription, FieldResult, GraphQLObject, RootNode, graphql_object,
 # };
 #
 #[derive(GraphQLObject)] 

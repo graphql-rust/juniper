@@ -4,12 +4,12 @@ use std::{
 };
 
 use crate::{
+    Span,
     ast::{Document, Fragment, FragmentSpread, Operation, Type, VariableDefinition},
     parser::Spanning,
     schema::model::{AsDynType, DynType},
     validation::{ValidatorContext, Visitor},
     value::ScalarValue,
-    Span,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -30,7 +30,7 @@ pub fn factory<'a, S: fmt::Debug>() -> VariableInAllowedPosition<'a, S> {
 pub struct VariableInAllowedPosition<'a, S: fmt::Debug + 'a> {
     spreads: HashMap<Scope<'a>, HashSet<&'a str>>,
     variable_usages: HashMap<Scope<'a>, Vec<(SpannedInput<'a, String>, DynType<'a>)>>,
-    #[allow(clippy::type_complexity)]
+    #[expect(clippy::type_complexity, reason = "readable enough")]
     variable_defs: HashMap<Scope<'a>, Vec<&'a (Spanning<&'a str>, VariableDefinition<'a, S>)>>,
     current_scope: Option<Scope<'a>>,
 }
@@ -195,7 +195,7 @@ mod tests {
 
     use crate::{
         parser::SourcePosition,
-        validation::{expect_fails_rule, expect_passes_rule, RuleError},
+        validation::{RuleError, expect_fails_rule, expect_passes_rule},
         value::DefaultScalarValue,
     };
 

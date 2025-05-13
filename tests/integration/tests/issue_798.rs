@@ -2,10 +2,11 @@
 //! See [#798](https://github.com/graphql-rust/juniper/issues/798) for details.
 
 use juniper::{
-    graphql_interface, graphql_object, graphql_value, graphql_vars, EmptyMutation,
-    EmptySubscription, GraphQLObject, GraphQLUnion, RootNode,
+    EmptyMutation, EmptySubscription, GraphQLObject, GraphQLUnion, RootNode, graphql_interface,
+    graphql_object, graphql_value, graphql_vars,
 };
 
+#[expect(dead_code, reason = "GraphQL schema testing")]
 #[graphql_interface(for = [Human, Droid])]
 trait Character {
     fn id(&self) -> &str;

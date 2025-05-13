@@ -1,24 +1,27 @@
-#![doc = include_str!("../README.md")]
+#![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
+#![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
 
 use std::{error::Error, fmt, string::FromUtf8Error, sync::Arc};
 
 use http_body_util::BodyExt as _;
 use hyper::{
-    body,
-    header::{self, HeaderValue},
     Method, Request, Response, StatusCode,
+    body::Body,
+    header::{self, HeaderValue},
 };
 use juniper::{
-    http::{GraphQLBatchRequest, GraphQLRequest as JuniperGraphQLRequest, GraphQLRequest},
     GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync, InputValue, RootNode, ScalarValue,
+    http::{GraphQLBatchRequest, GraphQLRequest as JuniperGraphQLRequest, GraphQLRequest},
 };
 use serde_json::error::Error as SerdeError;
 use url::form_urlencoded;
 
-pub async fn graphql_sync<CtxT, QueryT, MutationT, SubscriptionT, S>(
-    root_node: Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>,
+/// Executes synchronously  the provided GraphQL [`Request`] against the provided `schema` in the
+/// provided `context`, returning the encoded [`Response`].
+pub async fn graphql_sync<CtxT, QueryT, MutationT, SubscriptionT, S, B>(
+    schema: Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
-    req: Request<body::Incoming>,
+    req: Request<B>,
 ) -> Response<String>
 where
     QueryT: GraphQLType<S, Context = CtxT>,
@@ -29,17 +32,20 @@ where
     SubscriptionT::TypeInfo: Sync,
     CtxT: Sync,
     S: ScalarValue + Send + Sync,
+    B: Body<Error: fmt::Display>,
 {
     match parse_req(req).await {
-        Ok(req) => execute_request_sync(root_node, context, req).await,
+        Ok(req) => execute_request_sync(schema, context, req).await,
         Err(resp) => resp,
     }
 }
 
-pub async fn graphql<CtxT, QueryT, MutationT, SubscriptionT, S>(
-    root_node: Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>,
+/// Executes the provided GraphQL [`Request`] against the provided `schema` in the provided
+/// `context`, returning the encoded [`Response`].
+pub async fn graphql<CtxT, QueryT, MutationT, SubscriptionT, S, B>(
+    schema: Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
-    req: Request<body::Incoming>,
+    req: Request<B>,
 ) -> Response<String>
 where
     QueryT: GraphQLTypeAsync<S, Context = CtxT>,
@@ -50,16 +56,19 @@ where
     SubscriptionT::TypeInfo: Sync,
     CtxT: Sync,
     S: ScalarValue + Send + Sync,
+    B: Body<Error: fmt::Display>,
 {
     match parse_req(req).await {
-        Ok(req) => execute_request(root_node, context, req).await,
+        Ok(req) => execute_request(schema, context, req).await,
         Err(resp) => resp,
     }
 }
 
-async fn parse_req<S: ScalarValue>(
-    req: Request<body::Incoming>,
-) -> Result<GraphQLBatchRequest<S>, Response<String>> {
+async fn parse_req<S, B>(req: Request<B>) -> Result<GraphQLBatchRequest<S>, Response<String>>
+where
+    S: ScalarValue,
+    B: Body<Error: fmt::Display>,
+{
     match *req.method() {
         Method::GET => parse_get_req(req),
         Method::POST => {
@@ -78,9 +87,11 @@ async fn parse_req<S: ScalarValue>(
     .map_err(render_error)
 }
 
-fn parse_get_req<S: ScalarValue>(
-    req: Request<body::Incoming>,
-) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError> {
+fn parse_get_req<S, B>(req: Request<B>) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError<B>>
+where
+    S: ScalarValue,
+    B: Body,
+{
     req.uri()
         .query()
         .map(|q| gql_request_from_get(q).map(GraphQLBatchRequest::Single))
@@ -91,9 +102,13 @@ fn parse_get_req<S: ScalarValue>(
         })
 }
 
-async fn parse_post_json_req<S: ScalarValue>(
-    body: body::Incoming,
-) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError> {
+async fn parse_post_json_req<S, B>(
+    body: B,
+) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError<B>>
+where
+    S: ScalarValue,
+    B: Body,
+{
     let chunk = body
         .collect()
         .await
@@ -106,9 +121,13 @@ async fn parse_post_json_req<S: ScalarValue>(
         .map_err(GraphQLRequestError::BodyJSONError)
 }
 
-async fn parse_post_graphql_req<S: ScalarValue>(
-    body: body::Incoming,
-) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError> {
+async fn parse_post_graphql_req<S, B>(
+    body: B,
+) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError<B>>
+where
+    S: ScalarValue,
+    B: Body,
+{
     let chunk = body
         .collect()
         .await
@@ -122,6 +141,11 @@ async fn parse_post_graphql_req<S: ScalarValue>(
     )))
 }
 
+/// Generates a [`Response`] page containing [GraphiQL].
+///
+/// This does not handle routing, so you can mount it on any endpoint.
+///
+/// [GraphiQL]: https://github.com/graphql/graphiql
 pub async fn graphiql(
     graphql_endpoint: &str,
     subscriptions_endpoint: Option<&str>,
@@ -133,6 +157,11 @@ pub async fn graphiql(
     resp
 }
 
+/// Generates a [`Response`] page containing [GraphQL Playground].
+///
+/// This does not handle routing, so you can mount it on any endpoint.
+///
+/// [GraphQL Playground]: https://github.com/prisma/graphql-playground
 pub async fn playground(
     graphql_endpoint: &str,
     subscriptions_endpoint: Option<&str>,
@@ -143,14 +172,17 @@ pub async fn playground(
     resp
 }
 
-fn render_error(err: GraphQLRequestError) -> Response<String> {
+fn render_error<B>(err: GraphQLRequestError<B>) -> Response<String>
+where
+    B: Body<Error: fmt::Display>,
+{
     let mut resp = new_response(StatusCode::BAD_REQUEST);
     *resp.body_mut() = err.to_string();
     resp
 }
 
 async fn execute_request_sync<CtxT, QueryT, MutationT, SubscriptionT, S>(
-    root_node: Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>,
+    schema: Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     request: GraphQLBatchRequest<S>,
 ) -> Response<String>
@@ -164,7 +196,7 @@ where
     CtxT: Sync,
     S: ScalarValue + Send + Sync,
 {
-    let res = request.execute_sync(&*root_node, &context);
+    let res = request.execute_sync(&*schema, &context);
     let body = serde_json::to_string_pretty(&res).unwrap();
     let code = if res.is_ok() {
         StatusCode::OK
@@ -181,7 +213,7 @@ where
 }
 
 async fn execute_request<CtxT, QueryT, MutationT, SubscriptionT, S>(
-    root_node: Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>,
+    schema: Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     request: GraphQLBatchRequest<S>,
 ) -> Response<String>
@@ -195,7 +227,7 @@ where
     CtxT: Sync,
     S: ScalarValue + Send + Sync,
 {
-    let res = request.execute(&*root_node, &context).await;
+    let res = request.execute(&*schema, &context).await;
     let body = serde_json::to_string_pretty(&res).unwrap();
     let code = if res.is_ok() {
         StatusCode::OK
@@ -211,9 +243,12 @@ where
     resp
 }
 
-fn gql_request_from_get<S>(input: &str) -> Result<JuniperGraphQLRequest<S>, GraphQLRequestError>
+fn gql_request_from_get<S, B>(
+    input: &str,
+) -> Result<JuniperGraphQLRequest<S>, GraphQLRequestError<B>>
 where
     S: ScalarValue,
+    B: Body,
 {
     let mut query = None;
     let mut operation_name = None;
@@ -254,7 +289,7 @@ where
     }
 }
 
-fn invalid_err(parameter_name: &str) -> GraphQLRequestError {
+fn invalid_err<B: Body>(parameter_name: &str) -> GraphQLRequestError<B> {
     GraphQLRequestError::Invalid(format!(
         "`{parameter_name}` parameter is specified multiple times",
     ))
@@ -275,35 +310,57 @@ fn new_html_response(code: StatusCode) -> Response<String> {
     resp
 }
 
-#[derive(Debug)]
-enum GraphQLRequestError {
-    BodyHyper(hyper::Error),
+enum GraphQLRequestError<B: Body> {
+    BodyHyper(B::Error),
     BodyUtf8(FromUtf8Error),
     BodyJSONError(SerdeError),
     Variables(SerdeError),
     Invalid(String),
 }
 
-impl fmt::Display for GraphQLRequestError {
+// NOTE: Manual implementation instead of `#[derive(Debug)]` is used to omit imposing unnecessary
+//       `B: Debug` bound on the implementation.
+impl<B> fmt::Debug for GraphQLRequestError<B>
+where
+    B: Body<Error: fmt::Debug>,
+{
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            GraphQLRequestError::BodyHyper(err) => fmt::Display::fmt(err, f),
-            GraphQLRequestError::BodyUtf8(err) => fmt::Display::fmt(err, f),
-            GraphQLRequestError::BodyJSONError(err) => fmt::Display::fmt(err, f),
-            GraphQLRequestError::Variables(err) => fmt::Display::fmt(err, f),
-            GraphQLRequestError::Invalid(err) => fmt::Display::fmt(err, f),
+            Self::BodyHyper(e) => fmt::Debug::fmt(e, f),
+            Self::BodyUtf8(e) => fmt::Debug::fmt(e, f),
+            Self::BodyJSONError(e) => fmt::Debug::fmt(e, f),
+            Self::Variables(e) => fmt::Debug::fmt(e, f),
+            Self::Invalid(e) => fmt::Debug::fmt(e, f),
         }
     }
 }
 
-impl Error for GraphQLRequestError {
+impl<B> fmt::Display for GraphQLRequestError<B>
+where
+    B: Body<Error: fmt::Display>,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::BodyHyper(e) => fmt::Display::fmt(e, f),
+            Self::BodyUtf8(e) => fmt::Display::fmt(e, f),
+            Self::BodyJSONError(e) => fmt::Display::fmt(e, f),
+            Self::Variables(e) => fmt::Display::fmt(e, f),
+            Self::Invalid(e) => fmt::Display::fmt(e, f),
+        }
+    }
+}
+
+impl<B> Error for GraphQLRequestError<B>
+where
+    B: Body<Error: Error + 'static>,
+{
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            GraphQLRequestError::BodyHyper(err) => Some(err),
-            GraphQLRequestError::BodyUtf8(err) => Some(err),
-            GraphQLRequestError::BodyJSONError(err) => Some(err),
-            GraphQLRequestError::Variables(err) => Some(err),
-            GraphQLRequestError::Invalid(_) => None,
+            Self::BodyHyper(e) => Some(e),
+            Self::BodyUtf8(e) => Some(e),
+            Self::BodyJSONError(e) => Some(e),
+            Self::Variables(e) => Some(e),
+            Self::Invalid(_) => None,
         }
     }
 }
@@ -314,12 +371,16 @@ mod tests {
         convert::Infallible, error::Error, net::SocketAddr, panic, sync::Arc, time::Duration,
     };
 
-    use hyper::{server::conn::http1, service::service_fn, Method, Response, StatusCode};
+    use http_body_util::BodyExt as _;
+    use hyper::{
+        Method, Request, Response, StatusCode, body::Incoming, server::conn::http1,
+        service::service_fn,
+    };
     use hyper_util::rt::TokioIo;
     use juniper::{
+        EmptyMutation, EmptySubscription, RootNode,
         http::tests as http_tests,
         tests::fixtures::starwars::schema::{Database, Query},
-        EmptyMutation, EmptySubscription, RootNode,
     };
     use reqwest::blocking::Response as ReqwestResponse;
     use tokio::{net::TcpListener, task, time::sleep};
@@ -376,8 +437,7 @@ mod tests {
         }
     }
 
-    async fn run_hyper_integration(is_sync: bool) {
-        let port = if is_sync { 3002 } else { 3001 };
+    async fn run_hyper_integration(port: u16, is_sync: bool, is_custom_type: bool) {
         let addr = SocketAddr::from(([127, 0, 0, 1], port));
 
         let db = Arc::new(Database::new());
@@ -405,7 +465,7 @@ mod tests {
                         if let Err(e) = http1::Builder::new()
                             .serve_connection(
                                 io,
-                                service_fn(move |req| {
+                                service_fn(move |req: Request<Incoming>| {
                                     let root_node = root_node.clone();
                                     let db = db.clone();
                                     let matches = {
@@ -419,10 +479,30 @@ mod tests {
                                     };
                                     async move {
                                         Ok::<_, Infallible>(if matches {
-                                            if is_sync {
-                                                super::graphql_sync(root_node, db, req).await
+                                            if is_custom_type {
+                                                let (parts, mut body) = req.into_parts();
+                                                let body = {
+                                                    let mut buf = String::new();
+                                                    if let Some(Ok(frame)) = body.frame().await {
+                                                        if let Ok(bytes) = frame.into_data() {
+                                                            buf = String::from_utf8_lossy(&bytes)
+                                                                .to_string();
+                                                        }
+                                                    }
+                                                    buf
+                                                };
+                                                let req = Request::from_parts(parts, body);
+                                                if is_sync {
+                                                    super::graphql_sync(root_node, db, req).await
+                                                } else {
+                                                    super::graphql(root_node, db, req).await
+                                                }
                                             } else {
-                                                super::graphql(root_node, db, req).await
+                                                if is_sync {
+                                                    super::graphql_sync(root_node, db, req).await
+                                                } else {
+                                                    super::graphql(root_node, db, req).await
+                                                }
                                             }
                                         } else {
                                             let mut resp = Response::new(String::new());
@@ -460,11 +540,21 @@ mod tests {
 
     #[tokio::test]
     async fn test_hyper_integration() {
-        run_hyper_integration(false).await
+        run_hyper_integration(3000, false, false).await
     }
 
     #[tokio::test]
     async fn test_sync_hyper_integration() {
-        run_hyper_integration(true).await
+        run_hyper_integration(3001, true, false).await
+    }
+
+    #[tokio::test]
+    async fn test_custom_request_hyper_integration() {
+        run_hyper_integration(3002, false, false).await
+    }
+
+    #[tokio::test]
+    async fn test_custom_request_sync_hyper_integration() {
+        run_hyper_integration(3003, true, true).await
     }
 }

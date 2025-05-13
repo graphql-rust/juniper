@@ -1,5 +1,6 @@
 //! Tests for `#[graphql_interface]` macro placed on a trait.
 
+#![expect(dead_code, reason = "GraphQL schema definition")]
 // Assert that `#[graphql_interface]` macro placed on a trait stops Clippy from enforcing `# Errors`
 // and `# Panics` sections in GraphQL descriptions.
 #![deny(clippy::missing_errors_doc, clippy::missing_panics_doc)]
@@ -7,15 +8,14 @@
 pub mod common;
 
 use juniper::{
-    execute, graphql_interface, graphql_object, graphql_value, graphql_vars, DefaultScalarValue,
-    Executor, FieldError, FieldResult, GraphQLInputObject, GraphQLObject, GraphQLUnion,
-    IntoFieldError, ScalarValue, ID,
+    DefaultScalarValue, Executor, FieldError, FieldResult, GraphQLInputObject, GraphQLObject,
+    GraphQLUnion, ID, IntoFieldError, ScalarValue, execute, graphql_interface, graphql_object,
+    graphql_value, graphql_vars,
 };
 
 use self::common::util::{schema, schema_with_scalar};
 
 // Override `std::prelude` items to check whether macros expand hygienically.
-#[allow(unused_imports)]
 use self::common::hygiene::*;
 
 mod no_implers {
@@ -1055,19 +1055,11 @@ mod argument {
         }
 
         async fn id_wide(&self, is_number: bool) -> &str {
-            if is_number {
-                &self.id
-            } else {
-                "none"
-            }
+            if is_number { &self.id } else { "none" }
         }
 
         async fn id_wide2(&self, is_number: bool, _async: prelude::Option<i32>) -> &str {
-            if is_number {
-                &self.id
-            } else {
-                "none"
-            }
+            if is_number { &self.id } else { "none" }
         }
     }
 
@@ -2374,7 +2366,7 @@ mod explicit_custom_context {
 
     #[graphql_object(impl = CharacterValue, context = CustomContext)]
     impl Droid {
-        #[allow(clippy::needless_lifetimes)] // intentionally
+        #[expect(clippy::needless_lifetimes, reason = "intentional")]
         async fn id<'a>(&'a self) -> &'a str {
             &self.id
         }
@@ -2383,7 +2375,7 @@ mod explicit_custom_context {
             &self.primary_function
         }
 
-        #[allow(clippy::needless_lifetimes)] // intentionally
+        #[expect(clippy::needless_lifetimes, reason = "intentional")]
         async fn info<'b>(&'b self) -> &'b str {
             &self.primary_function
         }
@@ -2682,7 +2674,7 @@ mod executor {
             &self.home_planet
         }
 
-        #[allow(clippy::needless_lifetimes)] // intentionally
+        #[expect(clippy::needless_lifetimes, reason = "intentional")]
         async fn info<'b>(&'b self, _arg: prelude::Option<i32>) -> &'b str {
             &self.home_planet
         }
@@ -3075,7 +3067,7 @@ mod field_return_union_subtyping {
         value: i32,
     }
 
-    #[allow(dead_code)]
+    #[expect(dead_code, reason = "GraphQL schema testing")]
     #[derive(GraphQLUnion)]
     enum KeyFeature {
         Strength(Strength),
@@ -3678,21 +3670,25 @@ mod branching_subtyping {
         fn crew(&self) -> ConnectionValue {
             match self {
                 Self::Luke => HumanConnection {
-                    nodes: vec![Luke {
-                        id: ID::new("1"),
-                        home_planet: "earth".into(),
-                        father: "SPOILER".into(),
-                    }
-                    .into()],
+                    nodes: vec![
+                        Luke {
+                            id: ID::new("1"),
+                            home_planet: "earth".into(),
+                            father: "SPOILER".into(),
+                        }
+                        .into(),
+                    ],
                 }
                 .into(),
                 Self::R2D2 => DroidConnection {
-                    nodes: vec![R2D2 {
-                        id: ID::new("2"),
-                        primary_function: "roll".into(),
-                        charge: 146.0,
-                    }
-                    .into()],
+                    nodes: vec![
+                        R2D2 {
+                            id: ID::new("2"),
+                            primary_function: "roll".into(),
+                            charge: 146.0,
+                        }
+                        .into(),
+                    ],
                 }
                 .into(),
             }
@@ -3901,7 +3897,7 @@ mod branching_subtyping {
 mod preserves_visibility {
     use super::*;
 
-    #[allow(dead_code)]
+    #[expect(dead_code, reason = "GraphQL schema testing")]
     type Foo = self::inner::CharacterValue;
 
     pub(crate) mod inner {

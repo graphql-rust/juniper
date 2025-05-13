@@ -8,7 +8,7 @@ pub mod derive;
 use std::collections::HashMap;
 
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote, ToTokens};
+use quote::{ToTokens, format_ident, quote};
 use syn::{
     ext::IdentExt as _,
     parse::{Parse, ParseStream},
@@ -18,12 +18,12 @@ use syn::{
 };
 
 use crate::common::{
-    filter_attrs, gen,
+    AttrNames, Description, SpanContainer, filter_attrs, generate,
     parse::{
-        attr::{err, OptionExt as _},
         ParseBufferExt as _,
+        attr::{OptionExt as _, err},
     },
-    scalar, AttrNames, Description, SpanContainer,
+    scalar,
 };
 
 /// Helper alias for the type of [`Attr::external_resolvers`] field.
@@ -710,7 +710,7 @@ impl VariantDefinition {
         let ty = &self.ty;
         let ty_name = ty.to_token_stream().to_string();
         let expr = &self.resolver_code;
-        let resolving_code = gen::sync_resolving_code();
+        let resolving_code = generate::sync_resolving_code();
 
         quote! {
             if type_name == <#ty as ::juniper::GraphQLType<#scalar>>::name(info)
@@ -733,7 +733,7 @@ impl VariantDefinition {
         let ty = &self.ty;
         let ty_name = ty.to_token_stream().to_string();
         let expr = &self.resolver_code;
-        let resolving_code = gen::async_resolving_code(None);
+        let resolving_code = generate::async_resolving_code(None);
 
         quote! {
             match <#ty as ::juniper::GraphQLType<#scalar>>::name(info) {

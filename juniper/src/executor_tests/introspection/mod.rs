@@ -2,14 +2,13 @@ mod enums;
 mod input_object;
 
 // This asserts that the input objects defined public actually became public
-#[allow(unused_imports)]
+#[expect(unused_imports, reason = "`pub` assertion")]
 use self::input_object::{NamedPublic, NamedPublicWithDescription};
 
 use crate::{
-    graphql_interface, graphql_object, graphql_value, graphql_vars,
+    GraphQLEnum, GraphQLScalar, graphql_interface, graphql_object, graphql_value, graphql_vars,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
-    GraphQLEnum, GraphQLScalar,
 };
 
 #[derive(GraphQLEnum)]
@@ -24,6 +23,8 @@ enum Sample {
 struct Scalar(i32);
 
 /// A sample interface
+// TODO: Consider this for the GraphQL interfaces in the expansion.
+#[expect(dead_code, reason = "GraphQL schema testing")]
 #[graphql_interface(name = "SampleInterface", for = Root)]
 trait Interface {
     /// A sample field in the interface

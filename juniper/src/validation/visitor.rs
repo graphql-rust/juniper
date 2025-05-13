@@ -8,7 +8,7 @@ use crate::{
         meta::Argument,
         model::{AsDynType, DynType},
     },
-    validation::{multi_visitor::MultiVisitorCons, ValidatorContext, Visitor},
+    validation::{ValidatorContext, Visitor, multi_visitor::MultiVisitorCons},
     value::ScalarValue,
 };
 

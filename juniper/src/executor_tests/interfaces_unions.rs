@@ -1,11 +1,12 @@
 mod interface {
     use crate::{
-        graphql_interface, graphql_object,
+        GraphQLObject, graphql_interface, graphql_object,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
-        GraphQLObject,
     };
 
+    // TODO: Consider this for the GraphQL interfaces in the expansion.
+    #[expect(dead_code, reason = "GraphQL schema testing")]
     #[graphql_interface(for = [Cat, Dog])]
     trait Pet {
         fn name(&self) -> &str;

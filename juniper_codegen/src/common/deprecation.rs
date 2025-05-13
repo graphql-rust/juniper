@@ -4,7 +4,7 @@
 //! [0]: https://spec.graphql.org/October2021#sec--deprecated
 
 use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
+use quote::{ToTokens, quote};
 use syn::{
     parse::{Parse, ParseStream},
     punctuated::Punctuated,
@@ -12,7 +12,7 @@ use syn::{
     token,
 };
 
-use crate::common::{parse::ParseBufferExt as _, SpanContainer};
+use crate::common::{SpanContainer, parse::ParseBufferExt as _};
 
 /// [GraphQL deprecation directive][0] defined on a [GraphQL field][1] or a
 /// [GraphQL enum value][2] via `#[graphql(deprecated = ...)]` (or

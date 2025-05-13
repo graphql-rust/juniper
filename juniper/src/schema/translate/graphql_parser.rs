@@ -1,6 +1,7 @@
 use std::{boxed::Box, collections::BTreeMap};
 
 use graphql_parser::{
+    Pos,
     query::{Directive as ExternalDirective, Number as ExternalNumber, Type as ExternalType},
     schema::{
         Definition, Document, EnumType as ExternalEnum, EnumValue as ExternalEnumValue,
@@ -10,7 +11,6 @@ use graphql_parser::{
         TypeDefinition as ExternalTypeDefinition, UnionType as ExternalUnionType,
         Value as ExternalValue,
     },
-    Pos,
 };
 
 use crate::{
@@ -22,6 +22,11 @@ use crate::{
     },
     value::ScalarValue,
 };
+
+// TODO: Remove on upgrade to 0.4.1 version of `graphql-parser`.
+mod for_minimal_versions_check_only {
+    use void as _;
+}
 
 pub struct GraphQLParserTranslator;
 
@@ -40,9 +45,9 @@ impl<'a, T> SchemaTranslator<'a, graphql_parser::schema::Document<'a, T>>
 where
     T: Text<'a> + Default,
 {
-    fn translate_schema<S: 'a>(input: &'a SchemaType<S>) -> graphql_parser::schema::Document<'a, T>
+    fn translate_schema<S>(input: &'a SchemaType<S>) -> graphql_parser::schema::Document<'a, T>
     where
-        S: ScalarValue,
+        S: ScalarValue + 'a,
     {
         let mut doc = Document::default();
 
@@ -94,9 +99,9 @@ impl GraphQLParserTranslator {
         }
     }
 
-    fn translate_value<'a, S: 'a, T>(input: &'a InputValue<S>) -> ExternalValue<'a, T>
+    fn translate_value<'a, S, T>(input: &'a InputValue<S>) -> ExternalValue<'a, T>
     where
-        S: ScalarValue,
+        S: ScalarValue + 'a,
         T: Text<'a>,
     {
         match input {
@@ -250,9 +255,9 @@ impl GraphQLParserTranslator {
         }
     }
 
-    fn translate_field<'a, S: 'a, T>(input: &'a Field<S>) -> ExternalField<'a, T>
+    fn translate_field<'a, S, T>(input: &'a Field<S>) -> ExternalField<'a, T>
     where
-        S: ScalarValue,
+        S: ScalarValue + 'a,
         T: Text<'a>,
     {
         let arguments = input
@@ -306,11 +311,9 @@ fn generate_directives<'a, T>(status: &DeprecationStatus) -> Vec<ExternalDirecti
 where
     T: Text<'a>,
 {
-    if let Some(d) = deprecation_to_directive(status) {
-        vec![d]
-    } else {
-        vec![]
-    }
+    deprecation_to_directive(status)
+        .map(|d| vec![d])
+        .unwrap_or_default()
 }
 
 /// Sorts the provided [`Document`] in the "type-then-name" manner.

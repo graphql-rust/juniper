@@ -4,9 +4,9 @@ use proc_macro2::TokenStream;
 use quote::ToTokens as _;
 use syn::{ext::IdentExt as _, parse_quote, spanned::Spanned};
 
-use crate::common::{diagnostic, field, parse::TypeExt as _, rename, scalar, SpanContainer};
+use crate::common::{SpanContainer, diagnostic, field, parse::TypeExt as _, rename, scalar};
 
-use super::{attr::err_unnamed_field, enum_idents, Attr, Definition};
+use super::{Attr, Definition, attr::err_unnamed_field, enum_idents};
 
 /// [`diagnostic::Scope`] of errors for `#[derive(GraphQLInterface)]` macro.
 const ERR: diagnostic::Scope = diagnostic::Scope::InterfaceDerive;
@@ -16,9 +16,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
     let ast = syn::parse2::<syn::DeriveInput>(input)?;
     let attr = Attr::from_attrs("graphql", &ast.attrs)?;
 
-    let data = if let syn::Data::Struct(data) = &ast.data {
-        data
-    } else {
+    let syn::Data::Struct(data) = &ast.data else {
         return Err(ERR.custom_error(ast.span(), "can only be derived on structs"));
     };
 

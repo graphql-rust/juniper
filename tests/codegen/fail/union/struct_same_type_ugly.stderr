@@ -8,3 +8,37 @@ error[E0119]: conflicting implementations of trait `MutuallyExclusive` for type 
   |          conflicting implementation for `std::string::String`
   |
   = note: this error originates in the macro `::juniper::sa::assert_type_ne_all` which comes from the expansion of the derive macro `GraphQLUnion` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `std::string::String: GraphQLObject<__S>` is not satisfied
+ --> fail/union/struct_same_type_ugly.rs:5:14
+  |
+5 | #[graphql(on std::string::String = Character::b)]
+  |              ^^^^^^^^^^^^^^^^^^^ the trait `GraphQLObject<__S>` is not implemented for `std::string::String`
+  |
+  = help: the following other types implement trait `GraphQLObject<S>`:
+            `&T` implements `GraphQLObject<S>`
+            `Arc<T>` implements `GraphQLObject<S>`
+            `Argument<'a, S>` implements `GraphQLObject<S>`
+            `Box<T>` implements `GraphQLObject<S>`
+            `EnumValue` implements `GraphQLObject<__S>`
+            `SchemaType<'a, S>` implements `GraphQLObject<S>`
+            `juniper::meta::Field<'a, S>` implements `GraphQLObject<S>`
+            `juniper::schema::model::DirectiveType<'a, S>` implements `GraphQLObject<S>`
+            `juniper::schema::model::TypeType<'a, S>` implements `GraphQLObject<S>`
+
+error[E0277]: the trait bound `std::string::String: GraphQLObject<__S>` is not satisfied
+ --> fail/union/struct_same_type_ugly.rs:4:14
+  |
+4 | #[graphql(on String = Character::a)]
+  |              ^^^^^^ the trait `GraphQLObject<__S>` is not implemented for `std::string::String`
+  |
+  = help: the following other types implement trait `GraphQLObject<S>`:
+            `&T` implements `GraphQLObject<S>`
+            `Arc<T>` implements `GraphQLObject<S>`
+            `Argument<'a, S>` implements `GraphQLObject<S>`
+            `Box<T>` implements `GraphQLObject<S>`
+            `EnumValue` implements `GraphQLObject<__S>`
+            `SchemaType<'a, S>` implements `GraphQLObject<S>`
+            `juniper::meta::Field<'a, S>` implements `GraphQLObject<S>`
+            `juniper::schema::model::DirectiveType<'a, S>` implements `GraphQLObject<S>`
+            `juniper::schema::model::TypeType<'a, S>` implements `GraphQLObject<S>`

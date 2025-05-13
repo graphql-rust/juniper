@@ -4,17 +4,16 @@ pub mod graphiql;
 pub mod playground;
 
 use serde::{
-    de,
+    Deserialize, Serialize, de,
     ser::{self, SerializeMap},
-    Deserialize, Serialize,
 };
 
 use crate::{
+    FieldError, GraphQLError, GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync, RootNode,
+    Value, Variables,
     ast::InputValue,
     executor::{ExecutionError, ValuesStream},
     value::{DefaultScalarValue, ScalarValue},
-    FieldError, GraphQLError, GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync, RootNode,
-    Value, Variables,
 };
 
 /// The expected structure of the decoded JSON document for either POST or GET requests.
@@ -172,20 +171,28 @@ impl<S> GraphQLResponse<S>
 where
     S: ScalarValue,
 {
-    /// Constructs new `GraphQLResponse` using the given result
+    /// Constructs a new [`GraphQLResponse`] from the provided execution [`Result`].
+    #[must_use]
     pub fn from_result(r: Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError>) -> Self {
         Self(r)
     }
 
-    /// Constructs an error response outside of the normal execution flow
-    pub fn error(error: FieldError<S>) -> Self {
-        GraphQLResponse(Ok((Value::null(), vec![ExecutionError::at_origin(error)])))
+    /// Unwraps this [`GraphQLResponse`] into its underlying execution [`Result`].
+    pub fn into_result(self) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError> {
+        self.0
     }
 
-    /// Was the request successful or not?
+    /// Constructs an error [`GraphQLResponse`] outside the normal execution flow.
+    #[must_use]
+    pub fn error(error: FieldError<S>) -> Self {
+        Self(Ok((Value::null(), vec![ExecutionError::at_origin(error)])))
+    }
+
+    /// Indicates whether this [`GraphQLResponse`] contains a successful execution [`Result`].
     ///
-    /// Note that there still might be errors in the response even though it's
-    /// considered OK. This is by design in GraphQL.
+    /// **NOTE**: There still might be errors in the response even though it's considered OK.
+    ///           This is by design in GraphQL.
+    #[must_use]
     pub fn is_ok(&self) -> bool {
         self.0.is_ok()
     }
@@ -362,8 +369,9 @@ impl<S: ScalarValue> GraphQLBatchResponse<S> {
 }
 
 #[cfg(feature = "expose-test-schema")]
-#[allow(missing_docs)]
 pub mod tests {
+    //! HTTP integration tests.
+
     use std::time::Duration;
 
     use serde_json::Value as Json;
@@ -374,8 +382,13 @@ pub mod tests {
     /// the http framework integration we are testing.
     #[derive(Debug)]
     pub struct TestResponse {
+        /// Status code of the HTTP response.
         pub status_code: i32,
+
+        /// Body of the HTTP response, if any.
         pub body: Option<String>,
+
+        /// `Content-Type` header value of the HTTP response.
         pub content_type: String,
     }
 
@@ -394,7 +407,7 @@ pub mod tests {
         fn post_graphql(&self, url: &str, body: &str) -> TestResponse;
     }
 
-    #[allow(missing_docs)]
+    /// Runs integration tests suite for the provided [`HttpIntegration`].
     pub fn run_http_test_suite<T: HttpIntegration>(integration: &T) {
         println!("Running HTTP Test suite for integration");
 
@@ -661,9 +674,12 @@ pub mod tests {
     pub mod graphql_ws {
         use serde_json::json;
 
-        use super::{WsIntegration, WsIntegrationMessage, WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT};
+        use super::{WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT, WsIntegration, WsIntegrationMessage};
 
-        #[allow(missing_docs)]
+        /// Runs integration tests suite for the [legacy `graphql-ws` GraphQL over WebSocket
+        /// Protocol][0].
+        ///
+        /// [0]:https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
         pub async fn run_test_suite<T: WsIntegration>(integration: &T) {
             println!("Running `graphql-ws` test suite for integration");
 
@@ -790,9 +806,12 @@ pub mod tests {
     pub mod graphql_transport_ws {
         use serde_json::json;
 
-        use super::{WsIntegration, WsIntegrationMessage, WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT};
+        use super::{WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT, WsIntegration, WsIntegrationMessage};
 
-        #[allow(missing_docs)]
+        /// Runs integration tests suite the [new `graphql-transport-ws` GraphQL over WebSocket
+        /// Protocol][new].
+        ///
+        /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
         pub async fn run_test_suite<T: WsIntegration>(integration: &T) {
             println!("Running `graphql-transport-ws` test suite for integration");
 

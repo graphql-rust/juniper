@@ -270,7 +270,7 @@ where
     }
 }
 
-impl<'a, T, S> ToInputValue<S> for &'a [T]
+impl<T, S> ToInputValue<S> for &[T]
 where
     T: ToInputValue<S>,
     S: ScalarValue,
@@ -572,7 +572,7 @@ where
         .is_non_null();
 
     let mut futures = items
-        .map(|it| async move { executor.resolve_into_value_async(info, it).await })
+        .map(async |it| executor.resolve_into_value_async(info, it).await)
         .collect::<FuturesOrdered<_>>();
 
     let mut values = Vec::with_capacity(futures.len());
@@ -588,7 +588,7 @@ where
 
 #[cfg(test)]
 mod coercion {
-    use crate::{graphql_input_value, FromInputValue as _, InputValue, IntoFieldError as _};
+    use crate::{FromInputValue as _, InputValue, IntoFieldError as _, graphql_input_value};
 
     use super::{FromInputValueArrayError, FromInputValueVecError};
 

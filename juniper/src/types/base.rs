@@ -2,12 +2,12 @@ use arcstr::ArcStr;
 use indexmap::IndexMap;
 
 use crate::{
+    FieldResult, GraphQLEnum, IntoFieldError,
     ast::{Directive, FromInputValue, InputValue, Selection},
     executor::{ExecutionResult, Executor, Registry, Variables},
     parser::Spanning,
     schema::meta::{Argument, MetaType},
     value::{DefaultScalarValue, Object, ScalarValue, Value},
-    FieldResult, GraphQLEnum, IntoFieldError,
 };
 
 /// GraphQL type kind
@@ -251,7 +251,7 @@ where
     /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
     /// [2]: https://spec.graphql.org/October2021#sec-Unions
     /// [3]: https://spec.graphql.org/October2021#sec-Objects
-    #[allow(unused_variables)]
+    #[expect(unused_variables, reason = "nice interface declaration")]
     fn concrete_type_name(&self, context: &Self::Context, info: &Self::TypeInfo) -> String {
         panic!(
             "GraphQLValue::concrete_type_name() must be implemented by unions, interfaces \
@@ -534,8 +534,18 @@ where
                         for (k, v) in object {
                             merge_key_into(result, &k, v);
                         }
-                    } else if let Err(e) = sub_result {
-                        sub_exec.push_error_at(e, span.start);
+                    } else {
+                        if let Err(e) = sub_result {
+                            sub_exec.push_error_at(e, span.start);
+                        }
+                        // NOTE: Executing a fragment cannot really result in anything other
+                        //       than `Value::Object`, because it represents a set of fields.
+                        //       So, if an error happens or a `Value::Null` is returned, it's an
+                        //       indication that the fragment execution failed somewhere and,
+                        //       because of non-`null` types involved, its error should be
+                        //       propagated to the parent field, which is done here by returning
+                        //       a `false`.
+                        return false;
                     }
                 }
             }
@@ -570,8 +580,18 @@ where
                             for (k, v) in object {
                                 merge_key_into(result, &k, v);
                             }
-                        } else if let Err(e) = sub_result {
-                            sub_exec.push_error_at(e, span.start);
+                        } else {
+                            if let Err(e) = sub_result {
+                                sub_exec.push_error_at(e, span.start);
+                            }
+                            // NOTE: Executing a fragment cannot really result in anything other
+                            //       than `Value::Object`, because it represents a set of fields.
+                            //       So, if an error happens or a `Value::Null` is returned, it's an
+                            //       indication that the fragment execution failed somewhere and,
+                            //       because of non-`null` types involved, its error should be
+                            //       propagated to the parent field, which is done here by returning
+                            //       a `false`.
+                            return false;
                         }
                     }
                 } else if !resolve_selection_set_into(

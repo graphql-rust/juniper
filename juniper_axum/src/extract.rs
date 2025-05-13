@@ -3,16 +3,15 @@
 use std::fmt;
 
 use axum::{
-    async_trait,
+    Json, RequestExt as _,
     body::Body,
     extract::{FromRequest, FromRequestParts, Query},
-    http::{HeaderValue, Method, Request, StatusCode},
+    http::{HeaderValue, Method, Request, StatusCode, header},
     response::{IntoResponse as _, Response},
-    Json, RequestExt as _,
 };
 use juniper::{
-    http::{GraphQLBatchRequest, GraphQLRequest},
     DefaultScalarValue, ScalarValue,
+    http::{GraphQLBatchRequest, GraphQLRequest},
 };
 use serde::Deserialize;
 
@@ -70,7 +69,6 @@ pub struct JuniperRequest<S = DefaultScalarValue>(pub GraphQLBatchRequest<S>)
 where
     S: ScalarValue;
 
-#[async_trait]
 impl<S, State> FromRequest<State> for JuniperRequest<S>
 where
     S: ScalarValue,
@@ -85,7 +83,7 @@ where
     async fn from_request(mut req: Request<Body>, state: &State) -> Result<Self, Self::Rejection> {
         let content_type = req
             .headers()
-            .get("content-type")
+            .get(header::CONTENT_TYPE)
             .map(HeaderValue::to_str)
             .transpose()
             .map_err(|_| {
@@ -122,7 +120,7 @@ where
                                 .into_response()
                         })
                 }),
-            (&Method::POST, Some("application/json")) => {
+            (&Method::POST, Some(x)) if x.starts_with("application/json") => {
                 Json::<GraphQLBatchRequest<S>>::from_request(req, state)
                     .await
                     .map(|req| Self(req.0))
@@ -130,14 +128,16 @@ where
                         (StatusCode::BAD_REQUEST, format!("Invalid JSON body: {e}")).into_response()
                     })
             }
-            (&Method::POST, Some("application/graphql")) => String::from_request(req, state)
-                .await
-                .map(|body| {
-                    Self(GraphQLBatchRequest::Single(GraphQLRequest::new(
-                        body, None, None,
-                    )))
-                })
-                .map_err(|_| (StatusCode::BAD_REQUEST, "Not valid UTF-8 body").into_response()),
+            (&Method::POST, Some(x)) if x.starts_with("application/graphql") => {
+                String::from_request(req, state)
+                    .await
+                    .map(|body| {
+                        Self(GraphQLBatchRequest::Single(GraphQLRequest::new(
+                            body, None, None,
+                        )))
+                    })
+                    .map_err(|_| (StatusCode::BAD_REQUEST, "Not valid UTF-8 body").into_response())
+            }
             (&Method::POST, _) => Err((
                 StatusCode::UNSUPPORTED_MEDIA_TYPE,
                 "`Content-Type` header is expected to be either `application/json` or \
@@ -247,9 +247,41 @@ mod juniper_request_tests {
     }
 
     #[tokio::test]
+    async fn from_json_post_request_with_charset() {
+        let req = Request::post("/")
+            .header("content-type", "application/json; charset=utf-8")
+            .body(Body::from(r#"{"query": "{ add(a: 2, b: 3) }"}"#))
+            .unwrap_or_else(|e| panic!("cannot build `Request`: {e}"));
+
+        let expected = JuniperRequest(GraphQLBatchRequest::Single(GraphQLRequest::new(
+            "{ add(a: 2, b: 3) }".to_string(),
+            None,
+            None,
+        )));
+
+        assert_eq!(do_from_request(req).await, expected);
+    }
+
+    #[tokio::test]
     async fn from_graphql_post_request() {
         let req = Request::post("/")
             .header("content-type", "application/graphql")
+            .body(Body::from(r#"{ add(a: 2, b: 3) }"#))
+            .unwrap_or_else(|e| panic!("cannot build `Request`: {e}"));
+
+        let expected = JuniperRequest(GraphQLBatchRequest::Single(GraphQLRequest::new(
+            "{ add(a: 2, b: 3) }".to_string(),
+            None,
+            None,
+        )));
+
+        assert_eq!(do_from_request(req).await, expected);
+    }
+
+    #[tokio::test]
+    async fn from_graphql_post_request_with_charset() {
+        let req = Request::post("/")
+            .header("content-type", "application/graphql; charset=utf-8")
             .body(Body::from(r#"{ add(a: 2, b: 3) }"#))
             .unwrap_or_else(|e| panic!("cannot build `Request`: {e}"));
 

@@ -97,12 +97,12 @@ where
     }
 }
 
-impl<'a, S, QueryT, MutationT, SubscriptionT> GraphQLValueAsync<S>
+impl<S, QueryT, MutationT, SubscriptionT> GraphQLValueAsync<S>
     for RootNode<QueryT, MutationT, SubscriptionT, S>
 where
     QueryT: GraphQLTypeAsync<S>,
     QueryT::TypeInfo: Sync,
-    QueryT::Context: Sync + 'a,
+    QueryT::Context: Sync,
     MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
     MutationT::TypeInfo: Sync,
     SubscriptionT: GraphQLType<S, Context = QueryT::Context> + Sync,

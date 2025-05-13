@@ -82,7 +82,7 @@ impl<N: AsRef<str>> Type<N> {
 ///
 /// Lists and objects variants are _spanned_, i.e. they contain a reference to
 /// their position in the source file, if available.
-#[allow(missing_docs)]
+#[expect(missing_docs, reason = "self-explanatory")]
 #[derive(Clone, Debug, PartialEq)]
 pub enum InputValue<S = DefaultScalarValue> {
     Null,
@@ -147,8 +147,8 @@ pub struct InlineFragment<'a, S> {
 ///   }
 /// }
 /// ```
+#[expect(missing_docs, reason = "self-explanatory")]
 #[derive(Clone, Debug, PartialEq)]
-#[allow(missing_docs)]
 pub enum Selection<'a, S = DefaultScalarValue> {
     Field(Spanning<Field<'a, S>>),
     FragmentSpread(Spanning<FragmentSpread<'a, S>>),
@@ -161,7 +161,7 @@ pub struct Directive<'a, S> {
     pub arguments: Option<Spanning<Arguments<'a, S>>>,
 }
 
-#[allow(missing_docs)]
+#[expect(missing_docs, reason = "self-explanatory")]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum OperationType {
     Query,
@@ -169,7 +169,7 @@ pub enum OperationType {
     Subscription,
 }
 
-#[allow(missing_docs)]
+#[expect(missing_docs, reason = "self-explanatory")]
 #[derive(Clone, Debug, PartialEq)]
 pub struct Operation<'a, S> {
     pub operation_type: OperationType,

@@ -9,7 +9,7 @@ use futures::{
 };
 use juniper::{GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue};
 use juniper_graphql_ws::{graphql_transport_ws, graphql_ws};
-use warp::{filters::BoxedFilter, reply::Reply, Filter as _};
+use warp::{Filter as _, filters::BoxedFilter, reply::Reply};
 
 struct Message(warp::ws::Message);
 
@@ -202,7 +202,7 @@ where
             let is_legacy = subproto == "graphql-ws";
 
             warp::reply::with_header(
-                ws.on_upgrade(move |ws| async move {
+                ws.on_upgrade(async move |ws| {
                     if is_legacy {
                         serve_graphql_ws(ws, schema, init).await
                     } else {
@@ -232,8 +232,8 @@ where
 /// an authentication based on the parameters provided by a client.
 ///
 /// > __WARNING__: This protocol has been deprecated in favor of the
-///                [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new], which is
-///                provided by the [`serve_graphql_transport_ws()`] function.
+/// >              [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new], which is
+/// >              provided by the [`serve_graphql_transport_ws()`] function.
 ///
 /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
 /// [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md

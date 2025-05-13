@@ -2,7 +2,7 @@
 //! See [#500](https://github.com/graphql-rust/juniper/issues/500) for details.
 
 use juniper::{
-    graphql_object, graphql_vars, EmptyMutation, EmptySubscription, Executor, ScalarValue,
+    EmptyMutation, EmptySubscription, Executor, ScalarValue, graphql_object, graphql_vars,
 };
 
 struct Query;

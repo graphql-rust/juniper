@@ -1,18 +1,17 @@
-#![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![deny(missing_docs)]
-#![deny(warnings)]
+#![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
+#![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
 
 use actix_web::{
-    error::JsonPayloadError, http::Method, web, Error, FromRequest, HttpMessage, HttpRequest,
-    HttpResponse,
+    Error, FromRequest, HttpMessage, HttpRequest, HttpResponse, error::JsonPayloadError,
+    http::Method, web,
 };
 use juniper::{
-    http::{
-        graphiql::graphiql_source, playground::playground_source, GraphQLBatchRequest,
-        GraphQLRequest,
-    },
     ScalarValue,
+    http::{
+        GraphQLBatchRequest, GraphQLRequest, graphiql::graphiql_source,
+        playground::playground_source,
+    },
 };
 use serde::Deserialize;
 
@@ -170,12 +169,13 @@ pub mod subscriptions {
     use std::{fmt, pin::pin, sync::Arc};
 
     use actix_web::{
+        HttpRequest, HttpResponse,
         http::header::{HeaderName, HeaderValue},
-        web, HttpRequest, HttpResponse,
+        web,
     };
-    use futures::{future, SinkExt as _, StreamExt as _};
+    use futures::{SinkExt as _, StreamExt as _, future};
     use juniper::{GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue};
-    use juniper_graphql_ws::{graphql_transport_ws, graphql_ws, ArcSchema, Init};
+    use juniper_graphql_ws::{ArcSchema, Init, graphql_transport_ws, graphql_ws};
 
     /// Serves by auto-selecting between the
     /// [legacy `graphql-ws` GraphQL over WebSocket Protocol][old] and the
@@ -230,8 +230,8 @@ pub mod subscriptions {
     /// an authentication based on the parameters provided by a client.
     ///
     /// > __WARNING__: This protocol has been deprecated in favor of the
-    ///                [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new], which is
-    ///                provided by the [`graphql_transport_ws_handler()`] function.
+    /// >              [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new], which is
+    /// >              provided by the [`graphql_transport_ws_handler()`] function.
     ///
     /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
     /// [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
@@ -445,18 +445,18 @@ mod tests {
 
     use actix_http::body::MessageBody;
     use actix_web::{
+        App,
         dev::ServiceResponse,
         http,
         http::header::{ACCEPT, CONTENT_TYPE},
         test::{self, TestRequest},
         web::Data,
-        App,
     };
     use futures::future;
     use juniper::{
-        http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
-        tests::fixtures::starwars::schema::{Database, Query},
         EmptyMutation, EmptySubscription, RootNode,
+        http::tests::{HttpIntegration, TestResponse, run_http_test_suite},
+        tests::fixtures::starwars::schema::{Database, Query},
     };
 
     use super::*;
@@ -525,8 +525,8 @@ mod tests {
             "text/html; charset=utf-8"
         );
         let body = take_response_body_string(resp).await;
-        assert!(body.contains("var JUNIPER_URL = '/dogs-api/graphql';"));
-        assert!(body.contains("var JUNIPER_SUBSCRIPTIONS_URL = '/dogs-api/subscriptions';"))
+        assert!(body.contains("const JUNIPER_URL = '/dogs-api/graphql';"));
+        assert!(body.contains("const JUNIPER_SUBSCRIPTIONS_URL = '/dogs-api/subscriptions';"))
     }
 
     #[actix_web::rt::test]
@@ -640,8 +640,8 @@ mod tests {
     #[actix_web::rt::test]
     async fn batch_request_works() {
         use juniper::{
-            tests::fixtures::starwars::schema::{Database, Query},
             EmptyMutation, EmptySubscription, RootNode,
+            tests::fixtures::starwars::schema::{Database, Query},
         };
 
         let schema: Schema = RootNode::new(
@@ -765,12 +765,12 @@ mod tests {
 mod subscription_tests {
     use actix_http::ws;
     use actix_test::start;
-    use actix_web::{web, App, Error, HttpRequest, HttpResponse};
+    use actix_web::{App, Error, HttpRequest, HttpResponse, web};
     use juniper::{
-        futures::{SinkExt, StreamExt},
-        http::tests::{graphql_transport_ws, graphql_ws, WsIntegration, WsIntegrationMessage},
-        tests::fixtures::starwars::schema::{Database, Query, Subscription},
         EmptyMutation, LocalBoxFuture,
+        futures::{SinkExt, StreamExt},
+        http::tests::{WsIntegration, WsIntegrationMessage, graphql_transport_ws, graphql_ws},
+        tests::fixtures::starwars::schema::{Database, Query, Subscription},
     };
     use juniper_graphql_ws::ConnectionConfig;
     use tokio::time::timeout;

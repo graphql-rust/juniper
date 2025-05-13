@@ -1,17 +1,17 @@
 use std::sync::Arc;
 
 use axum::{
+    Extension, Router,
     body::Body,
     http::Request,
     response::Response,
     routing::{get, post},
-    Extension, Router,
 };
 use futures::TryStreamExt as _;
 use juniper::{
-    http::tests::{run_http_test_suite, HttpIntegration, TestResponse},
-    tests::fixtures::starwars::schema::{Database, Query},
     EmptyMutation, EmptySubscription, RootNode,
+    http::tests::{HttpIntegration, TestResponse, run_http_test_suite},
+    tests::fixtures::starwars::schema::{Database, Query},
 };
 use juniper_axum::{extract::JuniperRequest, response::JuniperResponse};
 use tower_service::Service as _;

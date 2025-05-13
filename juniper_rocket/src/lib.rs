@@ -1,20 +1,33 @@
-#![doc = include_str!("../README.md")]
+#![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
+#![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
+
+// TODO: Try remove on upgrade of `rocket` crate.
+mod for_minimal_versions_check_only {
+    use either as _;
+    use inlinable_string as _;
+    use pear as _;
+    use tempfile as _;
+}
+#[cfg(test)]
+mod for_tests_only {
+    use futures as _;
+}
 
 use std::{borrow::Cow, io::Cursor};
 
 use rocket::{
+    Data, Request,
     data::{self, FromData, ToByteUnit},
-    form::{error::ErrorKind, DataField, Error, Errors, FromForm, Options, ValueField},
+    form::{DataField, Error, Errors, FromForm, Options, ValueField, error::ErrorKind},
     http::{ContentType, Status},
     outcome::Outcome,
-    response::{self, content::RawHtml, Responder, Response},
-    Data, Request,
+    response::{self, Responder, Response, content::RawHtml},
 };
 
 use juniper::{
-    http::{self, GraphQLBatchRequest},
     DefaultScalarValue, FieldError, GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync,
     InputValue, RootNode, ScalarValue,
+    http::{self, GraphQLBatchRequest},
 };
 
 /// Simple wrapper around an incoming GraphQL request.
@@ -246,6 +259,7 @@ impl GraphQLResponse {
     }
 }
 
+/// [`FromForm::Context`] of a [`GraphQLRequest`].
 pub struct GraphQLContext<'f, S: ScalarValue> {
     opts: Options,
     query: Option<String>,
@@ -254,7 +268,7 @@ pub struct GraphQLContext<'f, S: ScalarValue> {
     errors: Errors<'f>,
 }
 
-impl<'f, S: ScalarValue> GraphQLContext<'f, S> {
+impl<S: ScalarValue> GraphQLContext<'_, S> {
     fn query(&mut self, value: String) {
         if self.query.is_some() {
             let error = Error::from(ErrorKind::Duplicate).with_name("query");
@@ -423,9 +437,9 @@ impl<'r, 'o: 'r> Responder<'r, 'o> for GraphQLResponse {
 mod fromform_tests {
     use std::borrow::Cow;
 
-    use juniper::{http, InputValue};
+    use juniper::{InputValue, http};
     use rocket::{
-        form::{error::ErrorKind, Error, Errors, Form, Strict},
+        form::{Error, Errors, Form, Strict, error::ErrorKind},
         http::RawStr,
     };
 
@@ -518,10 +532,12 @@ mod fromform_tests {
     fn variables_invalid_json() {
         check_error(
             "query=test&variables=NOT_JSON",
-            vec![Error::from(ErrorKind::Validation(Cow::Owned(
-                "expected value at line 1 column 1".into(),
-            )))
-            .with_name("variables")],
+            vec![
+                Error::from(ErrorKind::Validation(Cow::Owned(
+                    "expected value at line 1 column 1".into(),
+                )))
+                .with_name("variables"),
+            ],
             false,
         );
     }

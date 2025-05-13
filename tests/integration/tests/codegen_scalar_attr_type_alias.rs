@@ -6,17 +6,16 @@ use std::fmt;
 
 use chrono::{DateTime, TimeZone, Utc};
 use juniper::{
-    execute, graphql_object, graphql_scalar, graphql_value, graphql_vars, InputValue,
-    ParseScalarResult, ParseScalarValue, ScalarToken, ScalarValue, Value,
+    InputValue, ParseScalarResult, ParseScalarValue, ScalarToken, ScalarValue, Value, execute,
+    graphql_object, graphql_scalar, graphql_value, graphql_vars,
 };
 
 use self::common::{
-    util::{schema, schema_with_scalar},
     MyScalarValue,
+    util::{schema, schema_with_scalar},
 };
 
 // Override `std::prelude` items to check whether macros expand hygienically.
-#[allow(unused_imports)]
 use self::common::hygiene::*;
 
 mod all_custom_resolvers {

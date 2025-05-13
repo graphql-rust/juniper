@@ -1,17 +1,17 @@
-#![doc = include_str!("../README.md")]
-#![deny(missing_docs)]
-#![deny(warnings)]
+#![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
+#![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
+#![warn(missing_docs)]
 
 use std::{
     pin::Pin,
     task::{self, Poll},
 };
 
-use futures::{future, stream, FutureExt as _, Stream, StreamExt as _, TryFutureExt as _};
+use futures::{FutureExt as _, Stream, StreamExt as _, TryFutureExt as _, future, stream};
 use juniper::{
-    http::GraphQLRequest, BoxFuture, ExecutionError, ExecutionOutput, GraphQLError,
-    GraphQLSubscriptionType, GraphQLTypeAsync, Object, ScalarValue, SubscriptionConnection,
-    SubscriptionCoordinator, Value, ValuesStream,
+    BoxFuture, ExecutionError, ExecutionOutput, GraphQLError, GraphQLSubscriptionType,
+    GraphQLTypeAsync, Object, ScalarValue, SubscriptionConnection, SubscriptionCoordinator, Value,
+    ValuesStream, http::GraphQLRequest,
 };
 
 /// Simple [`SubscriptionCoordinator`] implementation:
@@ -110,11 +110,8 @@ where
 {
     type Item = ExecutionOutput<S>;
 
-    fn poll_next(self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> Poll<Option<Self::Item>> {
-        // this is safe as stream is only mutated here and is not moved anywhere
-        let Connection { stream } = unsafe { self.get_unchecked_mut() };
-        let stream = unsafe { Pin::new_unchecked(stream) };
-        stream.poll_next(cx)
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> Poll<Option<Self::Item>> {
+        self.stream.as_mut().poll_next(cx)
     }
 }
 
@@ -244,10 +241,10 @@ where
 mod whole_responses_stream {
     use std::task::Poll;
 
-    use futures::{stream, StreamExt as _};
+    use futures::{StreamExt as _, stream};
     use juniper::{
-        graphql_value, DefaultScalarValue, ExecutionError, ExecutionOutput, FieldError, Object,
-        Value, ValuesStream,
+        DefaultScalarValue, ExecutionError, ExecutionOutput, FieldError, Object, Value,
+        ValuesStream, graphql_value,
     };
 
     use super::whole_responses_stream;

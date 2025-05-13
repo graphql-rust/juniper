@@ -1,14 +1,14 @@
 use std::fmt;
 
 use juniper::ScalarValue;
-use serde::{de, Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, de};
 
 /// Common utilities used across tests.
 pub mod util {
     use futures::StreamExt as _;
     use juniper::{
-        graphql_value, DefaultScalarValue, EmptyMutation, EmptySubscription, ExecutionError,
-        GraphQLError, GraphQLType, RootNode, ScalarValue, Value, ValuesStream,
+        DefaultScalarValue, EmptyMutation, EmptySubscription, ExecutionError, GraphQLError,
+        GraphQLType, RootNode, ScalarValue, Value, ValuesStream, graphql_value,
     };
 
     pub fn schema<C, Q>(query_root: Q) -> RootNode<Q, EmptyMutation<C>, EmptySubscription<C>>
@@ -49,7 +49,7 @@ pub mod util {
     /// If the `input` [`Value`] doesn't represent a [`Value::Object`] containing a [`Stream`].
     ///
     /// [`Stream`]: futures::Stream
-    #[allow(clippy::type_complexity)]
+    #[expect(clippy::type_complexity, reason = "okay for tests")]
     pub async fn extract_next<S: ScalarValue>(
         input: Result<(Value<ValuesStream<'_, S>>, Vec<ExecutionError<S>>), GraphQLError>,
     ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError> {
@@ -92,7 +92,7 @@ impl<'de> Deserialize<'de> for MyScalarValue {
     fn deserialize<D: Deserializer<'de>>(de: D) -> Result<Self, D::Error> {
         struct Visitor;
 
-        impl<'de> de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = MyScalarValue;
 
             fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

@@ -6,6 +6,20 @@ All user visible changes to `juniper_hyper` crate will be documented in this fil
 
 
 
+## master
+
+### BC Breaks
+
+- Bumped up [MSRV] to 1.85. ([#1263], [todo])
+- Made `hyper::Request` in `graphql()` and `graphql_sync()` functions generic over `B: hyper::body::Body`. ([#1263], [#1102])
+
+[#1102]: /../../issues/1102
+[#1263]: /../../pull/1263
+[todo]: /../../commit/todo
+
+
+
+
 ## [0.9.0] · 2024-03-20
 [0.9.0]: /../../tree/juniper_hyper-v0.9.0/juniper_hyper
 
@@ -31,4 +45,5 @@ See [old CHANGELOG](/../../blob/juniper_hyper-v0.8.0/juniper_hyper/CHANGELOG.md)
 
 [`juniper` crate]: https://docs.rs/juniper
 [`hyper` crate]: https://docs.rs/hyper
+[MSRV]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field
 [Semantic Versioning 2.0.0]: https://semver.org

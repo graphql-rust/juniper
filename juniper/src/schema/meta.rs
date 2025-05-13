@@ -5,12 +5,12 @@ use std::{borrow::ToOwned, fmt};
 use arcstr::ArcStr;
 
 use crate::{
+    FieldError, IntoFieldError,
     ast::{FromInputValue, InputValue, Type},
     parser::{ParseError, ScalarToken},
     schema::model::SchemaType,
     types::base::TypeKind,
     value::{DefaultScalarValue, ParseScalarValue},
-    FieldError, IntoFieldError,
 };
 
 /// Whether an item is deprecated, with context.

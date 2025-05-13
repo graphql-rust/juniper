@@ -1,6 +1,6 @@
-#![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
-#![deny(missing_docs, warnings)]
+#![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
+#![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
 
 #[cfg(not(any(feature = "graphql-transport-ws", feature = "graphql-ws")))]
 compile_error!(
@@ -15,12 +15,7 @@ mod schema;
 mod server_message;
 mod util;
 
-use std::{
-    convert::Infallible,
-    error::Error,
-    future::{self, Future},
-    time::Duration,
-};
+use std::{convert::Infallible, error::Error, future, time::Duration};
 
 use juniper::{ScalarValue, Variables};
 

@@ -1,3 +1,5 @@
+//! Tests for codegen compilation errors.
+
 // TODO: [Object] Type Validation: §4 (interfaces) for objects
 // TODO: [Non-Null] §1 A Non‐Null type must not wrap another Non‐Null type.
 

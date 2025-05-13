@@ -1,11 +1,11 @@
 //! [`JuniperResponse`] definition.
 
 use axum::{
+    Json,
     http::StatusCode,
     response::{IntoResponse, Response},
-    Json,
 };
-use juniper::{http::GraphQLBatchResponse, DefaultScalarValue, ScalarValue};
+use juniper::{DefaultScalarValue, ScalarValue, http::GraphQLBatchResponse};
 
 /// Wrapper around a [`GraphQLBatchResponse`], implementing [`IntoResponse`], so it can be returned
 /// from [`axum`] handlers.

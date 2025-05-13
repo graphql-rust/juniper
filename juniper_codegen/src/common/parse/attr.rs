@@ -4,7 +4,7 @@
 use proc_macro2::{Span, TokenStream};
 use syn::parse_quote;
 
-use crate::common::{path_eq_single, AttrNames};
+use crate::common::{AttrNames, path_eq_single};
 
 /// Prepends the given `attrs` collection with a new [`syn::Attribute`] generated from the given
 /// `attr_path` and `attr_args`.

@@ -107,6 +107,7 @@ jobs:
           - { feature: chrono-clock, crate: juniper }
           - { feature: chrono-tz, crate: juniper }
           - { feature: expose-test-schema, crate: juniper }
+          - { feature: jiff, crate: juniper }
           - { feature: rust_decimal, crate: juniper }
           - { feature: schema-language, crate: juniper }
           - { feature: time, crate: juniper }
@@ -144,7 +145,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        msrv: ["1.73.0"]
+        msrv: ["1.85.0"]
         crate:
           - juniper_codegen
           - juniper
@@ -172,10 +173,6 @@ jobs:
       - run: cargo +nightly update -Z minimal-versions
 
       - run: make test.cargo crate=${{ matrix.crate }}
-        if: ${{ matrix.crate != 'juniper_actix' }}
-      # TODO: Remove once MSRV bumps up >=1.75.
-      - run: cargo check -p ${{ matrix.crate }} --all-features
-        if: ${{ matrix.crate == 'juniper_actix' }}
 
   package:
     name: check (package)
@@ -273,9 +270,10 @@ jobs:
       matrix:
         crate:
           - juniper
+          - juniper_axum
         target:
           - wasm32-unknown-unknown
-          - wasm32-wasi
+          - wasm32-wasip1
         toolchain:
           - stable
           - beta
@@ -288,10 +286,13 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
           target: ${{ matrix.target }}
 
+      - name: Switch Cargo workspace to `resolver = "2"`
+        run: sed -i 's/resolver = "1"/resolver = "2"/' Cargo.toml
+
       - run: cargo check --target ${{ matrix.target }} -p ${{ matrix.crate }}
-                   ${{ matrix.target == 'wasm32-unknown-unknown'
-                       && '--features js'
-                       || '' }}
+                   ${{ (matrix.crate == 'juniper' && matrix.target == 'wasm32-unknown-unknown')
+                    && '--features js'
+                    || '' }}
 
 
 

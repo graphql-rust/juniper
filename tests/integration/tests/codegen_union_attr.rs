@@ -3,14 +3,13 @@
 pub mod common;
 
 use juniper::{
-    execute, graphql_object, graphql_union, graphql_value, graphql_vars, DefaultScalarValue,
-    GraphQLObject, ScalarValue,
+    DefaultScalarValue, GraphQLObject, ScalarValue, execute, graphql_object, graphql_union,
+    graphql_value, graphql_vars,
 };
 
 use self::common::util::{schema, schema_with_scalar};
 
 // Override `std::prelude` items to check whether macros expand hygienically.
-#[allow(unused_imports)]
 use self::common::hygiene::*;
 
 #[derive(GraphQLObject)]
@@ -998,6 +997,7 @@ mod inferred_custom_context {
 mod ignored_method {
     use super::*;
 
+    #[expect(dead_code, reason = "GraphQL schema testing")]
     #[graphql_union]
     trait Character {
         fn as_human(&self) -> prelude::Option<&Human> {
@@ -1096,7 +1096,7 @@ mod external_resolver {
 
     type DynCharacter<'a> = dyn Character + prelude::Send + prelude::Sync + 'a;
 
-    impl<'a> DynCharacter<'a> {
+    impl DynCharacter<'_> {
         fn as_droid<'db>(&self, db: &'db Database) -> prelude::Option<&'db Droid> {
             db.droid.as_ref()
         }
@@ -1180,6 +1180,7 @@ mod full_featured {
     use super::*;
 
     /// Rust doc.
+    #[expect(dead_code, reason = "GraphQL schema testing")]
     #[graphql_union(name = "MyChar")]
     #[graphql_union(description = "My character.")]
     #[graphql_union(context = CustomContext, scalar = DefaultScalarValue)]

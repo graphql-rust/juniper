@@ -30,14 +30,14 @@ use std::fmt::Debug;
 
 use crate::{
     ast::Document,
-    validation::{visit, MultiVisitorNil, ValidatorContext},
+    validation::{MultiVisitorNil, ValidatorContext, visit},
     value::ScalarValue,
 };
 
 #[doc(hidden)]
-pub fn visit_all_rules<'a, S: Debug>(ctx: &mut ValidatorContext<'a, S>, doc: &'a Document<S>)
+pub fn visit_all_rules<'a, S>(ctx: &mut ValidatorContext<'a, S>, doc: &'a Document<S>)
 where
-    S: ScalarValue,
+    S: Debug + ScalarValue,
 {
     // Some validators are depending on the results of other ones.
     // For example, validators checking fragments usually rely on the fact that
@@ -81,9 +81,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::{parser::SourcePosition, DefaultScalarValue};
+    use crate::{DefaultScalarValue, parser::SourcePosition};
 
-    use crate::validation::{expect_fails_fn, RuleError};
+    use crate::validation::{RuleError, expect_fails_fn};
 
     #[test]
     fn handles_recursive_fragments() {

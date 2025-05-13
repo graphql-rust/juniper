@@ -1,4 +1,5 @@
 use crate::{
+    Span,
     ast::{
         Directive, Document, Field, Fragment, FragmentSpread, InlineFragment, InputValue,
         Operation, Selection, VariableDefinition,
@@ -6,7 +7,6 @@ use crate::{
     parser::Spanning,
     validation::{ValidatorContext, Visitor},
     value::ScalarValue,
-    Span,
 };
 
 #[doc(hidden)]
@@ -28,7 +28,7 @@ impl<A, B> MultiVisitorCons<A, B> {
     }
 }
 
-impl<'a, S> Visitor<'a, S> for MultiVisitorNil where S: ScalarValue {}
+impl<S> Visitor<'_, S> for MultiVisitorNil where S: ScalarValue {}
 
 impl<'a, A, B, S> Visitor<'a, S> for MultiVisitorCons<A, B>
 where

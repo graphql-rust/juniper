@@ -345,7 +345,7 @@ fn is_absent_or_null<S>(v: Option<&InputValue<S>>) -> bool
 where
     S: ScalarValue,
 {
-    v.map_or(true, InputValue::is_null)
+    v.is_none_or(InputValue::is_null)
 }
 
 fn unification_error(
@@ -360,7 +360,7 @@ fn unification_error(
     )
 }
 
-impl<'a> fmt::Display for Path<'a> {
+impl fmt::Display for Path<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Path::Root => write!(f, ""),

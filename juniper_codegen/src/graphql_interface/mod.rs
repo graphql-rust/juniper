@@ -8,7 +8,7 @@ pub mod derive;
 use std::collections::HashSet;
 
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote, quote_spanned, ToTokens};
+use quote::{ToTokens, format_ident, quote, quote_spanned};
 use syn::{
     ext::IdentExt as _,
     parse::{Parse, ParseStream},
@@ -20,12 +20,12 @@ use syn::{
 };
 
 use crate::common::{
-    field, filter_attrs, gen,
+    AttrNames, Description, SpanContainer, field, filter_attrs, generate,
     parse::{
-        attr::{err, OptionExt as _},
         GenericsExt as _, ParseBufferExt as _,
+        attr::{OptionExt as _, err},
     },
-    rename, scalar, AttrNames, Description, SpanContainer,
+    rename, scalar,
 };
 
 /// Returns [`syn::Ident`]s for a generic enum deriving [`Clone`] and [`Copy`]
@@ -401,7 +401,7 @@ impl Definition {
 
         let enum_gens = {
             let mut enum_gens = interface_gens.clone();
-            enum_gens.params = interface_gens_lifetimes.clone();
+            enum_gens.params.clone_from(&interface_gens_lifetimes);
             enum_gens.params.extend(variant_gens_pars.clone());
             enum_gens.params.extend(interface_gens_tys.clone());
             enum_gens
@@ -1221,7 +1221,7 @@ impl Definition {
     /// [1]: Self::implementers
     #[must_use]
     fn method_resolve_into_type_async_tokens(&self) -> TokenStream {
-        let resolving_code = gen::async_resolving_code(None);
+        let resolving_code = generate::async_resolving_code(None);
 
         let match_arms = self.implemented_for.iter().filter_map(|ty| {
             ty.path.segments.last().map(|ident| {
@@ -1254,7 +1254,7 @@ impl Definition {
     /// [1]: Self::implementers
     #[must_use]
     fn method_resolve_into_type_tokens(&self) -> TokenStream {
-        let resolving_code = gen::sync_resolving_code();
+        let resolving_code = generate::sync_resolving_code();
 
         let match_arms = self.implemented_for.iter().filter_map(|ty| {
             ty.path.segments.last().map(|ident| {
