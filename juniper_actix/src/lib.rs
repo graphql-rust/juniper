@@ -454,7 +454,7 @@ mod tests {
     };
     use futures::future;
     use juniper::{
-        EmptyMutation, EmptySubscription, RootNode,
+        EmptyMutation, EmptySubscription,
         http::tests::{HttpIntegration, TestResponse, run_http_test_suite},
         tests::fixtures::starwars::schema::{Database, Query},
     };
@@ -571,7 +571,7 @@ mod tests {
 
     #[actix_web::rt::test]
     async fn graphql_post_works_json_post() {
-        let schema: Schema = RootNode::new(
+        let schema = Schema::new(
             Query,
             EmptyMutation::<Database>::new(),
             EmptySubscription::<Database>::new(),
@@ -606,7 +606,7 @@ mod tests {
 
     #[actix_web::rt::test]
     async fn graphql_get_works() {
-        let schema: Schema = RootNode::new(
+        let schema = Schema::new(
             Query,
             EmptyMutation::<Database>::new(),
             EmptySubscription::<Database>::new(),
@@ -640,11 +640,11 @@ mod tests {
     #[actix_web::rt::test]
     async fn batch_request_works() {
         use juniper::{
-            EmptyMutation, EmptySubscription, RootNode,
+            EmptyMutation, EmptySubscription,
             tests::fixtures::starwars::schema::{Database, Query},
         };
 
-        let schema: Schema = RootNode::new(
+        let schema = Schema::new(
             Query,
             EmptyMutation::<Database>::new(),
             EmptySubscription::<Database>::new(),
