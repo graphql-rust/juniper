@@ -254,7 +254,7 @@ impl Subscription {
 </span><span class="boring">    }
 </span><span class="boring">}
 </span><span class="boring">
-</span>type Schema = RootNode&lt;'static, Query, EmptyMutation&lt;Database&gt;, Subscription&gt;;
+</span>type Schema = RootNode&lt;Query, EmptyMutation&lt;Database&gt;, Subscription&gt;;
 
 fn schema() -&gt; Schema {
     Schema::new(Query, EmptyMutation::new(), Subscription)

@@ -202,7 +202,7 @@ impl Mutation {
 </span>    }
 }
 
-type Schema = RootNode&lt;'static, Query, Mutation, EmptySubscription&gt;;
+type Schema = RootNode&lt;Query, Mutation, EmptySubscription&gt;;
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
@@ -273,7 +273,7 @@ impl Query {
    }
 }
 
-type Schema = RootNode&lt;'static, Query, EmptyMutation, EmptySubscription&gt;;
+type Schema = RootNode&lt;Query, EmptyMutation, EmptySubscription&gt;;
 
 fn main() {
     // Run the built-in introspection query.
