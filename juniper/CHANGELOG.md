@@ -64,6 +64,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
         - Made `name()` method returning `ArcStr`.
     - `GraphQLValue`:
         - Made `type_name()` method returning `ArcStr`.
+- Switched `ParseError::UnexpectedToken` to `compact_str::CompactString` instead of `smartstring::SmartString`. ([todo])
 
 ### Added
 
@@ -77,6 +78,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - `jiff::tz::Offset` as `UtcOffset` scalar.
     - `jiff::Span` as `Duration` scalar.
 - `http::GraphQLResponse::into_result()` method. ([#1293])
+- `String` scalar implementation for `compact_str::CompactString`. ([todo])
 
 ### Changed
 
@@ -103,6 +105,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1318]: /../../pull/1318
 [#1319]: /../../pull/1319
 [1b1fc618]: /../../commit/1b1fc61879ffdd640d741e187dc20678bf7ab295
+[todo]: /../../commit/todo
 
 
 

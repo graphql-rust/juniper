@@ -207,6 +207,26 @@ mod impl_arcstr_scalar {
     }
 }
 
+#[graphql_scalar]
+#[graphql(name = "String", with = impl_compactstring_scalar, parse_token(String))]
+type CompactString = compact_str::CompactString;
+
+mod impl_compactstring_scalar {
+    use crate::{InputValue, ScalarValue, Value};
+
+    use super::CompactString;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &CompactString) -> Value<S> {
+        Value::scalar(v.to_string())
+    }
+
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<CompactString, String> {
+        v.as_string_value()
+            .map(Into::into)
+            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+    }
+}
+
 impl<S> reflect::WrappedType<S> for str {
     const VALUE: reflect::WrappedValue = 1;
 }

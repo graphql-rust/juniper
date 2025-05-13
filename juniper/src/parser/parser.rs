@@ -1,6 +1,6 @@
 use std::{error::Error, fmt};
 
-use smartstring::alias::String;
+use compact_str::{CompactString, format_compact};
 
 use crate::parser::{Lexer, LexerError, Spanning, Token};
 
@@ -10,7 +10,7 @@ pub enum ParseError {
     /// An unexpected token occurred in the source
     // TODO: Previously was `Token<'a>`.
     //       Revisit on `graphql-parser` integration.
-    UnexpectedToken(String),
+    UnexpectedToken(CompactString),
 
     /// The input source abruptly ended
     UnexpectedEndOfFile,
@@ -48,14 +48,7 @@ impl ParseError {
     /// Creates a [`ParseError::UnexpectedToken`] out of the provided [`Token`].
     #[must_use]
     pub fn unexpected_token(token: Token<'_>) -> Self {
-        use std::fmt::Write as _;
-
-        let mut s = String::new();
-        // PANIC: Unwrapping is OK here, as it may panic only on allocation
-        //        error.
-        write!(s, "{token}").unwrap();
-
-        Self::UnexpectedToken(s)
+        Self::UnexpectedToken(format_compact!("{token}"))
     }
 }
 
