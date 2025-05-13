@@ -18,7 +18,7 @@ use tokio::{
 };
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async, tungstenite::Message};
 
-type Schema = RootNode<'static, Query, EmptyMutation<Database>, Subscription>;
+type Schema = RootNode<Query, EmptyMutation<Database>, Subscription>;
 
 #[derive(Clone)]
 struct TestApp(Router);

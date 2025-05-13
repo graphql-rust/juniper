@@ -177,7 +177,7 @@ impl From<Infallible> for Error {
 /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
 /// [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
 pub fn make_ws_filter<Query, Mutation, Subscription, CtxT, S, I>(
-    schema: impl Into<Arc<RootNode<'static, Query, Mutation, Subscription, S>>>,
+    schema: impl Into<Arc<RootNode<Query, Mutation, Subscription, S>>>,
     init: I,
 ) -> BoxedFilter<(impl Reply,)>
 where
@@ -239,7 +239,7 @@ where
 /// [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
 pub async fn serve_graphql_ws<Query, Mutation, Subscription, CtxT, S, I>(
     websocket: warp::ws::WebSocket,
-    root_node: Arc<RootNode<'static, Query, Mutation, Subscription, S>>,
+    root_node: Arc<RootNode<Query, Mutation, Subscription, S>>,
     init: I,
 ) -> Result<(), Error>
 where
@@ -286,7 +286,7 @@ where
 /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
 pub async fn serve_graphql_transport_ws<Query, Mutation, Subscription, CtxT, S, I>(
     websocket: warp::ws::WebSocket,
-    root_node: Arc<RootNode<'static, Query, Mutation, Subscription, S>>,
+    root_node: Arc<RootNode<Query, Mutation, Subscription, S>>,
     init: I,
 ) -> Result<(), Error>
 where

@@ -85,7 +85,7 @@ where
     }
 }
 
-/// Validates the specified GraphQL literal and returns an error message if the it's invalid.
+/// Validates the specified GraphQL literal and returns an error message if it's invalid.
 pub fn validate_literal_value<S>(
     schema: &SchemaType<S>,
     arg_type: &TypeType<S>,
@@ -155,12 +155,12 @@ where
                             .iter()
                             .filter_map(|f| {
                                 (f.arg_type.is_non_null() && f.default_value.is_none())
-                                    .then_some(&f.name)
+                                    .then_some(f.name.as_str())
                             })
                             .collect::<HashSet<_>>();
 
                         let error_message = obj.iter().find_map(|(key, value)| {
-                            remaining_required_fields.remove(&key.item);
+                            remaining_required_fields.remove(key.item.as_str());
                             validate_object_field(
                                 schema,
                                 arg_type,
@@ -179,7 +179,7 @@ where
                         } else {
                             let missing_fields = remaining_required_fields
                                 .into_iter()
-                                .map(|s| format!("\"{}\"", &**s))
+                                .map(|s| format!("\"{s}\""))
                                 .collect::<Vec<_>>()
                                 .join(", ");
                             Some(error::missing_fields(arg_type, missing_fields))

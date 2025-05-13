@@ -457,18 +457,14 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
             #[automatically_derived]
             impl #impl_generics ::juniper::GraphQLType<#scalar> for #ty #where_clause
             {
-                fn name(
-                    _ : &Self::TypeInfo,
-                ) -> ::core::option::Option<&'static ::core::primitive::str> {
-                    ::core::option::Option::Some(#name)
+                fn name(_ : &Self::TypeInfo) -> ::core::option::Option<::juniper::ArcStr> {
+                    ::core::option::Option::Some(::juniper::arcstr::literal!(#name))
                 }
 
-                fn meta<'r>(
+                fn meta(
                     info: &Self::TypeInfo,
-                    registry: &mut ::juniper::Registry<'r, #scalar>
-                ) -> ::juniper::meta::MetaType<'r, #scalar>
-                where #scalar: 'r,
-                {
+                    registry: &mut ::juniper::Registry<#scalar>,
+                ) -> ::juniper::meta::MetaType<#scalar> {
                     let fields = [
                         #( #fields_meta, )*
                     ];
@@ -785,10 +781,10 @@ impl Definition<Query> {
                 type Context = #context;
                 type TypeInfo = ();
 
-                fn type_name<'__i>(
+                fn type_name(
                     &self,
-                    info: &'__i Self::TypeInfo,
-                ) -> ::core::option::Option<&'__i ::core::primitive::str> {
+                    info: &Self::TypeInfo,
+                ) -> ::core::option::Option<::juniper::ArcStr> {
                     <Self as ::juniper::GraphQLType<#scalar>>::name(info)
                 }
 

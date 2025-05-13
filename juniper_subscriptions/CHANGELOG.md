@@ -10,8 +10,11 @@ All user visible changes to `juniper_subscriptions` crate will be documented in 
 
 ### BC Breaks
 
+- Removed lifetime parameters from `Coordinator`. ([#1247], [#819])
 - Bumped up [MSRV] to 1.85. ([#1272], [todo])
 
+[#819]: /../../issues/819
+[#1247]: /../../pull/1247
 [#1272]: /../../pull/1272
 [todo]: /../../commit/todo
 

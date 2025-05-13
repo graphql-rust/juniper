@@ -25,7 +25,7 @@ impl Query {
     }
 }
 
-type Schema = juniper::RootNode<'static, Query, EmptyMutation, EmptySubscription>;
+type Schema = juniper::RootNode<Query, EmptyMutation, EmptySubscription>;
 
 #[tokio::test]
 async fn error_propagates_same_way() {

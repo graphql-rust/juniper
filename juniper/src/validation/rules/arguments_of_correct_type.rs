@@ -10,7 +10,7 @@ use crate::{
 };
 
 pub struct ArgumentsOfCorrectType<'a, S: fmt::Debug + 'a> {
-    current_args: Option<&'a Vec<Argument<'a, S>>>,
+    current_args: Option<&'a Vec<Argument<S>>>,
 }
 
 pub fn factory<'a, S: fmt::Debug>() -> ArgumentsOfCorrectType<'a, S> {

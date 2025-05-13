@@ -52,12 +52,12 @@ impl Query {
     }
 }
 
-fn scalar_meta<T>(name: &'static str) -> MetaType<'static>
+fn scalar_meta<T>(name: &'static str) -> MetaType
 where
     T: FromInputValue<DefaultScalarValue> + ParseScalarValue<DefaultScalarValue>,
     T::Error: IntoFieldError,
 {
-    MetaType::Scalar(ScalarMeta::new::<T>(name.into()))
+    MetaType::Scalar(ScalarMeta::new::<T>(name))
 }
 
 fn parse_value<S>(s: &str, meta: &MetaType<S>) -> Spanning<InputValue<S>>
@@ -116,7 +116,7 @@ fn input_value_literals() {
         ),
     );
     let values = &[EnumValue::new("enum_value")];
-    let e: EnumMeta<DefaultScalarValue> = EnumMeta::new::<Enum>("TestEnum".into(), values);
+    let e: EnumMeta<DefaultScalarValue> = EnumMeta::new::<Enum>("TestEnum", values);
 
     assert_eq!(
         parse_value::<DefaultScalarValue>("enum_value", &MetaType::Enum(e)),
@@ -176,7 +176,7 @@ fn input_value_literals() {
         Argument::new("key", Type::NonNullNamed("Int".into())),
         Argument::new("other", Type::NonNullNamed("Bar".into())),
     ];
-    let meta = &MetaType::InputObject(InputObjectMeta::new::<Foo>("foo".into(), &fields));
+    let meta = &MetaType::InputObject(InputObjectMeta::new::<Foo>("foo", &fields));
     assert_eq!(
         parse_value::<DefaultScalarValue>("{}", meta),
         Spanning::start_end(

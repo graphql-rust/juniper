@@ -19,7 +19,7 @@ use url::form_urlencoded;
 /// Executes synchronously  the provided GraphQL [`Request`] against the provided `schema` in the
 /// provided `context`, returning the encoded [`Response`].
 pub async fn graphql_sync<CtxT, QueryT, MutationT, SubscriptionT, S, B>(
-    schema: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
+    schema: Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     req: Request<B>,
 ) -> Response<String>
@@ -43,7 +43,7 @@ where
 /// Executes the provided GraphQL [`Request`] against the provided `schema` in the provided
 /// `context`, returning the encoded [`Response`].
 pub async fn graphql<CtxT, QueryT, MutationT, SubscriptionT, S, B>(
-    schema: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
+    schema: Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     req: Request<B>,
 ) -> Response<String>
@@ -182,7 +182,7 @@ where
 }
 
 async fn execute_request_sync<CtxT, QueryT, MutationT, SubscriptionT, S>(
-    schema: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
+    schema: Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     request: GraphQLBatchRequest<S>,
 ) -> Response<String>
@@ -213,7 +213,7 @@ where
 }
 
 async fn execute_request<CtxT, QueryT, MutationT, SubscriptionT, S>(
-    schema: Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
+    schema: Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
     request: GraphQLBatchRequest<S>,
 ) -> Response<String>

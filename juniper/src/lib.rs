@@ -23,6 +23,8 @@ pub use {async_trait::async_trait, futures, serde, static_assertions as sa};
 #[doc(inline)]
 pub use futures::future::{BoxFuture, LocalBoxFuture};
 
+pub use arcstr::{self, ArcStr};
+
 // Depend on juniper_codegen and re-export everything in it.
 // This allows users to just depend on juniper and get the derive
 // functionality automatically.
@@ -198,7 +200,7 @@ where
 pub async fn execute<'a, S, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
     operation_name: Option<&str>,
-    root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &QueryT::Context,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError>
@@ -249,7 +251,7 @@ where
 pub async fn resolve_into_stream<'a, S, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
     operation_name: Option<&str>,
-    root_node: &'a RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &'a QueryT::Context,
 ) -> Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError>

@@ -41,7 +41,7 @@ pub trait Schema: Unpin + Clone + Send + Sync + 'static {
     /// Returns the root node for the schema.
     fn root_node(
         &self,
-    ) -> &RootNode<'static, Self::Query, Self::Mutation, Self::Subscription, Self::ScalarValue>;
+    ) -> &RootNode<Self::Query, Self::Mutation, Self::Subscription, Self::ScalarValue>;
 }
 
 /// This exists as a work-around for this issue: https://github.com/rust-lang/rust/issues/64552
@@ -50,7 +50,7 @@ pub trait Schema: Unpin + Clone + Send + Sync + 'static {
 // TODO: Remove this once that issue is resolved.
 #[doc(hidden)]
 pub struct ArcSchema<QueryT, MutationT, SubscriptionT, CtxT, S>(
-    pub Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>,
+    pub Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>,
 )
 where
     QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
@@ -100,13 +100,13 @@ where
     type SubscriptionTypeInfo = SubscriptionT::TypeInfo;
     type Subscription = SubscriptionT;
 
-    fn root_node(&self) -> &RootNode<'static, QueryT, MutationT, SubscriptionT, S> {
+    fn root_node(&self) -> &RootNode<QueryT, MutationT, SubscriptionT, S> {
         &self.0
     }
 }
 
 impl<QueryT, MutationT, SubscriptionT, CtxT, S> Schema
-    for Arc<RootNode<'static, QueryT, MutationT, SubscriptionT, S>>
+    for Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>
 where
     QueryT: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
     QueryT::TypeInfo: Send + Sync,
@@ -126,7 +126,7 @@ where
     type SubscriptionTypeInfo = SubscriptionT::TypeInfo;
     type Subscription = SubscriptionT;
 
-    fn root_node(&self) -> &RootNode<'static, QueryT, MutationT, SubscriptionT, S> {
+    fn root_node(&self) -> &RootNode<QueryT, MutationT, SubscriptionT, S> {
         self
     }
 }

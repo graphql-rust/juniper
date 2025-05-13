@@ -1,5 +1,7 @@
 use std::mem;
 
+use arcstr::ArcStr;
+
 use crate::{
     FieldError, GraphQLInputObject, IntoFieldError,
     ast::{Document, FromInputValue, InputValue},
@@ -76,17 +78,14 @@ impl<S> GraphQLType<S> for Being
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&'static str> {
-        Some("Being")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(arcstr::literal!("Being"))
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let fields = &[registry
-            .field::<Option<String>>("name", i)
-            .argument(registry.arg::<Option<bool>>("surname", i))];
+            .field::<Option<String>>(arcstr::literal!("name"), i)
+            .argument(registry.arg::<Option<bool>>(arcstr::literal!("surname"), i))];
 
         registry.build_interface_type::<Self>(i, fields).into_meta()
     }
@@ -99,7 +98,7 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType>::name(info)
     }
 }
@@ -108,17 +107,14 @@ impl<S> GraphQLType<S> for Pet
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&'static str> {
-        Some("Pet")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(arcstr::literal!("Pet"))
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let fields = &[registry
-            .field::<Option<String>>("name", i)
-            .argument(registry.arg::<Option<bool>>("surname", i))];
+            .field::<Option<String>>(arcstr::literal!("name"), i)
+            .argument(registry.arg::<Option<bool>>(arcstr::literal!("surname"), i))];
 
         registry.build_interface_type::<Self>(i, fields).into_meta()
     }
@@ -131,7 +127,7 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType>::name(info)
     }
 }
@@ -140,17 +136,14 @@ impl<S> GraphQLType<S> for Canine
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&'static str> {
-        Some("Canine")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(arcstr::literal!("Canine"))
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let fields = &[registry
-            .field::<Option<String>>("name", i)
-            .argument(registry.arg::<Option<bool>>("surname", i))];
+            .field::<Option<String>>(arcstr::literal!("name"), i)
+            .argument(registry.arg::<Option<bool>>(arcstr::literal!("surname"), i))];
 
         registry.build_interface_type::<Self>(i, fields).into_meta()
     }
@@ -163,7 +156,7 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType>::name(info)
     }
 }
@@ -172,17 +165,14 @@ impl<S> GraphQLType<S> for Unpopulated
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&'static str> {
-        Some("Unpopulated")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(arcstr::literal!("Unpopulated"))
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let fields = &[registry
-            .field::<Option<String>>("name", i)
-            .argument(registry.arg::<Option<bool>>("surname", i))];
+            .field::<Option<String>>(arcstr::literal!("name"), i)
+            .argument(registry.arg::<Option<bool>>(arcstr::literal!("surname"), i))];
 
         registry
             .build_interface_type::<Self>(i, fields)
@@ -198,7 +188,7 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType>::name(info)
     }
 }
@@ -207,14 +197,11 @@ impl<S> GraphQLType<S> for DogCommand
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&'static str> {
-        Some("DogCommand")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(arcstr::literal!("DogCommand"))
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         registry
             .build_enum_type::<Self>(
                 i,
@@ -235,7 +222,7 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType>::name(info)
     }
 }
@@ -260,31 +247,28 @@ impl<S> GraphQLType<S> for Dog
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&'static str> {
-        Some("Dog")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(arcstr::literal!("Dog"))
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let fields = &[
             registry
-                .field::<Option<String>>("name", i)
-                .argument(registry.arg::<Option<bool>>("surname", i)),
-            registry.field::<Option<String>>("nickname", i),
-            registry.field::<Option<i32>>("barkVolume", i),
-            registry.field::<Option<bool>>("barks", i),
+                .field::<Option<String>>(arcstr::literal!("name"), i)
+                .argument(registry.arg::<Option<bool>>(arcstr::literal!("surname"), i)),
+            registry.field::<Option<String>>(arcstr::literal!("nickname"), i),
+            registry.field::<Option<i32>>(arcstr::literal!("barkVolume"), i),
+            registry.field::<Option<bool>>(arcstr::literal!("barks"), i),
             registry
-                .field::<Option<bool>>("doesKnowCommand", i)
-                .argument(registry.arg::<Option<DogCommand>>("dogCommand", i)),
+                .field::<Option<bool>>(arcstr::literal!("doesKnowCommand"), i)
+                .argument(registry.arg::<Option<DogCommand>>(arcstr::literal!("dogCommand"), i)),
             registry
-                .field::<Option<bool>>("isHousetrained", i)
-                .argument(registry.arg_with_default("atOtherHomes", &true, i)),
+                .field::<Option<bool>>(arcstr::literal!("isHousetrained"), i)
+                .argument(registry.arg_with_default(arcstr::literal!("atOtherHomes"), &true, i)),
             registry
-                .field::<Option<bool>>("isAtLocation", i)
-                .argument(registry.arg::<Option<i32>>("x", i))
-                .argument(registry.arg::<Option<i32>>("y", i)),
+                .field::<Option<bool>>(arcstr::literal!("isAtLocation"), i)
+                .argument(registry.arg::<Option<i32>>(arcstr::literal!("x"), i))
+                .argument(registry.arg::<Option<i32>>(arcstr::literal!("y"), i)),
         ];
 
         registry
@@ -305,7 +289,7 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType>::name(info)
     }
 }
@@ -314,14 +298,11 @@ impl<S> GraphQLType<S> for FurColor
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&'static str> {
-        Some("FurColor")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(arcstr::literal!("FurColor"))
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         registry
             .build_enum_type::<Self>(
                 i,
@@ -343,7 +324,7 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType>::name(info)
     }
 }
@@ -369,22 +350,19 @@ impl<S> GraphQLType<S> for Cat
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&'static str> {
-        Some("Cat")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(arcstr::literal!("Cat"))
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let fields = &[
             registry
-                .field::<Option<String>>("name", i)
-                .argument(registry.arg::<Option<bool>>("surname", i)),
-            registry.field::<Option<String>>("nickname", i),
-            registry.field::<Option<bool>>("meows", i),
-            registry.field::<Option<i32>>("meowVolume", i),
-            registry.field::<Option<FurColor>>("furColor", i),
+                .field::<Option<String>>(arcstr::literal!("name"), i)
+                .argument(registry.arg::<Option<bool>>(arcstr::literal!("surname"), i)),
+            registry.field::<Option<String>>(arcstr::literal!("nickname"), i),
+            registry.field::<Option<bool>>(arcstr::literal!("meows"), i),
+            registry.field::<Option<i32>>(arcstr::literal!("meowVolume"), i),
+            registry.field::<Option<FurColor>>(arcstr::literal!("furColor"), i),
         ];
 
         registry
@@ -401,7 +379,7 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType>::name(info)
     }
 }
@@ -410,14 +388,11 @@ impl<S> GraphQLType<S> for CatOrDog
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&'static str> {
-        Some("CatOrDog")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(arcstr::literal!("CatOrDog"))
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let types = &[registry.get_type::<Cat>(i), registry.get_type::<Dog>(i)];
 
         registry.build_union_type::<Self>(i, types).into_meta()
@@ -431,7 +406,7 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType>::name(info)
     }
 }
@@ -440,15 +415,12 @@ impl<S> GraphQLType<S> for Intelligent
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&'static str> {
-        Some("Intelligent")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(arcstr::literal!("Intelligent"))
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
-        let fields = &[registry.field::<Option<i32>>("iq", i)];
+    fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
+        let fields = &[registry.field::<Option<i32>>(arcstr::literal!("iq"), i)];
 
         registry.build_interface_type::<Self>(i, fields).into_meta()
     }
@@ -461,7 +433,7 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType>::name(info)
     }
 }
@@ -470,21 +442,18 @@ impl<S> GraphQLType<S> for Human
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&'static str> {
-        Some("Human")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(arcstr::literal!("Human"))
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let fields = &[
             registry
-                .field::<Option<String>>("name", i)
-                .argument(registry.arg::<Option<bool>>("surname", i)),
-            registry.field::<Option<Vec<Option<Pet>>>>("pets", i),
-            registry.field::<Option<Vec<Human>>>("relatives", i),
-            registry.field::<Option<i32>>("iq", i),
+                .field::<Option<String>>(arcstr::literal!("name"), i)
+                .argument(registry.arg::<Option<bool>>(arcstr::literal!("surname"), i)),
+            registry.field::<Option<Vec<Option<Pet>>>>(arcstr::literal!("pets"), i),
+            registry.field::<Option<Vec<Human>>>(arcstr::literal!("relatives"), i),
+            registry.field::<Option<i32>>(arcstr::literal!("iq"), i),
         ];
         registry
             .build_object_type::<Self>(i, fields)
@@ -503,7 +472,7 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType>::name(info)
     }
 }
@@ -512,20 +481,17 @@ impl<S> GraphQLType<S> for Alien
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&'static str> {
-        Some("Alien")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(arcstr::literal!("Alien"))
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let fields = &[
             registry
-                .field::<Option<String>>("name", i)
-                .argument(registry.arg::<Option<bool>>("surname", i)),
-            registry.field::<Option<i32>>("iq", i),
-            registry.field::<Option<i32>>("numEyes", i),
+                .field::<Option<String>>(arcstr::literal!("name"), i)
+                .argument(registry.arg::<Option<bool>>(arcstr::literal!("surname"), i)),
+            registry.field::<Option<i32>>(arcstr::literal!("iq"), i),
+            registry.field::<Option<i32>>(arcstr::literal!("numEyes"), i),
         ];
 
         registry
@@ -545,7 +511,7 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType>::name(info)
     }
 }
@@ -554,14 +520,11 @@ impl<S> GraphQLType<S> for DogOrHuman
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&'static str> {
-        Some("DogOrHuman")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(arcstr::literal!("DogOrHuman"))
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let types = &[registry.get_type::<Dog>(i), registry.get_type::<Human>(i)];
 
         registry.build_union_type::<Self>(i, types).into_meta()
@@ -575,7 +538,7 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType>::name(info)
     }
 }
@@ -584,14 +547,11 @@ impl<S> GraphQLType<S> for HumanOrAlien
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&'static str> {
-        Some("HumanOrAlien")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(arcstr::literal!("HumanOrAlien"))
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let types = &[registry.get_type::<Human>(i), registry.get_type::<Alien>(i)];
 
         registry.build_union_type::<Self>(i, types).into_meta()
@@ -605,7 +565,7 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType>::name(info)
     }
 }
@@ -614,20 +574,17 @@ impl<S> GraphQLType<S> for ComplexInput
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&'static str> {
-        Some("ComplexInput")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(arcstr::literal!("ComplexInput"))
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let fields = &[
-            registry.arg::<bool>("requiredField", i),
-            registry.arg::<Option<i32>>("intField", i),
-            registry.arg::<Option<String>>("stringField", i),
-            registry.arg::<Option<bool>>("booleanField", i),
-            registry.arg::<Option<Vec<Option<String>>>>("stringListField", i),
+            registry.arg::<bool>(arcstr::literal!("requiredField"), i),
+            registry.arg::<Option<i32>>(arcstr::literal!("intField"), i),
+            registry.arg::<Option<String>>(arcstr::literal!("stringField"), i),
+            registry.arg::<Option<bool>>(arcstr::literal!("booleanField"), i),
+            registry.arg::<Option<Vec<Option<String>>>>(arcstr::literal!("stringListField"), i),
         ];
 
         registry
@@ -643,7 +600,7 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType>::name(info)
     }
 }
@@ -691,59 +648,59 @@ impl<S> GraphQLType<S> for ComplicatedArgs
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&'static str> {
-        Some("ComplicatedArgs")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(arcstr::literal!("ComplicatedArgs"))
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let fields = &[
             registry
-                .field::<Option<String>>("intArgField", i)
-                .argument(registry.arg::<Option<i32>>("intArg", i)),
+                .field::<Option<String>>(arcstr::literal!("intArgField"), i)
+                .argument(registry.arg::<Option<i32>>(arcstr::literal!("intArg"), i)),
             registry
-                .field::<Option<String>>("nonNullIntArgField", i)
-                .argument(registry.arg::<i32>("nonNullIntArg", i)),
+                .field::<Option<String>>(arcstr::literal!("nonNullIntArgField"), i)
+                .argument(registry.arg::<i32>(arcstr::literal!("nonNullIntArg"), i)),
             registry
-                .field::<Option<String>>("stringArgField", i)
-                .argument(registry.arg::<Option<String>>("stringArg", i)),
+                .field::<Option<String>>(arcstr::literal!("stringArgField"), i)
+                .argument(registry.arg::<Option<String>>(arcstr::literal!("stringArg"), i)),
             registry
-                .field::<Option<String>>("booleanArgField", i)
-                .argument(registry.arg::<Option<bool>>("booleanArg", i)),
+                .field::<Option<String>>(arcstr::literal!("booleanArgField"), i)
+                .argument(registry.arg::<Option<bool>>(arcstr::literal!("booleanArg"), i)),
             registry
-                .field::<Option<String>>("enumArgField", i)
-                .argument(registry.arg::<Option<FurColor>>("enumArg", i)),
+                .field::<Option<String>>(arcstr::literal!("enumArgField"), i)
+                .argument(registry.arg::<Option<FurColor>>(arcstr::literal!("enumArg"), i)),
             registry
-                .field::<Option<String>>("floatArgField", i)
-                .argument(registry.arg::<Option<f64>>("floatArg", i)),
+                .field::<Option<String>>(arcstr::literal!("floatArgField"), i)
+                .argument(registry.arg::<Option<f64>>(arcstr::literal!("floatArg"), i)),
             registry
-                .field::<Option<String>>("idArgField", i)
-                .argument(registry.arg::<Option<ID>>("idArg", i)),
+                .field::<Option<String>>(arcstr::literal!("idArgField"), i)
+                .argument(registry.arg::<Option<ID>>(arcstr::literal!("idArg"), i)),
             registry
-                .field::<Option<String>>("stringListArgField", i)
-                .argument(registry.arg::<Option<Vec<Option<String>>>>("stringListArg", i)),
+                .field::<Option<String>>(arcstr::literal!("stringListArgField"), i)
+                .argument(
+                    registry
+                        .arg::<Option<Vec<Option<String>>>>(arcstr::literal!("stringListArg"), i),
+                ),
             registry
-                .field::<Option<String>>("nonNullStringListArgField", i)
-                .argument(registry.arg::<Vec<String>>("nonNullStringListArg", i)),
+                .field::<Option<String>>(arcstr::literal!("nonNullStringListArgField"), i)
+                .argument(registry.arg::<Vec<String>>(arcstr::literal!("nonNullStringListArg"), i)),
             registry
-                .field::<Option<String>>("complexArgField", i)
-                .argument(registry.arg::<Option<ComplexInput>>("complexArg", i)),
+                .field::<Option<String>>(arcstr::literal!("complexArgField"), i)
+                .argument(registry.arg::<Option<ComplexInput>>(arcstr::literal!("complexArg"), i)),
             registry
-                .field::<Option<String>>("multipleReqs", i)
-                .argument(registry.arg::<i32>("req1", i))
-                .argument(registry.arg::<i32>("req2", i)),
+                .field::<Option<String>>(arcstr::literal!("multipleReqs"), i)
+                .argument(registry.arg::<i32>(arcstr::literal!("req1"), i))
+                .argument(registry.arg::<i32>(arcstr::literal!("req2"), i)),
             registry
-                .field::<Option<String>>("multipleOpts", i)
-                .argument(registry.arg_with_default("opt1", &0i32, i))
-                .argument(registry.arg_with_default("opt2", &0i32, i)),
+                .field::<Option<String>>(arcstr::literal!("multipleOpts"), i)
+                .argument(registry.arg_with_default(arcstr::literal!("opt1"), &0i32, i))
+                .argument(registry.arg_with_default(arcstr::literal!("opt2"), &0i32, i)),
             registry
-                .field::<Option<String>>("multipleOptAndReq", i)
-                .argument(registry.arg::<i32>("req1", i))
-                .argument(registry.arg::<i32>("req2", i))
-                .argument(registry.arg_with_default("opt1", &0i32, i))
-                .argument(registry.arg_with_default("opt2", &0i32, i)),
+                .field::<Option<String>>(arcstr::literal!("multipleOptAndReq"), i)
+                .argument(registry.arg::<i32>(arcstr::literal!("req1"), i))
+                .argument(registry.arg::<i32>(arcstr::literal!("req2"), i))
+                .argument(registry.arg_with_default(arcstr::literal!("opt1"), &0i32, i))
+                .argument(registry.arg_with_default(arcstr::literal!("opt2"), &0i32, i)),
         ];
 
         registry.build_object_type::<Self>(i, fields).into_meta()
@@ -757,7 +714,7 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType>::name(info)
     }
 }
@@ -766,26 +723,23 @@ impl<S> GraphQLType<S> for QueryRoot
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&'static str> {
-        Some("QueryRoot")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(arcstr::literal!("QueryRoot"))
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let fields = &[
             registry
-                .field::<Option<Human>>("human", i)
-                .argument(registry.arg::<Option<ID>>("id", i)),
-            registry.field::<Option<Alien>>("alien", i),
-            registry.field::<Option<Dog>>("dog", i),
-            registry.field::<Option<Cat>>("cat", i),
-            registry.field::<Option<Pet>>("pet", i),
-            registry.field::<Option<CatOrDog>>("catOrDog", i),
-            registry.field::<Option<DogOrHuman>>("dorOrHuman", i),
-            registry.field::<Option<HumanOrAlien>>("humanOrAlien", i),
-            registry.field::<Option<ComplicatedArgs>>("complicatedArgs", i),
+                .field::<Option<Human>>(arcstr::literal!("human"), i)
+                .argument(registry.arg::<Option<ID>>(arcstr::literal!("id"), i)),
+            registry.field::<Option<Alien>>(arcstr::literal!("alien"), i),
+            registry.field::<Option<Dog>>(arcstr::literal!("dog"), i),
+            registry.field::<Option<Cat>>(arcstr::literal!("cat"), i),
+            registry.field::<Option<Pet>>(arcstr::literal!("pet"), i),
+            registry.field::<Option<CatOrDog>>(arcstr::literal!("catOrDog"), i),
+            registry.field::<Option<DogOrHuman>>(arcstr::literal!("dorOrHuman"), i),
+            registry.field::<Option<HumanOrAlien>>(arcstr::literal!("humanOrAlien"), i),
+            registry.field::<Option<ComplicatedArgs>>(arcstr::literal!("complicatedArgs"), i),
         ];
 
         registry.build_object_type::<Self>(i, fields).into_meta()
@@ -799,7 +753,7 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType>::name(info)
     }
 }
@@ -808,26 +762,23 @@ impl<S> GraphQLType<S> for MutationRoot
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&str> {
-        Some("MutationRoot")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(arcstr::literal!("MutationRoot"))
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let _ = registry.get_type::<Unpopulated>(i);
 
-        let fields = [registry.field::<i32>("testInput", i).argument(
-            registry.arg_with_default::<TestInput>(
-                "input",
+        let fields = [registry
+            .field::<i32>(arcstr::literal!("testInput"), i)
+            .argument(registry.arg_with_default::<TestInput>(
+                arcstr::literal!("input"),
                 &TestInput {
                     id: 423,
                     name: String::from("foo"),
                 },
                 i,
-            ),
-        )];
+            ))];
 
         registry.build_object_type::<Self>(i, &fields).into_meta()
     }
@@ -840,7 +791,7 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType>::name(info)
     }
 }
@@ -849,14 +800,11 @@ impl<S> GraphQLType<S> for SubscriptionRoot
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&str> {
-        Some("SubscriptionRoot")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(arcstr::literal!("SubscriptionRoot"))
     }
 
-    fn meta<'r>(i: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(i: &(), registry: &mut Registry<S>) -> MetaType<S> {
         let fields = [];
 
         registry.build_object_type::<Self>(i, &fields).into_meta()
@@ -870,7 +818,7 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType>::name(info)
     }
 }

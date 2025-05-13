@@ -50,7 +50,7 @@ impl Country {
     }
 }
 
-type Schema = RootNode<'static, Query, EmptyMutation<()>, EmptySubscription<()>>;
+type Schema = RootNode<Query, EmptyMutation<()>, EmptySubscription<()>>;
 
 #[tokio::test]
 async fn lookahead_from_fragment_with_nested_type() {

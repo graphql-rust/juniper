@@ -44,7 +44,7 @@ use juniper::{
 /// };
 /// use rocket::{routes, State};
 ///
-/// type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
+/// type Schema = RootNode<Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 ///
 /// // GET request accepts query parameters like these:
 /// // ?query=<urlencoded-graphql-query-string>
@@ -179,7 +179,7 @@ where
     /// Asynchronously execute an incoming GraphQL query.
     pub async fn execute<CtxT, QueryT, MutationT, SubscriptionT>(
         &self,
-        root_node: &RootNode<'_, QueryT, MutationT, SubscriptionT, S>,
+        root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
         context: &CtxT,
     ) -> GraphQLResponse
     where
@@ -225,7 +225,7 @@ impl GraphQLResponse {
     /// # use juniper::tests::fixtures::starwars::schema::{Database, Query};
     /// # use juniper::{EmptyMutation, EmptySubscription, FieldError, RootNode, Value};
     /// #
-    /// # type Schema = RootNode<'static, Query, EmptyMutation<Database>, EmptySubscription<Database>>;
+    /// # type Schema = RootNode<Query, EmptyMutation<Database>, EmptySubscription<Database>>;
     /// #
     /// #[rocket::get("/graphql?<request..>")]
     /// fn get_graphql_handler(

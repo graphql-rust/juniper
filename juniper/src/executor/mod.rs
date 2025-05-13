@@ -8,6 +8,7 @@ use std::{
     sync::{Arc, RwLock},
 };
 
+use arcstr::ArcStr;
 use fnv::FnvHashMap;
 use futures::Stream;
 
@@ -46,16 +47,6 @@ pub use self::{
 mod look_ahead;
 mod owned_executor;
 
-/// A type registry used to build schemas
-///
-/// The registry gathers metadata for all types in a schema. It provides
-/// convenience methods to convert types implementing the `GraphQLType` trait
-/// into `Type` instances and automatically registers them.
-pub struct Registry<'r, S = DefaultScalarValue> {
-    /// Currently registered types
-    pub types: FnvHashMap<Name, MetaType<'r, S>>,
-}
-
 #[expect(missing_docs, reason = "self-explanatory")]
 #[derive(Clone)]
 pub enum FieldPath<'a> {
@@ -77,7 +68,7 @@ where
     current_selection_set: Option<&'r [Selection<'a, S>]>,
     parent_selection_set: Option<&'r [Selection<'a, S>]>,
     current_type: TypeType<'a, S>,
-    schema: &'a SchemaType<'a, S>,
+    schema: &'a SchemaType<S>,
     context: &'a CtxT,
     errors: &'r RwLock<Vec<ExecutionError<S>>>,
     field_path: Arc<FieldPath<'a>>,
@@ -893,10 +884,10 @@ where
 
 /// Create new `Executor` and start asynchronous query execution.
 /// Returns `IsSubscription` error if subscription is passed.
-pub async fn execute_validated_query_async<'a, 'b, QueryT, MutationT, SubscriptionT, S>(
-    document: &'b Document<'a, S>,
+pub async fn execute_validated_query_async<'b, QueryT, MutationT, SubscriptionT, S>(
+    document: &'b Document<'_, S>,
     operation: &'b Spanning<Operation<'_, S>>,
-    root_node: &RootNode<'a, QueryT, MutationT, SubscriptionT, S>,
+    root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &QueryT::Context,
 ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError>
@@ -1040,7 +1031,7 @@ pub async fn resolve_validated_subscription<
 >(
     document: &Document<'d, S>,
     operation: &Spanning<Operation<'op, S>>,
-    root_node: &'r RootNode<'r, QueryT, MutationT, SubscriptionT, S>,
+    root_node: &'r RootNode<QueryT, MutationT, SubscriptionT, S>,
     variables: &Variables<S>,
     context: &'r QueryT::Context,
 ) -> Result<(Value<ValuesStream<'r, S>>, Vec<ExecutionError<S>>), GraphQLError>
@@ -1136,46 +1127,52 @@ where
     Ok((value, errors))
 }
 
-impl<'r, S: 'r> Registry<'r, S> {
+/// A type registry used to build schemas
+///
+/// The registry gathers metadata for all types in a schema. It provides
+/// convenience methods to convert types implementing the `GraphQLType` trait
+/// into `Type` instances and automatically registers them.
+pub struct Registry<S = DefaultScalarValue> {
+    /// Currently registered types
+    pub types: FnvHashMap<Name, MetaType<S>>,
+}
+
+impl<S> Registry<S> {
     /// Constructs a new [`Registry`] out of the given `types`.
-    pub fn new(types: FnvHashMap<Name, MetaType<'r, S>>) -> Self {
+    pub fn new(types: FnvHashMap<Name, MetaType<S>>) -> Self {
         Self { types }
     }
 
-    /// Returns a [`Type`] instance for the given [`GraphQLType`], registered in
-    /// this [`Registry`].
+    /// Returns a [`Type`] instance for the given [`GraphQLType`], registered in this [`Registry`].
     ///
-    /// If this [`Registry`] hasn't seen a [`Type`] with such
-    /// [`GraphQLType::name`] before, it will construct the one and store it.
-    pub fn get_type<T>(&mut self, info: &T::TypeInfo) -> Type<'r>
+    /// If this [`Registry`] hasn't seen a [`Type`] with such [`GraphQLType::name`] before, it will
+    /// construct the one and store it.
+    pub fn get_type<T>(&mut self, info: &T::TypeInfo) -> Type
     where
         T: GraphQLType<S> + ?Sized,
         S: ScalarValue,
     {
         if let Some(name) = T::name(info) {
-            let validated_name = name.parse::<Name>().unwrap();
-            if !self.types.contains_key(name) {
-                self.insert_placeholder(
-                    validated_name.clone(),
-                    Type::NonNullNamed(Cow::Owned(name.into())),
-                );
+            let validated_name = Name::new(name.clone()).unwrap();
+            if !self.types.contains_key(&name) {
+                self.insert_placeholder(validated_name.clone(), Type::NonNullNamed(name.clone()));
                 let meta = T::meta(info, self);
                 self.types.insert(validated_name, meta);
             }
-            self.types[name].as_type()
+            self.types[&name].as_type()
         } else {
             T::meta(info, self).as_type()
         }
     }
 
     /// Creates a [`Field`] with the provided `name`.
-    pub fn field<T>(&mut self, name: &str, info: &T::TypeInfo) -> Field<'r, S>
+    pub fn field<T>(&mut self, name: impl Into<ArcStr>, info: &T::TypeInfo) -> Field<S>
     where
         T: GraphQLType<S> + ?Sized,
         S: ScalarValue,
     {
         Field {
-            name: smartstring::SmartString::from(name),
+            name: name.into(),
             description: None,
             arguments: None,
             field_type: self.get_type::<T>(info),
@@ -1186,9 +1183,9 @@ impl<'r, S: 'r> Registry<'r, S> {
     #[doc(hidden)]
     pub fn field_convert<'a, T: IntoResolvable<'a, S, I, C>, I, C>(
         &mut self,
-        name: &str,
+        name: impl Into<ArcStr>,
         info: &I::TypeInfo,
-    ) -> Field<'r, S>
+    ) -> Field<S>
     where
         I: GraphQLType<S>,
         S: ScalarValue,
@@ -1203,7 +1200,7 @@ impl<'r, S: 'r> Registry<'r, S> {
     }
 
     /// Creates an [`Argument`] with the provided `name`.
-    pub fn arg<T>(&mut self, name: &str, info: &T::TypeInfo) -> Argument<'r, S>
+    pub fn arg<T>(&mut self, name: impl Into<ArcStr>, info: &T::TypeInfo) -> Argument<S>
     where
         T: GraphQLType<S> + FromInputValue<S>,
         S: ScalarValue,
@@ -1214,10 +1211,10 @@ impl<'r, S: 'r> Registry<'r, S> {
     /// Creates an [`Argument`] with the provided default `value`.
     pub fn arg_with_default<T>(
         &mut self,
-        name: &str,
+        name: impl Into<ArcStr>,
         value: &T,
         info: &T::TypeInfo,
-    ) -> Argument<'r, S>
+    ) -> Argument<S>
     where
         T: GraphQLType<S> + ToInputValue<S> + FromInputValue<S>,
         S: ScalarValue,
@@ -1225,14 +1222,14 @@ impl<'r, S: 'r> Registry<'r, S> {
         Argument::new(name, self.get_type::<T>(info)).default_value(value.to_input_value())
     }
 
-    fn insert_placeholder(&mut self, name: Name, of_type: Type<'r>) {
+    fn insert_placeholder(&mut self, name: Name, of_type: Type) {
         self.types
             .entry(name)
             .or_insert(MetaType::Placeholder(PlaceholderMeta { of_type }));
     }
 
     /// Creates a [`ScalarMeta`] type.
-    pub fn build_scalar_type<T>(&mut self, info: &T::TypeInfo) -> ScalarMeta<'r, S>
+    pub fn build_scalar_type<T>(&mut self, info: &T::TypeInfo) -> ScalarMeta<S>
     where
         T: GraphQLType<S> + FromInputValue<S> + ParseScalarValue<S>,
         T::Error: IntoFieldError<S>,
@@ -1240,7 +1237,7 @@ impl<'r, S: 'r> Registry<'r, S> {
     {
         let name = T::name(info).expect("Scalar types must be named. Implement `name()`");
 
-        ScalarMeta::new::<T>(Cow::Owned(name.into()))
+        ScalarMeta::new::<T>(name)
     }
 
     /// Creates a [`ListMeta`] type.
@@ -1251,7 +1248,7 @@ impl<'r, S: 'r> Registry<'r, S> {
         &mut self,
         info: &T::TypeInfo,
         expected_size: Option<usize>,
-    ) -> ListMeta<'r>
+    ) -> ListMeta
     where
         T: GraphQLType<S> + ?Sized,
         S: ScalarValue,
@@ -1261,7 +1258,7 @@ impl<'r, S: 'r> Registry<'r, S> {
     }
 
     /// Creates a [`NullableMeta`] type.
-    pub fn build_nullable_type<T>(&mut self, info: &T::TypeInfo) -> NullableMeta<'r>
+    pub fn build_nullable_type<T>(&mut self, info: &T::TypeInfo) -> NullableMeta
     where
         T: GraphQLType<S> + ?Sized,
         S: ScalarValue,
@@ -1271,11 +1268,7 @@ impl<'r, S: 'r> Registry<'r, S> {
     }
 
     /// Creates an [`ObjectMeta`] type with the given `fields`.
-    pub fn build_object_type<T>(
-        &mut self,
-        info: &T::TypeInfo,
-        fields: &[Field<'r, S>],
-    ) -> ObjectMeta<'r, S>
+    pub fn build_object_type<T>(&mut self, info: &T::TypeInfo, fields: &[Field<S>]) -> ObjectMeta<S>
     where
         T: GraphQLType<S> + ?Sized,
         S: ScalarValue,
@@ -1283,16 +1276,12 @@ impl<'r, S: 'r> Registry<'r, S> {
         let name = T::name(info).expect("Object types must be named. Implement name()");
 
         let mut v = fields.to_vec();
-        v.push(self.field::<String>("__typename", &()));
-        ObjectMeta::new(Cow::Owned(name.into()), &v)
+        v.push(self.field::<String>(arcstr::literal!("__typename"), &()));
+        ObjectMeta::new(name, &v)
     }
 
     /// Creates an [`EnumMeta`] type out of the provided `values`.
-    pub fn build_enum_type<T>(
-        &mut self,
-        info: &T::TypeInfo,
-        values: &[EnumValue],
-    ) -> EnumMeta<'r, S>
+    pub fn build_enum_type<T>(&mut self, info: &T::TypeInfo, values: &[EnumValue]) -> EnumMeta<S>
     where
         T: GraphQLType<S> + FromInputValue<S>,
         T::Error: IntoFieldError<S>,
@@ -1300,15 +1289,15 @@ impl<'r, S: 'r> Registry<'r, S> {
     {
         let name = T::name(info).expect("Enum types must be named. Implement `name()`");
 
-        EnumMeta::new::<T>(Cow::Owned(name.into()), values)
+        EnumMeta::new::<T>(name, values)
     }
 
     /// Creates an [`InterfaceMeta`] type with the given `fields`.
     pub fn build_interface_type<T>(
         &mut self,
         info: &T::TypeInfo,
-        fields: &[Field<'r, S>],
-    ) -> InterfaceMeta<'r, S>
+        fields: &[Field<S>],
+    ) -> InterfaceMeta<S>
     where
         T: GraphQLType<S> + ?Sized,
         S: ScalarValue,
@@ -1316,27 +1305,27 @@ impl<'r, S: 'r> Registry<'r, S> {
         let name = T::name(info).expect("Interface types must be named. Implement name()");
 
         let mut v = fields.to_vec();
-        v.push(self.field::<String>("__typename", &()));
-        InterfaceMeta::new(Cow::Owned(name.into()), &v)
+        v.push(self.field::<String>(arcstr::literal!("__typename"), &()));
+        InterfaceMeta::new(name, &v)
     }
 
     /// Creates an [`UnionMeta`] type of the given `types`.
-    pub fn build_union_type<T>(&mut self, info: &T::TypeInfo, types: &[Type<'r>]) -> UnionMeta<'r>
+    pub fn build_union_type<T>(&mut self, info: &T::TypeInfo, types: &[Type]) -> UnionMeta
     where
         T: GraphQLType<S> + ?Sized,
         S: ScalarValue,
     {
         let name = T::name(info).expect("Union types must be named. Implement name()");
 
-        UnionMeta::new(Cow::Owned(name.into()), types)
+        UnionMeta::new(name, types)
     }
 
     /// Creates an [`InputObjectMeta`] type with the given `args`.
     pub fn build_input_object_type<T>(
         &mut self,
         info: &T::TypeInfo,
-        args: &[Argument<'r, S>],
-    ) -> InputObjectMeta<'r, S>
+        args: &[Argument<S>],
+    ) -> InputObjectMeta<S>
     where
         T: GraphQLType<S> + FromInputValue<S>,
         T::Error: IntoFieldError<S>,
@@ -1344,6 +1333,6 @@ impl<'r, S: 'r> Registry<'r, S> {
     {
         let name = T::name(info).expect("Input object types must be named. Implement name()");
 
-        InputObjectMeta::new::<T>(Cow::Owned(name.into()), args)
+        InputObjectMeta::new::<T>(name, args)
     }
 }

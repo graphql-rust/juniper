@@ -25,7 +25,7 @@ impl Query {
     }
 }
 
-type Schema = juniper::RootNode<'static, Query, EmptyMutation<Context>, EmptySubscription<Context>>;
+type Schema = juniper::RootNode<Query, EmptyMutation<Context>, EmptySubscription<Context>>;
 
 #[tokio::test]
 async fn explicit_null() {

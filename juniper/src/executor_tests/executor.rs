@@ -738,7 +738,7 @@ mod propagates_errors_to_nullable_fields {
         }
     }
 
-    fn schema() -> RootNode<'static, Schema, EmptyMutation, EmptySubscription> {
+    fn schema() -> RootNode<Schema, EmptyMutation, EmptySubscription> {
         RootNode::new(
             Schema,
             EmptyMutation::<()>::new(),

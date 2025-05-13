@@ -155,7 +155,7 @@ use self::response::JuniperResponse;
 ///
 /// [1]: https://github.com/seanmonstar/warp/issues/388#issuecomment-576453485
 pub fn make_graphql_filter<S, Query, Mutation, Subscription, CtxT, CtxErr>(
-    schema: impl Into<Arc<juniper::RootNode<'static, Query, Mutation, Subscription, S>>>,
+    schema: impl Into<Arc<juniper::RootNode<Query, Mutation, Subscription, S>>>,
     context_extractor: impl Filter<Extract = (CtxT,), Error = CtxErr> + Send + Sync + 'static,
 ) -> impl Filter<Extract = (reply::Response,), Error = Rejection> + Clone + Send
 where
@@ -198,7 +198,7 @@ where
 ///
 /// [1]: GraphQLBatchRequest::execute_sync
 pub fn make_graphql_filter_sync<S, Query, Mutation, Subscription, CtxT, CtxErr>(
-    schema: impl Into<Arc<juniper::RootNode<'static, Query, Mutation, Subscription, S>>>,
+    schema: impl Into<Arc<juniper::RootNode<Query, Mutation, Subscription, S>>>,
     context_extractor: impl Filter<Extract = (CtxT,), Error = CtxErr> + Send + Sync + 'static,
 ) -> impl Filter<Extract = (reply::Response,), Error = Rejection> + Clone + Send
 where
@@ -238,7 +238,7 @@ where
 /// `context`.
 async fn graphql_handler<Query, Mutation, Subscription, CtxT, S>(
     req: GraphQLBatchRequest<S>,
-    schema: Arc<juniper::RootNode<'static, Query, Mutation, Subscription, S>>,
+    schema: Arc<juniper::RootNode<Query, Mutation, Subscription, S>>,
     context: CtxT,
 ) -> reply::Response
 where
@@ -260,7 +260,7 @@ where
 /// [1]: GraphQLBatchRequest::execute_sync
 async fn graphql_handler_sync<Query, Mutation, Subscription, CtxT, S>(
     req: GraphQLBatchRequest<S>,
-    schema: Arc<juniper::RootNode<'static, Query, Mutation, Subscription, S>>,
+    schema: Arc<juniper::RootNode<Query, Mutation, Subscription, S>>,
     context: CtxT,
 ) -> reply::Response
 where
@@ -477,12 +477,8 @@ mod tests {
 
         #[tokio::test]
         async fn post_json() {
-            type Schema = juniper::RootNode<
-                'static,
-                Query,
-                EmptyMutation<Database>,
-                EmptySubscription<Database>,
-            >;
+            type Schema =
+                juniper::RootNode<Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
             let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
 
@@ -527,12 +523,8 @@ mod tests {
                 }
             }
 
-            type Schema = juniper::RootNode<
-                'static,
-                Query,
-                EmptyMutation<Database>,
-                EmptySubscription<Database>,
-            >;
+            type Schema =
+                juniper::RootNode<Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
             let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
 
@@ -575,12 +567,8 @@ mod tests {
 
         #[tokio::test]
         async fn batch_requests() {
-            type Schema = juniper::RootNode<
-                'static,
-                Query,
-                EmptyMutation<Database>,
-                EmptySubscription<Database>,
-            >;
+            type Schema =
+                juniper::RootNode<Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
             let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
 

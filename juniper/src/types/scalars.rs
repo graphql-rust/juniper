@@ -66,7 +66,8 @@ impl fmt::Display for ID {
     }
 }
 
-#[graphql_scalar(with = impl_string_scalar)]
+#[graphql_scalar]
+#[graphql(with = impl_string_scalar)]
 type String = std::string::String;
 
 mod impl_string_scalar {
@@ -186,6 +187,26 @@ where
     })
 }
 
+#[graphql_scalar]
+#[graphql(name = "String", with = impl_arcstr_scalar, parse_token(String))]
+type ArcStr = arcstr::ArcStr;
+
+mod impl_arcstr_scalar {
+    use crate::{InputValue, ScalarValue, Value};
+
+    use super::ArcStr;
+
+    pub(super) fn to_output<S: ScalarValue>(v: &ArcStr) -> Value<S> {
+        Value::scalar(v.to_string())
+    }
+
+    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<ArcStr, String> {
+        v.as_string_value()
+            .map(Into::into)
+            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+    }
+}
+
 impl<S> reflect::WrappedType<S> for str {
     const VALUE: reflect::WrappedValue = 1;
 }
@@ -202,14 +223,11 @@ impl<S> GraphQLType<S> for str
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&'static str> {
-        Some("String")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(arcstr::literal!("String"))
     }
 
-    fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(_: &(), registry: &mut Registry<S>) -> MetaType<S> {
         registry.build_scalar_type::<String>(&()).into_meta()
     }
 }
@@ -221,7 +239,7 @@ where
     type Context = ();
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType<S>>::name(info)
     }
 
@@ -259,7 +277,8 @@ where
     }
 }
 
-#[graphql_scalar(with = impl_boolean_scalar)]
+#[graphql_scalar]
+#[graphql(with = impl_boolean_scalar)]
 type Boolean = bool;
 
 mod impl_boolean_scalar {
@@ -281,7 +300,8 @@ mod impl_boolean_scalar {
     }
 }
 
-#[graphql_scalar(with = impl_int_scalar)]
+#[graphql_scalar]
+#[graphql(with = impl_int_scalar)]
 type Int = i32;
 
 mod impl_int_scalar {
@@ -307,7 +327,8 @@ mod impl_int_scalar {
     }
 }
 
-#[graphql_scalar(with = impl_float_scalar)]
+#[graphql_scalar]
+#[graphql(with = impl_float_scalar)]
 type Float = f64;
 
 mod impl_float_scalar {
@@ -359,14 +380,11 @@ impl<S, T> GraphQLType<S> for EmptyMutation<T>
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&'static str> {
-        Some("_EmptyMutation")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(arcstr::literal!("_EmptyMutation"))
     }
 
-    fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(_: &(), registry: &mut Registry<S>) -> MetaType<S> {
         registry.build_object_type::<Self>(&(), &[]).into_meta()
     }
 }
@@ -378,7 +396,7 @@ where
     type Context = T;
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType<S>>::name(info)
     }
 }
@@ -420,14 +438,11 @@ impl<S, T> GraphQLType<S> for EmptySubscription<T>
 where
     S: ScalarValue,
 {
-    fn name(_: &()) -> Option<&'static str> {
-        Some("_EmptySubscription")
+    fn name(_: &()) -> Option<ArcStr> {
+        Some(arcstr::literal!("_EmptySubscription"))
     }
 
-    fn meta<'r>(_: &(), registry: &mut Registry<'r, S>) -> MetaType<'r, S>
-    where
-        S: 'r,
-    {
+    fn meta(_: &(), registry: &mut Registry<S>) -> MetaType<S> {
         registry.build_object_type::<Self>(&(), &[]).into_meta()
     }
 }
@@ -439,7 +454,7 @@ where
     type Context = T;
     type TypeInfo = ();
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<&'i str> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType<S>>::name(info)
     }
 }

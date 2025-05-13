@@ -31,6 +31,39 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
         - `uuid::Uuid`.
     - Renamed `ObjectId` scalar to `ObjectID` in types: ([#1277])
         - `bson::oid::ObjectId`.
+- Optimized schema implementation with [`arcstr` crate]: ([#1247], [#819])
+    - `ast::Type`: 
+        - Removed lifetime parameters.
+        - Made it generic over string type.
+    - `MetaType`:
+        - Removed lifetime parameters.
+        - Made `name()`, `description()` and `specified_by_url()` methods returning `ArcStr`.
+    - `EnumMeta`, `InputObjectMeta`, `InterfaceMeta`, `ListMeta`, `NullableMeta`, `ObjectMeta`, `PlaceholderMeta`, `ScalarMeta` and `UnionMeta`:
+        - Removed lifetime parameters.
+    - `meta::Field` and `meta::Argument`:
+        - Removed lifetime parameters.
+    - `meta::EnumValue`:
+        - Made `name` and `description` fields using `ArcStr`.
+    - `DeprecationStatus`:
+        - Made `Deprecated` variant using `ArcStr`.
+        - Made `reason()` method returning `ArcStr`.
+    - `DirectiveType`:
+        - Removed lifetime parameters.
+        - Made `name` and `description` fields using `ArcStr`.
+    - `SchemaType`: 
+        - Removed lifetime parameters.
+        - Made `is_subtype()` method accepting `DynType` instead of `Type`.
+    - `RootNode`:
+        - Removed lifetime parameters.
+    - `Registry`:
+        - Removed lifetime parameters.
+    - `types::Name` and `types::NameParseError`:
+        - Made fields using `ArcStr` instead of `String`.
+        - Replaced `FromStr` impl of `types::Name` with `new()` constructor.
+    - `GraphQLType`:
+        - Made `name()` method returning `ArcStr`.
+    - `GraphQLValue`:
+        - Made `type_name()` method returning `ArcStr`.
 
 ### Added
 
@@ -53,6 +86,8 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 - Incorrect error propagation inside fragments. ([#1318], [#1287])
 
+[#819]: /../../issues/819
+[#1247]: /../../pull/1247
 [#1252]: /../../pull/1252
 [#1270]: /../../issues/1270
 [#1271]: /../../pull/1271
@@ -264,6 +299,7 @@ See [old CHANGELOG](/../../blob/juniper-v0.15.12/juniper/CHANGELOG.md).
 
 
 [`anyhow` crate]: https://docs.rs/anyhow
+[`arcstr` crate]: https://docs.rs/arcstr
 [`bigdecimal` crate]: https://docs.rs/bigdecimal
 [`bson` crate]: https://docs.rs/bson
 [`chrono` crate]: https://docs.rs/chrono

@@ -30,12 +30,12 @@ mod for_minimal_versions_check_only {
 
 pub struct GraphQLParserTranslator;
 
-impl<'a, S: 'a, T> From<&'a SchemaType<'a, S>> for Document<'a, T>
+impl<'a, S: 'a, T> From<&'a SchemaType<S>> for Document<'a, T>
 where
     S: ScalarValue,
     T: Text<'a> + Default,
 {
-    fn from(input: &'a SchemaType<'a, S>) -> Document<'a, T> {
+    fn from(input: &'a SchemaType<S>) -> Document<'a, T> {
         GraphQLParserTranslator::translate_schema(input)
     }
 }
@@ -88,7 +88,7 @@ impl GraphQLParserTranslator {
     {
         ExternalInputValue {
             position: Pos::default(),
-            description: input.description.as_ref().map(From::from),
+            description: input.description.as_deref().map(Into::into),
             name: From::from(input.name.as_str()),
             value_type: GraphQLParserTranslator::translate_type(&input.arg_type),
             default_value: input
@@ -139,21 +139,21 @@ impl GraphQLParserTranslator {
         }
     }
 
-    fn translate_type<'a, T>(input: &'a Type<'a>) -> ExternalType<'a, T>
+    fn translate_type<'a, T>(input: &'a Type<impl AsRef<str>>) -> ExternalType<'a, T>
     where
         T: Text<'a>,
     {
         match input {
-            Type::Named(x) => ExternalType::NamedType(From::from(x.as_ref())),
-            Type::List(x, _) => {
+            Type::List(x, ..) => {
                 ExternalType::ListType(GraphQLParserTranslator::translate_type(x).into())
             }
+            Type::Named(x) => ExternalType::NamedType(From::from(x.as_ref())),
+            Type::NonNullList(x, ..) => ExternalType::NonNullType(Box::new(
+                ExternalType::ListType(Box::new(GraphQLParserTranslator::translate_type(x))),
+            )),
             Type::NonNullNamed(x) => {
                 ExternalType::NonNullType(Box::new(ExternalType::NamedType(From::from(x.as_ref()))))
             }
-            Type::NonNullList(x, _) => ExternalType::NonNullType(Box::new(ExternalType::ListType(
-                Box::new(GraphQLParserTranslator::translate_type(x)),
-            ))),
         }
     }
 
@@ -165,13 +165,13 @@ impl GraphQLParserTranslator {
         match input {
             MetaType::Scalar(x) => ExternalTypeDefinition::Scalar(ExternalScalarType {
                 position: Pos::default(),
-                description: x.description.as_ref().map(From::from),
+                description: x.description.as_deref().map(Into::into),
                 name: From::from(x.name.as_ref()),
                 directives: vec![],
             }),
             MetaType::Enum(x) => ExternalTypeDefinition::Enum(ExternalEnum {
                 position: Pos::default(),
-                description: x.description.as_ref().map(|s| From::from(s.as_str())),
+                description: x.description.as_deref().map(Into::into),
                 name: From::from(x.name.as_ref()),
                 directives: vec![],
                 values: x
@@ -182,7 +182,7 @@ impl GraphQLParserTranslator {
             }),
             MetaType::Union(x) => ExternalTypeDefinition::Union(ExternalUnionType {
                 position: Pos::default(),
-                description: x.description.as_ref().map(|s| From::from(s.as_str())),
+                description: x.description.as_deref().map(Into::into),
                 name: From::from(x.name.as_ref()),
                 directives: vec![],
                 types: x
@@ -193,7 +193,7 @@ impl GraphQLParserTranslator {
             }),
             MetaType::Interface(x) => ExternalTypeDefinition::Interface(ExternalInterfaceType {
                 position: Pos::default(),
-                description: x.description.as_ref().map(|s| From::from(s.as_str())),
+                description: x.description.as_deref().map(Into::into),
                 name: From::from(x.name.as_ref()),
                 implements_interfaces: x
                     .interface_names
@@ -211,7 +211,7 @@ impl GraphQLParserTranslator {
             MetaType::InputObject(x) => {
                 ExternalTypeDefinition::InputObject(ExternalInputObjectType {
                     position: Pos::default(),
-                    description: x.description.as_ref().map(|s| From::from(s.as_str())),
+                    description: x.description.as_deref().map(Into::into),
                     name: From::from(x.name.as_ref()),
                     directives: vec![],
                     fields: x
@@ -224,7 +224,7 @@ impl GraphQLParserTranslator {
             }
             MetaType::Object(x) => ExternalTypeDefinition::Object(ExternalObjectType {
                 position: Pos::default(),
-                description: x.description.as_ref().map(|s| From::from(s.as_str())),
+                description: x.description.as_deref().map(Into::into),
                 name: From::from(x.name.as_ref()),
                 directives: vec![],
                 fields: x
@@ -250,7 +250,7 @@ impl GraphQLParserTranslator {
         ExternalEnumValue {
             position: Pos::default(),
             name: From::from(input.name.as_ref()),
-            description: input.description.as_ref().map(|s| From::from(s.as_str())),
+            description: input.description.as_deref().map(Into::into),
             directives: generate_directives(&input.deprecation_status),
         }
     }
@@ -274,7 +274,7 @@ impl GraphQLParserTranslator {
         ExternalField {
             position: Pos::default(),
             name: From::from(input.name.as_str()),
-            description: input.description.as_ref().map(|s| From::from(s.as_str())),
+            description: input.description.as_deref().map(Into::into),
             directives: generate_directives(&input.deprecation_status),
             field_type: GraphQLParserTranslator::translate_type(&input.field_type),
             arguments,
@@ -293,7 +293,12 @@ where
             name: "deprecated".into(),
             arguments: reason
                 .as_ref()
-                .map(|rsn| vec![(From::from("reason"), ExternalValue::String(rsn.into()))])
+                .map(|rsn| {
+                    vec![(
+                        From::from("reason"),
+                        ExternalValue::String(rsn.as_str().into()),
+                    )]
+                })
                 .unwrap_or_default(),
         }),
     }

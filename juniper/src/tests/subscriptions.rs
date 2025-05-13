@@ -29,8 +29,7 @@ impl MyQuery {
     }
 }
 
-type Schema =
-    RootNode<'static, MyQuery, EmptyMutation<MyContext>, MySubscription, DefaultScalarValue>;
+type Schema = RootNode<MyQuery, EmptyMutation<MyContext>, MySubscription, DefaultScalarValue>;
 
 fn run<O>(f: impl Future<Output = O>) -> O {
     let rt = tokio::runtime::Runtime::new().unwrap();
