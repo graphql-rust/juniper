@@ -7,12 +7,12 @@ error[E0277]: the trait bound `ObjectA: IsInputType<__S>` is not satisfied
    = help: the following other types implement trait `IsInputType<S>`:
              `&T` implements `IsInputType<S>`
              `Arc<T>` implements `IsInputType<S>`
+             `ArcStr` implements `IsInputType<__S>`
              `Box<T>` implements `IsInputType<S>`
              `ID` implements `IsInputType<__S>`
              `Object` implements `IsInputType<__S>`
              `TypeKind` implements `IsInputType<__S>`
              `Vec<T>` implements `IsInputType<S>`
-             `[T; N]` implements `IsInputType<S>`
            and $N others
 
 error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
@@ -26,18 +26,18 @@ error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
    |
    = help: the following other types implement trait `FromInputValue<S>`:
              `Arc<T>` implements `FromInputValue<S>`
+             `ArcStr` implements `FromInputValue<__S>`
              `Box<T>` implements `FromInputValue<S>`
              `ID` implements `FromInputValue<__S>`
              `Object` implements `FromInputValue<__S>`
              `TypeKind` implements `FromInputValue<__S>`
              `Vec<T>` implements `FromInputValue<S>`
              `[T; N]` implements `FromInputValue<S>`
-             `bool` implements `FromInputValue<__S>`
            and $N others
 note: required by a bound in `Registry::<S>::arg`
   --> $WORKSPACE/juniper/src/executor/mod.rs
    |
-   |     pub fn arg<T>(&mut self, name: ArcStr, info: &T::TypeInfo) -> Argument<S>
+   |     pub fn arg<T>(&mut self, name: impl Into<ArcStr>, info: &T::TypeInfo) -> Argument<S>
    |            --- required by a bound in this associated function
    |     where
    |         T: GraphQLType<S> + FromInputValue<S>,
@@ -51,13 +51,13 @@ error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
   |
   = help: the following other types implement trait `FromInputValue<S>`:
             `Arc<T>` implements `FromInputValue<S>`
+            `ArcStr` implements `FromInputValue<__S>`
             `Box<T>` implements `FromInputValue<S>`
             `ID` implements `FromInputValue<__S>`
             `Object` implements `FromInputValue<__S>`
             `TypeKind` implements `FromInputValue<__S>`
             `Vec<T>` implements `FromInputValue<S>`
             `[T; N]` implements `FromInputValue<S>`
-            `bool` implements `FromInputValue<__S>`
           and $N others
   = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -72,9 +72,9 @@ error[E0277]: the trait bound `ObjectA: ToInputValue<_>` is not satisfied
             `&[T]` implements `ToInputValue<S>`
             `&str` implements `ToInputValue<S>`
             `Arc<T>` implements `ToInputValue<S>`
+            `ArcStr` implements `ToInputValue<__S>`
             `Box<T>` implements `ToInputValue<S>`
             `ID` implements `ToInputValue<__S>`
             `Object` implements `ToInputValue<__S>`
-            `TypeKind` implements `ToInputValue<__S>`
           and $N others
   = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)

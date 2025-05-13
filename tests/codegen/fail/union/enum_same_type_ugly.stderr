@@ -18,12 +18,12 @@ error[E0277]: the trait bound `std::string::String: GraphQLObject<__S>` is not s
   = help: the following other types implement trait `GraphQLObject<S>`:
             `&T` implements `GraphQLObject<S>`
             `Arc<T>` implements `GraphQLObject<S>`
-            `Argument<'a, S>` implements `GraphQLObject<S>`
+            `Argument<S>` implements `GraphQLObject<S>`
             `Box<T>` implements `GraphQLObject<S>`
             `EnumValue` implements `GraphQLObject<__S>`
-            `SchemaType<'a, S>` implements `GraphQLObject<S>`
-            `juniper::meta::Field<'a, S>` implements `GraphQLObject<S>`
-            `juniper::schema::model::DirectiveType<'a, S>` implements `GraphQLObject<S>`
+            `SchemaType<S>` implements `GraphQLObject<S>`
+            `juniper::meta::Field<S>` implements `GraphQLObject<S>`
+            `juniper::schema::model::DirectiveType<S>` implements `GraphQLObject<S>`
             `juniper::schema::model::TypeType<'a, S>` implements `GraphQLObject<S>`
 
 error[E0277]: the trait bound `std::string::String: GraphQLObject<__S>` is not satisfied
@@ -35,10 +35,10 @@ error[E0277]: the trait bound `std::string::String: GraphQLObject<__S>` is not s
   = help: the following other types implement trait `GraphQLObject<S>`:
             `&T` implements `GraphQLObject<S>`
             `Arc<T>` implements `GraphQLObject<S>`
-            `Argument<'a, S>` implements `GraphQLObject<S>`
+            `Argument<S>` implements `GraphQLObject<S>`
             `Box<T>` implements `GraphQLObject<S>`
             `EnumValue` implements `GraphQLObject<__S>`
-            `SchemaType<'a, S>` implements `GraphQLObject<S>`
-            `juniper::meta::Field<'a, S>` implements `GraphQLObject<S>`
-            `juniper::schema::model::DirectiveType<'a, S>` implements `GraphQLObject<S>`
+            `SchemaType<S>` implements `GraphQLObject<S>`
+            `juniper::meta::Field<S>` implements `GraphQLObject<S>`
+            `juniper::schema::model::DirectiveType<S>` implements `GraphQLObject<S>`
             `juniper::schema::model::TypeType<'a, S>` implements `GraphQLObject<S>`
