@@ -78,11 +78,11 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - `jiff::tz::Offset` as `UtcOffset` scalar.
     - `jiff::Span` as `Duration` scalar.
 - `http::GraphQLResponse::into_result()` method. ([#1293])
-- `String` scalar implementation for `compact_str::CompactString`. ([todo])
+- `String` scalar implementation for `compact_str::CompactString`. ([20609366])
 
 ### Changed
 
-- Upgraded [GraphiQL] to [4.0.4 version](https://github.com/graphql/graphiql/blob/graphiql%404.0.4/packages/graphiql/CHANGELOG.md#404). ([#1319])
+- Upgraded [GraphiQL] to [4.0.5 version](https://github.com/graphql/graphiql/blob/graphiql%404.0.5/packages/graphiql/CHANGELOG.md#405). ([#1320])
 
 ### Fixed
 
@@ -103,9 +103,9 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1293]: /../../pull/1293
 [#1311]: /../../pull/1311
 [#1318]: /../../pull/1318
-[#1319]: /../../pull/1319
+[#1320]: /../../pull/1320
 [1b1fc618]: /../../commit/1b1fc61879ffdd640d741e187dc20678bf7ab295
-[todo]: /../../commit/todo
+[20609366]: /../../commit/2060936635609b0186d46d8fbd06eb30fce660e3
 
 
 
