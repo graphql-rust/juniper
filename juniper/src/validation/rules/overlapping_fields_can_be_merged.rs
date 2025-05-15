@@ -570,8 +570,8 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
             }
             (Type::Named(n1), Type::Named(n2))
             | (Type::NonNullNamed(n1), Type::NonNullNamed(n2)) => {
-                let ct1 = ctx.schema.concrete_type_by_name(n1.as_ref());
-                let ct2 = ctx.schema.concrete_type_by_name(n2.as_ref());
+                let ct1 = ctx.schema.concrete_type_by_name(n1);
+                let ct2 = ctx.schema.concrete_type_by_name(n2);
 
                 if ct1.map(MetaType::is_leaf).unwrap_or(false)
                     || ct2.map(MetaType::is_leaf).unwrap_or(false)

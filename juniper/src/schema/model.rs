@@ -397,16 +397,13 @@ impl<S> SchemaType<S> {
             Type::List(inner, expected_size) => {
                 TypeType::List(Box::new(self.make_type(inner)), *expected_size)
             }
-            Type::Named(n) => self
-                .type_by_name(n.as_ref())
-                .expect("Type not found in schema"),
+            Type::Named(n) => self.type_by_name(n).expect("Type not found in schema"),
             Type::NonNullList(inner, expected_size) => TypeType::NonNull(Box::new(TypeType::List(
                 Box::new(self.make_type(inner)),
                 *expected_size,
             ))),
             Type::NonNullNamed(n) => TypeType::NonNull(Box::new(
-                self.type_by_name(n.as_ref())
-                    .expect("Type not found in schema"),
+                self.type_by_name(n).expect("Type not found in schema"),
             )),
         }
     }
