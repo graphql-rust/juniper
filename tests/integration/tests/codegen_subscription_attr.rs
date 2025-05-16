@@ -728,7 +728,6 @@ mod generic_lifetime {
         home_planet: &'p str,
     }
 
-    #[expect(clippy::needless_lifetimes, reason = "required by codegen")]
     #[graphql_subscription]
     impl<'p> Human<'p, i32> {
         async fn id(&self) -> Stream<'static, i32> {
@@ -741,7 +740,6 @@ mod generic_lifetime {
         }
     }
 
-    #[expect(clippy::needless_lifetimes, reason = "required by codegen")]
     #[graphql_subscription(name = "HumanString")]
     impl<'id, 'p> Human<'p, &'id str> {
         // TODO: Make it work with `Stream<'_, &str>`.

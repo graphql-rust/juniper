@@ -685,7 +685,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
                     item: FragmentSpread { ref name, .. },
                     ..
                 }) => {
-                    if !fragment_names.iter().any(|n| *n == name.item) {
+                    if !fragment_names.contains(&name.item) {
                         fragment_names.push(name.item);
                     }
                 }

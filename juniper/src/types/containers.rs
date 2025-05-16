@@ -375,10 +375,6 @@ where
                     });
                 }
                 if N == 0 {
-                    // TODO: Use `mem::transmute` instead of
-                    //       `mem::transmute_copy` below, once it's allowed
-                    //       for const generics:
-                    //       https://github.com/rust-lang/rust/issues/61956
                     // SAFETY: `mem::transmute_copy` is safe here, because we
                     //         check `N` to be `0`. It's no-op, actually.
                     return Ok(unsafe { mem::transmute_copy::<[T; 0], Self>(&[]) });
@@ -418,9 +414,9 @@ where
                 // them.
                 out.no_drop = true;
 
-                // TODO: Use `mem::transmute` instead of `mem::transmute_copy`
-                //       below, once it's allowed for const generics:
-                //       https://github.com/rust-lang/rust/issues/61956
+                // TODO: Use `MaybeUninit::array_assume_init()` instead of `mem::transmute_copy`
+                //       below, once it's in stable Rust:
+                //       https://github.com/rust-lang/rust/issues/96097
                 // SAFETY: `mem::transmute_copy` is safe here, because we have
                 //         exactly `N` initialized `items`.
                 //         Also, despite `mem::transmute_copy` copies the value,
@@ -437,10 +433,6 @@ where
                     .convert()
                     .map_err(FromInputValueArrayError::Item)
                     .and_then(|e: T| {
-                        // TODO: Use `mem::transmute` instead of
-                        //       `mem::transmute_copy` below, once it's allowed
-                        //       for const generics:
-                        //       https://github.com/rust-lang/rust/issues/61956
                         if N == 1 {
                             // SAFETY: `mem::transmute_copy` is safe here,
                             //         because we check `N` to be `1`.
@@ -451,7 +443,9 @@ where
                             //         `mem::ManuallyDrop`, so does nothing on
                             //         `Drop`.
                             Ok(unsafe {
-                                mem::transmute_copy::<_, Self>(&[mem::ManuallyDrop::new(e)])
+                                mem::transmute_copy::<[mem::ManuallyDrop<T>; 1], Self>(&[
+                                    mem::ManuallyDrop::new(e),
+                                ])
                             })
                         } else {
                             Err(FromInputValueArrayError::WrongCount {
