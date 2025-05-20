@@ -25,7 +25,8 @@ struct Scalar(i32);
 /// A sample interface
 // TODO: Consider this for the GraphQL interfaces in the expansion.
 #[expect(dead_code, reason = "GraphQL schema testing")]
-#[graphql_interface(name = "SampleInterface", for = Root)]
+#[graphql_interface]
+#[graphql(name = "SampleInterface", for = Root)]
 trait Interface {
     /// A sample field in the interface
     fn sample_enum(&self) -> Sample;

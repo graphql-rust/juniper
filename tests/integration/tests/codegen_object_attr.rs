@@ -616,7 +616,6 @@ mod generic_lifetime_async {
         home_planet: &'p str,
     }
 
-    #[expect(clippy::needless_lifetimes, reason = "required by codegen")]
     #[graphql_object]
     impl<'p> Human<'p, i32> {
         async fn id(&self) -> i32 {
@@ -628,7 +627,6 @@ mod generic_lifetime_async {
         }
     }
 
-    #[expect(clippy::needless_lifetimes, reason = "required by codegen")]
     #[graphql_object(name = "HumanString")]
     impl<'id, 'p> Human<'p, &'id str> {
         async fn id(&self) -> &str {
@@ -725,7 +723,6 @@ mod nested_generic_lifetime_async {
         primary_function: &'p str,
     }
 
-    #[expect(clippy::needless_lifetimes, reason = "required by codegen")]
     #[graphql_object]
     impl<'p> Droid<'p, i32> {
         async fn id(&self) -> i32 {
@@ -737,7 +734,6 @@ mod nested_generic_lifetime_async {
         }
     }
 
-    #[expect(clippy::needless_lifetimes, reason = "required by codegen")]
     #[graphql_object(name = "DroidString")]
     impl<'id, 'p> Droid<'p, &'id str> {
         async fn id(&self) -> &str {
@@ -754,7 +750,6 @@ mod nested_generic_lifetime_async {
         home_planet: &'p str,
     }
 
-    #[expect(clippy::needless_lifetimes, reason = "required by codegen")]
     #[graphql_object]
     impl<'p> Human<'p, i32> {
         async fn id(&self) -> i32 {
@@ -773,7 +768,6 @@ mod nested_generic_lifetime_async {
         }
     }
 
-    #[expect(clippy::needless_lifetimes, reason = "required by codegen")]
     #[graphql_object(name = "HumanString")]
     impl<'id, 'p> Human<'p, &'id str> {
         async fn id(&self) -> &str {
