@@ -10,64 +10,85 @@ use crate::{
     value::{DefaultScalarValue, ScalarValue},
 };
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum TypeModifier {
+    NonNull,
+    List(Option<usize>),
+}
+
+pub(crate) type BorrowedType<'a> = Type<&'a str, &'a [TypeModifier]>;
+
 /// Type literal in a syntax tree.
 ///
-/// This enum carries no semantic information and might refer to types that do not exist.
+/// Carries no semantic information and might refer to types that don't exist.
 #[derive(Clone, Debug)]
-pub enum Type<N = ArcStr> {
-    /// `null`able named type, e.g. `String`.
-    Named(N),
-
-    /// `null`able list type, e.g. `[String]`.
-    ///
-    /// The list itself is `null`able, the containing [`Type`] might be non-`null`.
-    List(Box<Type<N>>, Option<usize>),
-
-    /// Non-`null` named type, e.g. `String!`.
-    NonNullNamed(N),
-
-    /// Non-`null` list type, e.g. `[String]!`.
-    ///
-    /// The list itself is non-`null`, the containing [`Type`] might be `null`able.
-    NonNullList(Box<Type<N>>, Option<usize>),
+pub struct Type<N = ArcStr, M = Box<[TypeModifier]>> {
+    name: N,
+    modifiers: M,
 }
 
-impl<N> Eq for Type<N> where Self: PartialEq {}
+impl<N, M> Eq for Type<N, M> where Self: PartialEq {}
 
-impl<N1: AsRef<str>, N2: AsRef<str>> PartialEq<Type<N2>> for Type<N1> {
-    fn eq(&self, other: &Type<N2>) -> bool {
-        match (self, other) {
-            (Self::Named(n1), Type::Named(n2)) => n1.as_ref() == n2.as_ref(),
-            (Self::List(lhs, s1), Type::List(rhs, s2)) => s1 == s2 && lhs.as_ref() == rhs.as_ref(),
-            (Self::NonNullNamed(n1), Type::NonNullNamed(n2)) => n1.as_ref() == n2.as_ref(),
-            (Self::NonNullList(lhs, s1), Type::NonNullList(rhs, s2)) => {
-                s1 == s2 && lhs.as_ref() == rhs.as_ref()
-            }
-            _ => false,
-        }
+impl<N1, N2, M1, M2> PartialEq<Type<N2, M2>> for Type<N1, M1>
+where
+    N1: AsRef<str>,
+    N2: AsRef<str>,
+    M1: AsRef<[TypeModifier]>,
+    M2: AsRef<[TypeModifier]>,
+{
+    fn eq(&self, other: &Type<N2, M2>) -> bool {
+        self.name.as_ref() == other.name.as_ref()
+            && self.modifiers.as_ref() == other.modifiers.as_ref()
     }
 }
 
-impl<N: fmt::Display> fmt::Display for Type<N> {
+impl<N, M> fmt::Display for Type<N, M>
+where
+    N: AsRef<str>,
+    M: AsRef<[TypeModifier]>,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Named(n) => write!(f, "{n}"),
-            Self::NonNullNamed(n) => write!(f, "{n}!"),
-            Self::List(t, _) => write!(f, "[{t}]"),
-            Self::NonNullList(t, _) => write!(f, "[{t}]!"),
+        // PANIC: `self.inner().unwrap()` never panics if there is at least on `TypeModifier`.
+        match self.modifiers.as_ref().last() {
+            Some(TypeModifier::NonNull) => write!(f, "{}!", self.inner().unwrap()),
+            Some(TypeModifier::List(..)) => write!(f, "[{}]", self.inner().unwrap()),
+            None => write!(f, "{}", self.name.as_ref()),
         }
     }
 }
 
-impl<N: AsRef<str>> Type<N> {
+impl<N: AsRef<str>, M> Type<N, M> {
+    pub(crate) fn inner(&self) -> Option<BorrowedType<'_>>
+    where
+        M: AsRef<[TypeModifier]>,
+    {
+        let modifiers = self.modifiers.as_ref();
+        match modifiers.len() {
+            0 => None,
+            n => Some(Type {
+                name: self.name.as_ref(),
+                modifiers: &modifiers[..n - 1],
+            }),
+        }
+    }
+
     /// Returns the name of this named [`Type`].
     ///
     /// Only applies to named [`Type`]s. Lists will return [`None`].
     #[must_use]
-    pub fn name(&self) -> Option<&str> {
-        match self {
-            Self::Named(n) | Self::NonNullNamed(n) => Some(n.as_ref()),
-            Self::List(..) | Self::NonNullList(..) => None,
+    pub fn name(&self) -> Option<&str>
+    where
+        M: AsRef<[TypeModifier]>,
+    {
+        if self
+            .modifiers
+            .as_ref()
+            .iter()
+            .any(|m| matches!(m, TypeModifier::List(..)))
+        {
+            None
+        } else {
+            Some(self.name.as_ref())
         }
     }
 
@@ -76,18 +97,18 @@ impl<N: AsRef<str>> Type<N> {
     /// All [`Type`] literals contain exactly one named type.
     #[must_use]
     pub fn innermost_name(&self) -> &str {
-        match self {
-            Self::Named(n) | Self::NonNullNamed(n) => n.as_ref(),
-            Self::List(l, ..) | Self::NonNullList(l, ..) => l.innermost_name(),
-        }
+        self.name.as_ref()
     }
 
     /// Indicates whether this [`Type`] can only represent non-`null` values.
     #[must_use]
-    pub fn is_non_null(&self) -> bool {
-        match self {
-            Self::NonNullList(..) | Self::NonNullNamed(..) => true,
-            Self::List(..) | Self::Named(..) => false,
+    pub fn is_non_null(&self) -> bool
+    where
+        M: AsRef<[TypeModifier]>,
+    {
+        match self.modifiers.as_ref().last() {
+            Some(TypeModifier::NonNull) => true,
+            Some(TypeModifier::List(..)) | None => false,
         }
     }
 }
