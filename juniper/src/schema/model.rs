@@ -473,23 +473,27 @@ impl<S> SchemaType<S> {
     }
 
     /// If the type is a subtype of another type.
-    pub fn is_subtype<'b>(&self, sub_type: &DynType<'b>, super_type: &DynType<'b>) -> bool {
-        use DynType::*;
+    pub fn is_subtype(
+        &self,
+        sub_type: &Type<impl AsRef<str>>,
+        super_type: &Type<impl AsRef<str>>,
+    ) -> bool {
+        use Type::*;
 
-        if super_type.equals(sub_type) {
+        if super_type == sub_type {
             return true;
         }
 
         match (super_type, sub_type) {
-            (&NonNullNamed(ref super_name), &NonNullNamed(ref sub_name))
-            | (&Named(ref super_name), &Named(ref sub_name))
-            | (&Named(ref super_name), &NonNullNamed(ref sub_name)) => {
+            (NonNullNamed(super_name), NonNullNamed(sub_name))
+            | (Named(super_name), Named(sub_name))
+            | (Named(super_name), NonNullNamed(sub_name)) => {
                 self.is_named_subtype(sub_name.as_ref(), super_name.as_ref())
             }
-            (&NonNullList(super_inner, _), &NonNullList(sub_inner, _))
-            | (&List(super_inner, _), &List(sub_inner, _))
-            | (&List(super_inner, _), &NonNullList(sub_inner, _)) => {
-                self.is_subtype(&sub_inner.as_dyn_type(), &super_inner.as_dyn_type())
+            (NonNullList(super_inner, _), NonNullList(sub_inner, _))
+            | (List(super_inner, _), List(sub_inner, _))
+            | (List(super_inner, _), NonNullList(sub_inner, _)) => {
+                self.is_subtype(sub_inner, super_inner)
             }
             _ => false,
         }

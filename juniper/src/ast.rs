@@ -13,7 +13,7 @@ use crate::{
 /// Type literal in a syntax tree.
 ///
 /// This enum carries no semantic information and might refer to types that do not exist.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub enum Type<N = ArcStr> {
     /// `null`able named type, e.g. `String`.
     Named(N),
@@ -30,6 +30,22 @@ pub enum Type<N = ArcStr> {
     ///
     /// The list itself is non-`null`, the containing [`Type`] might be `null`able.
     NonNullList(Box<Type<N>>, Option<usize>),
+}
+
+impl<N> Eq for Type<N> where Self: PartialEq {}
+
+impl<N1: AsRef<str>, N2: AsRef<str>> PartialEq<Type<N2>> for Type<N1> {
+    fn eq(&self, other: &Type<N2>) -> bool {
+        match (self, other) {
+            (Self::Named(n1), Type::Named(n2)) => n1.as_ref() == n2.as_ref(),
+            (Self::List(lhs, s1), Type::List(rhs, s2)) => s1 == s2 && lhs.as_ref() == rhs.as_ref(),
+            (Self::NonNullNamed(n1), Type::NonNullNamed(n2)) => n1.as_ref() == n2.as_ref(),
+            (Self::NonNullList(lhs, s1), Type::NonNullList(rhs, s2)) => {
+                s1 == s2 && lhs.as_ref() == rhs.as_ref()
+            }
+            _ => false,
+        }
+    }
 }
 
 impl<N: fmt::Display> fmt::Display for Type<N> {

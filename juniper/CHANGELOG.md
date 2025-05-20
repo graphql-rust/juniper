@@ -52,7 +52,6 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
         - Made `name` and `description` fields using `ArcStr`.
     - `SchemaType`: 
         - Removed lifetime parameters.
-        - Made `is_subtype()` method accepting `DynType` instead of `Type`.
     - `RootNode`:
         - Removed lifetime parameters.
     - `Registry`:

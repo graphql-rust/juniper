@@ -94,7 +94,7 @@ impl<'a, S: fmt::Debug> VariableInAllowedPosition<'a, S> {
 
                     if !ctx
                         .schema
-                        .is_subtype(&expected_type.as_dyn_type(), var_type)
+                        .is_subtype(&expected_type, var_type)
                     {
                         ctx.report_error(
                             &error_message(var_name.item, expected_type, var_type),
