@@ -1,4 +1,4 @@
-use std::{boxed::Box, collections::BTreeMap};
+use std::collections::BTreeMap;
 
 use graphql_parser::{
     Pos,
@@ -14,7 +14,7 @@ use graphql_parser::{
 };
 
 use crate::{
-    ast::{BorrowedType, InputValue, Type, TypeModifier},
+    ast::{BorrowedType, InputValue, TypeModifier},
     schema::{
         meta::{Argument, DeprecationStatus, EnumValue, Field, MetaType},
         model::SchemaType,

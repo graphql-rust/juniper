@@ -78,7 +78,7 @@ impl<'a> BorrowedType<'a> {
             modifiers: &[TypeModifier::NonNull],
         }
     }
-    
+
     pub(crate) fn inner_borrowed(&self) -> BorrowedType<'a> {
         let modifiers = self.modifiers.as_ref();
         match modifiers.len() {

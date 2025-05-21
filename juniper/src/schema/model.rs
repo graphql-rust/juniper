@@ -7,7 +7,7 @@ use graphql_parser::schema::Document;
 
 use crate::{
     GraphQLEnum,
-    ast::{Type, TypeModifier, TypeModifier::NonNull},
+    ast::{Type, TypeModifier},
     executor::{Context, Registry},
     schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta},
     types::{base::GraphQLType, name::Name},

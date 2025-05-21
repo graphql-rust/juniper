@@ -5,7 +5,10 @@ use std::{
 
 use crate::{
     Span,
-    ast::{Document, Fragment, FragmentSpread, Operation, BorrowedType, TypeModifier, VariableDefinition},
+    ast::{
+        BorrowedType, Document, Fragment, FragmentSpread, Operation, TypeModifier,
+        VariableDefinition,
+    },
     parser::Spanning,
     validation::{ValidatorContext, Visitor},
     value::ScalarValue,
@@ -83,12 +86,13 @@ impl<'a, S: fmt::Debug> VariableInAllowedPosition<'a, S> {
                 if let Some(&(var_def_name, var_def)) =
                     var_defs.iter().find(|&&(n, _)| n.item == var_name.item)
                 {
-                    let expected_type = match (&var_def.default_value, var_def.var_type.item.modifier()) {
-                        (&Some(_), Some(TypeModifier::List(..)) | None) => {
-                            var_def.var_type.item.clone().wrap_non_null()
-                        }
-                        (_, ty) => var_def.var_type.item.clone(),
-                    };
+                    let expected_type =
+                        match (&var_def.default_value, var_def.var_type.item.modifier()) {
+                            (&Some(_), Some(TypeModifier::List(..)) | None) => {
+                                var_def.var_type.item.clone().wrap_non_null()
+                            }
+                            _ => var_def.var_type.item.clone(),
+                        };
 
                     if !ctx.schema.is_subtype(&expected_type, var_type) {
                         ctx.report_error(

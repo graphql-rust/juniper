@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::{
-    ast::{BorrowedType, Definition, Document, Type, TypeModifier},
+    ast::{BorrowedType, Definition, Document},
     parser::SourcePosition,
     schema::{meta::MetaType, model::SchemaType},
 };
@@ -114,7 +114,7 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
         F: FnOnce(&mut ValidatorContext<'a, S>) -> R,
     {
         let t = t.map(Into::into);
-        
+
         if let Some(t) = t {
             self.type_stack
                 .push(self.schema.concrete_type_by_name(t.innermost_name()));

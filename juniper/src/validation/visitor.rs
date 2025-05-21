@@ -1,17 +1,13 @@
 use crate::{
     ast::{
-        Arguments, Definition, Directive, Document, Field, Fragment, FragmentSpread,
+        Arguments, BorrowedType, Definition, Directive, Document, Field, Fragment, FragmentSpread,
         InlineFragment, InputValue, Operation, OperationType, Selection, VariableDefinitions,
-        Type,
     },
     parser::Spanning,
-    schema::{
-        meta::Argument,
-    },
+    schema::meta::Argument,
     validation::{ValidatorContext, Visitor, multi_visitor::MultiVisitorCons},
     value::ScalarValue,
 };
-use crate::ast::BorrowedType;
 
 #[doc(hidden)]
 pub fn visit<'a, A, B, S>(
@@ -342,7 +338,9 @@ fn visit_input_value<'a, S, V>(
             }
         }
         InputValue::List(ls) => {
-            let inner_type = ctx.current_input_type_literal().and_then(|t| t.list_inner_borrowed());
+            let inner_type = ctx
+                .current_input_type_literal()
+                .and_then(|t| t.list_inner_borrowed());
 
             ctx.with_pushed_input_type(inner_type, |ctx| {
                 for value in ls {

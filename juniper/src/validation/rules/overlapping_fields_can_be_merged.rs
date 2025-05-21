@@ -5,7 +5,7 @@ use arcstr::ArcStr;
 use crate::{
     ast::{
         Arguments, Definition, Document, Field, Fragment, FragmentSpread, Selection, Type,
-        TypeModifier, TypeModifier::NonNull,
+        TypeModifier,
     },
     parser::{SourcePosition, Spanning},
     schema::meta::{Field as FieldType, MetaType},
