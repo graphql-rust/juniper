@@ -72,6 +72,13 @@ where
 }
 
 impl<'a> BorrowedType<'a> {
+    pub(crate) fn non_null(name: &'a str) -> Self {
+        Self {
+            name,
+            modifiers: &[TypeModifier::NonNull],
+        }
+    }
+    
     pub(crate) fn inner_borrowed(&self) -> BorrowedType<'a> {
         let modifiers = self.modifiers.as_ref();
         match modifiers.len() {

@@ -11,6 +11,7 @@ use crate::{
     validation::{ValidatorContext, Visitor, multi_visitor::MultiVisitorCons},
     value::ScalarValue,
 };
+use crate::ast::BorrowedType;
 
 #[doc(hidden)]
 pub fn visit<'a, A, B, S>(
@@ -40,7 +41,7 @@ where
                         ..
                     },
                 ..
-            }) => Some(Type::named(*name).wrap_non_null()),
+            }) => Some(BorrowedType::non_null(name)),
             Definition::Operation(Spanning {
                 item:
                     Operation {
@@ -48,7 +49,9 @@ where
                         ..
                     },
                 ..
-            }) => Some(ctx.schema.concrete_query_type().as_type()),
+            }) => Some(BorrowedType::non_null(
+                ctx.schema.concrete_query_type().name().unwrap(),
+            )),
             Definition::Operation(Spanning {
                 item:
                     Operation {
@@ -59,7 +62,7 @@ where
             }) => ctx
                 .schema
                 .concrete_mutation_type()
-                .map(|t| t.as_type()),
+                .map(|t| BorrowedType::non_null(t.name().unwrap())),
             Definition::Operation(Spanning {
                 item:
                     Operation {
@@ -70,10 +73,10 @@ where
             }) => ctx
                 .schema
                 .concrete_subscription_type()
-                .map(|t| t.as_type()),
+                .map(|t| BorrowedType::non_null(t.name().unwrap())),
         };
 
-        ctx.with_pushed_type(def_type.as_ref(), |ctx| {
+        ctx.with_pushed_type(def_type, |ctx| {
             enter_definition(v, ctx, def);
             visit_definition(v, ctx, def);
             exit_definition(v, ctx, def);
@@ -306,7 +309,7 @@ fn visit_inline_fragment<'a, S, V>(
         item: type_name, ..
     }) = fragment.item.type_condition
     {
-        ctx.with_pushed_type(Some(&Type::<&str>::named(type_name).wrap_non_null()), visit_fn);
+        ctx.with_pushed_type(Some(BorrowedType::non_null(type_name)), visit_fn);
     } else {
         visit_fn(ctx);
     }
