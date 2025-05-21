@@ -14,7 +14,7 @@ use graphql_parser::{
 };
 
 use crate::{
-    ast::{InputValue, Type},
+    ast::{BorrowedType, InputValue, Type, TypeModifier},
     schema::{
         meta::{Argument, DeprecationStatus, EnumValue, Field, MetaType},
         model::SchemaType,
@@ -90,7 +90,7 @@ impl GraphQLParserTranslator {
             position: Pos::default(),
             description: input.description.as_deref().map(Into::into),
             name: From::from(input.name.as_str()),
-            value_type: GraphQLParserTranslator::translate_type(&input.arg_type),
+            value_type: GraphQLParserTranslator::translate_type((&input.arg_type).into()),
             default_value: input
                 .default_value
                 .as_ref()
@@ -139,21 +139,18 @@ impl GraphQLParserTranslator {
         }
     }
 
-    fn translate_type<'a, T>(input: &'a Type<impl AsRef<str>>) -> ExternalType<'a, T>
+    fn translate_type<'a, T>(input: BorrowedType<'a>) -> ExternalType<'a, T>
     where
         T: Text<'a>,
     {
-        match input {
-            Type::List(x, ..) => {
-                ExternalType::ListType(GraphQLParserTranslator::translate_type(x).into())
+        match input.modifier() {
+            Some(TypeModifier::NonNull) => {
+                ExternalType::NonNullType(Self::translate_type(input.inner_borrowed()).into())
             }
-            Type::Named(x) => ExternalType::NamedType(From::from(x.as_ref())),
-            Type::NonNullList(x, ..) => ExternalType::NonNullType(Box::new(
-                ExternalType::ListType(Box::new(GraphQLParserTranslator::translate_type(x))),
-            )),
-            Type::NonNullNamed(x) => {
-                ExternalType::NonNullType(Box::new(ExternalType::NamedType(From::from(x.as_ref()))))
+            Some(TypeModifier::List(..)) => {
+                ExternalType::ListType(Self::translate_type(input.inner_borrowed()).into())
             }
+            None => ExternalType::NamedType(input.borrowed_name().into()),
         }
     }
 
@@ -276,7 +273,7 @@ impl GraphQLParserTranslator {
             name: From::from(input.name.as_str()),
             description: input.description.as_deref().map(Into::into),
             directives: generate_directives(&input.deprecation_status),
-            field_type: GraphQLParserTranslator::translate_type(&input.field_type),
+            field_type: GraphQLParserTranslator::translate_type((&input.field_type).into()),
             arguments,
         }
     }

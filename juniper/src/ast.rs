@@ -1,8 +1,8 @@
 use std::{borrow::Cow, fmt, hash::Hash, slice, vec};
 
 use arcstr::ArcStr;
-
 use indexmap::IndexMap;
+use smallvec::{SmallVec, smallvec};
 
 use crate::{
     executor::Variables,
@@ -22,7 +22,7 @@ pub(crate) type BorrowedType<'a> = Type<&'a str, &'a [TypeModifier]>;
 ///
 /// Carries no semantic information and might refer to types that don't exist.
 #[derive(Clone, Debug)]
-pub struct Type<N = ArcStr, M = Box<[TypeModifier]>> {
+pub struct Type<N = ArcStr, M = SmallVec<[TypeModifier; 2]>> {
     name: N,
     modifiers: M,
 }
@@ -48,27 +48,56 @@ where
     M: AsRef<[TypeModifier]>,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // PANIC: `self.inner().unwrap()` never panics if there is at least on `TypeModifier`.
-        match self.modifiers.as_ref().last() {
-            Some(TypeModifier::NonNull) => write!(f, "{}!", self.inner().unwrap()),
-            Some(TypeModifier::List(..)) => write!(f, "[{}]", self.inner().unwrap()),
+        match self.modifier() {
+            Some(TypeModifier::NonNull) => write!(f, "{}!", self.inner()),
+            Some(TypeModifier::List(..)) => write!(f, "[{}]", self.inner()),
             None => write!(f, "{}", self.name.as_ref()),
         }
     }
 }
 
+impl<'a, N, M> From<&'a Type<N, M>> for BorrowedType<'a>
+where
+    N: AsRef<str>,
+    M: AsRef<[TypeModifier]>,
+{
+    fn from(value: &'a Type<N, M>) -> Self {
+        Self {
+            name: value.name.as_ref(),
+            modifiers: value.modifiers.as_ref(),
+        }
+    }
+}
+
+impl<'a> BorrowedType<'a> {
+    pub(crate) fn inner_borrowed(&self) -> BorrowedType<'a> {
+        let modifiers = self.modifiers.as_ref();
+        match modifiers.len() {
+            0 => unreachable!(),
+            n => Type {
+                name: self.name,
+                modifiers: &modifiers[..n - 1],
+            },
+        }
+    }
+
+    pub(crate) fn borrowed_name(&self) -> &'a str {
+        self.name
+    }
+}
+
 impl<N: AsRef<str>, M> Type<N, M> {
-    pub(crate) fn inner(&self) -> Option<BorrowedType<'_>>
+    pub(crate) fn inner(&self) -> BorrowedType<'_>
     where
         M: AsRef<[TypeModifier]>,
     {
         let modifiers = self.modifiers.as_ref();
         match modifiers.len() {
-            0 => None,
-            n => Some(Type {
+            0 => unreachable!(),
+            n => Type {
                 name: self.name.as_ref(),
                 modifiers: &modifiers[..n - 1],
-            }),
+            },
         }
     }
 
@@ -100,6 +129,15 @@ impl<N: AsRef<str>, M> Type<N, M> {
         self.name.as_ref()
     }
 
+    /// Returns the [`TypeModifier`] of this [`Type`], if any.
+    #[must_use]
+    pub fn modifier(&self) -> Option<&TypeModifier>
+    where
+        M: AsRef<[TypeModifier]>,
+    {
+        self.modifiers.as_ref().last()
+    }
+
     /// Indicates whether this [`Type`] can only represent non-`null` values.
     #[must_use]
     pub fn is_non_null(&self) -> bool
@@ -109,6 +147,50 @@ impl<N: AsRef<str>, M> Type<N, M> {
         match self.modifiers.as_ref().last() {
             Some(TypeModifier::NonNull) => true,
             Some(TypeModifier::List(..)) | None => false,
+        }
+    }
+
+    #[must_use]
+    pub fn is_list(&self) -> bool
+    where
+        M: AsRef<[TypeModifier]>,
+    {
+        match self.modifiers.as_ref().last() {
+            Some(TypeModifier::NonNull) => self.inner().is_non_null(),
+            Some(TypeModifier::List(..)) => true,
+            None => false,
+        }
+    }
+}
+
+impl<N: AsRef<str>> Type<N> {
+    /// Wraps this [`Type`] into the provided [`TypeModifier`].
+    fn wrap(mut self, modifier: TypeModifier) -> Self {
+        self.modifiers.push(modifier);
+        self
+    }
+
+    pub fn wrap_list(self, size_hint: Option<usize>) -> Self {
+        // TODO: assert?
+        self.wrap(TypeModifier::List(size_hint))
+    }
+
+    pub fn wrap_non_null(self) -> Self {
+        // TODO: assert?
+        self.wrap(TypeModifier::NonNull)
+    }
+
+    pub fn nullable(mut self) -> Self {
+        if self.is_non_null() {
+            _ = self.modifiers.pop();
+        }
+        self
+    }
+
+    pub fn named(name: impl Into<N>) -> Self {
+        Self {
+            name: name.into(),
+            modifiers: smallvec![],
         }
     }
 }

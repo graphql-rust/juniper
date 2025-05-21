@@ -3,7 +3,10 @@ use std::{borrow::Borrow, cell::RefCell, collections::HashMap, fmt::Debug, hash:
 use arcstr::ArcStr;
 
 use crate::{
-    ast::{Arguments, Definition, Document, Field, Fragment, FragmentSpread, Selection, Type},
+    ast::{
+        Arguments, Definition, Document, Field, Fragment, FragmentSpread, Selection, Type,
+        TypeModifier, TypeModifier::NonNull,
+    },
     parser::{SourcePosition, Spanning},
     schema::meta::{Field as FieldType, MetaType},
     validation::{ValidatorContext, Visitor},
@@ -552,24 +555,29 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
         ))
     }
 
-    fn is_type_conflict<N: AsRef<str> + PartialEq>(
+    fn is_type_conflict(
         ctx: &ValidatorContext<'a, S>,
-        t1: &Type<N>,
-        t2: &Type<N>,
+        t1: &Type<impl AsRef<str>, impl AsRef<[TypeModifier]>>,
+        t2: &Type<impl AsRef<str>, impl AsRef<[TypeModifier]>>,
     ) -> bool {
-        match (t1, t2) {
-            (Type::List(inner1, expected_size1), Type::List(inner2, expected_size2))
-            | (
-                Type::NonNullList(inner1, expected_size1),
-                Type::NonNullList(inner2, expected_size2),
-            ) => {
-                if expected_size1 != expected_size2 {
-                    return false;
-                }
-                Self::is_type_conflict(ctx, inner1, inner2)
+        match (t1.modifier(), t2.modifier()) {
+            (Some(TypeModifier::NonNull), Some(TypeModifier::NonNull)) => {
+                Self::is_type_conflict(ctx, &t1.inner(), &t2.inner())
             }
-            (Type::Named(n1), Type::Named(n2))
-            | (Type::NonNullNamed(n1), Type::NonNullNamed(n2)) => {
+            (
+                Some(TypeModifier::List(expected_size1)),
+                Some(TypeModifier::List(expected_size2)),
+            ) => {
+                if expected_size1 == expected_size2 {
+                    Self::is_type_conflict(ctx, &t1.inner(), &t2.inner())
+                } else {
+                    false
+                }
+            }
+            (None, None) => {
+                let n1 = t1.innermost_name();
+                let n2 = t2.innermost_name();
+
                 let ct1 = ctx.schema.concrete_type_by_name(n1);
                 let ct2 = ctx.schema.concrete_type_by_name(n2);
 

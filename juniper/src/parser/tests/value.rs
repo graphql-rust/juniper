@@ -173,8 +173,8 @@ fn input_value_literals() {
         ),
     );
     let fields = [
-        Argument::new("key", Type::NonNullNamed("Int".into())),
-        Argument::new("other", Type::NonNullNamed("Bar".into())),
+        Argument::new("key", Type::named("Int").wrap_non_null()),
+        Argument::new("other", Type::named("Bar").wrap_non_null()),
     ];
     let meta = &MetaType::InputObject(InputObjectMeta::new::<Foo>("foo", &fields));
     assert_eq!(

@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     Span,
-    ast::{Document, Fragment, FragmentSpread, Operation, Type, VariableDefinition},
+    ast::{Document, Fragment, FragmentSpread, Operation, Type, TypeModifier, VariableDefinition},
     parser::Spanning,
     schema::model::{AsDynType, DynType},
     validation::{ValidatorContext, Visitor},
@@ -84,12 +84,11 @@ impl<'a, S: fmt::Debug> VariableInAllowedPosition<'a, S> {
                 if let Some(&(var_def_name, var_def)) =
                     var_defs.iter().find(|&&(n, _)| n.item == var_name.item)
                 {
-                    let expected_type = match (&var_def.default_value, &var_def.var_type.item) {
-                        (&Some(_), Type::List(inner, expected_size)) => {
-                            Type::NonNullList(inner.clone(), *expected_size)
+                    let expected_type = match (&var_def.default_value, var_def.var_type.item.modifier()) {
+                        (&Some(_), Some(TypeModifier::List(..)) | None) => {
+                            var_def.var_type.item.clone().wrap_non_null()
                         }
-                        (&Some(_), Type::Named(inner)) => Type::NonNullNamed(*inner),
-                        (_, ty) => ty.clone(),
+                        (_, ty) => var_def.var_type.item.clone(),
                     };
 
                     if !ctx.schema.is_subtype(&expected_type, var_type) {

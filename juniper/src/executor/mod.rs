@@ -1155,7 +1155,7 @@ impl<S> Registry<S> {
         if let Some(name) = T::name(info) {
             let validated_name = Name::new(name.clone()).unwrap();
             if !self.types.contains_key(&name) {
-                self.insert_placeholder(validated_name.clone(), Type::NonNullNamed(name.clone()));
+                self.insert_placeholder(validated_name.clone(), Type::named(name.clone()).wrap_non_null());
                 let meta = T::meta(info, self);
                 self.types.insert(validated_name, meta);
             }

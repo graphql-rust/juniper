@@ -72,8 +72,8 @@ impl std::error::Error for RuleError {}
 
 impl<'a, S: Debug> ValidatorContext<'a, S> {
     #[doc(hidden)]
-    pub fn new(schema: &'a SchemaType<S>, document: &Document<'a, S>) -> ValidatorContext<'a, S> {
-        ValidatorContext {
+    pub fn new(schema: &'a SchemaType<S>, document: &Document<'a, S>) -> Self {
+        Self {
             errors: Vec::new(),
             schema,
             type_stack: Vec::new(),

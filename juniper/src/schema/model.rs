@@ -7,7 +7,7 @@ use graphql_parser::schema::Document;
 
 use crate::{
     GraphQLEnum,
-    ast::Type,
+    ast::{Type, TypeModifier, TypeModifier::NonNull},
     executor::{Context, Registry},
     schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta},
     types::{base::GraphQLType, name::Name},
@@ -318,12 +318,14 @@ impl<S> SchemaType<S> {
         self.types.get(name.as_ref())
     }
 
-    pub(crate) fn lookup_type(&self, tpe: &Type<impl AsRef<str>>) -> Option<&MetaType<S>> {
-        match tpe {
-            Type::Named(name) | Type::NonNullNamed(name) => {
-                self.concrete_type_by_name(name.as_ref())
-            }
-            Type::List(inner, ..) | Type::NonNullList(inner, ..) => self.lookup_type(inner),
+    pub(crate) fn lookup_type(
+        &self,
+        ty: &Type<impl AsRef<str>, impl AsRef<[TypeModifier]>>,
+    ) -> Option<&MetaType<S>> {
+        if let Some(name) = ty.name() {
+            self.concrete_type_by_name(name)
+        } else {
+            self.lookup_type(&ty.inner())
         }
     }
 
@@ -392,19 +394,15 @@ impl<S> SchemaType<S> {
     }
 
     /// Make a type.
-    pub fn make_type(&self, ty: &Type<impl AsRef<str>>) -> TypeType<S> {
-        match ty {
-            Type::List(inner, expected_size) => {
-                TypeType::List(Box::new(self.make_type(inner)), *expected_size)
+    pub fn make_type(&self, ty: &Type<impl AsRef<str>, impl AsRef<[TypeModifier]>>) -> TypeType<S> {
+        match ty.modifier() {
+            Some(TypeModifier::NonNull) => TypeType::NonNull(Box::new(self.make_type(&ty.inner()))),
+            Some(TypeModifier::List(expected_size)) => {
+                TypeType::List(Box::new(self.make_type(&ty.inner())), *expected_size)
             }
-            Type::Named(n) => self.type_by_name(n).expect("Type not found in schema"),
-            Type::NonNullList(inner, expected_size) => TypeType::NonNull(Box::new(TypeType::List(
-                Box::new(self.make_type(inner)),
-                *expected_size,
-            ))),
-            Type::NonNullNamed(n) => TypeType::NonNull(Box::new(
-                self.type_by_name(n).expect("Type not found in schema"),
-            )),
+            None => self
+                .type_by_name(ty.innermost_name())
+                .expect("Type not found in schema"),
         }
     }
 
@@ -475,25 +473,27 @@ impl<S> SchemaType<S> {
     /// If the type is a subtype of another type.
     pub fn is_subtype(
         &self,
-        sub_type: &Type<impl AsRef<str>>,
-        super_type: &Type<impl AsRef<str>>,
+        sub_type: &Type<impl AsRef<str>, impl AsRef<[TypeModifier]>>,
+        super_type: &Type<impl AsRef<str>, impl AsRef<[TypeModifier]>>,
     ) -> bool {
-        use Type::*;
+        use TypeModifier::{List, NonNull};
 
         if super_type == sub_type {
             return true;
         }
 
-        match (super_type, sub_type) {
-            (NonNullNamed(super_name), NonNullNamed(sub_name))
-            | (Named(super_name), Named(sub_name))
-            | (Named(super_name), NonNullNamed(sub_name)) => {
-                self.is_named_subtype(sub_name.as_ref(), super_name.as_ref())
+        match (super_type.modifier(), sub_type.modifier()) {
+            (Some(NonNull), Some(NonNull)) => {
+                self.is_subtype(&sub_type.inner(), &super_type.inner())
             }
-            (NonNullList(super_inner, _), NonNullList(sub_inner, _))
-            | (List(super_inner, _), List(sub_inner, _))
-            | (List(super_inner, _), NonNullList(sub_inner, _)) => {
-                self.is_subtype(sub_inner, super_inner)
+            (None | Some(List(..)), Some(NonNull)) => {
+                self.is_subtype(&sub_type.inner(), super_type)
+            }
+            (Some(List(..)), Some(List(..))) => {
+                self.is_subtype(&sub_type.inner(), &super_type.inner())
+            }
+            (None, None) => {
+                self.is_named_subtype(sub_type.innermost_name(), super_type.innermost_name())
             }
             _ => false,
         }
