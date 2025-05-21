@@ -2,11 +2,11 @@ use crate::{
     ast::{
         Arguments, Definition, Directive, Document, Field, Fragment, FragmentSpread,
         InlineFragment, InputValue, Operation, OperationType, Selection, VariableDefinitions,
+        Type,
     },
     parser::Spanning,
     schema::{
         meta::Argument,
-        model::{AsDynType, DynType},
     },
     validation::{ValidatorContext, Visitor, multi_visitor::MultiVisitorCons},
     value::ScalarValue,
@@ -32,7 +32,7 @@ where
     V: Visitor<'a, S>,
 {
     for def in d {
-        let def_type = match *def {
+        let def_type = match def {
             Definition::Fragment(Spanning {
                 item:
                     Fragment {
@@ -40,7 +40,7 @@ where
                         ..
                     },
                 ..
-            }) => Some(DynType::NonNullNamed(name)),
+            }) => Some(Type::named(*name).wrap_non_null()),
             Definition::Operation(Spanning {
                 item:
                     Operation {
@@ -48,9 +48,7 @@ where
                         ..
                     },
                 ..
-            }) => Some(DynType::NonNullNamed(
-                ctx.schema.concrete_query_type().name().unwrap(),
-            )),
+            }) => Some(ctx.schema.concrete_query_type().as_type()),
             Definition::Operation(Spanning {
                 item:
                     Operation {
@@ -61,7 +59,7 @@ where
             }) => ctx
                 .schema
                 .concrete_mutation_type()
-                .map(|t| DynType::NonNullNamed(t.name().unwrap())),
+                .map(|t| t.as_type()),
             Definition::Operation(Spanning {
                 item:
                     Operation {
@@ -72,10 +70,10 @@ where
             }) => ctx
                 .schema
                 .concrete_subscription_type()
-                .map(|t| DynType::NonNullNamed(t.name().unwrap())),
+                .map(|t| t.as_type()),
         };
 
-        ctx.with_pushed_type(def_type, |ctx| {
+        ctx.with_pushed_type(def_type.as_ref(), |ctx| {
             enter_definition(v, ctx, def);
             visit_definition(v, ctx, def);
             exit_definition(v, ctx, def);
@@ -135,7 +133,7 @@ fn visit_variable_definitions<'a, S, V>(
         for def in defs.item.iter() {
             let var_type = &def.1.var_type.item;
 
-            ctx.with_pushed_input_type(Some(var_type.as_dyn_type()), |ctx| {
+            ctx.with_pushed_input_type(Some(var_type), |ctx| {
                 v.enter_variable_definition(ctx, def);
 
                 if let Some(ref default_value) = def.1.default_value {
@@ -196,8 +194,7 @@ fn visit_arguments<'a, S, V>(
         for argument in arguments.item.iter() {
             let arg_type = meta_args
                 .and_then(|args| args.iter().find(|a| a.name == argument.0.item))
-                .map(|a| &a.arg_type)
-                .map(|t| t.as_dyn_type());
+                .map(|a| &a.arg_type);
 
             ctx.with_pushed_input_type(arg_type, |ctx| {
                 v.enter_argument(ctx, argument);
@@ -256,7 +253,7 @@ fn visit_field<'a, S, V>(
         .parent_type()
         .and_then(|t| t.field_by_name(field.item.name.item));
 
-    let field_type = meta_field.map(|f| f.field_type.as_dyn_type());
+    let field_type = meta_field.map(|f| &f.field_type);
     let field_args = meta_field.and_then(|f| f.arguments.as_ref());
 
     ctx.with_pushed_type(field_type, |ctx| {
@@ -291,7 +288,7 @@ fn visit_fragment_spread<'a, S, V>(
 fn visit_inline_fragment<'a, S, V>(
     v: &mut V,
     ctx: &mut ValidatorContext<'a, S>,
-    fragment: &'a Spanning<InlineFragment<S>>,
+    fragment: &'a Spanning<InlineFragment<'a, S>>,
 ) where
     S: ScalarValue,
     V: Visitor<'a, S>,
@@ -309,7 +306,7 @@ fn visit_inline_fragment<'a, S, V>(
         item: type_name, ..
     }) = fragment.item.type_condition
     {
-        ctx.with_pushed_type(Some(DynType::NonNullNamed(type_name)), visit_fn);
+        ctx.with_pushed_type(Some(&Type::<&str>::named(type_name).wrap_non_null()), visit_fn);
     } else {
         visit_fn(ctx);
     }
@@ -325,20 +322,14 @@ fn visit_input_value<'a, S, V>(
 {
     enter_input_value(v, ctx, input_value);
 
-    match input_value.item {
-        InputValue::Object(ref fields) => {
+    match &input_value.item {
+        InputValue::Object(fields) => {
             for (key, value) in fields {
                 let inner_type = ctx
                     .current_input_type_literal()
-                    .and_then(|t| match t {
-                        DynType::NonNullNamed(name) | DynType::Named(name) => {
-                            ctx.schema.concrete_type_by_name(name)
-                        }
-                        _ => None,
-                    })
+                    .and_then(|t| t.name().and_then(|n| ctx.schema.concrete_type_by_name(n)))
                     .and_then(|ct| ct.input_field_by_name(&key.item))
-                    .map(|f| &f.arg_type)
-                    .map(|t| t.as_dyn_type());
+                    .map(|f| &f.arg_type);
 
                 ctx.with_pushed_input_type(inner_type, |ctx| {
                     v.enter_object_field(ctx, (key.as_ref(), value.as_ref()));
@@ -347,13 +338,8 @@ fn visit_input_value<'a, S, V>(
                 })
             }
         }
-        InputValue::List(ref ls) => {
-            let inner_type = ctx.current_input_type_literal().and_then(|t| match t {
-                DynType::List(inner, _) | DynType::NonNullList(inner, _) => {
-                    Some(inner.as_dyn_type())
-                }
-                _ => None,
-            });
+        InputValue::List(ls) => {
+            let inner_type = ctx.current_input_type_literal().and_then(|t| t.list_inner_borrowed());
 
             ctx.with_pushed_input_type(inner_type, |ctx| {
                 for value in ls {

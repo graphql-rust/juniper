@@ -18,6 +18,8 @@ pub enum TypeModifier {
 
 pub(crate) type BorrowedType<'a> = Type<&'a str, &'a [TypeModifier]>;
 
+impl Copy for BorrowedType<'_> {}
+
 /// Type literal in a syntax tree.
 ///
 /// Carries no semantic information and might refer to types that don't exist.
@@ -78,6 +80,13 @@ impl<'a> BorrowedType<'a> {
                 name: self.name,
                 modifiers: &modifiers[..n - 1],
             },
+        }
+    }
+    pub(crate) fn list_inner_borrowed(&self) -> Option<BorrowedType<'a>> {
+        match self.modifiers.as_ref().last() {
+            Some(TypeModifier::NonNull) => self.inner_borrowed().list_inner_borrowed(),
+            Some(TypeModifier::List(..)) => Some(self.inner_borrowed()),
+            None => None,
         }
     }
 

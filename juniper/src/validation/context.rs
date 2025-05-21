@@ -4,13 +4,10 @@ use std::{
 };
 
 use crate::{
-    ast::{Definition, Document},
-    schema::model::DynType,
+    ast::{BorrowedType, Definition, Document, Type, TypeModifier},
+    parser::SourcePosition,
+    schema::{meta::MetaType, model::SchemaType},
 };
-
-use crate::schema::{meta::MetaType, model::SchemaType};
-
-use crate::parser::SourcePosition;
 
 /// Query validation error
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -24,9 +21,9 @@ pub struct ValidatorContext<'a, S: Debug + 'a> {
     pub schema: &'a SchemaType<S>,
     errors: Vec<RuleError>,
     type_stack: Vec<Option<&'a MetaType<S>>>,
-    type_literal_stack: Vec<Option<DynType<'a>>>,
+    type_literal_stack: Vec<Option<BorrowedType<'a>>>,
     input_type_stack: Vec<Option<&'a MetaType<S>>>,
-    input_type_literal_stack: Vec<Option<DynType<'a>>>,
+    input_type_literal_stack: Vec<Option<BorrowedType<'a>>>,
     parent_type_stack: Vec<Option<&'a MetaType<S>>>,
     fragment_names: HashSet<&'a str>,
 }
@@ -112,10 +109,12 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
     }
 
     #[doc(hidden)]
-    pub fn with_pushed_type<F, R>(&mut self, t: Option<DynType<'a>>, f: F) -> R
+    pub fn with_pushed_type<F, R>(&mut self, t: Option<impl Into<BorrowedType<'a>>>, f: F) -> R
     where
         F: FnOnce(&mut ValidatorContext<'a, S>) -> R,
     {
+        let t = t.map(Into::into);
+        
         if let Some(t) = t {
             self.type_stack
                 .push(self.schema.concrete_type_by_name(t.innermost_name()));
@@ -147,10 +146,16 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
     }
 
     #[doc(hidden)]
-    pub fn with_pushed_input_type<F, R>(&mut self, t: Option<DynType<'a>>, f: F) -> R
+    pub fn with_pushed_input_type<F, R>(
+        &mut self,
+        t: Option<impl Into<BorrowedType<'a>>>,
+        f: F,
+    ) -> R
     where
         F: FnOnce(&mut ValidatorContext<'a, S>) -> R,
     {
+        let t = t.map(Into::into);
+
         if let Some(t) = t {
             self.input_type_stack
                 .push(self.schema.concrete_type_by_name(t.innermost_name()));
@@ -174,7 +179,7 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
     }
 
     #[doc(hidden)]
-    pub fn current_type_literal(&self) -> Option<DynType<'a>> {
+    pub fn current_type_literal(&self) -> Option<BorrowedType<'a>> {
         match self.type_literal_stack.last() {
             Some(Some(t)) => Some(*t),
             _ => None,
@@ -187,7 +192,7 @@ impl<'a, S: Debug> ValidatorContext<'a, S> {
     }
 
     #[doc(hidden)]
-    pub fn current_input_type_literal(&self) -> Option<DynType<'a>> {
+    pub fn current_input_type_literal(&self) -> Option<BorrowedType<'a>> {
         match self.input_type_literal_stack.last() {
             Some(Some(t)) => Some(*t),
             _ => None,
