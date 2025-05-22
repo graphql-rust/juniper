@@ -174,7 +174,7 @@ pub mod subscriptions {
         http::header::{HeaderName, HeaderValue},
         web,
     };
-    use derive_more::with_trait::Display;
+    use derive_more::with_trait::{Display, Error as StdError};
     use futures::{SinkExt as _, StreamExt as _, future};
     use juniper::{GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue};
     use juniper_graphql_ws::{ArcSchema, Init, graphql_transport_ws, graphql_ws};
@@ -418,7 +418,7 @@ pub mod subscriptions {
     }
 
     /// Possible errors of serving an [`actix_ws`] connection.
-    #[derive(Debug, Display)]
+    #[derive(Debug, Display, StdError)]
     enum Error {
         /// Deserializing of a client [`actix_ws::Message`] failed.
         #[display("`serde` error: {_0}")]
@@ -426,10 +426,8 @@ pub mod subscriptions {
 
         /// Unexpected client [`actix_ws::Message`].
         #[display("unexpected message received from client: {_0:?}")]
-        UnexpectedClientMessage(actix_ws::Message),
+        UnexpectedClientMessage(#[error(not(source))] actix_ws::Message),
     }
-
-    impl std::error::Error for Error {}
 }
 
 #[cfg(test)]

@@ -1,6 +1,6 @@
 use std::{char, iter::Peekable, str::CharIndices};
 
-use derive_more::with_trait::Display;
+use derive_more::with_trait::{Display, Error};
 
 use crate::parser::{SourcePosition, Spanning};
 
@@ -63,21 +63,21 @@ pub enum Token<'a> {
 }
 
 /// Error when tokenizing the input source
-#[derive(Clone, Debug, Display, Eq, PartialEq)]
+#[derive(Clone, Debug, Display, Eq, Error, PartialEq)]
 pub enum LexerError {
     /// An unknown character was found
     ///
     /// Unknown characters are characters that do not occur anywhere in the
     /// GraphQL language, such as `?` or `%`.
     #[display("Unknown character \"{_0}\"")]
-    UnknownCharacter(char),
+    UnknownCharacter(#[error(not(source))] char),
 
     /// An unexpected character was found
     ///
     /// Unexpected characters are characters that _do_ exist in the GraphQL
     /// language, but is not expected at the current position in the document.
     #[display("Unexpected character \"{_0}\"")]
-    UnexpectedCharacter(char),
+    UnexpectedCharacter(#[error(not(source))] char),
 
     /// An unterminated string literal was found
     ///
@@ -92,14 +92,14 @@ pub enum LexerError {
     /// This occurs when an invalid source character is found in a string
     /// literal, such as ASCII control characters.
     #[display("Unknown character \"{_0}\" in string literal")]
-    UnknownCharacterInString(char),
+    UnknownCharacterInString(#[error(not(source))] char),
 
     /// An unknown escape sequence in a string literal was found
     ///
     /// Only a limited set of escape sequences are supported, this is emitted
     /// when e.g. `"\l"` is parsed.
     #[display("Unknown escape sequence \"{_0}\" in string")]
-    UnknownEscapeSequence(String),
+    UnknownEscapeSequence(#[error(not(source))] String),
 
     /// The input source was unexpectedly terminated
     ///
@@ -516,5 +516,3 @@ fn is_name_cont(c: char) -> bool {
 fn is_number_start(c: char) -> bool {
     c == '-' || c.is_ascii_digit()
 }
-
-impl std::error::Error for LexerError {}

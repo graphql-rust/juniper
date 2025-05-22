@@ -7,7 +7,7 @@ use axum::{
     },
     response::Response,
 };
-use derive_more::with_trait::Display;
+use derive_more::with_trait::{Display, Error as StdError};
 use futures::{SinkExt as _, StreamExt as _, future};
 use juniper::ScalarValue;
 use juniper_graphql_ws::{Init, Schema, graphql_transport_ws, graphql_ws};
@@ -670,7 +670,7 @@ impl<S: ScalarValue> TryFrom<Message> for graphql_ws::ClientMessage<S> {
 }
 
 /// Possible errors of serving a [`WebSocket`] connection.
-#[derive(Debug, Display)]
+#[derive(Debug, Display, StdError)]
 enum Error {
     /// Deserializing of a client [`ws::Message`] failed.
     #[display("`serde` error: {_0}")]
@@ -678,7 +678,5 @@ enum Error {
 
     /// Unexpected client [`ws::Message`].
     #[display("unexpected message received from client: {_0:?}")]
-    UnexpectedClientMessage(ws::Message),
+    UnexpectedClientMessage(#[error(not(source))] ws::Message),
 }
-
-impl std::error::Error for Error {}

@@ -2,9 +2,9 @@
 #![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
 #![cfg_attr(test, expect(unused_crate_dependencies, reason = "examples"))]
 
-use std::{error::Error, string::FromUtf8Error, sync::Arc};
+use std::{string::FromUtf8Error, sync::Arc};
 
-use derive_more::with_trait::{Debug, Display};
+use derive_more::with_trait::{Debug, Display, Error};
 use http_body_util::BodyExt as _;
 use hyper::{
     Method, Request, Response, StatusCode,
@@ -313,7 +313,7 @@ fn new_html_response(code: StatusCode) -> Response<String> {
 }
 
 // TODO: Use `#[debug(forward)]` once `derive_more::Debug` is capable of it.
-#[derive(Debug, Display)]
+#[derive(Debug, Display, Error)]
 enum GraphQLRequestError<B: Body> {
     #[debug("{_0:?}")]
     BodyHyper(B::Error),
@@ -324,22 +324,7 @@ enum GraphQLRequestError<B: Body> {
     #[debug("{_0:?}")]
     Variables(SerdeError),
     #[debug("{_0:?}")]
-    Invalid(String),
-}
-
-impl<B> Error for GraphQLRequestError<B>
-where
-    B: Body<Error: Error + 'static>,
-{
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            Self::BodyHyper(e) => Some(e),
-            Self::BodyUtf8(e) => Some(e),
-            Self::BodyJSONError(e) => Some(e),
-            Self::Variables(e) => Some(e),
-            Self::Invalid(_) => None,
-        }
-    }
+    Invalid(#[error(not(source))] String),
 }
 
 #[cfg(test)]

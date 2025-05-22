@@ -2,7 +2,7 @@
 
 use std::{convert::Infallible, sync::Arc};
 
-use derive_more::with_trait::Display;
+use derive_more::with_trait::{Display, Error as StdError};
 use futures::{
     future::{self, Either},
     sink::SinkExt as _,
@@ -39,7 +39,7 @@ impl<S: ScalarValue> TryFrom<Message> for graphql_transport_ws::Input<S> {
 }
 
 /// Errors that can happen while serving a connection.
-#[derive(Debug, Display)]
+#[derive(Debug, Display, StdError)]
 pub enum Error {
     /// Errors that can happen in Warp while serving a connection.
     #[display("`warp` error: {_0}")]
@@ -50,8 +50,6 @@ pub enum Error {
     #[display("`serde` error: {_0}")]
     Serde(serde_json::Error),
 }
-
-impl std::error::Error for Error {}
 
 impl From<warp::Error> for Error {
     fn from(err: warp::Error) -> Self {

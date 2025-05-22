@@ -1,7 +1,7 @@
-use std::{borrow::Borrow, error::Error};
+use std::borrow::Borrow;
 
 use arcstr::ArcStr;
-use derive_more::with_trait::Display;
+use derive_more::with_trait::{Display, Error};
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Name(ArcStr);
@@ -49,14 +49,8 @@ impl Borrow<str> for Name {
     }
 }
 
-#[derive(Clone, Debug, Display, Eq, Ord, PartialEq, PartialOrd)]
-pub struct NameParseError(ArcStr);
-
-impl Error for NameParseError {
-    fn description(&self) -> &str {
-        &self.0
-    }
-}
+#[derive(Clone, Debug, Display, Eq, Error, Ord, PartialEq, PartialOrd)]
+pub struct NameParseError(#[error(not(source))] ArcStr);
 
 #[test]
 fn test_name_is_valid() {

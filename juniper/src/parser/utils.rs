@@ -1,6 +1,6 @@
 use std::fmt;
 
-use derive_more::with_trait::Display;
+use derive_more::with_trait::{Display, Error};
 
 /// A reference to a line and column in an input source file
 #[derive(Clone, Copy, Debug, Display, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -54,9 +54,10 @@ impl Span {
 }
 
 /// Data structure used to wrap items into a [`Span`].
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 pub struct Spanning<T, Sp = Span> {
     /// Wrapped item.
+    #[error(source)]
     pub item: T,
 
     /// [`Span`] of the wrapped item.
@@ -144,8 +145,6 @@ impl<T: Display> Display for Spanning<T> {
         write!(f, "{}. At {}", self.item, self.span.start)
     }
 }
-
-impl<T: std::error::Error> std::error::Error for Spanning<T> {}
 
 impl SourcePosition {
     #[doc(hidden)]

@@ -1,6 +1,6 @@
 use std::{collections::HashSet, fmt::Debug};
 
-use derive_more::with_trait::Display;
+use derive_more::with_trait::{Display, Error};
 use itertools::Itertools as _;
 
 use crate::{
@@ -13,7 +13,7 @@ use crate::schema::{meta::MetaType, model::SchemaType};
 use crate::parser::SourcePosition;
 
 /// Query validation error
-#[derive(Clone, Debug, Display, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Display, Eq, Error, Ord, PartialEq, PartialOrd)]
 #[display("{message}. At {}", locations.iter().format(", "))]
 pub struct RuleError {
     locations: Vec<SourcePosition>,
@@ -54,8 +54,6 @@ impl RuleError {
         &self.locations
     }
 }
-
-impl std::error::Error for RuleError {}
 
 impl<'a, S: Debug> ValidatorContext<'a, S> {
     #[doc(hidden)]
