@@ -50,9 +50,9 @@
 //! [s7]: https://graphql-scalars.dev/docs/scalars/duration
 //! [1]: https://docs.rs/jiff/latest/jiff/index.html#time-zone-features
 
-use std::{error::Error, fmt, str};
+use std::{error::Error, str};
 
-use derive_more::with_trait::Display;
+use derive_more::with_trait::{Debug, Display};
 
 use crate::{InputValue, ScalarValue, Value, graphql_scalar};
 
@@ -411,23 +411,14 @@ mod time_zone_or_utc_offset {
 }
 
 /// Error parsing a [`TimeZone`] value.
-#[derive(Clone, Display)]
+#[derive(Clone, Debug, Display)]
 pub enum TimeZoneParsingError {
     /// Identifier cannot not be parsed by the [`jiff::tz::TimeZone::get()`] method.
     InvalidTimeZone(jiff::Error),
 
     /// GraphQL scalar [`TimeZone`] requires `tz::TimeZone` with IANA name.
     #[display("missing IANA name")]
-    MissingIanaName(jiff::tz::TimeZone),
-}
-
-impl fmt::Debug for TimeZoneParsingError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::InvalidTimeZone(e) => write!(f, "TimeZoneParsingError::InvalidTimeZone({e:?})"),
-            Self::MissingIanaName(_) => write!(f, "TimeZoneParsingError::MissingIanaName(..)"),
-        }
-    }
+    MissingIanaName(#[debug(ignore)] jiff::tz::TimeZone),
 }
 
 impl Error for TimeZoneParsingError {

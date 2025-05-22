@@ -26,6 +26,7 @@ graphql-transport-ws = []
 graphql-ws = []
 
 [dependencies]
+derive_more = { version = "2.0", features = ["debug"] }
 juniper = { version = "0.16", path = "../juniper", default-features = false }
 juniper_subscriptions = { version = "0.17.0", path = "../juniper_subscriptions" }
 serde = { version = "1.0.122", features = ["derive"], default-features = false }

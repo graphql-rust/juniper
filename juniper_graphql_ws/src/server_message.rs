@@ -1,7 +1,8 @@
 //! Common definitions regarding server messages.
 
-use std::{any::Any, fmt, marker::PhantomPinned};
+use std::{any::Any, marker::PhantomPinned};
 
+use derive_more::with_trait::Debug;
 use juniper::GraphQLError;
 use serde::{Serialize, Serializer};
 
@@ -15,6 +16,8 @@ use serde::{Serialize, Serializer};
 /// [`graphql_ws::DataPayload`]: crate::graphql_ws::DataPayload
 // XXX: Think carefully before deriving traits. This is self-referential (error references
 // _execution_params).
+#[derive(Debug)]
+#[debug("{error:?}")]
 pub struct ErrorPayload {
     _execution_params: Option<Box<dyn Any + Send>>,
     error: GraphQLError,
@@ -34,12 +37,6 @@ impl ErrorPayload {
     /// Returns the contained [`GraphQLError`].
     pub fn graphql_error(&self) -> &GraphQLError {
         &self.error
-    }
-}
-
-impl fmt::Debug for ErrorPayload {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.error.fmt(f)
     }
 }
 

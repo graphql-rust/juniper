@@ -51,7 +51,7 @@ bson = { version = "2.4", optional = true }
 chrono = { version = "0.4.30", features = ["alloc"], default-features = false, optional = true }
 chrono-tz = { version = "0.10", default-features = false, optional = true }
 compact_str = "0.9"
-derive_more = { version = "2.0", features = ["display"] }
+derive_more = { version = "2.0", features = ["debug", "display"] }
 fnv = "1.0.5"
 futures = { version = "0.3.22", features = ["alloc"], default-features = false }
 graphql-parser = { version = "0.4", optional = true }

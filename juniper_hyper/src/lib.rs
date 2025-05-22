@@ -2,9 +2,9 @@
 #![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
 #![cfg_attr(test, expect(unused_crate_dependencies, reason = "examples"))]
 
-use std::{error::Error, fmt, string::FromUtf8Error, sync::Arc};
+use std::{error::Error, string::FromUtf8Error, sync::Arc};
 
-use derive_more::with_trait::Display;
+use derive_more::with_trait::{Debug, Display};
 use http_body_util::BodyExt as _;
 use hyper::{
     Method, Request, Response, StatusCode,
@@ -34,7 +34,7 @@ where
     SubscriptionT::TypeInfo: Sync,
     CtxT: Sync,
     S: ScalarValue + Send + Sync,
-    B: Body<Error: fmt::Display>,
+    B: Body<Error: Display>,
 {
     match parse_req(req).await {
         Ok(req) => execute_request_sync(schema, context, req).await,
@@ -58,7 +58,7 @@ where
     SubscriptionT::TypeInfo: Sync,
     CtxT: Sync,
     S: ScalarValue + Send + Sync,
-    B: Body<Error: fmt::Display>,
+    B: Body<Error: Display>,
 {
     match parse_req(req).await {
         Ok(req) => execute_request(schema, context, req).await,
@@ -69,7 +69,7 @@ where
 async fn parse_req<S, B>(req: Request<B>) -> Result<GraphQLBatchRequest<S>, Response<String>>
 where
     S: ScalarValue,
-    B: Body<Error: fmt::Display>,
+    B: Body<Error: Display>,
 {
     match *req.method() {
         Method::GET => parse_get_req(req),
@@ -176,7 +176,7 @@ pub async fn playground(
 
 fn render_error<B>(err: GraphQLRequestError<B>) -> Response<String>
 where
-    B: Body<Error: fmt::Display>,
+    B: Body<Error: Display>,
 {
     let mut resp = new_response(StatusCode::BAD_REQUEST);
     *resp.body_mut() = err.to_string();
@@ -312,30 +312,19 @@ fn new_html_response(code: StatusCode) -> Response<String> {
     resp
 }
 
-#[derive(Display)]
+// TODO: Use `#[debug(forward)]` once `derive_more::Debug` is capable of it.
+#[derive(Debug, Display)]
 enum GraphQLRequestError<B: Body> {
+    #[debug("{_0:?}")]
     BodyHyper(B::Error),
+    #[debug("{_0:?}")]
     BodyUtf8(FromUtf8Error),
+    #[debug("{_0:?}")]
     BodyJSONError(SerdeError),
+    #[debug("{_0:?}")]
     Variables(SerdeError),
+    #[debug("{_0:?}")]
     Invalid(String),
-}
-
-// NOTE: Manual implementation instead of `#[derive(Debug)]` is used to omit imposing unnecessary
-//       `B: Debug` bound on the implementation.
-impl<B> fmt::Debug for GraphQLRequestError<B>
-where
-    B: Body<Error: fmt::Debug>,
-{
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::BodyHyper(e) => fmt::Debug::fmt(e, f),
-            Self::BodyUtf8(e) => fmt::Debug::fmt(e, f),
-            Self::BodyJSONError(e) => fmt::Debug::fmt(e, f),
-            Self::Variables(e) => fmt::Debug::fmt(e, f),
-            Self::Invalid(e) => fmt::Debug::fmt(e, f),
-        }
-    }
 }
 
 impl<B> Error for GraphQLRequestError<B>
