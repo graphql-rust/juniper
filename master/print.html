@@ -2412,7 +2412,7 @@ mod string_or_int {
 </span><span class="boring">   }
 </span><span class="boring">
 </span><span class="boring">   impl std::fmt::Display for Date {
-</span><span class="boring">       fn fmt(&amp;self, _f: &amp;mut std::fmt::Formatter) -&gt; std::fmt::Result {
+</span><span class="boring">       fn fmt(&amp;self, _f: &amp;mut std::fmt::Formatter&lt;'_&gt;) -&gt; std::fmt::Result {
 </span><span class="boring">           unimplemented!()
 </span><span class="boring">       }
 </span><span class="boring">   }
