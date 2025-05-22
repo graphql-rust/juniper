@@ -3,6 +3,8 @@ use std::{
     fmt::{self, Debug},
 };
 
+use itertools::Itertools as _;
+
 use crate::{
     ast::{Definition, Document},
     schema::model::DynType,
@@ -58,12 +60,7 @@ impl fmt::Display for RuleError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // This is fine since all `RuleError`s should have at least one source
         // position.
-        let locations = self
-            .locations
-            .iter()
-            .map(ToString::to_string)
-            .collect::<Vec<_>>()
-            .join(", ");
+        let locations = self.locations.iter().format(", ");
         write!(f, "{}. At {locations}", self.message)
     }
 }

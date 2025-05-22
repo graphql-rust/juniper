@@ -1,6 +1,13 @@
-use std::{borrow::Borrow, cell::RefCell, collections::HashMap, fmt::Debug, hash::Hash};
+use std::{
+    borrow::Borrow,
+    cell::RefCell,
+    collections::HashMap,
+    fmt::{self, Debug},
+    hash::Hash,
+};
 
 use arcstr::ArcStr;
+use itertools::Itertools as _;
 
 use crate::{
     ast::{Arguments, Definition, Document, Field, Fragment, FragmentSpread, Selection, Type},
@@ -745,19 +752,33 @@ fn error_message(reason_name: &str, reason: &ConflictReasonMessage) -> String {
     )
 }
 
-fn format_reason(reason: &ConflictReasonMessage) -> String {
+fn format_reason(reason: &ConflictReasonMessage) -> impl fmt::Display {
+    enum Either<A, B> {
+        A(A),
+        B(B),
+    }
+
+    // TODO: Use `derive_more`.
+    impl<A: fmt::Display, B: fmt::Display> fmt::Display for Either<A, B> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            match self {
+                Self::A(a) => write!(f, "{a}"),
+                Self::B(b) => write!(f, "{b}"),
+            }
+        }
+    }
+
     match reason {
-        ConflictReasonMessage::Message(name) => name.clone(),
-        ConflictReasonMessage::Nested(nested) => nested
-            .iter()
-            .map(|ConflictReason(name, subreason)| {
-                format!(
+        ConflictReasonMessage::Message(name) => Either::A(name),
+        ConflictReasonMessage::Nested(nested) => Either::B(nested.iter().format_with(
+            " and ",
+            |ConflictReason(name, subreason), f| {
+                f(&format_args!(
                     r#"subfields "{name}" conflict because {}"#,
                     format_reason(subreason),
-                )
-            })
-            .collect::<Vec<_>>()
-            .join(" and "),
+                ))
+            },
+        )),
     }
 }
 

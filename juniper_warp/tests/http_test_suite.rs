@@ -1,4 +1,5 @@
 use futures::TryStreamExt as _;
+use itertools::Itertools as _;
 use juniper::{
     EmptyMutation, EmptySubscription, RootNode,
     http::tests::{HttpIntegration, TestResponse, run_http_test_suite},
@@ -69,9 +70,9 @@ impl HttpIntegration for TestWarpIntegration {
 
         let url = Url::parse(&format!("http://localhost:3000{url}")).expect("url to parse");
 
-        let url: String = utf8_percent_encode(url.query().unwrap_or(""), QUERY_ENCODE_SET)
-            .collect::<Vec<_>>()
-            .join("");
+        let url = utf8_percent_encode(url.query().unwrap_or(""), QUERY_ENCODE_SET)
+            .format("")
+            .to_string();
 
         self.make_request(
             warp::test::request()

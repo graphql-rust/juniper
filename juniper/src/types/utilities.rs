@@ -1,5 +1,7 @@
 use std::collections::HashSet;
 
+use itertools::Itertools as _;
+
 use crate::{
     ast::InputValue,
     schema::{
@@ -179,9 +181,7 @@ where
                         } else {
                             let missing_fields = remaining_required_fields
                                 .into_iter()
-                                .map(|s| format!("\"{s}\""))
-                                .collect::<Vec<_>>()
-                                .join(", ");
+                                .format_with(", ", |s, f| f(&format_args!("\"{s}\"")));
                             Some(error::missing_fields(arg_type, missing_fields))
                         }
                     } else {
