@@ -562,14 +562,14 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
     ) -> bool {
         match (t1.modifier(), t2.modifier()) {
             (Some(TypeModifier::NonNull), Some(TypeModifier::NonNull)) => {
-                Self::is_type_conflict(ctx, &t1.inner(), &t2.inner())
+                Self::is_type_conflict(ctx, &t1.borrow_inner(), &t2.borrow_inner())
             }
             (
                 Some(TypeModifier::List(expected_size1)),
                 Some(TypeModifier::List(expected_size2)),
             ) => {
                 if expected_size1 == expected_size2 {
-                    Self::is_type_conflict(ctx, &t1.inner(), &t2.inner())
+                    Self::is_type_conflict(ctx, &t1.borrow_inner(), &t2.borrow_inner())
                 } else {
                     false
                 }

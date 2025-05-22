@@ -710,12 +710,12 @@ impl<S> MetaType<S> {
             | Self::Interface(InterfaceMeta { name, .. })
             | Self::Object(ObjectMeta { name, .. })
             | Self::Scalar(ScalarMeta { name, .. })
-            | Self::Union(UnionMeta { name, .. }) => Type::named(name.clone()).wrap_non_null(),
+            | Self::Union(UnionMeta { name, .. }) => Type::nullable(name.clone()).wrap_non_null(),
             Self::List(ListMeta {
                 of_type,
                 expected_size,
             }) => of_type.clone().wrap_list(*expected_size).wrap_non_null(),
-            Self::Nullable(NullableMeta { of_type }) => of_type.clone().nullable(),
+            Self::Nullable(NullableMeta { of_type }) => of_type.clone().into_nullable(),
             Self::Placeholder(PlaceholderMeta { of_type }) => of_type.clone(),
         }
     }

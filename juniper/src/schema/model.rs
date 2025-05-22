@@ -325,7 +325,7 @@ impl<S> SchemaType<S> {
         if let Some(name) = ty.name() {
             self.concrete_type_by_name(name)
         } else {
-            self.lookup_type(&ty.inner())
+            self.lookup_type(&ty.borrow_inner())
         }
     }
 
@@ -396,9 +396,11 @@ impl<S> SchemaType<S> {
     /// Make a type.
     pub fn make_type(&self, ty: &Type<impl AsRef<str>, impl AsRef<[TypeModifier]>>) -> TypeType<S> {
         match ty.modifier() {
-            Some(TypeModifier::NonNull) => TypeType::NonNull(Box::new(self.make_type(&ty.inner()))),
+            Some(TypeModifier::NonNull) => {
+                TypeType::NonNull(Box::new(self.make_type(&ty.borrow_inner())))
+            }
             Some(TypeModifier::List(expected_size)) => {
-                TypeType::List(Box::new(self.make_type(&ty.inner())), *expected_size)
+                TypeType::List(Box::new(self.make_type(&ty.borrow_inner())), *expected_size)
             }
             None => self
                 .type_by_name(ty.innermost_name())
@@ -484,13 +486,13 @@ impl<S> SchemaType<S> {
 
         match (super_type.modifier(), sub_type.modifier()) {
             (Some(NonNull), Some(NonNull)) => {
-                self.is_subtype(&sub_type.inner(), &super_type.inner())
+                self.is_subtype(&sub_type.borrow_inner(), &super_type.borrow_inner())
             }
             (None | Some(List(..)), Some(NonNull)) => {
-                self.is_subtype(&sub_type.inner(), super_type)
+                self.is_subtype(&sub_type.borrow_inner(), super_type)
             }
             (Some(List(..)), Some(List(..))) => {
-                self.is_subtype(&sub_type.inner(), &super_type.inner())
+                self.is_subtype(&sub_type.borrow_inner(), &super_type.borrow_inner())
             }
             (None, None) => {
                 self.is_named_subtype(sub_type.innermost_name(), super_type.innermost_name())

@@ -516,7 +516,7 @@ pub fn parse_type<'a>(parser: &mut Parser<'a>) -> ParseResult<Type<&'a str>> {
         let end_pos = parser.expect(&Token::BracketClose)?.span.end;
         Spanning::start_end(&start_span.start, &end_pos, inner_type.item.wrap_list(None))
     } else {
-        parser.expect_name()?.map(Type::named)
+        parser.expect_name()?.map(Type::nullable)
     };
 
     Ok(match *parser.peek() {

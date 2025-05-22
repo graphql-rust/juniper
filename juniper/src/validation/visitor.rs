@@ -340,7 +340,7 @@ fn visit_input_value<'a, S, V>(
         InputValue::List(ls) => {
             let inner_type = ctx
                 .current_input_type_literal()
-                .and_then(|t| t.list_inner_borrowed());
+                .and_then(|t| t.borrow_list_inner());
 
             ctx.with_pushed_input_type(inner_type, |ctx| {
                 for value in ls {

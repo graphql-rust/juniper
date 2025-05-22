@@ -14,7 +14,7 @@ use graphql_parser::{
 };
 
 use crate::{
-    ast::{BorrowedType, InputValue, TypeModifier},
+    ast::{InputValue, Type, TypeModifier},
     schema::{
         meta::{Argument, DeprecationStatus, EnumValue, Field, MetaType},
         model::SchemaType,
@@ -90,7 +90,7 @@ impl GraphQLParserTranslator {
             position: Pos::default(),
             description: input.description.as_deref().map(Into::into),
             name: From::from(input.name.as_str()),
-            value_type: GraphQLParserTranslator::translate_type((&input.arg_type).into()),
+            value_type: GraphQLParserTranslator::translate_type(&input.arg_type),
             default_value: input
                 .default_value
                 .as_ref()
@@ -139,19 +139,18 @@ impl GraphQLParserTranslator {
         }
     }
 
-    fn translate_type<'a, T>(input: BorrowedType<'a>) -> ExternalType<'a, T>
+    fn translate_type<'a, T>(input: &'a Type) -> ExternalType<'a, T>
     where
         T: Text<'a>,
     {
-        match input.modifier() {
-            Some(TypeModifier::NonNull) => {
-                ExternalType::NonNullType(Self::translate_type(input.inner_borrowed()).into())
-            }
-            Some(TypeModifier::List(..)) => {
-                ExternalType::ListType(Self::translate_type(input.inner_borrowed()).into())
-            }
-            None => ExternalType::NamedType(input.borrowed_name().into()),
+        let mut ty = ExternalType::NamedType(input.innermost_name().into());
+        for m in input.modifiers() {
+            ty = match m {
+                TypeModifier::NonNull => ExternalType::NonNullType(ty.into()),
+                TypeModifier::List(..) => ExternalType::ListType(ty.into()),
+            };
         }
+        ty
     }
 
     fn translate_meta<'a, S, T>(input: &'a MetaType<S>) -> ExternalTypeDefinition<'a, T>
@@ -273,7 +272,7 @@ impl GraphQLParserTranslator {
             name: From::from(input.name.as_str()),
             description: input.description.as_deref().map(Into::into),
             directives: generate_directives(&input.deprecation_status),
-            field_type: GraphQLParserTranslator::translate_type((&input.field_type).into()),
+            field_type: GraphQLParserTranslator::translate_type(&input.field_type),
             arguments,
         }
     }
