@@ -18,12 +18,10 @@ pub enum TypeModifier {
 
 pub(crate) type BorrowedType<'a> = Type<&'a str, &'a [TypeModifier]>;
 
-impl Copy for BorrowedType<'_> {}
-
 /// Type literal in a syntax tree.
 ///
 /// Carries no semantic information and might refer to types that don't exist.
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Type<N = ArcStr, M = SmallVec<[TypeModifier; 2]>> {
     name: N,
     modifiers: M,
@@ -125,16 +123,7 @@ impl<N: AsRef<str>, M> Type<N, M> {
     where
         M: AsRef<[TypeModifier]>,
     {
-        if self
-            .modifiers
-            .as_ref()
-            .iter()
-            .any(|m| matches!(m, TypeModifier::List(..)))
-        {
-            None
-        } else {
-            Some(self.name.as_ref())
-        }
+        (!self.is_list()).then(|| self.name.as_ref())
     }
 
     /// Returns the innermost name of this [`Type`] by unpacking lists.
