@@ -35,6 +35,12 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - `ast::Type`: 
         - Removed lifetime parameters.
         - Made it generic over string type.
+        - Remade as a struct with methods: ([#1322])
+            - Added `modifier()` and `modifiers()` methods returning `TypeModifier`.
+            - Added `is_list()` method.
+            - Added `wrap_list()` and `wrap_non_null() methods.
+            - Added `nullable()` constructor.
+            - Added `BorrowedType` representation.
     - `MetaType`:
         - Removed lifetime parameters.
         - Made `name()`, `description()` and `specified_by_url()` methods returning `ArcStr`.
@@ -102,6 +108,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1293]: /../../pull/1293
 [#1311]: /../../pull/1311
 [#1318]: /../../pull/1318
+[#1322]: /../../pull/1322
 [#1323]: /../../pull/1323
 [1b1fc618]: /../../commit/1b1fc61879ffdd640d741e187dc20678bf7ab295
 [20609366]: /../../commit/2060936635609b0186d46d8fbd06eb30fce660e3
