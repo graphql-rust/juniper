@@ -1,7 +1,10 @@
 use std::fmt;
 
+use derive_more::with_trait::Display;
+
 /// A reference to a line and column in an input source file
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Copy)]
+#[derive(Clone, Copy, Debug, Display, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[display("{line}:{col}")]
 pub struct SourcePosition {
     index: usize,
     line: usize,
@@ -136,8 +139,8 @@ impl<T> Spanning<T, Span> {
     }
 }
 
-impl<T: fmt::Display> fmt::Display for Spanning<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl<T: Display> Display for Spanning<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}. At {}", self.item, self.span.start)
     }
 }
@@ -194,11 +197,5 @@ impl SourcePosition {
     /// Zero-based index: the first column is column zero.
     pub fn column(&self) -> usize {
         self.col
-    }
-}
-
-impl fmt::Display for SourcePosition {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}:{}", self.line, self.col)
     }
 }

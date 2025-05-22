@@ -166,13 +166,14 @@ pub async fn playground_handler(
 #[cfg(feature = "subscriptions")]
 /// `juniper_actix` subscriptions handler implementation.
 pub mod subscriptions {
-    use std::{fmt, pin::pin, sync::Arc};
+    use std::{pin::pin, sync::Arc};
 
     use actix_web::{
         HttpRequest, HttpResponse,
         http::header::{HeaderName, HeaderValue},
         web,
     };
+    use derive_more::with_trait::Display;
     use futures::{SinkExt as _, StreamExt as _, future};
     use juniper::{GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue};
     use juniper_graphql_ws::{ArcSchema, Init, graphql_transport_ws, graphql_ws};
@@ -416,24 +417,15 @@ pub mod subscriptions {
     }
 
     /// Possible errors of serving an [`actix_ws`] connection.
-    #[derive(Debug)]
+    #[derive(Debug, Display)]
     enum Error {
         /// Deserializing of a client [`actix_ws::Message`] failed.
+        #[display("`serde` error: {_0}")]
         Serde(serde_json::Error),
 
         /// Unexpected client [`actix_ws::Message`].
+        #[display("unexpected message received from client: {_0:?}")]
         UnexpectedClientMessage(actix_ws::Message),
-    }
-
-    impl fmt::Display for Error {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            match self {
-                Self::Serde(e) => write!(f, "`serde` error: {e}"),
-                Self::UnexpectedClientMessage(m) => {
-                    write!(f, "unexpected message received from client: {m:?}")
-                }
-            }
-        }
     }
 
     impl std::error::Error for Error {}

@@ -345,7 +345,7 @@ For implementing [custom scalars][2] on foreign types there is [`#[graphql_scala
 #    }
 #
 #    impl std::fmt::Display for Date {
-#        fn fmt(&self, _f: &mut std::fmt::Formatter) -> std::fmt::Result {
+#        fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 #            unimplemented!()
 #        }
 #    }

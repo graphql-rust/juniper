@@ -52,6 +52,8 @@
 
 use std::{error::Error, fmt, str};
 
+use derive_more::with_trait::Display;
+
 use crate::{InputValue, ScalarValue, Value, graphql_scalar};
 
 /// Representation of a civil date in the Gregorian calendar.
@@ -409,12 +411,13 @@ mod time_zone_or_utc_offset {
 }
 
 /// Error parsing a [`TimeZone`] value.
-#[derive(Clone)]
+#[derive(Clone, Display)]
 pub enum TimeZoneParsingError {
     /// Identifier cannot not be parsed by the [`jiff::tz::TimeZone::get()`] method.
     InvalidTimeZone(jiff::Error),
 
     /// GraphQL scalar [`TimeZone`] requires `tz::TimeZone` with IANA name.
+    #[display("missing IANA name")]
     MissingIanaName(jiff::tz::TimeZone),
 }
 
@@ -423,15 +426,6 @@ impl fmt::Debug for TimeZoneParsingError {
         match self {
             Self::InvalidTimeZone(e) => write!(f, "TimeZoneParsingError::InvalidTimeZone({e:?})"),
             Self::MissingIanaName(_) => write!(f, "TimeZoneParsingError::MissingIanaName(..)"),
-        }
-    }
-}
-
-impl fmt::Display for TimeZoneParsingError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::InvalidTimeZone(e) => e.fmt(f),
-            Self::MissingIanaName(..) => write!(f, "missing IANA name"),
         }
     }
 }
@@ -463,7 +457,8 @@ impl Error for TimeZoneParsingError {
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/time-zone",
 )]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Display, Eq, PartialEq)]
+#[display("{}", _0.iana_name().expect("failed to display `TimeZone`: no IANA name"))]
 pub struct TimeZone(jiff::tz::TimeZone);
 
 impl TryFrom<jiff::tz::TimeZone> for TimeZone {
@@ -484,18 +479,6 @@ impl str::FromStr for TimeZone {
         let value =
             jiff::tz::TimeZone::get(value).map_err(TimeZoneParsingError::InvalidTimeZone)?;
         value.try_into()
-    }
-}
-
-impl fmt::Display for TimeZone {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0
-            .iana_name()
-            .unwrap_or_else(|| {
-                // PANIC: We made sure that IANA name is available when constructing `Self`.
-                panic!("failed to display `TimeZone`: no IANA name")
-            })
-            .fmt(f)
     }
 }
 

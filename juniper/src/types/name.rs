@@ -1,6 +1,7 @@
-use std::{borrow::Borrow, error::Error, fmt};
+use std::{borrow::Borrow, error::Error};
 
 use arcstr::ArcStr;
+use derive_more::with_trait::Display;
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Name(ArcStr);
@@ -48,14 +49,8 @@ impl Borrow<str> for Name {
     }
 }
 
-#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Display, Eq, Ord, PartialEq, PartialOrd)]
 pub struct NameParseError(ArcStr);
-
-impl fmt::Display for NameParseError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
-    }
-}
 
 impl Error for NameParseError {
     fn description(&self) -> &str {

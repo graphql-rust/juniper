@@ -14,8 +14,6 @@ mod for_benches_only {
     use bencher as _;
 }
 
-use std::fmt;
-
 // These are required by the code generated via the `juniper_codegen` macros.
 #[doc(hidden)]
 pub use {async_trait::async_trait, futures, serde, static_assertions as sa};
@@ -57,6 +55,9 @@ pub mod tests;
 
 #[cfg(test)]
 mod executor_tests;
+
+use derive_more::with_trait::Display;
+use itertools::Itertools as _;
 
 // Needs to be public because macros use it.
 pub use crate::util::to_camel_case;
@@ -106,34 +107,21 @@ pub use crate::{
 
 /// An error that prevented query execution
 #[expect(missing_docs, reason = "self-explanatory")]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Display, Eq, PartialEq)]
 pub enum GraphQLError {
     ParseError(Spanning<ParseError>),
+    #[display("{}", _0.iter().format("\n"))]
     ValidationError(Vec<RuleError>),
+    #[display("No operation provided")]
     NoOperationProvided,
+    #[display("Multiple operations provided")]
     MultipleOperationsProvided,
+    #[display("Unknown operation name")]
     UnknownOperationName,
+    #[display("Operation is a subscription")]
     IsSubscription,
+    #[display("Operation is not a subscription")]
     NotSubscription,
-}
-
-impl fmt::Display for GraphQLError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::ParseError(e) => write!(f, "{e}"),
-            Self::ValidationError(errs) => {
-                for e in errs {
-                    writeln!(f, "{e}")?;
-                }
-                Ok(())
-            }
-            Self::NoOperationProvided => write!(f, "No operation provided"),
-            Self::MultipleOperationsProvided => write!(f, "Multiple operations provided"),
-            Self::UnknownOperationName => write!(f, "Unknown operation name"),
-            Self::IsSubscription => write!(f, "Operation is a subscription"),
-            Self::NotSubscription => write!(f, "Operation is not a subscription"),
-        }
-    }
 }
 
 impl std::error::Error for GraphQLError {

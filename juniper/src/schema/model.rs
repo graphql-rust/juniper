@@ -1,6 +1,7 @@
 use std::fmt;
 
 use arcstr::ArcStr;
+use derive_more::with_trait::Display;
 use fnv::FnvHashMap;
 #[cfg(feature = "schema-language")]
 use graphql_parser::schema::Document;
@@ -513,21 +514,14 @@ impl<S> SchemaType<S> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Display)]
 pub enum TypeType<'a, S: 'a> {
+    #[display("{}", _0.name().unwrap())]
     Concrete(&'a MetaType<S>),
+    #[display("{}!", **_0)]
     NonNull(Box<TypeType<'a, S>>),
+    #[display("[{}]", **_0)]
     List(Box<TypeType<'a, S>>, Option<usize>),
-}
-
-impl<S> fmt::Display for TypeType<'_, S> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Concrete(t) => f.write_str(t.name().unwrap()),
-            Self::List(i, _) => write!(f, "[{i}]"),
-            Self::NonNull(i) => write!(f, "{i}!"),
-        }
-    }
 }
 
 impl<'a, S> TypeType<'a, S> {
@@ -651,38 +645,31 @@ impl<S> DirectiveType<S> {
     }
 }
 
-#[derive(Clone, Debug, Eq, GraphQLEnum, PartialEq)]
+#[derive(Clone, Debug, Display, Eq, GraphQLEnum, PartialEq)]
 #[graphql(name = "__DirectiveLocation", internal)]
 pub enum DirectiveLocation {
+    #[display("query")]
     Query,
+    #[display("mutation")]
     Mutation,
+    #[display("subscription")]
     Subscription,
+    #[display("field")]
     Field,
+    #[display("scalar")]
     Scalar,
+    #[display("fragment definition")]
     FragmentDefinition,
+    #[display("field definition")]
     FieldDefinition,
+    #[display("variable definition")]
     VariableDefinition,
+    #[display("fragment spread")]
     FragmentSpread,
+    #[display("inline fragment")]
     InlineFragment,
+    #[display("enum value")]
     EnumValue,
-}
-
-impl fmt::Display for DirectiveLocation {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(match self {
-            Self::Query => "query",
-            Self::Mutation => "mutation",
-            Self::Subscription => "subscription",
-            Self::Field => "field",
-            Self::FieldDefinition => "field definition",
-            Self::FragmentDefinition => "fragment definition",
-            Self::FragmentSpread => "fragment spread",
-            Self::InlineFragment => "inline fragment",
-            Self::VariableDefinition => "variable definition",
-            Self::Scalar => "scalar",
-            Self::EnumValue => "enum value",
-        })
-    }
 }
 
 /// Sorts the provided [`TypeType`]s in the "type-then-name" manner.

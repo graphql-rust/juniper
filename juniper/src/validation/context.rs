@@ -1,8 +1,6 @@
-use std::{
-    collections::HashSet,
-    fmt::{self, Debug},
-};
+use std::{collections::HashSet, fmt::Debug};
 
+use derive_more::with_trait::Display;
 use itertools::Itertools as _;
 
 use crate::{
@@ -15,7 +13,8 @@ use crate::schema::{meta::MetaType, model::SchemaType};
 use crate::parser::SourcePosition;
 
 /// Query validation error
-#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Display, Eq, Ord, PartialEq, PartialOrd)]
+#[display("{message}. At {}", locations.iter().format(", "))]
 pub struct RuleError {
     locations: Vec<SourcePosition>,
     message: String,
@@ -53,15 +52,6 @@ impl RuleError {
     /// validators supply extra context through multiple positions.
     pub fn locations(&self) -> &[SourcePosition] {
         &self.locations
-    }
-}
-
-impl fmt::Display for RuleError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // This is fine since all `RuleError`s should have at least one source
-        // position.
-        let locations = self.locations.iter().format(", ");
-        write!(f, "{}. At {locations}", self.message)
     }
 }
 

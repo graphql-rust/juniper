@@ -22,6 +22,7 @@ exclude = ["/release.toml"]
 proc-macro = true
 
 [dependencies]
+derive_more = { version = "2.0", features = ["display"] }
 proc-macro2 = "1.0.4"
 quote = "1.0.9"
 syn = { version = "2.0", features = ["extra-traits", "full", "visit", "visit-mut"] }

@@ -1,7 +1,8 @@
 //! GraphQL subscriptions handler implementation.
 
-use std::{convert::Infallible, fmt, sync::Arc};
+use std::{convert::Infallible, sync::Arc};
 
+use derive_more::with_trait::Display;
 use futures::{
     future::{self, Either},
     sink::SinkExt as _,
@@ -38,23 +39,16 @@ impl<S: ScalarValue> TryFrom<Message> for graphql_transport_ws::Input<S> {
 }
 
 /// Errors that can happen while serving a connection.
-#[derive(Debug)]
+#[derive(Debug, Display)]
 pub enum Error {
     /// Errors that can happen in Warp while serving a connection.
+    #[display("`warp` error: {_0}")]
     Warp(warp::Error),
 
     /// Errors that can happen while serializing outgoing messages. Note that errors that occur
     /// while deserializing incoming messages are handled internally by the protocol.
+    #[display("`serde` error: {_0}")]
     Serde(serde_json::Error),
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Warp(e) => write!(f, "`warp` error: {e}"),
-            Self::Serde(e) => write!(f, "`serde` error: {e}"),
-        }
-    }
 }
 
 impl std::error::Error for Error {}

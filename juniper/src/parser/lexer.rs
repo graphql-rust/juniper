@@ -1,4 +1,6 @@
-use std::{char, fmt, iter::Peekable, str::CharIndices};
+use std::{char, iter::Peekable, str::CharIndices};
+
+use derive_more::with_trait::Display;
 
 use crate::parser::{SourcePosition, Spanning};
 
@@ -16,8 +18,9 @@ pub struct Lexer<'a> {
 ///
 /// This is only used for tagging how the lexer has interpreted a value literal
 #[expect(missing_docs, reason = "self-explanatory")]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
 pub enum ScalarToken<'a> {
+    #[display("\"{}\"", _0.replace('\\', "\\\\").replace('"', "\\\""))]
     String(&'a str),
     Float(&'a str),
     Int(&'a str),
@@ -25,39 +28,55 @@ pub enum ScalarToken<'a> {
 
 /// A single token in the input source
 #[expect(missing_docs, reason = "self-explanatory")]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
 pub enum Token<'a> {
     Name(&'a str),
     Scalar(ScalarToken<'a>),
+    #[display("!")]
     ExclamationMark,
+    #[display("$")]
     Dollar,
+    #[display("(")]
     ParenOpen,
+    #[display(")")]
     ParenClose,
+    #[display("[")]
     BracketOpen,
+    #[display("]")]
     BracketClose,
+    #[display("{{")]
     CurlyOpen,
+    #[display("}}")]
     CurlyClose,
+    #[display("...")]
     Ellipsis,
+    #[display(":")]
     Colon,
+    #[display("=")]
     Equals,
+    #[display("@")]
     At,
+    #[display("|")]
     Pipe,
+    #[display("End of file")]
     EndOfFile,
 }
 
 /// Error when tokenizing the input source
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Display, Eq, PartialEq)]
 pub enum LexerError {
     /// An unknown character was found
     ///
     /// Unknown characters are characters that do not occur anywhere in the
     /// GraphQL language, such as `?` or `%`.
+    #[display("Unknown character \"{_0}\"")]
     UnknownCharacter(char),
 
     /// An unexpected character was found
     ///
     /// Unexpected characters are characters that _do_ exist in the GraphQL
     /// language, but is not expected at the current position in the document.
+    #[display("Unexpected character \"{_0}\"")]
     UnexpectedCharacter(char),
 
     /// An unterminated string literal was found
@@ -65,27 +84,32 @@ pub enum LexerError {
     /// Apart from forgetting the ending `"`, terminating a string within a
     /// Unicode escape sequence or having a line break in the string also
     /// causes this error.
+    #[display("Unterminated string literal")]
     UnterminatedString,
 
     /// An unknown character in a string literal was found
     ///
     /// This occurs when an invalid source character is found in a string
     /// literal, such as ASCII control characters.
+    #[display("Unknown character \"{_0}\" in string literal")]
     UnknownCharacterInString(char),
 
     /// An unknown escape sequence in a string literal was found
     ///
     /// Only a limited set of escape sequences are supported, this is emitted
     /// when e.g. `"\l"` is parsed.
+    #[display("Unknown escape sequence \"{_0}\" in string")]
     UnknownEscapeSequence(String),
 
     /// The input source was unexpectedly terminated
     ///
     /// Emitted when the current token requires a succeeding character, but
     /// the source has reached EOF. Emitted when scanning e.g. `"1."`.
+    #[display("Unexpected end of input")]
     UnexpectedEndOfFile,
 
     /// An invalid number literal was found
+    #[display("Invalid number literal")]
     InvalidNumber,
 }
 
@@ -477,34 +501,6 @@ impl<'a> Iterator for Lexer<'a> {
     }
 }
 
-impl fmt::Display for Token<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Token::Name(name) => write!(f, "{name}"),
-            Token::Scalar(ScalarToken::Int(s)) | Token::Scalar(ScalarToken::Float(s)) => {
-                write!(f, "{s}")
-            }
-            Token::Scalar(ScalarToken::String(s)) => {
-                write!(f, "\"{}\"", s.replace('\\', "\\\\").replace('"', "\\\""))
-            }
-            Token::ExclamationMark => write!(f, "!"),
-            Token::Dollar => write!(f, "$"),
-            Token::ParenOpen => write!(f, "("),
-            Token::ParenClose => write!(f, ")"),
-            Token::BracketOpen => write!(f, "["),
-            Token::BracketClose => write!(f, "]"),
-            Token::CurlyOpen => write!(f, "{{"),
-            Token::CurlyClose => write!(f, "}}"),
-            Token::Ellipsis => write!(f, "..."),
-            Token::Colon => write!(f, ":"),
-            Token::Equals => write!(f, "="),
-            Token::At => write!(f, "@"),
-            Token::Pipe => write!(f, "|"),
-            Token::EndOfFile => write!(f, "End of file"),
-        }
-    }
-}
-
 fn is_source_char(c: char) -> bool {
     c == '\t' || c == '\n' || c == '\r' || c >= ' '
 }
@@ -519,24 +515,6 @@ fn is_name_cont(c: char) -> bool {
 
 fn is_number_start(c: char) -> bool {
     c == '-' || c.is_ascii_digit()
-}
-
-impl fmt::Display for LexerError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            LexerError::UnknownCharacter(c) => write!(f, "Unknown character \"{c}\""),
-            LexerError::UnterminatedString => write!(f, "Unterminated string literal"),
-            LexerError::UnknownCharacterInString(c) => {
-                write!(f, "Unknown character \"{c}\" in string literal")
-            }
-            LexerError::UnknownEscapeSequence(ref s) => {
-                write!(f, "Unknown escape sequence \"{s}\" in string")
-            }
-            LexerError::UnexpectedCharacter(c) => write!(f, "Unexpected character \"{c}\""),
-            LexerError::UnexpectedEndOfFile => write!(f, "Unexpected end of input"),
-            LexerError::InvalidNumber => write!(f, "Invalid number literal"),
-        }
-    }
 }
 
 impl std::error::Error for LexerError {}

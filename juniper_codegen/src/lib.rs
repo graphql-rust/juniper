@@ -709,19 +709,16 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 /// ```rust
 /// # mod date {
 /// #    use std::{fmt, str::FromStr};
+/// #    use derive_more::with_trait::Display;
 /// #
+/// #    #[derive(Display)]
+/// #    #[display("{}", unimplemented!())]
 /// #    pub struct Date;
 /// #
 /// #    impl FromStr for Date {
 /// #        type Err = String;
 /// #
 /// #        fn from_str(_: &str) -> Result<Self, Self::Err> {
-/// #            unimplemented!()
-/// #        }
-/// #    }
-/// #
-/// #    impl fmt::Display for Date {
-/// #        fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
 /// #            unimplemented!()
 /// #        }
 /// #    }

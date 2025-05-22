@@ -3,6 +3,7 @@
 
 use std::{error::Error, fmt, string::FromUtf8Error, sync::Arc};
 
+use derive_more::with_trait::Display;
 use http_body_util::BodyExt as _;
 use hyper::{
     Method, Request, Response, StatusCode,
@@ -310,6 +311,7 @@ fn new_html_response(code: StatusCode) -> Response<String> {
     resp
 }
 
+#[derive(Display)]
 enum GraphQLRequestError<B: Body> {
     BodyHyper(B::Error),
     BodyUtf8(FromUtf8Error),
@@ -331,21 +333,6 @@ where
             Self::BodyJSONError(e) => fmt::Debug::fmt(e, f),
             Self::Variables(e) => fmt::Debug::fmt(e, f),
             Self::Invalid(e) => fmt::Debug::fmt(e, f),
-        }
-    }
-}
-
-impl<B> fmt::Display for GraphQLRequestError<B>
-where
-    B: Body<Error: fmt::Display>,
-{
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::BodyHyper(e) => fmt::Display::fmt(e, f),
-            Self::BodyUtf8(e) => fmt::Display::fmt(e, f),
-            Self::BodyJSONError(e) => fmt::Display::fmt(e, f),
-            Self::Variables(e) => fmt::Display::fmt(e, f),
-            Self::Invalid(e) => fmt::Display::fmt(e, f),
         }
     }
 }

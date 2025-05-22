@@ -1,4 +1,6 @@
-use std::{collections::HashSet, fmt};
+use std::collections::HashSet;
+
+use derive_more::with_trait::Display;
 
 use crate::{
     ast::{InputValue, Operation, VariableDefinitions},
@@ -12,10 +14,13 @@ use crate::{
     value::ScalarValue,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Display)]
 enum Path<'a> {
+    #[display("")]
     Root,
+    #[display("{_1}In element #{_0}: ")]
     ArrayElement(usize, &'a Path<'a>),
+    #[display(r#"{_1}In field "{_0}": "#)]
     ObjectField(&'a str, &'a Path<'a>),
 }
 
@@ -349,23 +354,13 @@ where
 }
 
 fn unification_error(
-    var_name: impl fmt::Display,
+    var_name: impl Display,
     var_pos: &SourcePosition,
     path: &Path<'_>,
-    message: impl fmt::Display,
+    message: impl Display,
 ) -> RuleError {
     RuleError::new(
         &format!(r#"Variable "${var_name}" got invalid value. {path}{message}."#),
         &[*var_pos],
     )
-}
-
-impl fmt::Display for Path<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Path::Root => write!(f, ""),
-            Path::ArrayElement(idx, prev) => write!(f, "{prev}In element #{idx}: "),
-            Path::ObjectField(name, prev) => write!(f, r#"{prev}In field "{name}": "#),
-        }
-    }
 }

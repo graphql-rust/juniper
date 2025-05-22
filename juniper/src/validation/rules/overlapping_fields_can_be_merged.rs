@@ -1,12 +1,7 @@
-use std::{
-    borrow::Borrow,
-    cell::RefCell,
-    collections::HashMap,
-    fmt::{self, Debug},
-    hash::Hash,
-};
+use std::{borrow::Borrow, cell::RefCell, collections::HashMap, fmt::Debug, hash::Hash};
 
 use arcstr::ArcStr;
+use derive_more::with_trait::Display;
 use itertools::Itertools as _;
 
 use crate::{
@@ -752,20 +747,11 @@ fn error_message(reason_name: &str, reason: &ConflictReasonMessage) -> String {
     )
 }
 
-fn format_reason(reason: &ConflictReasonMessage) -> impl fmt::Display {
+fn format_reason(reason: &ConflictReasonMessage) -> impl Display {
+    #[derive(Display)]
     enum Either<A, B> {
         A(A),
         B(B),
-    }
-
-    // TODO: Use `derive_more`.
-    impl<A: fmt::Display, B: fmt::Display> fmt::Display for Either<A, B> {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            match self {
-                Self::A(a) => write!(f, "{a}"),
-                Self::B(b) => write!(f, "{b}"),
-            }
-        }
     }
 
     match reason {

@@ -91,7 +91,7 @@ mod as_input_field {
         assert_eq!(
             res.unwrap_err().to_string(),
             "Invalid value for argument \"input\", reason: Error on \"Input\" field \"two\": \
-             Expected list of length 2, but \"[true, true, false]\" has length 3. At 2:30\n",
+             Expected list of length 2, but \"[true, true, false]\" has length 3. At 2:30",
         );
     }
 
@@ -110,7 +110,7 @@ mod as_input_field {
         assert_eq!(
             res.unwrap_err().to_string(),
             "Invalid value for argument \"input\", reason: Error on \"Input\" field \"two\": \
-             Expected list of length 2, but \"true\" has length 1. At 2:30\n",
+             Expected list of length 2, but \"true\" has length 1. At 2:30",
         );
     }
 
@@ -184,7 +184,7 @@ mod as_input_argument {
         assert_eq!(
             res.unwrap_err().to_string(),
             "Invalid value for argument \"input\", reason: Expected list of length 2, \
-             but \"[true, true, false]\" has length 3. At 2:30\n",
+             but \"[true, true, false]\" has length 3. At 2:30",
         );
     }
 
@@ -203,7 +203,7 @@ mod as_input_argument {
         assert_eq!(
             res.unwrap_err().to_string(),
             "Invalid value for argument \"input\", reason: Expected list of length 2, \
-             but \"true\" has length 1. At 2:30\n",
+             but \"true\" has length 1. At 2:30",
             "invalid error returned",
         );
     }
