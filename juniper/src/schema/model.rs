@@ -395,17 +395,16 @@ impl<S> SchemaType<S> {
 
     /// Make a type.
     pub fn make_type(&self, ty: &Type<impl AsRef<str>, impl AsRef<[TypeModifier]>>) -> TypeType<S> {
-        match ty.modifier() {
-            Some(TypeModifier::NonNull) => {
-                TypeType::NonNull(Box::new(self.make_type(&ty.borrow_inner())))
-            }
-            Some(TypeModifier::List(expected_size)) => {
-                TypeType::List(Box::new(self.make_type(&ty.borrow_inner())), *expected_size)
-            }
-            None => self
-                .type_by_name(ty.innermost_name())
-                .expect("Type not found in schema"),
+        let mut out = self
+            .type_by_name(ty.innermost_name())
+            .expect("Type not found in schema");
+        for m in ty.modifiers() {
+            out = match m {
+                TypeModifier::NonNull => TypeType::NonNull(out.into()),
+                TypeModifier::List(expected_size) => TypeType::List(out.into(), *expected_size),
+            };
         }
+        out
     }
 
     /// Get a list of directives.
