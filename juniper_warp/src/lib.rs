@@ -1,7 +1,10 @@
 #![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
 #![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![deny(missing_docs)]
+#![cfg_attr(
+    test,
+    expect(unused_crate_dependencies, reason = "examples and integration tests")
+)]
 
 // TODO: Try remove on upgrade of `warp` crate.
 mod for_minimal_versions_check_only {
@@ -532,7 +535,7 @@ mod tests {
 
             let filter = warp::path("graphql")
                 .and(make_graphql_filter(schema, context_extractor))
-                .recover(|rejection: warp::reject::Rejection| async move {
+                .recover(async |rejection: warp::reject::Rejection| {
                     rejection
                         .find::<ExtractionError>()
                         .map(|e| e.into_response())

@@ -1,6 +1,10 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
 #![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
+#![cfg_attr(
+    test,
+    expect(unused_crate_dependencies, reason = "examples and integration tests")
+)]
 
 // TODO: Try remove on upgrade of `axum` crate.
 mod for_minimal_versions_check_only {

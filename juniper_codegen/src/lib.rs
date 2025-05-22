@@ -1,6 +1,10 @@
 #![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
 #![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
 #![recursion_limit = "1024"]
+#![cfg_attr(
+    all(test, not(doctest)),
+    expect(unused_crate_dependencies, reason = "for doc tests only")
+)]
 
 // NOTICE: Unfortunately this macro MUST be defined here, in the crate's root module, because Rust
 //         doesn't allow to export `macro_rules!` macros from a `proc-macro` crate type currently,

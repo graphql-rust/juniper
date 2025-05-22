@@ -1,5 +1,7 @@
 //! This example demonstrates asynchronous subscriptions with [`warp`].
 
+#![expect(unused_crate_dependencies, reason = "example")]
+
 use std::{pin::Pin, sync::Arc, time::Duration};
 
 use futures::Stream;

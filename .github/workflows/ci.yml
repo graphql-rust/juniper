@@ -240,6 +240,8 @@ jobs:
       - run: make test.cargo crate=${{ matrix.crate }}
                   careful=${{ (matrix.toolchain == 'nightly' && 'yes')
                            ||                                   'no' }}
+        env:
+          RUSTFLAGS: -D warnings
 
   test-book:
     name: test (Book)

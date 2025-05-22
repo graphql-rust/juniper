@@ -1,5 +1,7 @@
 //! This example demonstrates simple default integration with [`axum`].
 
+#![expect(unused_crate_dependencies, reason = "example")]
+
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use axum::{
@@ -15,7 +17,7 @@ use tokio::{net::TcpListener, time::interval};
 use tokio_stream::wrappers::IntervalStream;
 
 #[derive(Clone, Copy, Debug)]
-pub struct Query;
+struct Query;
 
 #[graphql_object]
 impl Query {
@@ -26,7 +28,7 @@ impl Query {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct Subscription;
+struct Subscription;
 
 type NumberStream = BoxStream<'static, Result<i32, FieldError>>;
 

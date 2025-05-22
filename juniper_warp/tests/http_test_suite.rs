@@ -1,3 +1,7 @@
+//! [`HttpIntegration`] testing for [`warp`].
+
+#![expect(unused_crate_dependencies, reason = "integration tests")]
+
 use futures::TryStreamExt as _;
 use itertools::Itertools as _;
 use juniper::{

@@ -1,4 +1,7 @@
-#![cfg(not(windows))]
+//! [`WsIntegration`] testing for [`axum`].
+
+#![expect(unused_crate_dependencies, reason = "integration tests")]
+#![cfg_attr(windows, expect(dead_code, unused_imports, reason = "disabled"))]
 
 use std::{net::SocketAddr, sync::Arc};
 
@@ -127,12 +130,14 @@ impl WsIntegration for TestApp {
     }
 }
 
+#[cfg(not(windows))]
 #[tokio::test]
 async fn test_graphql_ws_integration() {
     let app = TestApp::new("graphql-ws");
     graphql_ws::run_test_suite(&app).await;
 }
 
+#[cfg(not(windows))]
 #[tokio::test]
 async fn test_graphql_transport_integration() {
     let app = TestApp::new("graphql-transport-ws");
