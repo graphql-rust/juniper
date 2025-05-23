@@ -1,4 +1,6 @@
-use std::{collections::HashMap, vec};
+use std::collections::HashMap;
+
+use derive_more::with_trait::IntoIterator;
 
 use crate::{
     ast::{Directive, Field, Fragment, InputValue, Selection},
@@ -379,7 +381,7 @@ impl<'a, S> LookAheadArgument<'a, S> {
 }
 
 /// Children of a [`LookAheadSelection`].
-#[derive(Debug)]
+#[derive(Debug, IntoIterator)]
 #[must_use]
 pub struct LookAheadChildren<'a, S> {
     children: Vec<LookAheadSelection<'a, S>>,
@@ -450,15 +452,6 @@ impl<'a, S> LookAheadChildren<'a, S> {
     /// Returns an [`Iterator`] over these children, by reference.
     pub fn iter(&self) -> impl DoubleEndedIterator<Item = &LookAheadSelection<'a, S>> + '_ {
         self.children.iter()
-    }
-}
-
-impl<'a, S: ScalarValue> IntoIterator for LookAheadChildren<'a, S> {
-    type Item = LookAheadSelection<'a, S>;
-    type IntoIter = vec::IntoIter<Self::Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.children.into_iter()
     }
 }
 
@@ -1765,7 +1758,7 @@ mod tests {
             assert!(!children.is_empty());
             assert_eq!(
                 children.names().collect::<Vec<_>>(),
-                vec!["name", "aliasedName", "friends"]
+                vec!["name", "aliasedName", "friends"],
             );
             let mut child_iter = children.iter();
 
@@ -1806,7 +1799,7 @@ mod tests {
             assert!(!friends_child.children().is_empty());
             assert_eq!(
                 friends_child.children().names().collect::<Vec<_>>(),
-                vec!["name"]
+                vec!["name"],
             );
 
             assert!(child_iter.next().is_none());

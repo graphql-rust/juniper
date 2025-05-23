@@ -1,10 +1,12 @@
 use std::mem;
 
+use derive_more::with_trait::IntoIterator;
+use indexmap::map::IndexMap;
+
 use super::Value;
-use indexmap::map::{IndexMap, IntoIter};
 
 /// An Object value
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, IntoIterator, PartialEq)]
 pub struct Object<S> {
     key_value_list: IndexMap<String, Value<S>>,
 }
@@ -64,15 +66,6 @@ impl<S> Object<S> {
     /// Get the mutable value for a given field
     pub fn get_mut_field_value<K: AsRef<str>>(&mut self, key: K) -> Option<&mut Value<S>> {
         self.key_value_list.get_mut(key.as_ref())
-    }
-}
-
-impl<S> IntoIterator for Object<S> {
-    type Item = (String, Value<S>);
-    type IntoIter = IntoIter<String, Value<S>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.key_value_list.into_iter()
     }
 }
 
