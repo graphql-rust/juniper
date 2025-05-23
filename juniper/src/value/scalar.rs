@@ -1,5 +1,6 @@
 use std::{borrow::Cow, fmt};
 
+use derive_more::with_trait::From;
 use serde::{Serialize, de::DeserializeOwned};
 
 use crate::parser::{ParseError, ScalarToken};
@@ -229,12 +230,13 @@ pub trait ScalarValue:
 /// These types closely follow the [GraphQL specification][0].
 ///
 /// [0]: https://spec.graphql.org/October2021
-#[derive(Clone, Debug, PartialEq, ScalarValue, Serialize)]
+#[derive(Clone, Debug, From, PartialEq, ScalarValue, Serialize)]
 #[serde(untagged)]
 pub enum DefaultScalarValue {
     /// [`Int` scalar][0] as a signed 32‐bit numeric non‐fractional value.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Int
+    #[from(ignore)]
     #[value(as_float, as_int)]
     Int(i32),
 
@@ -243,6 +245,7 @@ pub enum DefaultScalarValue {
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Float
     /// [IEEE 754]: https://en.wikipedia.org/wiki/IEEE_floating_point
+    #[from(ignore)]
     #[value(as_float)]
     Float(f64),
 
@@ -250,24 +253,14 @@ pub enum DefaultScalarValue {
     /// sequences.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-String
+    #[from(&str, Cow<'_, str>)]
     #[value(as_str, as_string, into_string)]
     String(String),
 
     /// [`Boolean` scalar][0] as a `true` or `false` value.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Boolean
+    #[from(ignore)]
     #[value(as_bool)]
     Boolean(bool),
-}
-
-impl<'a> From<&'a str> for DefaultScalarValue {
-    fn from(s: &'a str) -> Self {
-        Self::String(s.into())
-    }
-}
-
-impl<'a> From<Cow<'a, str>> for DefaultScalarValue {
-    fn from(s: Cow<'a, str>) -> Self {
-        Self::String(s.into())
-    }
 }

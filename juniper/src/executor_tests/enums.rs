@@ -1,6 +1,5 @@
 use crate::{
     GraphQLEnum,
-    GraphQLError::ValidationError,
     executor::Variables,
     graphql_value, graphql_vars,
     parser::SourcePosition,
@@ -99,10 +98,11 @@ async fn does_not_accept_string_literals() {
 
     assert_eq!(
         error,
-        ValidationError(vec![RuleError::new(
+        RuleError::new(
             r#"Invalid value for argument "color", reason: Invalid value ""RED"" for enum "Color""#,
             &[SourcePosition::new(18, 0, 18)],
-        )])
+        )
+        .into(),
     );
 }
 
@@ -138,10 +138,11 @@ async fn does_not_accept_incorrect_enum_name_in_variables() {
 
     assert_eq!(
         error,
-        ValidationError(vec![RuleError::new(
+        RuleError::new(
             r#"Variable "$color" got invalid value. Invalid value for enum "Color"."#,
             &[SourcePosition::new(8, 0, 8)],
-        )]),
+        )
+        .into(),
     );
 }
 
@@ -162,9 +163,10 @@ async fn does_not_accept_incorrect_type_in_variables() {
 
     assert_eq!(
         error,
-        ValidationError(vec![RuleError::new(
+        RuleError::new(
             r#"Variable "$color" got invalid value. Expected "Color", found not a string or enum."#,
             &[SourcePosition::new(8, 0, 8)],
-        )]),
+        )
+        .into(),
     );
 }

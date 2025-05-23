@@ -52,7 +52,7 @@
 
 use std::str;
 
-use derive_more::with_trait::{Debug, Display, Error};
+use derive_more::with_trait::{Debug, Display, Error, Into};
 
 use crate::{InputValue, ScalarValue, Value, graphql_scalar};
 
@@ -443,7 +443,7 @@ pub enum TimeZoneParsingError {
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/time-zone",
 )]
-#[derive(Clone, Debug, Display, Eq, PartialEq)]
+#[derive(Clone, Debug, Display, Eq, Into, PartialEq)]
 #[display("{}", _0.iana_name().expect("failed to display `TimeZone`: no IANA name"))]
 pub struct TimeZone(jiff::tz::TimeZone);
 
@@ -465,12 +465,6 @@ impl str::FromStr for TimeZone {
         let value =
             jiff::tz::TimeZone::get(value).map_err(TimeZoneParsingError::InvalidTimeZone)?;
         value.try_into()
-    }
-}
-
-impl From<TimeZone> for jiff::tz::TimeZone {
-    fn from(value: TimeZone) -> Self {
-        value.0
     }
 }
 

@@ -18,6 +18,7 @@ use std::{
     sync::Arc, time::Duration,
 };
 
+use derive_more::with_trait::From;
 use juniper::{
     GraphQLError, RuleError, ScalarValue,
     futures::{
@@ -43,19 +44,13 @@ struct ExecutionParams<S: Schema> {
 }
 
 /// Possible inputs received from a client.
-#[derive(Debug)]
+#[derive(Debug, From)]
 pub enum Input<S> {
     /// Deserialized [`ClientMessage`].
     Message(ClientMessage<S>),
 
     /// Client initiated normal closing of a [`Connection`].
     Close,
-}
-
-impl<S> From<ClientMessage<S>> for Input<S> {
-    fn from(val: ClientMessage<S>) -> Self {
-        Self::Message(val)
-    }
 }
 
 /// Output provides the responses that should be sent to the client.
@@ -181,9 +176,10 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                                 stream::iter(vec![
                                     Output::Message(ServerMessage::Error {
                                         id: id.clone(),
-                                        payload: GraphQLError::ValidationError(vec![
-                                            RuleError::new("Too many in-flight operations.", &[]),
-                                        ])
+                                        payload: GraphQLError::from(RuleError::new(
+                                            "Too many in-flight operations.",
+                                            &[],
+                                        ))
                                         .into(),
                                     }),
                                     Output::Message(ServerMessage::Complete { id }),

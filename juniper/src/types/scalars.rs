@@ -1,6 +1,6 @@
 use std::{char, marker::PhantomData, ops::Deref, rc::Rc, thread::JoinHandle};
 
-use derive_more::with_trait::Display;
+use derive_more::with_trait::{Display, From, Into};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -22,7 +22,9 @@ use crate::{
 /// An ID as defined by the GraphQL specification
 ///
 /// Represented as a string, but can be converted _to_ from an integer as well.
-#[derive(Clone, Debug, Deserialize, Display, Eq, GraphQLScalar, PartialEq, Serialize)]
+#[derive(
+    Clone, Debug, Deserialize, Display, Eq, From, GraphQLScalar, Into, PartialEq, Serialize,
+)]
 #[graphql(parse_token(String, i32))]
 pub struct ID(String);
 
@@ -37,12 +39,6 @@ impl ID {
             .or_else(|| v.as_int_value().as_ref().map(ToString::to_string))
             .map(Self)
             .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
-    }
-}
-
-impl From<String> for ID {
-    fn from(s: String) -> ID {
-        ID(s)
     }
 }
 

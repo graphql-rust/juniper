@@ -2,7 +2,7 @@
 
 use std::{convert::Infallible, sync::Arc};
 
-use derive_more::with_trait::{Display, Error as StdError};
+use derive_more::with_trait::{Display, Error as StdError, From};
 use futures::{
     future::{self, Either},
     sink::SinkExt as _,
@@ -39,7 +39,7 @@ impl<S: ScalarValue> TryFrom<Message> for graphql_transport_ws::Input<S> {
 }
 
 /// Errors that can happen while serving a connection.
-#[derive(Debug, Display, StdError)]
+#[derive(Debug, Display, From, StdError)]
 pub enum Error {
     /// Errors that can happen in Warp while serving a connection.
     #[display("`warp` error: {_0}")]
@@ -51,14 +51,8 @@ pub enum Error {
     Serde(serde_json::Error),
 }
 
-impl From<warp::Error> for Error {
-    fn from(err: warp::Error) -> Self {
-        Self::Warp(err)
-    }
-}
-
 impl From<Infallible> for Error {
-    fn from(_err: Infallible) -> Self {
+    fn from(_: Infallible) -> Self {
         unreachable!()
     }
 }
@@ -253,7 +247,7 @@ where
     let s_rx = s_rx.map(|msg| {
         serde_json::to_string(&msg)
             .map(warp::ws::Message::text)
-            .map_err(Error::Serde)
+            .map_err(Into::into)
     });
 
     match future::select(
@@ -301,7 +295,7 @@ where
     let s_rx = s_rx.map(|output| match output {
         graphql_transport_ws::Output::Message(msg) => serde_json::to_string(&msg)
             .map(warp::ws::Message::text)
-            .map_err(Error::Serde),
+            .map_err(Into::into),
         graphql_transport_ws::Output::Close { code, message } => {
             Ok(warp::ws::Message::close_with(code, message))
         }

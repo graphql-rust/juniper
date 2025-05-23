@@ -26,6 +26,7 @@ subscriptions = [
     "dep:futures",
     "dep:juniper_graphql_ws",
     "dep:log",
+    "derive_more/error", "derive_more/from",
     "warp/websocket",
 ]
 

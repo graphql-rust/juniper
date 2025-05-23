@@ -76,12 +76,6 @@ impl<S> IntoIterator for Object<S> {
     }
 }
 
-impl<S> From<Object<S>> for Value<S> {
-    fn from(o: Object<S>) -> Self {
-        Self::Object(o)
-    }
-}
-
 impl<K, S> FromIterator<(K, Value<S>)> for Object<S>
 where
     K: AsRef<str> + Into<String>,

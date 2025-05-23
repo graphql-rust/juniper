@@ -156,9 +156,10 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                                 stream::iter(vec![
                                     Reaction::ServerMessage(ServerMessage::Error {
                                         id: id.clone(),
-                                        payload: GraphQLError::ValidationError(vec![
-                                            RuleError::new("Too many in-flight operations.", &[]),
-                                        ])
+                                        payload: GraphQLError::from(RuleError::new(
+                                            "Too many in-flight operations.",
+                                            &[],
+                                        ))
                                         .into(),
                                     }),
                                     Reaction::ServerMessage(ServerMessage::Complete { id }),

@@ -56,7 +56,7 @@ pub mod tests;
 #[cfg(test)]
 mod executor_tests;
 
-use derive_more::with_trait::Display;
+use derive_more::with_trait::{Display, From};
 use itertools::Itertools as _;
 
 // Needs to be public because macros use it.
@@ -107,7 +107,7 @@ pub use crate::{
 
 /// An error that prevented query execution
 #[expect(missing_docs, reason = "self-explanatory")]
-#[derive(Clone, Debug, Display, Eq, PartialEq)]
+#[derive(Clone, Debug, Display, Eq, From, PartialEq)]
 pub enum GraphQLError {
     ParseError(Spanning<ParseError>),
     #[display("{}", _0.iter().format("\n"))]
@@ -122,6 +122,12 @@ pub enum GraphQLError {
     IsSubscription,
     #[display("Operation is not a subscription")]
     NotSubscription,
+}
+
+impl From<RuleError> for GraphQLError {
+    fn from(value: RuleError) -> Self {
+        vec![value].into()
+    }
 }
 
 impl std::error::Error for GraphQLError {
@@ -167,7 +173,7 @@ where
 
         let errors = ctx.into_errors();
         if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
+            return Err(errors.into());
         }
     }
 
@@ -177,7 +183,7 @@ where
         let errors = validate_input_values(variables, operation, &root_node.schema);
 
         if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
+            return Err(errors.into());
         }
     }
 
@@ -217,7 +223,7 @@ where
 
         let errors = ctx.into_errors();
         if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
+            return Err(errors.into());
         }
     }
 
@@ -227,7 +233,7 @@ where
         let errors = validate_input_values(variables, operation, &root_node.schema);
 
         if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
+            return Err(errors.into());
         }
     }
 
@@ -253,7 +259,7 @@ where
     SubscriptionT::TypeInfo: Sync,
     S: ScalarValue + Send + Sync,
 {
-    let document: crate::ast::OwnedDocument<'a, S> =
+    let document: ast::OwnedDocument<'a, S> =
         parse_document_source(document_source, &root_node.schema)?;
 
     {
@@ -269,7 +275,7 @@ where
 
         let errors = ctx.into_errors();
         if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
+            return Err(errors.into());
         }
     }
 
@@ -279,7 +285,7 @@ where
         let errors = validate_input_values(variables, operation, &root_node.schema);
 
         if !errors.is_empty() {
-            return Err(GraphQLError::ValidationError(errors));
+            return Err(errors.into());
         }
     }
 
@@ -309,10 +315,4 @@ where
         &Variables::new(),
         context,
     )
-}
-
-impl From<Spanning<ParseError>> for GraphQLError {
-    fn from(err: Spanning<ParseError>) -> Self {
-        Self::ParseError(err)
-    }
 }

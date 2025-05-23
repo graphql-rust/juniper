@@ -3,8 +3,8 @@
 pub mod common;
 
 use juniper::{
-    GraphQLError, GraphQLInputObject, RuleError, execute, graphql_object, graphql_value,
-    graphql_vars, parser::SourcePosition,
+    GraphQLInputObject, RuleError, execute, graphql_object, graphql_value, graphql_vars,
+    parser::SourcePosition,
 };
 
 use self::common::util::schema;
@@ -187,11 +187,12 @@ mod default_value {
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Err(GraphQLError::ValidationError(vec![RuleError::new(
+            Err(RuleError::new(
                 "Invalid value for argument \"point\", reason: Error on \"Point2D\" field \"y\": \
                  \"null\" specified for not nullable type \"Float!\"",
                 &[SourcePosition::new(11, 0, 11)],
-            )]))
+            )
+            .into()),
         );
     }
 
@@ -203,10 +204,11 @@ mod default_value {
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Err(GraphQLError::ValidationError(vec![RuleError::new(
+            Err(RuleError::new(
                 "Variable \"$x\" of required type \"Float!\" was not provided.",
                 &[SourcePosition::new(8, 0, 8)],
-            )]))
+            )
+            .into()),
         );
     }
 
