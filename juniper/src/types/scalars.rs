@@ -1,6 +1,6 @@
-use std::{char, marker::PhantomData, ops::Deref, rc::Rc, thread::JoinHandle};
+use std::{char, marker::PhantomData, rc::Rc, thread::JoinHandle};
 
-use derive_more::with_trait::{Display, From, Into};
+use derive_more::with_trait::{Deref, Display, From, Into};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -23,8 +23,9 @@ use crate::{
 ///
 /// Represented as a string, but can be converted _to_ from an integer as well.
 #[derive(
-    Clone, Debug, Deserialize, Display, Eq, From, GraphQLScalar, Into, PartialEq, Serialize,
+    Clone, Debug, Deref, Deserialize, Display, Eq, From, GraphQLScalar, Into, PartialEq, Serialize,
 )]
+#[deref(forward)]
 #[graphql(parse_token(String, i32))]
 pub struct ID(String);
 
@@ -46,14 +47,6 @@ impl ID {
     /// Construct a new ID from anything implementing `Into<String>`
     pub fn new<S: Into<String>>(value: S) -> Self {
         ID(value.into())
-    }
-}
-
-impl Deref for ID {
-    type Target = str;
-
-    fn deref(&self) -> &str {
-        &self.0
     }
 }
 
