@@ -1,4 +1,4 @@
-use std::{boxed::Box, collections::BTreeMap};
+use std::collections::BTreeMap;
 
 use graphql_parser::{
     Pos,
@@ -14,7 +14,7 @@ use graphql_parser::{
 };
 
 use crate::{
-    ast::{InputValue, Type},
+    ast::{InputValue, Type, TypeModifier},
     schema::{
         meta::{Argument, DeprecationStatus, EnumValue, Field, MetaType},
         model::SchemaType,
@@ -139,22 +139,18 @@ impl GraphQLParserTranslator {
         }
     }
 
-    fn translate_type<'a, T>(input: &'a Type<impl AsRef<str>>) -> ExternalType<'a, T>
+    fn translate_type<'a, T>(input: &'a Type) -> ExternalType<'a, T>
     where
         T: Text<'a>,
     {
-        match input {
-            Type::List(x, ..) => {
-                ExternalType::ListType(GraphQLParserTranslator::translate_type(x).into())
-            }
-            Type::Named(x) => ExternalType::NamedType(From::from(x.as_ref())),
-            Type::NonNullList(x, ..) => ExternalType::NonNullType(Box::new(
-                ExternalType::ListType(Box::new(GraphQLParserTranslator::translate_type(x))),
-            )),
-            Type::NonNullNamed(x) => {
-                ExternalType::NonNullType(Box::new(ExternalType::NamedType(From::from(x.as_ref()))))
-            }
+        let mut ty = ExternalType::NamedType(input.innermost_name().into());
+        for m in input.modifiers() {
+            ty = match m {
+                TypeModifier::NonNull => ExternalType::NonNullType(ty.into()),
+                TypeModifier::List(..) => ExternalType::ListType(ty.into()),
+            };
         }
+        ty
     }
 
     fn translate_meta<'a, S, T>(input: &'a MetaType<S>) -> ExternalTypeDefinition<'a, T>
