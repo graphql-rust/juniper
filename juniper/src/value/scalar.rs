@@ -1,4 +1,8 @@
-use std::{borrow::Cow, fmt};
+use std::{
+    any::{Any, TypeId},
+    borrow::Cow,
+    fmt, ptr,
+};
 
 use derive_more::with_trait::From;
 use serde::{Serialize, de::DeserializeOwned};
@@ -223,7 +227,43 @@ pub trait ScalarValue:
             unreachable!("`ScalarValue` must represent at least one of the GraphQL spec types")
         }
     }
+
+    /// Creates this [`ScalarValue`] from the provided custom string type.
+    ///
+    /// This method should be implemented if [`ScalarValue`] implementation uses some custom string 
+    /// type inside to enable efficient conversion from values of this type.
+    ///
+    /// Default implementation allocates by converting [`ToString`] and [`From`]`<`[`String`]`>`.
+    fn from_custom_string<Str: fmt::Display + Any + ?Sized>(s: &Str) -> Self {
+        s.to_string().into()
+    }
 }
+
+/// Extension of [`Any`] for using its methods directly on the value without `dyn`.
+pub trait AnyExt: Any {
+    /// Returns `true` if the this type is the same as `T`.
+    #[must_use]
+    fn is<T: Any + ?Sized>(&self) -> bool {
+        TypeId::of::<T>() == self.type_id()
+    }
+
+    /// Returns [`Some`] reference to this value if it's of type `T`, or [`None`] otherwise.
+    #[must_use]
+    fn downcast_ref<T: Any>(&self) -> Option<&T> {
+        self.is::<T>()
+            .then(|| unsafe { &*(ptr::from_ref(self) as *const T) })
+    }
+
+    /// Returns [`Some`] mutable reference to this value if it's of type `T`, or [`None`] otherwise.
+    #[must_use]
+    fn downcast_mut<T: Any>(&mut self) -> Option<&mut T> {
+        // `self.is::<T>()` produces a false positive here: borrowed data escapes outside of method
+        (TypeId::of::<Self>() == TypeId::of::<T>())
+            .then(|| unsafe { &mut *(ptr::from_mut(self) as *mut T) })
+    }
+}
+
+impl<T: Any + ?Sized> AnyExt for T {}
 
 /// The default [`ScalarValue`] representation in [`juniper`].
 ///

@@ -527,6 +527,12 @@ impl<'a, S: From<String>> From<&'a str> for InputValue<S> {
     }
 }
 
+impl<S: ScalarValue> From<&ArcStr> for InputValue<S> {
+    fn from(value: &ArcStr) -> Self {
+        Self::scalar(S::from_custom_string(value))
+    }
+}
+
 impl<'a, S: From<String>> From<Cow<'a, str>> for InputValue<S> {
     fn from(s: Cow<'a, str>) -> Self {
         Self::scalar(s.into_owned())

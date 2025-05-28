@@ -3,6 +3,7 @@ mod scalar;
 
 use std::{any::TypeId, borrow::Cow, fmt, mem};
 
+use arcstr::ArcStr;
 use derive_more::with_trait::From;
 
 use crate::{
@@ -12,7 +13,7 @@ use crate::{
 
 pub use self::{
     object::Object,
-    scalar::{DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarValue},
+    scalar::{DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarValue, AnyExt},
 };
 
 /// Serializable value returned from query and field execution.
@@ -248,6 +249,12 @@ where
 impl<'a, S: From<String>> From<&'a str> for Value<S> {
     fn from(s: &'a str) -> Self {
         Self::scalar(s.to_owned())
+    }
+}
+
+impl<S: ScalarValue> From<&ArcStr> for Value<S> {
+    fn from(value: &ArcStr) -> Self {
+        Self::scalar(S::from_custom_string(value))
     }
 }
 

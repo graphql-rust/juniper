@@ -102,7 +102,9 @@ pub use crate::{
         },
     },
     validation::RuleError,
-    value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarValue, Value},
+    value::{
+        AnyExt, DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarValue, Value,
+    },
 };
 
 /// An error that prevented query execution
