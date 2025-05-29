@@ -288,6 +288,22 @@ impl<S: From<bool>> From<bool> for Value<S> {
     }
 }
 
+pub trait IntoValue<S> {
+    fn into_value(self) -> Value<S>;
+}
+
+impl<T: Into<Value<S>>, S> IntoValue<S> for T {
+    fn into_value(self) -> Value<S> {
+        self.into()
+    }
+}
+
+impl IntoValue<DefaultScalarValue> for compact_str::CompactString {
+    fn into_value(self) -> Value {
+        todo!()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::graphql_value;
