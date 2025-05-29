@@ -268,7 +268,7 @@ macro_rules! graphql_value {
 
     (None$(,)?) => ($crate::Value::null());
 
-    ($e:expr$(,)?) => ($crate::Value::from($e));
+    ($e:expr$(,)?) => ($crate::IntoValue::into_value($e));
 }
 
 #[cfg(test)]

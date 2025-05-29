@@ -4,6 +4,7 @@ mod scalar;
 use std::{any::TypeId, borrow::Cow, fmt, mem};
 
 use arcstr::ArcStr;
+use compact_str::CompactString;
 use derive_more::with_trait::From;
 
 use crate::{
@@ -13,7 +14,7 @@ use crate::{
 
 pub use self::{
     object::Object,
-    scalar::{DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarValue, AnyExt},
+    scalar::{AnyExt, DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarValue},
 };
 
 /// Serializable value returned from query and field execution.
@@ -54,10 +55,7 @@ impl<S> Value<S> {
     }
 
     /// Construct a scalar value
-    pub fn scalar<T>(s: T) -> Self
-    where
-        S: From<T>,
-    {
+    pub fn scalar<T: Into<S>>(s: T) -> Self {
         Self::Scalar(s.into())
     }
 
@@ -234,73 +232,117 @@ impl<S: ScalarValue> fmt::Display for Value<S> {
     }
 }
 
-impl<S, T> From<Option<T>> for Value<S>
+/// Conversion into a [`Value`].
+///
+/// This trait exists to work around [orphan rules] and allow to specify custom efficient
+/// conversions whenever some custom [`ScalarValue`] is involved
+/// (`impl IntoValue<CustomScalarValue> for ForeignType` would work, while
+/// `impl From<ForeignType> for Value<CustomScalarValue>` wound not).
+///
+/// This trait is used inside [`graphql_value!`] macro expansion and implementing it allows to
+/// put values of the implementor type there.
+///
+/// [`graphql_value!`]: crate::graphql_value
+/// [orphan rules]: https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules
+pub trait IntoValue<S> {
+    /// Converts this value into a [`Value`].
+    #[must_use]
+    fn into_value(self) -> Value<S>;
+}
+
+impl<S> IntoValue<S> for Value<S> {
+    fn into_value(self) -> Self {
+        self
+    }
+}
+
+impl<T, S> IntoValue<S> for Option<T>
 where
-    Self: From<T>,
+    T: IntoValue<S>,
 {
-    fn from(v: Option<T>) -> Self {
-        match v {
-            Some(v) => v.into(),
-            None => Self::Null,
+    fn into_value(self) -> Value<S> {
+        match self {
+            Some(v) => v.into_value(),
+            None => Value::Null,
         }
     }
 }
 
-impl<'a, S: From<String>> From<&'a str> for Value<S> {
-    fn from(s: &'a str) -> Self {
-        Self::scalar(s.to_owned())
-    }
-}
-
-impl<S: ScalarValue> From<&ArcStr> for Value<S> {
-    fn from(value: &ArcStr) -> Self {
-        Self::scalar(S::from_custom_string(value))
-    }
-}
-
-impl<'a, S: From<String>> From<Cow<'a, str>> for Value<S> {
-    fn from(s: Cow<'a, str>) -> Self {
-        Self::scalar(s.into_owned())
-    }
-}
-
-impl<S: From<String>> From<String> for Value<S> {
-    fn from(s: String) -> Self {
-        Self::scalar(s)
-    }
-}
-
-impl<S: From<i32>> From<i32> for Value<S> {
-    fn from(i: i32) -> Self {
-        Self::scalar(i)
-    }
-}
-
-impl<S: From<f64>> From<f64> for Value<S> {
-    fn from(f: f64) -> Self {
-        Self::scalar(f)
-    }
-}
-
-impl<S: From<bool>> From<bool> for Value<S> {
-    fn from(b: bool) -> Self {
-        Self::scalar(b)
-    }
-}
-
-pub trait IntoValue<S> {
-    fn into_value(self) -> Value<S>;
-}
-
-impl<T: Into<Value<S>>, S> IntoValue<S> for T {
+impl<S> IntoValue<S> for &str
+where
+    String: Into<S>,
+{
     fn into_value(self) -> Value<S> {
-        self.into()
+        Value::scalar(self.to_owned())
     }
 }
 
-impl IntoValue<DefaultScalarValue> for compact_str::CompactString {
-    fn into_value(self) -> Value {
-        todo!()
+impl<S> IntoValue<S> for Cow<'_, str>
+where
+    String: Into<S>,
+{
+    fn into_value(self) -> Value<S> {
+        Value::scalar(self.into_owned())
+    }
+}
+
+impl<S> IntoValue<S> for String
+where
+    String: Into<S>,
+{
+    fn into_value(self) -> Value<S> {
+        Value::scalar(self)
+    }
+}
+
+impl<S: ScalarValue> IntoValue<S> for &ArcStr {
+    fn into_value(self) -> Value<S> {
+        Value::scalar(S::from_custom_string(self))
+    }
+}
+
+impl<S: ScalarValue> IntoValue<S> for ArcStr {
+    fn into_value(self) -> Value<S> {
+        (&self).into_value()
+    }
+}
+
+impl<S: ScalarValue> IntoValue<S> for &CompactString {
+    fn into_value(self) -> Value<S> {
+        Value::scalar(S::from_custom_string(self))
+    }
+}
+
+impl<S: ScalarValue> IntoValue<S> for CompactString {
+    fn into_value(self) -> Value<S> {
+        (&self).into_value()
+    }
+}
+
+impl<S> IntoValue<S> for i32
+where
+    i32: Into<S>,
+{
+    fn into_value(self) -> Value<S> {
+        Value::scalar(self)
+    }
+}
+
+impl<S> IntoValue<S> for f64
+where
+    f64: Into<S>,
+{
+    fn into_value(self) -> Value<S> {
+        Value::scalar(self)
+    }
+}
+
+impl<S> IntoValue<S> for bool
+where
+    bool: Into<S>,
+{
+    fn into_value(self) -> Value<S> {
+        Value::scalar(self)
     }
 }
 

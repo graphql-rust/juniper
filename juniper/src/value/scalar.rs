@@ -230,10 +230,11 @@ pub trait ScalarValue:
 
     /// Creates this [`ScalarValue`] from the provided custom string type.
     ///
-    /// This method should be implemented if [`ScalarValue`] implementation uses some custom string 
+    /// This method should be implemented if [`ScalarValue`] implementation uses some custom string
     /// type inside to enable efficient conversion from values of this type.
     ///
     /// Default implementation allocates by converting [`ToString`] and [`From`]`<`[`String`]`>`.
+    #[must_use]
     fn from_custom_string<Str: fmt::Display + Any + ?Sized>(s: &Str) -> Self {
         s.to_string().into()
     }

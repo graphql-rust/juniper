@@ -1,6 +1,6 @@
 use std::fmt;
 
-use juniper::ScalarValue;
+use juniper::{IntoValue, ScalarValue, Value};
 use serde::{Deserialize, Deserializer, Serialize, de};
 
 /// Common utilities used across tests.
@@ -152,6 +152,14 @@ impl<'de> Deserialize<'de> for MyScalarValue {
         }
 
         de.deserialize_any(Visitor)
+    }
+}
+
+/// Assert that we can implement [`IntoValue`] for a foreign type when local [`MyScalarValue`] is
+/// involved.
+impl IntoValue<MyScalarValue> for smartstring::alias::CompactString {
+    fn into_value(self) -> Value<MyScalarValue> {
+        Value::Scalar(MyScalarValue::from_custom_string(&self))
     }
 }
 
