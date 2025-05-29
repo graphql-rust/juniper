@@ -1,6 +1,6 @@
 use std::fmt;
 
-use juniper::{IntoValue, ScalarValue, Value, IntoInputValue, InputValue};
+use juniper::{InputValue, IntoInputValue, IntoValue, ScalarValue, Value};
 use serde::{Deserialize, Deserializer, Serialize, de};
 use smartstring::alias::CompactString;
 
@@ -156,19 +156,19 @@ impl<'de> Deserialize<'de> for MyScalarValue {
     }
 }
 
-/// Assert that [`IntoValue`] could be implemented for a foreign type when local [`MyScalarValue`] 
+/// Assert that [`IntoValue`] could be implemented for a foreign type when local [`MyScalarValue`]
 /// is involved.
 impl IntoValue<MyScalarValue> for CompactString {
     fn into_value(self) -> Value<MyScalarValue> {
-        Value::Scalar(MyScalarValue::from_custom_string(&self))
+        Value::Scalar(MyScalarValue::from_displayable(&self))
     }
 }
 
-/// Assert that [`IntoInputValue`] could be implemented for a foreign type when local 
+/// Assert that [`IntoInputValue`] could be implemented for a foreign type when local
 /// [`MyScalarValue`] is involved.
 impl IntoInputValue<MyScalarValue> for CompactString {
     fn into_input_value(self) -> InputValue<MyScalarValue> {
-        InputValue::Scalar(MyScalarValue::from_custom_string(&self))
+        InputValue::Scalar(MyScalarValue::from_displayable(&self))
     }
 }
 

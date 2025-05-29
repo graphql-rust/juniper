@@ -181,7 +181,7 @@ mod impl_arcstr_scalar {
     use super::ArcStr;
 
     pub(super) fn to_output<S: ScalarValue>(v: &ArcStr) -> Value<S> {
-        Value::scalar(S::from_custom_string(v))
+        Value::scalar(S::from_displayable(v))
     }
 
     pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<ArcStr, String> {
@@ -201,7 +201,7 @@ mod impl_compactstring_scalar {
     use super::CompactString;
 
     pub(super) fn to_output<S: ScalarValue>(v: &CompactString) -> Value<S> {
-        Value::scalar(S::from_custom_string(v))
+        Value::scalar(S::from_displayable(v))
     }
 
     pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<CompactString, String> {

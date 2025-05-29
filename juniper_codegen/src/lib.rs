@@ -415,7 +415,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// struct UserId(String);
 /// ```
 ///
-/// All of the methods inherited from `Newtype`'s field may also be overridden
+/// All the methods inherited from `Newtype`'s field may also be overridden
 /// with the attributes described below.
 ///
 /// # Custom resolving
@@ -423,7 +423,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// Customization of a [GraphQL scalar][0] type resolving is possible via
 /// `#[graphql(to_output_with = <fn path>)]` attribute:
 /// ```rust
-/// # use juniper::{GraphQLScalar, ScalarValue, Value};
+/// # use juniper::{GraphQLScalar, IntoValue as _, ScalarValue, Value};
 /// #
 /// #[derive(GraphQLScalar)]
 /// #[graphql(to_output_with = to_output, transparent)]
@@ -431,8 +431,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///
 /// /// Increments [`Incremented`] before converting into a [`Value`].
 /// fn to_output<S: ScalarValue>(v: &Incremented) -> Value<S> {
-///     let inc = v.0 + 1;
-///     Value::from(inc)
+///     (v.0 + 1).into_value()
 /// }
 /// ```
 ///
@@ -772,22 +771,25 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
     })
 }
 
-/// `#[derive(ScalarValue)]` macro for deriving a [`ScalarValue`]
-/// implementation.
+/// `#[derive(ScalarValue)]` macro for deriving a [`ScalarValue`] implementation.
 ///
 /// To derive a [`ScalarValue`] on enum you should mark the corresponding enum
 /// variants with `as_int`, `as_float`, `as_string`, `into_string`, `as_str` and
-/// `as_bool` attribute argumentes (names correspond to [`ScalarValue`] required
+/// `as_bool` attribute arguments (names correspond to [`ScalarValue`] required
 /// methods).
 ///
+/// Additional `from_displayable_with` argument could be used to specify a custom
+/// implementation to override the default `ScalarValue::from_displayable()` method.
+///
 /// ```rust
-/// # use std::fmt;
+/// # use std::{any::Any, fmt};
 /// #
 /// # use serde::{de, Deserialize, Deserializer, Serialize};
 /// # use juniper::ScalarValue;
 /// #
 /// #[derive(Clone, Debug, PartialEq, ScalarValue, Serialize)]
 /// #[serde(untagged)]
+/// #[value(from_displayable_with = from_custom_str)]
 /// enum MyScalarValue {
 ///     #[value(as_float, as_int)]
 ///     Int(i32),
@@ -803,6 +805,23 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
 ///     String(String),
 ///     #[value(as_bool)]
 ///     Boolean(bool),
+/// }
+/// 
+/// // Custom implementation of `ScalarValue::from_displayable()` method for 
+/// // possible efficient conversions into `MyScalarValue` from custom string types.
+/// fn from_custom_str<Str: fmt::Display + Any + ?Sized>(s: &Str) -> MyScalarValue {
+///     use juniper::AnyExt as _; // allows downcasting directly on types without `dyn`
+/// 
+///     // Imagine this is some custom optimized string type.
+///     struct CustomString(String);
+///
+///     // We specialize the conversion for this type without going through expensive
+///     // `ToString` -> `From<String>` conversion with allocation.
+///     if let Some(s) = s.downcast_ref::<CustomString>() {
+///         MyScalarValue::String(s.0.clone())
+///     } else {
+///         s.to_string().into()
+///     }
 /// }
 ///
 /// impl<'de> Deserialize<'de> for MyScalarValue {
@@ -1361,7 +1380,7 @@ pub fn graphql_interface(attr: TokenStream, body: TokenStream) -> TokenStream {
 ///
 /// For more info and possibilities see [`#[graphql_interface]`][0] macro.
 ///
-/// [0]: crate::graphql_interface
+/// [0]: macro@crate::graphql_interface
 /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
 #[proc_macro_derive(GraphQLInterface, attributes(graphql))]
 pub fn derive_interface(body: TokenStream) -> TokenStream {

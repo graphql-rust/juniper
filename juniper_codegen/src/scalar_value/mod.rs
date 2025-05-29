@@ -14,7 +14,10 @@ use syn::{
 
 use crate::common::{
     SpanContainer, diagnostic, filter_attrs,
-    parse::{ParseBufferExt as _, attr::err},
+    parse::{
+        ParseBufferExt as _,
+        attr::{OptionExt as _, err},
+    },
 };
 
 /// [`diagnostic::Scope`] of errors for `#[derive(ScalarValue)]` macro.
@@ -78,6 +81,7 @@ pub fn expand_derive(input: TokenStream) -> syn::Result<TokenStream> {
         generics: ast.generics,
         variants: data_enum.variants.into_iter().collect(),
         methods,
+        from_displayable: attr.from_displayable.map(SpanContainer::into_inner),
     }
     .into_token_stream())
 }
@@ -88,6 +92,10 @@ pub fn expand_derive(input: TokenStream) -> syn::Result<TokenStream> {
 struct Attr {
     /// Allows missing [`Method`]s.
     allow_missing_attrs: bool,
+
+    /// Explicitly specified function to be used as `ScalarValue::from_displayable()`
+    /// implementation.
+    from_displayable: Option<SpanContainer<syn::ExprPath>>,
 }
 
 impl Parse for Attr {
@@ -98,6 +106,13 @@ impl Parse for Attr {
             match ident.to_string().as_str() {
                 "allow_missing_attributes" => {
                     out.allow_missing_attrs = true;
+                }
+                "from_displayable_with" => {
+                    input.parse::<token::Eq>()?;
+                    let scl = input.parse::<syn::ExprPath>()?;
+                    out.from_displayable
+                        .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
+                        .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 name => {
                     return Err(err::unknown_arg(&ident, name));
@@ -112,9 +127,11 @@ impl Parse for Attr {
 impl Attr {
     /// Tries to merge two [`Attr`]s into a single one, reporting about
     /// duplicates, if any.
-    fn try_merge(mut self, another: Self) -> syn::Result<Self> {
-        self.allow_missing_attrs |= another.allow_missing_attrs;
-        Ok(self)
+    fn try_merge(self, mut another: Self) -> syn::Result<Self> {
+        Ok(Self {
+            allow_missing_attrs: self.allow_missing_attrs || another.allow_missing_attrs,
+            from_displayable: try_merge_opt!(from_displayable: self, another),
+        })
     }
 
     /// Parses [`Attr`] from the given multiple `name`d [`syn::Attribute`]s
@@ -207,27 +224,24 @@ impl VariantAttr {
     }
 }
 
-/// Definition of a [`ScalarValue`] for code generation.
-///
-/// [`ScalarValue`]: juniper::ScalarValue
+/// Definition of a `ScalarValue` for code generation.
 struct Definition {
-    /// [`syn::Ident`] of the enum representing this [`ScalarValue`].
-    ///
-    /// [`ScalarValue`]: juniper::ScalarValue
+    /// [`syn::Ident`] of the enum representing this `ScalarValue`.
     ident: syn::Ident,
 
-    /// [`syn::Generics`] of the enum representing this [`ScalarValue`].
-    ///
-    /// [`ScalarValue`]: juniper::ScalarValue
+    /// [`syn::Generics`] of the enum representing this `ScalarValue`.
     generics: syn::Generics,
 
-    /// [`syn::Variant`]s of the enum representing this [`ScalarValue`].
-    ///
-    /// [`ScalarValue`]: juniper::ScalarValue
+    /// [`syn::Variant`]s of the enum representing this `ScalarValue`.
     variants: Vec<syn::Variant>,
 
     /// [`Variant`]s marked with a [`Method`] attribute.
     methods: HashMap<Method, Vec<Variant>>,
+
+    /// Custom definition to call in `ScalarValue::from_displayable()` method.
+    ///
+    /// If [`None`] then `ScalarValue::from_displayable()` method is not generated.
+    from_displayable: Option<syn::ExprPath>,
 }
 
 impl ToTokens for Definition {
@@ -239,9 +253,7 @@ impl ToTokens for Definition {
 }
 
 impl Definition {
-    /// Returns generated code implementing [`ScalarValue`].
-    ///
-    /// [`ScalarValue`]: juniper::ScalarValue
+    /// Returns generated code implementing `ScalarValue`.
     fn impl_scalar_value_tokens(&self) -> TokenStream {
         let ident = &self.ident;
         let (impl_gens, ty_gens, where_clause) = self.generics.split_for_impl();
@@ -294,12 +306,23 @@ impl Definition {
             }
         });
 
+        let from_displayable = self.from_displayable.as_ref().map(|expr| {
+            quote! {
+                fn from_displayable<Str: ::core::fmt::Display + ::core::any::Any + ?Sized>(
+                    __s: &Str
+                ) -> Self {
+                    #expr(__s)
+                }
+            }
+        });
+
         quote! {
             #[automatically_derived]
             impl #impl_gens ::juniper::ScalarValue for #ident #ty_gens
                 #where_clause
             {
                 #( #methods )*
+                #from_displayable
             }
         }
     }

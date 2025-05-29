@@ -572,7 +572,7 @@ where
 
 impl<S: ScalarValue> IntoInputValue<S> for &ArcStr {
     fn into_input_value(self) -> InputValue<S> {
-        InputValue::scalar(S::from_custom_string(self))
+        InputValue::scalar(S::from_displayable(self))
     }
 }
 
@@ -584,7 +584,7 @@ impl<S: ScalarValue> IntoInputValue<S> for ArcStr {
 
 impl<S: ScalarValue> IntoInputValue<S> for &CompactString {
     fn into_input_value(self) -> InputValue<S> {
-        InputValue::scalar(S::from_custom_string(self))
+        InputValue::scalar(S::from_displayable(self))
     }
 }
 
