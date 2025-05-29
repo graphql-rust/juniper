@@ -1,6 +1,7 @@
 use std::{borrow::Cow, fmt, hash::Hash, slice, vec};
 
 use arcstr::ArcStr;
+use compact_str::CompactString;
 
 use indexmap::IndexMap;
 
@@ -249,10 +250,7 @@ impl<S> InputValue<S> {
     }
 
     /// Construct a scalar value
-    pub fn scalar<T>(v: T) -> Self
-    where
-        S: From<T>,
-    {
+    pub fn scalar<T: Into<S>>(v: T) -> Self {
         Self::Scalar(v.into())
     }
 
@@ -509,57 +507,117 @@ impl<S: ScalarValue> fmt::Display for InputValue<S> {
     }
 }
 
-impl<S, T> From<Option<T>> for InputValue<S>
+/// Conversion into an [`InputValue`].
+///
+/// This trait exists to work around [orphan rules] and allow to specify custom efficient
+/// conversions whenever some custom [`ScalarValue`] is involved
+/// (`impl IntoInputValue<CustomScalarValue> for ForeignType` would work, while
+/// `impl From<ForeignType> for InputValue<CustomScalarValue>` wound not).
+///
+/// This trait is used inside [`graphql_input_value!`] macro expansion and implementing it allows to
+/// put values of the implementor type there.
+///
+/// [`graphql_input_value!`]: crate::graphql_input_value
+/// [orphan rules]: https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules
+pub trait IntoInputValue<S> {
+    /// Converts this value into an [`InputValue`].
+    #[must_use]
+    fn into_input_value(self) -> InputValue<S>;
+}
+
+impl<S> IntoInputValue<S> for InputValue<S> {
+    fn into_input_value(self) -> Self {
+        self
+    }
+}
+
+impl<T, S> IntoInputValue<S> for Option<T>
 where
-    Self: From<T>,
+    T: IntoInputValue<S>,
 {
-    fn from(v: Option<T>) -> Self {
-        match v {
-            Some(v) => v.into(),
-            None => Self::Null,
+    fn into_input_value(self) -> InputValue<S> {
+        match self {
+            Some(v) => v.into_input_value(),
+            None => InputValue::Null,
         }
     }
 }
 
-impl<'a, S: From<String>> From<&'a str> for InputValue<S> {
-    fn from(s: &'a str) -> Self {
-        Self::scalar(s.to_owned())
+impl<S> IntoInputValue<S> for &str
+where
+    String: Into<S>,
+{
+    fn into_input_value(self) -> InputValue<S> {
+        InputValue::scalar(self.to_owned())
     }
 }
 
-impl<S: ScalarValue> From<&ArcStr> for InputValue<S> {
-    fn from(value: &ArcStr) -> Self {
-        Self::scalar(S::from_custom_string(value))
+impl<S> IntoInputValue<S> for Cow<'_, str>
+where
+    String: Into<S>,
+{
+    fn into_input_value(self) -> InputValue<S> {
+        InputValue::scalar(self.into_owned())
     }
 }
 
-impl<'a, S: From<String>> From<Cow<'a, str>> for InputValue<S> {
-    fn from(s: Cow<'a, str>) -> Self {
-        Self::scalar(s.into_owned())
+impl<S> IntoInputValue<S> for String
+where
+    String: Into<S>,
+{
+    fn into_input_value(self) -> InputValue<S> {
+        InputValue::scalar(self)
     }
 }
 
-impl<S: From<String>> From<String> for InputValue<S> {
-    fn from(s: String) -> Self {
-        Self::scalar(s)
+impl<S: ScalarValue> IntoInputValue<S> for &ArcStr {
+    fn into_input_value(self) -> InputValue<S> {
+        InputValue::scalar(S::from_custom_string(self))
     }
 }
 
-impl<S: From<i32>> From<i32> for InputValue<S> {
-    fn from(i: i32) -> Self {
-        Self::scalar(i)
+impl<S: ScalarValue> IntoInputValue<S> for ArcStr {
+    fn into_input_value(self) -> InputValue<S> {
+        (&self).into_input_value()
     }
 }
 
-impl<S: From<f64>> From<f64> for InputValue<S> {
-    fn from(f: f64) -> Self {
-        Self::scalar(f)
+impl<S: ScalarValue> IntoInputValue<S> for &CompactString {
+    fn into_input_value(self) -> InputValue<S> {
+        InputValue::scalar(S::from_custom_string(self))
     }
 }
 
-impl<S: From<bool>> From<bool> for InputValue<S> {
-    fn from(b: bool) -> Self {
-        Self::scalar(b)
+impl<S: ScalarValue> IntoInputValue<S> for CompactString {
+    fn into_input_value(self) -> InputValue<S> {
+        (&self).into_input_value()
+    }
+}
+
+impl<S> IntoInputValue<S> for i32
+where
+    i32: Into<S>,
+{
+    fn into_input_value(self) -> InputValue<S> {
+        InputValue::scalar(self)
+    }
+}
+
+impl<S> IntoInputValue<S> for f64
+where
+    f64: Into<S>,
+{
+    fn into_input_value(self) -> InputValue<S> {
+        InputValue::scalar(self)
+    }
+}
+
+impl<S> IntoInputValue<S> for bool
+where
+    bool: Into<S>,
+{
+    fn into_input_value(self) -> InputValue<S> {
+        InputValue::scalar(self)
     }
 }
 
