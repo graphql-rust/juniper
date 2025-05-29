@@ -76,8 +76,8 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 ///         s.to_string().into()
 ///     }
 /// }
-/// 
-/// // Macro cannot infer and generate this impl if a custom string type is used. 
+///
+/// // Macro cannot infer and generate this impl if a custom string type is used.
 /// impl From<String> for MyScalarValue {
 ///     fn from(value: String) -> Self {
 ///         Self::String(value.into())

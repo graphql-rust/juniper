@@ -806,12 +806,12 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
 ///     #[value(as_bool)]
 ///     Boolean(bool),
 /// }
-/// 
-/// // Custom implementation of `ScalarValue::from_displayable()` method for 
+///
+/// // Custom implementation of `ScalarValue::from_displayable()` method for
 /// // possible efficient conversions into `MyScalarValue` from custom string types.
 /// fn from_custom_str<Str: fmt::Display + Any + ?Sized>(s: &Str) -> MyScalarValue {
 ///     use juniper::AnyExt as _; // allows downcasting directly on types without `dyn`
-/// 
+///
 ///     // Imagine this is some custom optimized string type.
 ///     struct CustomString(String);
 ///
