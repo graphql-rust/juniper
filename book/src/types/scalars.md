@@ -85,7 +85,7 @@ pub struct UserId(String);
 In case we need to customize [resolving][7] of a [custom GraphQL scalar][2] value (change the way it gets executed), the `#[graphql(to_output_with = <fn path>)]` attribute is the way to do so:
 ```rust
 # extern crate juniper;
-# use juniper::{GraphQLScalar, ScalarValue, Value};
+# use juniper::{GraphQLScalar, IntoValue as _, ScalarValue, Value};
 #
 #[derive(GraphQLScalar)]
 #[graphql(to_output_with = to_output, transparent)]
@@ -93,8 +93,7 @@ struct Incremented(i32);
 
 /// Increments [`Incremented`] before converting into a [`Value`].
 fn to_output<S: ScalarValue>(v: &Incremented) -> Value<S> {
-    let inc = v.0 + 1;
-    Value::from(inc)
+    (v.0 + 1).into_value()
 }
 #
 # fn main() {}
