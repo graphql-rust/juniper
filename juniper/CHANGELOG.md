@@ -64,7 +64,9 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
         - Made `name()` method returning `ArcStr`.
     - `GraphQLValue`:
         - Made `type_name()` method returning `ArcStr`.
-- Switched `ParseError::UnexpectedToken` to `compact_str::CompactString` instead of `smartstring::SmartString`. ([todo])
+- Switched `ParseError::UnexpectedToken` to `compact_str::CompactString` instead of `smartstring::SmartString`. ([20609366])
+- Replaced `Value`'s `From` implementations with `IntoValue` ones. ([#1324])
+- Replaced `InputValue`'s `From` implementations with `IntoInputValue` ones. ([#1324])
 
 ### Added
 
@@ -78,7 +80,10 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - `jiff::tz::Offset` as `UtcOffset` scalar.
     - `jiff::Span` as `Duration` scalar.
 - `http::GraphQLResponse::into_result()` method. ([#1293])
+- `String` scalar implementation for `arcstr::ArcStr`. ([#1247])
 - `String` scalar implementation for `compact_str::CompactString`. ([20609366])
+- `ScalarValue::from_displayable()` method allowing to specialize `ScalarValue` conversion from custom string types. ([#1324], [#819])
+- `IntoValue` and `IntoInputValue` conversion traits allowing to work around orphan rules with custom `ScalarValue`. ([#1324])
 
 ### Changed
 
@@ -103,6 +108,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1293]: /../../pull/1293
 [#1311]: /../../pull/1311
 [#1318]: /../../pull/1318
+[#1324]: /../../pull/1324
 [#1325]: /../../pull/1325
 [1b1fc618]: /../../commit/1b1fc61879ffdd640d741e187dc20678bf7ab295
 [20609366]: /../../commit/2060936635609b0186d46d8fbd06eb30fce660e3

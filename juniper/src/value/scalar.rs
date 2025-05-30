@@ -1,9 +1,15 @@
-use std::{borrow::Cow, fmt};
+use std::{
+    any::{Any, TypeId},
+    borrow::Cow,
+    fmt, ptr,
+};
 
 use derive_more::with_trait::From;
 use serde::{Serialize, de::DeserializeOwned};
 
 use crate::parser::{ParseError, ScalarToken};
+#[cfg(doc)]
+use crate::{InputValue, Value};
 
 pub use juniper_codegen::ScalarValue;
 
@@ -16,32 +22,37 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
     fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<S>;
 }
 
-/// A trait marking a type that could be used as internal representation of
-/// scalar values in juniper
+/// Type that could be used as internal representation of scalar values (e.g. inside [`Value`] and
+/// [`InputValue`]).
 ///
-/// The main objective of this abstraction is to allow other libraries to
-/// replace the default representation with something that better fits their
-/// needs.
-/// There is a custom derive (`#[derive(`[`ScalarValue`]`)]`) available that
-/// implements most of the required traits automatically for a enum representing
-/// a scalar value. However, [`Serialize`] and [`Deserialize`] implementations
+/// This abstraction allows other libraries and user code to replace the default representation with
+/// something that better fits their needs than [`DefaultScalarValue`].
+///
+/// # Deriving
+///
+/// There is a custom derive (`#[derive(`[`ScalarValue`](macro@crate::ScalarValue)`)]`) available,
+/// that implements most of the required traits automatically for an enum representing a
+/// [`ScalarValue`]. However, [`Serialize`] and [`Deserialize`] implementations
 /// are expected to be provided.
 ///
-/// # Implementing a new scalar value representation
-/// The preferred way to define a new scalar value representation is
-/// defining a enum containing a variant for each type that needs to be
-/// represented at the lowest level.
-/// The following example introduces an new variant that is able to store 64 bit
-/// integers.
+/// # Example
+///
+/// The preferred way to define a new [`ScalarValue`] representation is defining an enum containing
+/// a variant for each type that needs to be represented at the lowest level.
+///
+/// The following example introduces a new variant that is able to store 64-bit integers, and uses
+/// a [`CompactString`] for a string representation.
 ///
 /// ```rust
-/// # use std::fmt;
+/// # use std::{any::Any, fmt};
 /// #
-/// # use serde::{de, Deserialize, Deserializer, Serialize};
+/// # use compact_str::CompactString;
 /// # use juniper::ScalarValue;
+/// # use serde::{de, Deserialize, Deserializer, Serialize};
 /// #
 /// #[derive(Clone, Debug, PartialEq, ScalarValue, Serialize)]
 /// #[serde(untagged)]
+/// #[value(from_displayable_with = from_compact_str)]
 /// enum MyScalarValue {
 ///     #[value(as_float, as_int)]
 ///     Int(i32),
@@ -49,9 +60,28 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 ///     #[value(as_float)]
 ///     Float(f64),
 ///     #[value(as_str, as_string, into_string)]
-///     String(String),
+///     String(CompactString),
 ///     #[value(as_bool)]
 ///     Boolean(bool),
+/// }
+///
+/// // Custom implementation of `ScalarValue::from_displayable()` method
+/// // for efficient conversions from `CompactString` into `MyScalarValue`.
+/// fn from_compact_str<Str: fmt::Display + Any + ?Sized>(s: &Str) -> MyScalarValue {
+///     use juniper::AnyExt as _; // allows downcasting directly on types without `dyn`
+///
+///     if let Some(s) = s.downcast_ref::<CompactString>() {
+///         MyScalarValue::String(s.clone())
+///     } else {
+///         s.to_string().into()
+///     }
+/// }
+///
+/// // Macro cannot infer and generate this impl if a custom string type is used.
+/// impl From<String> for MyScalarValue {
+///     fn from(value: String) -> Self {
+///         Self::String(value.into())
+///     }
 /// }
 ///
 /// impl<'de> Deserialize<'de> for MyScalarValue {
@@ -111,7 +141,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 ///             }
 ///
 ///             fn visit_string<E: de::Error>(self, s: String) -> Result<Self::Value, E> {
-///                 Ok(MyScalarValue::String(s))
+///                 Ok(MyScalarValue::String(s.into()))
 ///             }
 ///         }
 ///
@@ -120,6 +150,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// }
 /// ```
 ///
+/// [`CompactString`]: compact_str::CompactString
 /// [`Deserialize`]: trait@serde::Deserialize
 /// [`Serialize`]: trait@serde::Serialize
 pub trait ScalarValue:
@@ -223,7 +254,48 @@ pub trait ScalarValue:
             unreachable!("`ScalarValue` must represent at least one of the GraphQL spec types")
         }
     }
+
+    /// Creates this [`ScalarValue`] from the provided [`fmt::Display`] type.
+    ///
+    /// This method should be implemented if [`ScalarValue`] implementation uses some custom string
+    /// type inside to enable efficient conversion from values of this type.
+    ///
+    /// Default implementation allocates by converting [`ToString`] and [`From`]`<`[`String`]`>`.
+    ///
+    /// # Example
+    ///
+    /// See the [example in trait documentation](ScalarValue#example) for how it can be used.
+    #[must_use]
+    fn from_displayable<Str: fmt::Display + Any + ?Sized>(s: &Str) -> Self {
+        s.to_string().into()
+    }
 }
+
+/// Extension of [`Any`] for using its methods directly on the value without `dyn`.
+pub trait AnyExt: Any {
+    /// Returns `true` if the this type is the same as `T`.
+    #[must_use]
+    fn is<T: Any + ?Sized>(&self) -> bool {
+        TypeId::of::<T>() == self.type_id()
+    }
+
+    /// Returns [`Some`] reference to this value if it's of type `T`, or [`None`] otherwise.
+    #[must_use]
+    fn downcast_ref<T: Any>(&self) -> Option<&T> {
+        self.is::<T>()
+            .then(|| unsafe { &*(ptr::from_ref(self) as *const T) })
+    }
+
+    /// Returns [`Some`] mutable reference to this value if it's of type `T`, or [`None`] otherwise.
+    #[must_use]
+    fn downcast_mut<T: Any>(&mut self) -> Option<&mut T> {
+        // `self.is::<T>()` produces a false positive here: borrowed data escapes outside of method
+        (TypeId::of::<Self>() == TypeId::of::<T>())
+            .then(|| unsafe { &mut *(ptr::from_mut(self) as *mut T) })
+    }
+}
+
+impl<T: Any + ?Sized> AnyExt for T {}
 
 /// The default [`ScalarValue`] representation in [`juniper`].
 ///

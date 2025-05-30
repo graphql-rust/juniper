@@ -74,8 +74,8 @@ use crate::{
 
 pub use crate::{
     ast::{
-        Definition, Document, FromInputValue, InputValue, Operation, OperationType, Selection,
-        ToInputValue, Type,
+        Definition, Document, FromInputValue, InputValue, IntoInputValue, Operation, OperationType,
+        Selection, ToInputValue, Type,
     },
     executor::{
         Applies, Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
@@ -102,7 +102,10 @@ pub use crate::{
         },
     },
     validation::RuleError,
-    value::{DefaultScalarValue, Object, ParseScalarResult, ParseScalarValue, ScalarValue, Value},
+    value::{
+        AnyExt, DefaultScalarValue, IntoValue, Object, ParseScalarResult, ParseScalarValue,
+        ScalarValue, Value,
+    },
 };
 
 /// An error that prevented query execution

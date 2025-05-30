@@ -176,12 +176,12 @@ where
 type ArcStr = arcstr::ArcStr;
 
 mod impl_arcstr_scalar {
-    use crate::{InputValue, ScalarValue, Value};
+    use crate::{InputValue, IntoValue as _, ScalarValue, Value};
 
     use super::ArcStr;
 
     pub(super) fn to_output<S: ScalarValue>(v: &ArcStr) -> Value<S> {
-        Value::scalar(v.to_string())
+        v.into_value()
     }
 
     pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<ArcStr, String> {
@@ -196,12 +196,12 @@ mod impl_arcstr_scalar {
 type CompactString = compact_str::CompactString;
 
 mod impl_compactstring_scalar {
-    use crate::{InputValue, ScalarValue, Value};
+    use crate::{InputValue, IntoValue as _, ScalarValue, Value};
 
     use super::CompactString;
 
     pub(super) fn to_output<S: ScalarValue>(v: &CompactString) -> Value<S> {
-        Value::scalar(v.to_string())
+        v.into_value()
     }
 
     pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<CompactString, String> {
