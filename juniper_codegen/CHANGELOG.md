@@ -10,10 +10,15 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
 
 ### BC Breaks
 
-- Bumped up [MSRV] to 1.85. ([#1272], [todo])
+- Bumped up [MSRV] to 1.85. ([#1272], [1b1fc618])
+
+### Added
+
+- Support of top-level `#[value(from_displayable_with = ...)]` attribute in `derive(ScalarValue)`. ([#1324])
 
 [#1272]: /../../pull/1272
-[todo]: /../../commit/todo
+[#1324]: /../../pull/1324
+[1b1fc618]: /../../commit/1b1fc61879ffdd640d741e187dc20678bf7ab295
 
 
 
