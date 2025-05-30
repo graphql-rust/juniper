@@ -309,7 +309,7 @@ impl Definition {
         let from_displayable = self.from_displayable.as_ref().map(|expr| {
             quote! {
                 fn from_displayable<Str: ::core::fmt::Display + ::core::any::Any + ?Sized>(
-                    __s: &Str
+                    __s: &Str,
                 ) -> Self {
                     #expr(__s)
                 }
