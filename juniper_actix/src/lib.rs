@@ -841,7 +841,7 @@ mod subscription_tests {
         fn run(
             &self,
             messages: Vec<WsIntegrationMessage>,
-        ) -> LocalBoxFuture<Result<(), anyhow::Error>> {
+        ) -> LocalBoxFuture<'_, Result<(), anyhow::Error>> {
             Box::pin(self.run_async(messages))
         }
     }

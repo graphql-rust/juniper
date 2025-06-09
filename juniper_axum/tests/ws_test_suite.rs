@@ -125,7 +125,7 @@ impl WsIntegration for TestApp {
     fn run(
         &self,
         messages: Vec<WsIntegrationMessage>,
-    ) -> LocalBoxFuture<Result<(), anyhow::Error>> {
+    ) -> LocalBoxFuture<'_, Result<(), anyhow::Error>> {
         Box::pin(self.clone().run(messages))
     }
 }

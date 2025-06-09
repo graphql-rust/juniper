@@ -56,7 +56,7 @@ impl<K: Eq + Hash + Clone, V> OrderedMap<K, V> {
         }
     }
 
-    fn iter(&self) -> OrderedMapIter<K, V> {
+    fn iter(&self) -> OrderedMapIter<'_, K, V> {
         OrderedMapIter {
             map: &self.data,
             inner: self.insert_order.iter(),

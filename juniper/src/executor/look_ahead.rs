@@ -819,7 +819,7 @@ mod tests {
 
     use super::*;
 
-    fn parse_document_source<S>(q: &str) -> UnlocatedParseResult<OwnedDocument<S>>
+    fn parse_document_source<S>(q: &str) -> UnlocatedParseResult<OwnedDocument<'_, S>>
     where
         S: ScalarValue,
     {
