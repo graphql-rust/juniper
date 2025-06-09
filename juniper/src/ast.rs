@@ -626,11 +626,11 @@ impl<'a, S> Arguments<'a, S> {
         self.items.into_iter()
     }
 
-    pub fn iter(&self) -> slice::Iter<(Spanning<&'a str>, Spanning<InputValue<S>>)> {
+    pub fn iter(&self) -> slice::Iter<'_, (Spanning<&'a str>, Spanning<InputValue<S>>)> {
         self.items.iter()
     }
 
-    pub fn iter_mut(&mut self) -> slice::IterMut<(Spanning<&'a str>, Spanning<InputValue<S>>)> {
+    pub fn iter_mut(&mut self) -> slice::IterMut<'_, (Spanning<&'a str>, Spanning<InputValue<S>>)> {
         self.items.iter_mut()
     }
 
@@ -648,7 +648,7 @@ impl<'a, S> Arguments<'a, S> {
 }
 
 impl<'a, S> VariableDefinitions<'a, S> {
-    pub fn iter(&self) -> slice::Iter<(Spanning<&'a str>, VariableDefinition<'a, S>)> {
+    pub fn iter(&self) -> slice::Iter<'_, (Spanning<&'a str>, VariableDefinition<'a, S>)> {
         self.items.iter()
     }
 }

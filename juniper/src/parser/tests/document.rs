@@ -8,7 +8,7 @@ use crate::{
     value::{DefaultScalarValue, ScalarValue},
 };
 
-fn parse_document<S>(s: &str) -> OwnedDocument<S>
+fn parse_document<S>(s: &str) -> OwnedDocument<'_, S>
 where
     S: ScalarValue,
 {
@@ -33,46 +33,44 @@ fn parse_document_error<S: ScalarValue>(s: &str) -> Spanning<ParseError> {
 fn simple_ast() {
     assert_eq!(
         parse_document::<DefaultScalarValue>(
-            r#"
-            {
+            r#"{
                 node(id: 4) {
                     id
                     name
                 }
-            }
-        "#
+            }"#,
         ),
         vec![Definition::Operation(Spanning::start_end(
-            &SourcePosition::new(13, 1, 12),
-            &SourcePosition::new(124, 6, 13),
+            &SourcePosition::new(0, 0, 0),
+            &SourcePosition::new(111, 5, 13),
             Operation {
                 operation_type: OperationType::Query,
                 name: None,
                 variable_definitions: None,
                 directives: None,
                 selection_set: vec![Selection::Field(Spanning::start_end(
-                    &SourcePosition::new(31, 2, 16),
-                    &SourcePosition::new(110, 5, 17),
+                    &SourcePosition::new(18, 1, 16),
+                    &SourcePosition::new(97, 4, 17),
                     Field {
                         alias: None,
                         name: Spanning::start_end(
-                            &SourcePosition::new(31, 2, 16),
-                            &SourcePosition::new(35, 2, 20),
+                            &SourcePosition::new(18, 1, 16),
+                            &SourcePosition::new(22, 1, 20),
                             "node",
                         ),
                         arguments: Some(Spanning::start_end(
-                            &SourcePosition::new(35, 2, 20),
-                            &SourcePosition::new(42, 2, 27),
+                            &SourcePosition::new(22, 1, 20),
+                            &SourcePosition::new(29, 1, 27),
                             Arguments {
                                 items: vec![(
                                     Spanning::start_end(
-                                        &SourcePosition::new(36, 2, 21),
-                                        &SourcePosition::new(38, 2, 23),
+                                        &SourcePosition::new(23, 1, 21),
+                                        &SourcePosition::new(25, 1, 23),
                                         "id",
                                     ),
                                     Spanning::start_end(
-                                        &SourcePosition::new(40, 2, 25),
-                                        &SourcePosition::new(41, 2, 26),
+                                        &SourcePosition::new(27, 1, 25),
+                                        &SourcePosition::new(28, 1, 26),
                                         graphql_input_value!(4),
                                     ),
                                 )],
@@ -81,13 +79,13 @@ fn simple_ast() {
                         directives: None,
                         selection_set: Some(vec![
                             Selection::Field(Spanning::start_end(
-                                &SourcePosition::new(65, 3, 20),
-                                &SourcePosition::new(67, 3, 22),
+                                &SourcePosition::new(52, 2, 20),
+                                &SourcePosition::new(54, 2, 22),
                                 Field {
                                     alias: None,
                                     name: Spanning::start_end(
-                                        &SourcePosition::new(65, 3, 20),
-                                        &SourcePosition::new(67, 3, 22),
+                                        &SourcePosition::new(52, 2, 20),
+                                        &SourcePosition::new(54, 2, 22),
                                         "id",
                                     ),
                                     arguments: None,
@@ -96,13 +94,13 @@ fn simple_ast() {
                                 },
                             )),
                             Selection::Field(Spanning::start_end(
-                                &SourcePosition::new(88, 4, 20),
-                                &SourcePosition::new(92, 4, 24),
+                                &SourcePosition::new(75, 3, 20),
+                                &SourcePosition::new(79, 3, 24),
                                 Field {
                                     alias: None,
                                     name: Spanning::start_end(
-                                        &SourcePosition::new(88, 4, 20),
-                                        &SourcePosition::new(92, 4, 24),
+                                        &SourcePosition::new(75, 3, 20),
+                                        &SourcePosition::new(79, 3, 24),
                                         "name",
                                     ),
                                     arguments: None,
