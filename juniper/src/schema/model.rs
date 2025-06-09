@@ -310,7 +310,7 @@ impl<S> SchemaType<S> {
     }
 
     /// Get a type by name.
-    pub fn type_by_name(&self, name: impl AsRef<str>) -> Option<TypeType<S>> {
+    pub fn type_by_name(&self, name: impl AsRef<str>) -> Option<TypeType<'_, S>> {
         self.types.get(name.as_ref()).map(|t| TypeType::Concrete(t))
     }
 
@@ -329,7 +329,7 @@ impl<S> SchemaType<S> {
     }
 
     /// Get the query type from the schema.
-    pub fn query_type(&self) -> TypeType<S> {
+    pub fn query_type(&self) -> TypeType<'_, S> {
         TypeType::Concrete(
             self.types
                 .get(self.query_type_name.as_str())
@@ -345,7 +345,7 @@ impl<S> SchemaType<S> {
     }
 
     /// Get the mutation type from the schema.
-    pub fn mutation_type(&self) -> Option<TypeType<S>> {
+    pub fn mutation_type(&self) -> Option<TypeType<'_, S>> {
         self.mutation_type_name.as_ref().map(|name| {
             self.type_by_name(name)
                 .expect("Mutation type does not exist in schema")
@@ -361,7 +361,7 @@ impl<S> SchemaType<S> {
     }
 
     /// Get the subscription type.
-    pub fn subscription_type(&self) -> Option<TypeType<S>> {
+    pub fn subscription_type(&self) -> Option<TypeType<'_, S>> {
         self.subscription_type_name.as_ref().map(|name| {
             self.type_by_name(name)
                 .expect("Subscription type does not exist in schema")
@@ -377,7 +377,7 @@ impl<S> SchemaType<S> {
     }
 
     /// Get a list of types.
-    pub fn type_list(&self) -> Vec<TypeType<S>> {
+    pub fn type_list(&self) -> Vec<TypeType<'_, S>> {
         let mut types = self
             .types
             .values()
@@ -393,7 +393,7 @@ impl<S> SchemaType<S> {
     }
 
     /// Make a type.
-    pub fn make_type(&self, ty: &Type<impl AsRef<str>>) -> TypeType<S> {
+    pub fn make_type(&self, ty: &Type<impl AsRef<str>>) -> TypeType<'_, S> {
         match ty {
             Type::List(inner, expected_size) => {
                 TypeType::List(Box::new(self.make_type(inner)), *expected_size)
