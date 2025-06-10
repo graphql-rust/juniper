@@ -1,17 +1,21 @@
 use std::convert::Infallible;
 
+use arcstr::ArcStr;
+use derive_more::with_trait::{Display, Error, From};
+use ref_cast::RefCast as _;
+use serde::{Serialize, de::DeserializeOwned};
 use std::{
     any::{Any, TypeId},
     borrow::Cow,
     fmt, ptr,
 };
-use arcstr::ArcStr;
-use derive_more::with_trait::{Display, Error, From};
-use serde::{Serialize, de::DeserializeOwned};
 
-use crate::{FieldError, parser::{ParseError, ScalarToken}, IntoFieldError};
+use crate::{
+    FieldError, IntoFieldError, Raw,
+    parser::{ParseError, ScalarToken},
+};
 #[cfg(doc)]
-use crate::{Value, GraphQLValue};
+use crate::{GraphQLValue, Value};
 
 pub use juniper_codegen::ScalarValue;
 
@@ -294,9 +298,17 @@ impl<'me, S: ?Sized> TryScalarValueTo<'me, &'me S> for S {
     }
 }
 
+impl<'me, S: ?Sized> TryScalarValueTo<'me, &'me Raw<S>> for S {
+    type Error = Infallible;
+
+    fn try_scalar_value_to(&'me self) -> Result<&'me Raw<S>, Self::Error> {
+        Ok(Raw::ref_cast(self))
+    }
+}
+
 /// Error of a [`ScalarValue`] not matching the expected type.
 #[derive(Clone, Debug, Display, Error)]
-#[display("Expected `{type_name}` scalar, found: {}", ScalarValueFmt(*input))]
+#[display("Expected `{type_name}`, found: {}", ScalarValueFmt(*input))]
 pub struct WrongInputScalarTypeError<'a, S: ScalarValue> {
     /// Type name of the expected GraphQL scalar.
     pub type_name: ArcStr,

@@ -265,13 +265,11 @@ impl Definition {
         generics.params.push(parse_quote! { #ref_lt });
         let (lt_impl_gens, _, _) = generics.split_for_impl();
 
-        let methods = [
-            (
-                Method::IntoString,
-                quote! { fn into_string(self) -> ::core::option::Option<::std::string::String> },
-                quote! { ::std::string::String::from(v) },
-            ),
-        ];
+        let methods = [(
+            Method::IntoString,
+            quote! { fn into_string(self) -> ::core::option::Option<::std::string::String> },
+            quote! { ::std::string::String::from(v) },
+        )];
         let methods = methods.iter().map(|(m, sig, def)| {
             let arms = self.methods.get(m).into_iter().flatten().map(|v| {
                 let arm = v.match_arm();
@@ -328,13 +326,13 @@ impl Definition {
                 } else {
                     default_expr.clone()
                 };
-                quote! { 
-                    #arm_pattern => ::core::result::Result::Ok(#call), 
+                quote! {
+                    #arm_pattern => ::core::result::Result::Ok(#call),
                 }
             });
             quote! {
                 #[automatically_derived]
-                impl #lt_impl_gens ::juniper::TryScalarValueTo<#ref_lt, #as_ty> 
+                impl #lt_impl_gens ::juniper::TryScalarValueTo<#ref_lt, #as_ty>
                  for #ty_ident #ty_gens #where_clause
                 {
                     type Error = ::juniper::WrongInputScalarTypeError<#ref_lt, #ty_ident #ty_gens>;
@@ -370,7 +368,7 @@ impl Definition {
                 #( #methods )*
                 #from_displayable
             }
-            
+
             #( #impls )*
         }
     }

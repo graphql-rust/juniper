@@ -1,10 +1,10 @@
-use std::{char, marker::PhantomData, rc::Rc, thread::JoinHandle, convert::Infallible};
+use std::{char, convert::Infallible, marker::PhantomData, rc::Rc, thread::JoinHandle};
 
 use derive_more::with_trait::{Deref, Display, From, Into};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    GraphQLScalar,
+    GraphQLScalar, Raw,
     ast::{InputValue, Selection, ToInputValue},
     executor::{ExecutionResult, Executor, Registry},
     graphql_scalar,
@@ -16,7 +16,7 @@ use crate::{
         base::{GraphQLType, GraphQLValue},
         subscriptions::GraphQLSubscriptionValue,
     },
-    value::{ParseScalarResult, ScalarValue, Value},
+    value::{ParseScalarResult, ScalarValue, Value, WrongInputScalarTypeError},
 };
 
 /// An ID as defined by the GraphQL specification
@@ -26,26 +26,32 @@ use crate::{
     Clone, Debug, Deref, Deserialize, Display, Eq, From, GraphQLScalar, Into, PartialEq, Serialize,
 )]
 #[deref(forward)]
+#[from(Box<str>, String)]
+#[into(Box<str>, String)]
 #[graphql(parse_token(String, i32))]
-pub struct ID(String);
+pub struct ID(Box<str>);
 
 impl ID {
     fn to_output<S: ScalarValue>(&self) -> Value<S> {
-        Value::scalar(self.0.clone())
+        Value::scalar(self.0.clone().into_string())
     }
 
-    fn from_input(s: &impl ScalarValue) -> Result<Self, String> {
-        s.as_string()
-            .or_else(|| s.as_int().as_ref().map(ToString::to_string))
-            .map(Self)
-            .ok_or_else(|| format!("Expected `String` or `Int`, found: {s}"))
+    fn from_input<S: ScalarValue>(v: &Raw<S>) -> Result<Self, WrongInputScalarTypeError<'_, S>> {
+        v.as_string()
+            .or_else(|| v.as_int().as_ref().map(ToString::to_string))
+            .map(|s| Self(s.into()))
+            .ok_or_else(|| WrongInputScalarTypeError {
+                type_name: arcstr::literal!("String` or `Int"),
+                input: &**v,
+            })
     }
 }
 
 impl ID {
-    /// Construct a new ID from anything implementing `Into<String>`
+    /// Construct a new [`ID`] from anything implementing [`Into`]`<`[`String`]`>`.
+    #[must_use]
     pub fn new<S: Into<String>>(value: S) -> Self {
-        ID(value.into())
+        ID(value.into().into())
     }
 }
 
@@ -175,8 +181,8 @@ type ArcStr = arcstr::ArcStr;
 mod impl_arcstr_scalar {
     use std::convert::Infallible;
 
-    use crate::{IntoValue as _, ScalarValue, Value};
     use super::ArcStr;
+    use crate::{IntoValue as _, ScalarValue, Value};
 
     pub(super) fn to_output<S: ScalarValue>(v: &ArcStr) -> Value<S> {
         v.into_value()
@@ -194,8 +200,8 @@ type CompactString = compact_str::CompactString;
 mod impl_compactstring_scalar {
     use std::convert::Infallible;
 
-    use crate::{IntoValue as _, ScalarValue, Value};
     use super::CompactString;
+    use crate::{IntoValue as _, ScalarValue, Value};
 
     pub(super) fn to_output<S: ScalarValue>(v: &CompactString) -> Value<S> {
         v.into_value()

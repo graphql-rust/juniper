@@ -433,7 +433,8 @@ mod time_zone {
     }
 
     pub(super) fn from_input(s: &str) -> Result<TimeZone, Box<str>> {
-        s.parse().map_err(|e| format!("Invalid `TimeZone`: {e}").into())
+        s.parse()
+            .map_err(|e| format!("Invalid `TimeZone`: {e}").into())
     }
 }
 

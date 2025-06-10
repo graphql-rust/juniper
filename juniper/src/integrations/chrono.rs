@@ -59,8 +59,7 @@ mod local_date {
     }
 
     pub(super) fn from_input(s: &str) -> Result<LocalDate, Box<str>> {
-        LocalDate::parse_from_str(s, FORMAT)
-            .map_err(|e| format!("Invalid `LocalDate`: {e}").into())
+        LocalDate::parse_from_str(s, FORMAT).map_err(|e| format!("Invalid `LocalDate`: {e}").into())
     }
 }
 

@@ -6,13 +6,16 @@ use std::{any::TypeId, borrow::Cow, fmt, mem};
 use arcstr::ArcStr;
 use compact_str::CompactString;
 
+pub use self::{
+    object::Object,
+    scalar::{
+        AnyExt, DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarValue,
+        ScalarValueFmt, TryScalarValueTo, WrongInputScalarTypeError,
+    },
+};
 use crate::{
     ast::{InputValue, ToInputValue},
     parser::Spanning,
-};
-pub use self::{
-    object::Object,
-    scalar::{AnyExt, DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarValue, TryScalarValueTo, ScalarValueFmt, WrongInputScalarTypeError},
 };
 
 /// Serializable value returned from query and field execution.
@@ -193,9 +196,7 @@ impl<S: ScalarValue> fmt::Display for Value<S> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Null => write!(f, "null"),
-            Self::Scalar(s) => {
-                fmt::Display::fmt(&ScalarValueFmt(s), f)
-            }
+            Self::Scalar(s) => fmt::Display::fmt(&ScalarValueFmt(s), f),
             Self::List(list) => {
                 write!(f, "[")?;
                 for (idx, item) in list.iter().enumerate() {

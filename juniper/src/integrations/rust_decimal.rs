@@ -10,7 +10,7 @@
 
 use std::str::FromStr as _;
 
-use crate::{ScalarValue, Value, graphql_scalar};
+use crate::{Raw, ScalarValue, Value, graphql_scalar};
 
 /// 128 bit representation of a fixed-precision decimal number.
 ///
@@ -35,22 +35,31 @@ type Decimal = rust_decimal::Decimal;
 
 mod rust_decimal_scalar {
     use super::*;
+    use crate::WrongInputScalarTypeError;
 
     pub(super) fn to_output<S: ScalarValue>(v: &Decimal) -> Value<S> {
         Value::scalar(v.to_string())
     }
 
-    pub(super) fn from_input(s: &impl ScalarValue) -> Result<Decimal, String> {
-        if let Some(i) = s.as_int() {
+    pub(super) fn from_input(v: &Raw<impl ScalarValue>) -> Result<Decimal, Box<str>> {
+        if let Some(i) = v.as_int() {
             Ok(Decimal::from(i))
-        } else if let Some(f) = s.as_float() {
-            Decimal::try_from(f).map_err(|e| format!("Failed to parse `Decimal` from `Float`: {e}"))
+        } else if let Some(f) = v.as_float() {
+            Decimal::try_from(f)
+                .map_err(|e| format!("Failed to parse `Decimal` from `Float`: {e}").into())
         } else {
-            s.as_str()
-                .ok_or_else(|| format!("Expected `String`, found: {s}"))
+            v.as_str()
+                .ok_or_else(|| {
+                    WrongInputScalarTypeError {
+                        type_name: arcstr::literal!("String"),
+                        input: &**v,
+                    }
+                    .to_string()
+                    .into()
+                })
                 .and_then(|s| {
                     Decimal::from_str(s)
-                        .map_err(|e| format!("Failed to parse `Decimal` from `String`: {e}"))
+                        .map_err(|e| format!("Failed to parse `Decimal` from `String`: {e}").into())
                 })
         }
     }
