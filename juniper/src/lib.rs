@@ -104,7 +104,7 @@ pub use crate::{
     validation::RuleError,
     value::{
         AnyExt, DefaultScalarValue, IntoValue, Object, ParseScalarResult, ParseScalarValue,
-        ScalarValue, Value,
+        ScalarValue, Value, TryScalarValueTo, ScalarValueFmt, WrongInputScalarTypeError,
     },
 };
 

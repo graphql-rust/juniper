@@ -10,10 +10,9 @@ use crate::{
     ast::{InputValue, ToInputValue},
     parser::Spanning,
 };
-
 pub use self::{
     object::Object,
-    scalar::{AnyExt, DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarValue},
+    scalar::{AnyExt, DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarValue, TryScalarValueTo, ScalarValueFmt, WrongInputScalarTypeError},
 };
 
 /// Serializable value returned from query and field execution.
@@ -195,11 +194,7 @@ impl<S: ScalarValue> fmt::Display for Value<S> {
         match self {
             Self::Null => write!(f, "null"),
             Self::Scalar(s) => {
-                if let Some(string) = s.as_string() {
-                    write!(f, "\"{string}\"")
-                } else {
-                    write!(f, "{s}")
-                }
+                fmt::Display::fmt(&ScalarValueFmt(s), f)
             }
             Self::List(list) => {
                 write!(f, "[")?;

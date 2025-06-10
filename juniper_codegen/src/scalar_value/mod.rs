@@ -247,47 +247,29 @@ struct Definition {
 impl ToTokens for Definition {
     fn to_tokens(&self, into: &mut TokenStream) {
         self.impl_scalar_value_tokens().to_tokens(into);
-        self.impl_from_tokens().to_tokens(into);
-        self.impl_display_tokens().to_tokens(into);
+        //self.impl_from_tokens().to_tokens(into);
+        //self.impl_display_tokens().to_tokens(into);
     }
 }
 
 impl Definition {
     /// Returns generated code implementing `ScalarValue`.
     fn impl_scalar_value_tokens(&self) -> TokenStream {
-        let ident = &self.ident;
+        let ty_ident = &self.ident;
         let (impl_gens, ty_gens, where_clause) = self.generics.split_for_impl();
 
+        let ref_lt = quote! { '___a };
+        // We don't impose additional bounds on generic parameters, because
+        // `ScalarValue` itself has `'static` bound.
+        let mut generics = self.generics.clone();
+        generics.params.push(parse_quote! { #ref_lt });
+        let (lt_impl_gens, _, _) = generics.split_for_impl();
+
         let methods = [
-            (
-                Method::AsInt,
-                quote! { fn as_int(&self) -> ::core::option::Option<::core::primitive::i32> },
-                quote! { ::core::primitive::i32::from(*v) },
-            ),
-            (
-                Method::AsFloat,
-                quote! { fn as_float(&self) -> ::core::option::Option<::core::primitive::f64> },
-                quote! { ::core::primitive::f64::from(*v) },
-            ),
-            (
-                Method::AsStr,
-                quote! { fn as_str(&self) -> ::core::option::Option<&::core::primitive::str> },
-                quote! { ::core::convert::AsRef::as_ref(v) },
-            ),
-            (
-                Method::AsString,
-                quote! { fn as_string(&self) -> ::core::option::Option<::std::string::String> },
-                quote! { ::std::string::ToString::to_string(v) },
-            ),
             (
                 Method::IntoString,
                 quote! { fn into_string(self) -> ::core::option::Option<::std::string::String> },
                 quote! { ::std::string::String::from(v) },
-            ),
-            (
-                Method::AsBool,
-                quote! { fn as_bool(&self) -> ::core::option::Option<::core::primitive::bool> },
-                quote! { ::core::primitive::bool::from(*v) },
             ),
         ];
         let methods = methods.iter().map(|(m, sig, def)| {
@@ -306,6 +288,72 @@ impl Definition {
             }
         });
 
+        let methods2 = [
+            (
+                Method::AsInt,
+                "Int",
+                quote! { ::core::primitive::i32 },
+                quote! { ::core::convert::Into::into(*v) },
+            ),
+            (
+                Method::AsFloat,
+                "Float",
+                quote! { ::core::primitive::f64 },
+                quote! { ::core::convert::Into::into(*v) },
+            ),
+            (
+                Method::AsStr,
+                "String",
+                quote! { &#ref_lt ::core::primitive::str },
+                quote! { ::core::convert::AsRef::as_ref(v) },
+            ),
+            (
+                Method::AsString,
+                "String",
+                quote! { ::std::string::String },
+                quote! { ::std::string::ToString::to_string(v) },
+            ),
+            (
+                Method::AsBool,
+                "Bool",
+                quote! { ::core::primitive::bool },
+                quote! { ::core::convert::Into::into(*v) },
+            ),
+        ];
+        let impls = methods2.iter().map(|(m, into_name, as_ty, default_expr)| {
+            let arms = self.methods.get(m).into_iter().flatten().map(|v| {
+                let arm_pattern = v.match_arm();
+                let call = if let Some(func) = &v.expr {
+                    quote! { #func(v) }
+                } else {
+                    default_expr.clone()
+                };
+                quote! { 
+                    #arm_pattern => ::core::result::Result::Ok(#call), 
+                }
+            });
+            quote! {
+                #[automatically_derived]
+                impl #lt_impl_gens ::juniper::TryScalarValueTo<#ref_lt, #as_ty> 
+                 for #ty_ident #ty_gens #where_clause
+                {
+                    type Error = ::juniper::WrongInputScalarTypeError<#ref_lt, #ty_ident #ty_gens>;
+
+                    fn try_scalar_value_to(
+                        &#ref_lt self,
+                    ) -> ::core::result::Result<#as_ty, Self::Error> {
+                        match self {
+                            #( #arms )*
+                            _ => ::core::result::Result::Err(::juniper::WrongInputScalarTypeError {
+                                type_name: ::juniper::arcstr::literal!(#into_name),
+                                input: self,
+                            }),
+                        }
+                    }
+                }
+            }
+        });
+
         let from_displayable = self.from_displayable.as_ref().map(|expr| {
             quote! {
                 fn from_displayable<Str: ::core::fmt::Display + ::core::any::Any + ?Sized>(
@@ -318,12 +366,12 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl #impl_gens ::juniper::ScalarValue for #ident #ty_gens
-                #where_clause
-            {
+            impl #impl_gens ::juniper::ScalarValue for #ty_ident #ty_gens #where_clause {
                 #( #methods )*
                 #from_displayable
             }
+            
+            #( #impls )*
         }
     }
 
@@ -345,6 +393,7 @@ impl Definition {
             .iter()
             .map(|v| {
                 let var_ident = &v.ident;
+                //let var_name = var_ident.to_string();
                 let field = v.fields.iter().next().unwrap();
                 let var_ty = &field.ty;
                 let var_field = field
@@ -353,6 +402,7 @@ impl Definition {
                     .map_or_else(|| quote! { (v) }, |i| quote! { { #i: v } });
 
                 quote! {
+                    /*
                     #[automatically_derived]
                     impl #impl_gen ::core::convert::From<#var_ty> for #ty_ident #ty_gen
                         #where_clause
@@ -360,7 +410,7 @@ impl Definition {
                         fn from(v: #var_ty) -> Self {
                             Self::#var_ident #var_field
                         }
-                    }
+                    }*/
 
                     #[automatically_derived]
                     impl #impl_gen ::core::convert::From<#ty_ident #ty_gen>
@@ -387,6 +437,26 @@ impl Definition {
                             }
                         }
                     }
+/*
+                    #[automatically_derived]
+                    impl #lf_impl_gen ::juniper::TryFromScalarValue<&'___a #ty_ident #ty_gen>
+                     for &'___a #var_ty #where_clause
+                    {
+                        type Error = ::juniper::WrongInputScalarTypeError<'___a, #ty_ident #ty_gen>;
+
+                        fn try_from_scalar_value(
+                            __value: &'___a #ty_ident #ty_gen
+                        ) -> ::core::result::Result<Self, Self::Error> {
+                            if let #ty_ident::#var_ident #var_field = __value {
+                                ::core::result::Result::Ok(v)
+                            } else {
+                                ::core::result::Result::Err(::juniper::WrongInputScalarTypeError {
+                                    type_name: ::juniper::arcstr::literal!(#var_name),
+                                    input: __value,
+                                })
+                            }
+                        }
+                    }*/
                 }
             })
             .collect()

@@ -282,6 +282,12 @@ impl<S> IntoFieldError<S> for Cow<'_, str> {
     }
 }
 
+impl<S> IntoFieldError<S> for Box<str> {
+    fn into_field_error(self) -> FieldError<S> {
+        FieldError::<S>::from(self)
+    }
+}
+
 #[doc(hidden)]
 pub trait IntoResolvable<'a, S, T, C>
 where

@@ -1,15 +1,17 @@
+use std::convert::Infallible;
+
 use std::{
     any::{Any, TypeId},
     borrow::Cow,
     fmt, ptr,
 };
-
-use derive_more::with_trait::From;
+use arcstr::ArcStr;
+use derive_more::with_trait::{Display, Error, From};
 use serde::{Serialize, de::DeserializeOwned};
 
-use crate::parser::{ParseError, ScalarToken};
+use crate::{InputValue, FieldError, parser::{ParseError, ScalarToken}, IntoFieldError};
 #[cfg(doc)]
-use crate::{InputValue, Value};
+use crate::{Value, GraphQLValue};
 
 pub use juniper_codegen::ScalarValue;
 
@@ -164,6 +166,11 @@ pub trait ScalarValue:
     + From<bool>
     + From<i32>
     + From<f64>
+    + for<'a> TryScalarValueTo<'a, bool, Error: IntoFieldError<Self>>
+    + for<'a> TryScalarValueTo<'a, i32, Error: IntoFieldError<Self>>
+    + for<'a> TryScalarValueTo<'a, f64, Error: IntoFieldError<Self>>
+    + for<'a> TryScalarValueTo<'a, String, Error: IntoFieldError<Self>>
+    + for<'a> TryScalarValueTo<'a, &'a str, Error: IntoFieldError<Self>>
     + 'static
 {
     /// Checks whether this [`ScalarValue`] contains the value of the given
@@ -191,19 +198,19 @@ pub trait ScalarValue:
     /// This function is used for implementing [`GraphQLValue`] for [`i32`] for
     /// all possible [`ScalarValue`]s. Implementations should convert all the
     /// supported integer types with 32 bit or less to an integer, if requested.
-    ///
-    /// [`GraphQLValue`]: crate::GraphQLValue
     #[must_use]
-    fn as_int(&self) -> Option<i32>;
+    fn as_int(&self) -> Option<i32> {
+        self.try_scalar_value_to().ok()
+    }
 
     /// Represents this [`ScalarValue`] as a [`String`] value.
     ///
     /// This function is used for implementing [`GraphQLValue`] for [`String`]
     /// for all possible [`ScalarValue`]s.
-    ///
-    /// [`GraphQLValue`]: crate::GraphQLValue
     #[must_use]
-    fn as_string(&self) -> Option<String>;
+    fn as_string(&self) -> Option<String> {
+        self.try_scalar_value_to().ok()
+    }
 
     /// Converts this [`ScalarValue`] into a [`String`] value.
     ///
@@ -216,10 +223,10 @@ pub trait ScalarValue:
     ///
     /// This function is used for implementing [`GraphQLValue`] for [`str`] for
     /// all possible [`ScalarValue`]s.
-    ///
-    /// [`GraphQLValue`]: crate::GraphQLValue
     #[must_use]
-    fn as_str(&self) -> Option<&str>;
+    fn as_str(&self) -> Option<&str> {
+        self.try_scalar_value_to().ok()
+    }
 
     /// Represents this [`ScalarValue`] as a float value.
     ///
@@ -227,18 +234,19 @@ pub trait ScalarValue:
     /// all possible [`ScalarValue`]s. Implementations should convert all
     /// supported integer types with 64 bit or less and all floating point
     /// values with 64 bit or less to a float, if requested.
-    ///
-    /// [`GraphQLValue`]: crate::GraphQLValue
     #[must_use]
-    fn as_float(&self) -> Option<f64>;
+    fn as_float(&self) -> Option<f64> {
+        self.try_scalar_value_to().ok()
+    }
 
     /// Represents this [`ScalarValue`] as a boolean value
     ///
     /// This function is used for implementing [`GraphQLValue`] for [`bool`] for
     /// all possible [`ScalarValue`]s.
-    ///
-    /// [`GraphQLValue`]: crate::GraphQLValue
-    fn as_bool(&self) -> Option<bool>;
+    #[must_use]
+    fn as_bool(&self) -> Option<bool> {
+        self.try_scalar_value_to().ok()
+    }
 
     /// Converts this [`ScalarValue`] into another one.
     fn into_another<S: ScalarValue>(self) -> S {
@@ -268,6 +276,49 @@ pub trait ScalarValue:
     #[must_use]
     fn from_displayable<Str: fmt::Display + Any + ?Sized>(s: &Str) -> Self {
         s.to_string().into()
+    }
+}
+
+pub trait TryScalarValueTo<'me, T: 'me> {
+    type Error;
+
+    fn try_scalar_value_to(&'me self) -> Result<T, Self::Error>;
+}
+
+impl<'me, S: ?Sized> TryScalarValueTo<'me, &'me S> for S {
+    type Error = Infallible;
+
+    fn try_scalar_value_to(&'me self) -> Result<&'me S, Self::Error> {
+        Ok(self)
+    }
+}
+
+/// Error of a [`ScalarValue`] not matching the expected type.
+#[derive(Clone, Debug, Display, Error)]
+#[display("Expected `{type_name}` scalar, found: {}", ScalarValueFmt(*input))]
+pub struct WrongInputScalarTypeError<'a, S: ScalarValue> {
+    /// Type name of the expected GraphQL scalar.
+    pub type_name: ArcStr,
+
+    /// Input [`ScalarValue`] not matching the expected type.
+    pub input: &'a S,
+}
+
+impl<'a, S: ScalarValue> IntoFieldError<S> for WrongInputScalarTypeError<'a, S> {
+    fn into_field_error(self) -> FieldError<S> {
+        FieldError::<S>::from(self)
+    }
+}
+
+pub struct ScalarValueFmt<'a, S: ScalarValue>(pub &'a S);
+
+impl<'a, S: ScalarValue> Display for ScalarValueFmt<'a, S> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(s) = self.0.as_str() {
+            write!(f, "\"{s}\"")
+        } else {
+            Display::fmt(&self.0, f)
+        }
     }
 }
 
@@ -302,13 +353,13 @@ impl<T: Any + ?Sized> AnyExt for T {}
 /// These types closely follow the [GraphQL specification][0].
 ///
 /// [0]: https://spec.graphql.org/October2021
-#[derive(Clone, Debug, From, PartialEq, ScalarValue, Serialize)]
+#[derive(Clone, Debug, Display, From, PartialEq, ScalarValue, Serialize)]
 #[serde(untagged)]
 pub enum DefaultScalarValue {
     /// [`Int` scalar][0] as a signed 32‐bit numeric non‐fractional value.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Int
-    #[from(ignore)]
+    #[from(i32)]
     #[value(as_float, as_int)]
     Int(i32),
 
@@ -317,7 +368,7 @@ pub enum DefaultScalarValue {
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Float
     /// [IEEE 754]: https://en.wikipedia.org/wiki/IEEE_floating_point
-    #[from(ignore)]
+    #[from(f64)]
     #[value(as_float)]
     Float(f64),
 
@@ -325,14 +376,14 @@ pub enum DefaultScalarValue {
     /// sequences.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-String
-    #[from(&str, Cow<'_, str>)]
+    #[from(&str, Cow<'_, str>, String)]
     #[value(as_str, as_string, into_string)]
     String(String),
 
     /// [`Boolean` scalar][0] as a `true` or `false` value.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Boolean
-    #[from(ignore)]
+    #[from(bool)]
     #[value(as_bool)]
     Boolean(bool),
 }
