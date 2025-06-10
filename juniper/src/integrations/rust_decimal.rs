@@ -10,7 +10,7 @@
 
 use std::str::FromStr as _;
 
-use crate::{InputValue, ScalarValue, Value, graphql_scalar};
+use crate::{ScalarValue, Value, graphql_scalar};
 
 /// 128 bit representation of a fixed-precision decimal number.
 ///
@@ -40,14 +40,14 @@ mod rust_decimal_scalar {
         Value::scalar(v.to_string())
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Decimal, String> {
-        if let Some(i) = v.as_int_value() {
+    pub(super) fn from_input(s: &impl ScalarValue) -> Result<Decimal, String> {
+        if let Some(i) = s.as_int() {
             Ok(Decimal::from(i))
-        } else if let Some(f) = v.as_float_value() {
+        } else if let Some(f) = s.as_float() {
             Decimal::try_from(f).map_err(|e| format!("Failed to parse `Decimal` from `Float`: {e}"))
         } else {
-            v.as_string_value()
-                .ok_or_else(|| format!("Expected `String`, found: {v}"))
+            s.as_str()
+                .ok_or_else(|| format!("Expected `String`, found: {s}"))
                 .and_then(|s| {
                     Decimal::from_str(s)
                         .map_err(|e| format!("Failed to parse `Decimal` from `String`: {e}"))

@@ -9,7 +9,7 @@
 //! [`Url`]: url::Url
 //! [s1]: https://graphql-scalars.dev/docs/scalars/url
 
-use crate::{InputValue, ScalarValue, Value, graphql_scalar};
+use crate::{ScalarValue, Value, graphql_scalar};
 
 /// [Standard URL][0] format as specified in [RFC 3986].
 ///
@@ -36,9 +36,9 @@ mod url_scalar {
         Value::scalar(v.as_str().to_owned())
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Url, String> {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+    pub(super) fn from_input(s: &impl ScalarValue) -> Result<Url, String> {
+        s.as_str()
+            .ok_or_else(|| format!("Expected `String`, found: {s}"))
             .and_then(|s| Url::parse(s).map_err(|e| format!("Failed to parse `URL`: {e}")))
     }
 }

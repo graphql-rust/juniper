@@ -6,8 +6,8 @@ use std::fmt;
 
 use chrono::{DateTime, TimeZone, Utc};
 use juniper::{
-    GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue, ScalarToken, ScalarValue,
-    Value, execute, graphql_object, graphql_value, graphql_vars,
+    GraphQLScalar, ParseScalarResult, ParseScalarValue, ScalarToken, ScalarValue, Value, execute,
+    graphql_object, graphql_value, graphql_vars,
 };
 
 use self::common::{
@@ -29,10 +29,10 @@ mod trivial {
             Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> prelude::Result<Self, prelude::String> {
-            v.as_int_value()
+        fn from_input(s: &impl ScalarValue) -> prelude::Result<Self, prelude::String> {
+            s.as_int()
                 .map(Self)
-                .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
+                .ok_or_else(|| format!("Expected `Counter`, found: {s}"))
         }
 
         fn parse_token<S: ScalarValue>(t: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -237,10 +237,10 @@ mod all_custom_resolvers {
         Value::scalar(v.0)
     }
 
-    fn from_input<S: ScalarValue>(v: &InputValue<S>) -> prelude::Result<Counter, prelude::String> {
-        v.as_int_value()
+    fn from_input(s: &impl ScalarValue) -> prelude::Result<Counter, prelude::String> {
+        s.as_int()
             .map(Counter)
-            .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
+            .ok_or_else(|| format!("Expected `Counter`, found: {s}"))
     }
 
     fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -313,10 +313,10 @@ mod explicit_name {
             Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> prelude::Result<Self, prelude::String> {
-            v.as_int_value()
+        fn from_input(s: &impl ScalarValue) -> prelude::Result<Self, prelude::String> {
+            s.as_int()
                 .map(Self)
-                .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
+                .ok_or_else(|| format!("Expected `Counter`, found: {s}"))
         }
 
         fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -390,10 +390,10 @@ mod delegated_parse_token {
             Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> prelude::Result<Self, prelude::String> {
-            v.as_int_value()
+        fn from_input(s: &impl ScalarValue) -> prelude::Result<Self, prelude::String> {
+            s.as_int()
                 .map(Self)
-                .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
+                .ok_or_else(|| format!("Expected `Counter`, found: {s}"))
         }
     }
 
@@ -469,11 +469,11 @@ mod multiple_delegated_parse_token {
             }
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> prelude::Result<Self, prelude::String> {
-            v.as_string_value()
-                .map(|s| Self::String(s.to_owned()))
-                .or_else(|| v.as_int_value().map(Self::Int))
-                .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
+        fn from_input(s: &impl ScalarValue) -> prelude::Result<Self, prelude::String> {
+            s.as_string()
+                .map(Self::String)
+                .or_else(|| s.as_int().map(Self::Int))
+                .ok_or_else(|| format!("Expected `String` or `Int`, found: {s}"))
         }
     }
 
@@ -533,13 +533,12 @@ mod where_attribute {
         Value::scalar(v.0.to_rfc3339())
     }
 
-    fn from_input<S, Tz>(v: &InputValue<S>) -> prelude::Result<CustomDateTime<Tz>, prelude::String>
+    fn from_input<Tz>(v: &impl ScalarValue) -> prelude::Result<CustomDateTime<Tz>, prelude::String>
     where
-        S: ScalarValue,
         Tz: From<Utc> + TimeZone,
         Tz::Offset: fmt::Display,
     {
-        v.as_string_value()
+        v.as_str()
             .ok_or_else(|| format!("Expected `String`, found: {v}"))
             .and_then(|s| {
                 DateTime::parse_from_rfc3339(s)
@@ -604,10 +603,10 @@ mod with_self {
             Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> prelude::Result<Self, prelude::String> {
-            v.as_int_value()
+        fn from_input(s: &impl ScalarValue) -> prelude::Result<Self, prelude::String> {
+            s.as_int()
                 .map(Self)
-                .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
+                .ok_or_else(|| format!("Expected `Counter`, found: {s}"))
         }
 
         fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -693,15 +692,14 @@ mod with_module {
             Value::scalar(v.0.to_rfc3339())
         }
 
-        pub(super) fn from_input<S, Tz>(
-            v: &InputValue<S>,
+        pub(super) fn from_input<Tz>(
+            v: &impl ScalarValue,
         ) -> prelude::Result<CustomDateTime<Tz>, prelude::String>
         where
-            S: ScalarValue,
             Tz: From<Utc> + TimeZone,
             Tz::Offset: fmt::Display,
         {
-            v.as_string_value()
+            v.as_str()
                 .ok_or_else(|| format!("Expected `String`, found: {v}"))
                 .and_then(|s| {
                     DateTime::parse_from_rfc3339(s)
@@ -768,10 +766,10 @@ mod description_from_doc_comment {
             Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> prelude::Result<Self, prelude::String> {
-            v.as_int_value()
+        fn from_input(s: &impl ScalarValue) -> prelude::Result<Self, prelude::String> {
+            s.as_int()
                 .map(Self)
-                .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
+                .ok_or_else(|| format!("Expected `Counter`, found: {s}"))
         }
     }
 
@@ -845,10 +843,10 @@ mod description_from_attribute {
             Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> prelude::Result<Self, prelude::String> {
-            v.as_int_value()
+        fn from_input(s: &impl ScalarValue) -> prelude::Result<Self, prelude::String> {
+            s.as_int()
                 .map(Self)
-                .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
+                .ok_or_else(|| format!("Expected `Counter`, found: {s}"))
         }
     }
 
@@ -922,10 +920,10 @@ mod custom_scalar {
             Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> prelude::Result<Self, prelude::String> {
-            v.as_int_value()
+        fn from_input(s: &impl ScalarValue) -> prelude::Result<Self, prelude::String> {
+            s.as_int()
                 .map(Self)
-                .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
+                .ok_or_else(|| format!("Expected `Counter`, found: {s}"))
         }
     }
 
@@ -999,10 +997,10 @@ mod generic_scalar {
             Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> prelude::Result<Self, prelude::String> {
-            v.as_int_value()
+        fn from_input(s: &impl ScalarValue) -> prelude::Result<Self, prelude::String> {
+            s.as_int()
                 .map(Self)
-                .ok_or_else(|| format!("Expected `Counter`, found: {v}"))
+                .ok_or_else(|| format!("Expected `Counter`, found: {s}"))
         }
     }
 
@@ -1075,10 +1073,10 @@ mod bounded_generic_scalar {
             Value::scalar(self.0)
         }
 
-        fn from_input<S: ScalarValue>(v: &InputValue<S>) -> prelude::Result<Self, prelude::String> {
-            v.as_int_value()
+        fn from_input(s: &impl ScalarValue) -> prelude::Result<Self, prelude::String> {
+            s.as_int()
                 .map(Self)
-                .ok_or_else(|| format!("Expected `String`, found: {v}"))
+                .ok_or_else(|| format!("Expected `String`, found: {s}"))
         }
     }
 

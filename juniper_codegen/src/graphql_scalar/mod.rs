@@ -770,7 +770,11 @@ impl Methods {
                 from_input: Some(from_input),
                 ..
             } => {
-                quote! { #from_input(input) }
+                quote! {
+                    let input = ::juniper::InputValue::as_scalar(input)
+                        .ok_or_else(|| format!("Expected GraphQL scalar, found: {input}"))?;
+                    #from_input(input)
+                }
             }
             Self::Delegated { field, .. } => {
                 let field_ty = field.ty();

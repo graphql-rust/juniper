@@ -34,12 +34,11 @@ impl ID {
         Value::scalar(self.0.clone())
     }
 
-    fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
-        v.as_string_value()
-            .map(str::to_owned)
-            .or_else(|| v.as_int_value().as_ref().map(ToString::to_string))
+    fn from_input(s: &impl ScalarValue) -> Result<Self, String> {
+        s.as_string()
+            .or_else(|| s.as_int().as_ref().map(ToString::to_string))
             .map(Self)
-            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {s}"))
     }
 }
 
@@ -61,9 +60,8 @@ mod impl_string_scalar {
         Value::scalar(v.to_owned())
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<String, String> {
-        v.as_string_value()
-            .map(str::to_owned)
+    pub(super) fn from_input(v: &impl ScalarValue) -> Result<String, String> {
+        v.as_string()
             .ok_or_else(|| format!("Expected `String`, found: {v}"))
     }
 
@@ -176,7 +174,7 @@ where
 type ArcStr = arcstr::ArcStr;
 
 mod impl_arcstr_scalar {
-    use crate::{InputValue, IntoValue as _, ScalarValue, Value};
+    use crate::{IntoValue as _, ScalarValue, Value};
 
     use super::ArcStr;
 
@@ -184,10 +182,10 @@ mod impl_arcstr_scalar {
         v.into_value()
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<ArcStr, String> {
-        v.as_string_value()
+    pub(super) fn from_input(s: &impl ScalarValue) -> Result<ArcStr, String> {
+        s.as_str()
             .map(Into::into)
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+            .ok_or_else(|| format!("Expected `String`, found: {s}"))
     }
 }
 
@@ -196,7 +194,7 @@ mod impl_arcstr_scalar {
 type CompactString = compact_str::CompactString;
 
 mod impl_compactstring_scalar {
-    use crate::{InputValue, IntoValue as _, ScalarValue, Value};
+    use crate::{IntoValue as _, ScalarValue, Value};
 
     use super::CompactString;
 
@@ -204,10 +202,10 @@ mod impl_compactstring_scalar {
         v.into_value()
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<CompactString, String> {
-        v.as_string_value()
+    pub(super) fn from_input(s: &impl ScalarValue) -> Result<CompactString, String> {
+        s.as_str()
             .map(Into::into)
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+            .ok_or_else(|| format!("Expected `String`, found: {s}"))
     }
 }
 
@@ -292,10 +290,9 @@ mod impl_boolean_scalar {
         Value::scalar(*v)
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Boolean, String> {
-        v.as_scalar_value()
-            .and_then(ScalarValue::as_bool)
-            .ok_or_else(|| format!("Expected `Boolean`, found: {v}"))
+    pub(super) fn from_input(s: &impl ScalarValue) -> Result<Boolean, String> {
+        s.as_bool()
+            .ok_or_else(|| format!("Expected `Boolean`, found: {s}"))
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -315,9 +312,9 @@ mod impl_int_scalar {
         Value::scalar(*v)
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Int, String> {
-        v.as_int_value()
-            .ok_or_else(|| format!("Expected `Int`, found: {v}"))
+    pub(super) fn from_input(s: &impl ScalarValue) -> Result<Int, String> {
+        s.as_int()
+            .ok_or_else(|| format!("Expected `Int`, found: {s}"))
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -342,9 +339,9 @@ mod impl_float_scalar {
         Value::scalar(*v)
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Float, String> {
-        v.as_float_value()
-            .ok_or_else(|| format!("Expected `Float`, found: {v}"))
+    pub(super) fn from_input(s: &impl ScalarValue) -> Result<Float, String> {
+        s.as_float()
+            .ok_or_else(|| format!("Expected `Float`, found: {s}"))
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {

@@ -9,7 +9,7 @@
 //! [`Uuid`]: uuid::Uuid
 //! [s1]: https://graphql-scalars.dev/docs/scalars/uuid
 
-use crate::{InputValue, ScalarValue, Value, graphql_scalar};
+use crate::{ScalarValue, Value, graphql_scalar};
 
 /// [Universally Unique Identifier][0] (UUID).
 ///
@@ -35,9 +35,9 @@ mod uuid_scalar {
         Value::scalar(v.to_string())
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Uuid, String> {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+    pub(super) fn from_input(s: &impl ScalarValue) -> Result<Uuid, String> {
+        s.as_str()
+            .ok_or_else(|| format!("Expected `String`, found: {s}"))
             .and_then(|s| Uuid::parse_str(s).map_err(|e| format!("Failed to parse `UUID`: {e}")))
     }
 }

@@ -23,7 +23,7 @@ use std::fmt;
 
 use chrono::{FixedOffset, TimeZone};
 
-use crate::{InputValue, ScalarValue, Value, graphql_scalar};
+use crate::{ScalarValue, Value, graphql_scalar};
 
 /// Date in the proleptic Gregorian calendar (without time zone).
 ///
@@ -58,12 +58,9 @@ mod local_date {
         Value::scalar(v.format(FORMAT).to_string())
     }
 
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<LocalDate, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+    pub(super) fn from_input(s: &impl ScalarValue) -> Result<LocalDate, String> {
+        s.as_str()
+            .ok_or_else(|| format!("Expected `String`, found: {s}"))
             .and_then(|s| {
                 LocalDate::parse_from_str(s, FORMAT)
                     .map_err(|e| format!("Invalid `LocalDate`: {e}"))
@@ -124,12 +121,9 @@ mod local_time {
         )
     }
 
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<LocalTime, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+    pub(super) fn from_input(s: &impl ScalarValue) -> Result<LocalTime, String> {
+        s.as_str()
+            .ok_or_else(|| format!("Expected `String`, found: {s}"))
             .and_then(|s| {
                 // First, try to parse the most used format.
                 // At the end, try to parse the full format for the parsing
@@ -172,12 +166,9 @@ mod local_date_time {
         Value::scalar(v.format(FORMAT).to_string())
     }
 
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<LocalDateTime, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+    pub(super) fn from_input(s: &impl ScalarValue) -> Result<LocalDateTime, String> {
+        s.as_str()
+            .ok_or_else(|| format!("Expected `String`, found: {s}"))
             .and_then(|s| {
                 LocalDateTime::parse_from_str(s, FORMAT)
                     .map_err(|e| format!("Invalid `LocalDateTime`: {e}"))
@@ -225,13 +216,12 @@ mod date_time {
         )
     }
 
-    pub(super) fn from_input<S, Tz>(v: &InputValue<S>) -> Result<DateTime<Tz>, String>
+    pub(super) fn from_input<Tz>(s: &impl ScalarValue) -> Result<DateTime<Tz>, String>
     where
-        S: ScalarValue,
         Tz: TimeZone + FromFixedOffset,
     {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+        s.as_str()
+            .ok_or_else(|| format!("Expected `String`, found: {s}"))
             .and_then(|s| {
                 DateTime::<FixedOffset>::parse_from_rfc3339(s)
                     .map_err(|e| format!("Invalid `DateTime`: {e}"))

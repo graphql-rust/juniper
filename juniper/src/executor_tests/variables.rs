@@ -18,11 +18,11 @@ impl TestComplexScalar {
         graphql_value!("SerializedValue")
     }
 
-    fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
-        v.as_string_value()
+    fn from_input(s: &impl ScalarValue) -> Result<Self, String> {
+        s.as_str()
             .filter(|s| *s == "SerializedValue")
             .map(|_| Self)
-            .ok_or_else(|| format!(r#"Expected "SerializedValue" string, found: {v}"#))
+            .ok_or_else(|| format!(r#"Expected "SerializedValue" string, found: {s}"#))
     }
 }
 

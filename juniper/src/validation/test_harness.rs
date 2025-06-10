@@ -233,7 +233,7 @@ where
 {
     type Error = &'static str;
 
-    fn from_input_value<'a>(v: &InputValue<S>) -> Result<DogCommand, Self::Error> {
+    fn from_input_value(v: &InputValue<S>) -> Result<DogCommand, Self::Error> {
         match v.as_enum_value() {
             Some("SIT") => Ok(DogCommand::Sit),
             Some("HEEL") => Ok(DogCommand::Heel),
@@ -335,7 +335,7 @@ where
 {
     type Error = &'static str;
 
-    fn from_input_value<'a>(v: &InputValue<S>) -> Result<FurColor, Self::Error> {
+    fn from_input_value(v: &InputValue<S>) -> Result<FurColor, Self::Error> {
         match v.as_enum_value() {
             Some("BROWN") => Ok(FurColor::Brown),
             Some("BLACK") => Ok(FurColor::Black),
@@ -611,7 +611,7 @@ where
 {
     type Error = FieldError<S>;
 
-    fn from_input_value<'a>(v: &InputValue<S>) -> Result<ComplexInput, Self::Error> {
+    fn from_input_value(v: &InputValue<S>) -> Result<ComplexInput, Self::Error> {
         let obj = v.to_object_value().ok_or("Expected object")?;
 
         Ok(ComplexInput {

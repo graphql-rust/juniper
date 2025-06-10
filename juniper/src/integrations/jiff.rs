@@ -54,7 +54,7 @@ use std::str;
 
 use derive_more::with_trait::{Debug, Display, Error, Into};
 
-use crate::{InputValue, ScalarValue, Value, graphql_scalar};
+use crate::{ScalarValue, Value, graphql_scalar};
 
 /// Representation of a civil date in the Gregorian calendar.
 ///
@@ -90,12 +90,9 @@ mod local_date {
         Value::scalar(v.strftime(FORMAT).to_string())
     }
 
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<LocalDate, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+    pub(super) fn from_input(s: &impl ScalarValue) -> Result<LocalDate, String> {
+        s.as_str()
+            .ok_or_else(|| format!("Expected `String`, found: {s}"))
             .and_then(|s| {
                 LocalDate::strptime(FORMAT, s).map_err(|e| format!("Invalid `LocalDate`: {e}"))
             })
@@ -153,12 +150,9 @@ mod local_time {
         )
     }
 
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<LocalTime, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+    pub(super) fn from_input(s: &impl ScalarValue) -> Result<LocalTime, String> {
+        s.as_str()
+            .ok_or_else(|| format!("Expected `String`, found: {s}"))
             .and_then(|s| {
                 // First, try to parse the most used format.
                 // At the end, try to parse the full format for the parsing
@@ -207,12 +201,9 @@ mod local_date_time {
         Value::scalar(v.strftime(FORMAT).to_string())
     }
 
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<LocalDateTime, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+    pub(super) fn from_input(s: &impl ScalarValue) -> Result<LocalDateTime, String> {
+        s.as_str()
+            .ok_or_else(|| format!("Expected `String`, found: {s}"))
             .and_then(|s| {
                 LocalDateTime::strptime(FORMAT, s)
                     .map_err(|e| format!("Invalid `LocalDateTime`: {e}"))
@@ -254,12 +245,9 @@ mod date_time {
         Value::scalar(v.strftime(FORMAT).to_string())
     }
 
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<DateTime, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+    pub(super) fn from_input(s: &impl ScalarValue) -> Result<DateTime, String> {
+        s.as_str()
+            .ok_or_else(|| format!("Expected `String`, found: {s}"))
             .and_then(|s| DateTime::from_str(s).map_err(|e| format!("Invalid `DateTime`: {e}")))
     }
 }
@@ -299,12 +287,9 @@ mod zoned_date_time {
         Value::scalar(v.to_string())
     }
 
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<ZonedDateTime, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+    pub(super) fn from_input(s: &impl ScalarValue) -> Result<ZonedDateTime, String> {
+        s.as_str()
+            .ok_or_else(|| format!("Expected `String`, found: {s}"))
             .and_then(|s| {
                 ZonedDateTime::from_str(s).map_err(|e| format!("Invalid `ZonedDateTime`: {e}"))
             })
@@ -341,12 +326,9 @@ mod duration {
         Value::scalar(v.to_string())
     }
 
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<Duration, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+    pub(super) fn from_input(s: &impl ScalarValue) -> Result<Duration, String> {
+        s.as_str()
+            .ok_or_else(|| format!("Expected `String`, found: {s}"))
             .and_then(|s| Duration::from_str(s).map_err(|e| format!("Invalid `Duration`: {e}")))
     }
 }
@@ -395,12 +377,9 @@ mod time_zone_or_utc_offset {
         ))
     }
 
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<TimeZoneOrUtcOffset, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+    pub(super) fn from_input(s: &impl ScalarValue) -> Result<TimeZoneOrUtcOffset, String> {
+        s.as_str()
+            .ok_or_else(|| format!("Expected `String`, found: {s}"))
             .and_then(|s| {
                 TimeZoneOrUtcOffset::get(s)
                     .map_err(TimeZoneParsingError::InvalidTimeZone)
@@ -478,12 +457,9 @@ mod time_zone {
         Value::scalar(v.to_string())
     }
 
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<TimeZone, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+    pub(super) fn from_input(s: &impl ScalarValue) -> Result<TimeZone, String> {
+        s.as_str()
+            .ok_or_else(|| format!("Expected `String`, found: {s}"))
             .and_then(|s| s.parse().map_err(|e| format!("Invalid `TimeZone`: {e}")))
     }
 }
@@ -531,12 +507,9 @@ mod utc_offset {
         Value::scalar(buf)
     }
 
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<UtcOffset, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+    pub(super) fn from_input(s: &impl ScalarValue) -> Result<UtcOffset, String> {
+        s.as_str()
+            .ok_or_else(|| format!("Expected `String`, found: {s}"))
             .and_then(|s| utc_offset_from_str(s).map_err(|e| format!("Invalid `UtcOffset`: {e}")))
     }
 }

@@ -440,20 +440,20 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// Customization of a [GraphQL scalar][0] type parsing is possible via
 /// `#[graphql(from_input_with = <fn path>)]` attribute:
 /// ```rust
-/// # use juniper::{DefaultScalarValue, GraphQLScalar, InputValue, ScalarValue};
+/// # use juniper::{DefaultScalarValue, GraphQLScalar, ScalarValue};
 /// #
 /// #[derive(GraphQLScalar)]
 /// #[graphql(from_input_with = Self::from_input, transparent)]
 /// struct UserId(String);
 ///
 /// impl UserId {
-///     /// Checks whether [`InputValue`] is `String` beginning with `id: ` and
-///     /// strips it.
-///     fn from_input<S: ScalarValue>(
-///         input: &InputValue<S>,
+///     /// Checks whether the [`ScalarValue`] is a [`String`] beginning with
+///     /// `id: ` and strips it.
+///     fn from_input(
+///         input: &impl ScalarValue,
 ///     ) -> Result<Self, String> {
 ///         //            ^^^^^^ must implement `IntoFieldError`
-///         input.as_string_value()
+///         input.as_str()
 ///             .ok_or_else(|| format!("Expected `String`, found: {input}"))
 ///             .and_then(|str| {
 ///                 str.strip_prefix("id: ")
@@ -476,8 +476,8 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// `#[graphql(parse_token(<types>)]` attributes:
 /// ```rust
 /// # use juniper::{
-/// #     GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
-/// #     ScalarValue, ScalarToken, Value,
+/// #     GraphQLScalar, ParseScalarResult, ParseScalarValue, ScalarValue,
+/// #     ScalarToken, Value,
 /// # };
 /// #
 /// #[derive(GraphQLScalar)]
@@ -501,10 +501,10 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///     }
 /// }
 ///
-/// fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<StringOrInt, String> {
-///     v.as_string_value()
-///         .map(|s| StringOrInt::String(s.into()))
-///         .or_else(|| v.as_int_value().map(StringOrInt::Int))
+/// fn from_input(v: &impl ScalarValue) -> Result<StringOrInt, String> {
+///     v.as_string()
+///         .map(StringOrInt::String)
+///         .or_else(|| v.as_int().map(StringOrInt::Int))
 ///         .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
 /// }
 ///
@@ -523,8 +523,8 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// `parse_token()` functions:
 /// ```rust
 /// # use juniper::{
-/// #     GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
-/// #     ScalarValue, ScalarToken, Value,
+/// #     GraphQLScalar, ParseScalarResult, ParseScalarValue, ScalarValue,
+/// #     ScalarToken, Value,
 /// # };
 /// #
 /// #[derive(GraphQLScalar)]
@@ -544,10 +544,10 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///         }
 ///     }
 ///
-///     pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<StringOrInt, String> {
-///         v.as_string_value()
-///             .map(|s| StringOrInt::String(s.into()))
-///             .or_else(|| v.as_int_value().map(StringOrInt::Int))
+///     pub(super) fn from_input(v: &impl ScalarValue) -> Result<StringOrInt, String> {
+///         v.as_string()
+///             .map(StringOrInt::String)
+///             .or_else(|| v.as_int().map(StringOrInt::Int))
 ///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
 ///     }
 ///
@@ -563,8 +563,8 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// A regular `impl` block is also suitable for that:
 /// ```rust
 /// # use juniper::{
-/// #     GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
-/// #     ScalarValue, ScalarToken, Value,
+/// #     GraphQLScalar, ParseScalarResult, ParseScalarValue, ScalarValue,
+/// #     ScalarToken, Value,
 /// # };
 /// #
 /// #[derive(GraphQLScalar)]
@@ -582,13 +582,10 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///         }
 ///     }
 ///
-///     fn from_input<S>(v: &InputValue<S>) -> Result<Self, String>
-///     where
-///         S: ScalarValue
-///     {
-///         v.as_string_value()
-///             .map(|s| Self::String(s.into()))
-///             .or_else(|| v.as_int_value().map(Self::Int))
+///     fn from_input(v: &impl ScalarValue) -> Result<Self, String> {
+///         v.as_string()
+///             .map(Self::String)
+///             .or_else(|| v.as_int().map(Self::Int))
 ///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
 ///     }
 ///
@@ -607,8 +604,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// At the same time, any custom function still may be specified separately:
 /// ```rust
 /// # use juniper::{
-/// #     GraphQLScalar, InputValue, ParseScalarResult, ScalarValue,
-/// #     ScalarToken, Value
+/// #     GraphQLScalar, ParseScalarResult, ScalarValue, ScalarToken, Value,
 /// # };
 /// #
 /// #[derive(GraphQLScalar)]
@@ -634,13 +630,10 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///         }
 ///     }
 ///
-///     pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<StringOrInt, String>
-///     where
-///         S: ScalarValue,
-///     {
-///         v.as_string_value()
-///             .map(|s| StringOrInt::String(s.into()))
-///             .or_else(|| v.as_int_value().map(StringOrInt::Int))
+///     pub(super) fn from_input(v: &impl ScalarValue) -> Result<StringOrInt, String> {
+///         v.as_string()
+///             .map(StringOrInt::String)
+///             .or_else(|| v.as_int().map(StringOrInt::Int))
 ///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
 ///     }
 ///
@@ -728,7 +721,7 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 /// # }
 /// #
 /// # use juniper::DefaultScalarValue as CustomScalarValue;
-/// use juniper::{graphql_scalar, InputValue, ScalarValue, Value};
+/// use juniper::{graphql_scalar, ScalarValue, Value};
 ///
 /// #[graphql_scalar]
 /// #[graphql(
@@ -747,8 +740,8 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 ///         Value::scalar(v.to_string())
 ///     }
 ///
-///     pub(super) fn from_input(v: &InputValue<CustomScalarValue>) -> Result<Date, String> {
-///       v.as_string_value()
+///     pub(super) fn from_input(v: &CustomScalarValue) -> Result<Date, String> {
+///       v.as_str()
 ///           .ok_or_else(|| format!("Expected `String`, found: {v}"))
 ///           .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {e}")))
 ///     }
