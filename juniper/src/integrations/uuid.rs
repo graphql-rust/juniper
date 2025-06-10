@@ -35,10 +35,8 @@ mod uuid_scalar {
         Value::scalar(v.to_string())
     }
 
-    pub(super) fn from_input(s: &impl ScalarValue) -> Result<Uuid, String> {
-        s.as_str()
-            .ok_or_else(|| format!("Expected `String`, found: {s}"))
-            .and_then(|s| Uuid::parse_str(s).map_err(|e| format!("Failed to parse `UUID`: {e}")))
+    pub(super) fn from_input(s: &str) -> Result<Uuid, Box<str>> {
+        Uuid::parse_str(s).map_err(|e| format!("Failed to parse `UUID`: {e}").into())
     }
 }
 

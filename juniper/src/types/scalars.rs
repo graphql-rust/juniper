@@ -1,4 +1,4 @@
-use std::{char, marker::PhantomData, rc::Rc, thread::JoinHandle};
+use std::{char, marker::PhantomData, rc::Rc, thread::JoinHandle, convert::Infallible};
 
 use derive_more::with_trait::{Deref, Display, From, Into};
 use serde::{Deserialize, Serialize};
@@ -60,9 +60,8 @@ mod impl_string_scalar {
         Value::scalar(v.to_owned())
     }
 
-    pub(super) fn from_input(v: &impl ScalarValue) -> Result<String, String> {
-        v.as_string()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+    pub(super) fn from_input(s: String) -> Result<String, Infallible> {
+        Ok(s)
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -174,18 +173,17 @@ where
 type ArcStr = arcstr::ArcStr;
 
 mod impl_arcstr_scalar {
-    use crate::{IntoValue as _, ScalarValue, Value};
+    use std::convert::Infallible;
 
+    use crate::{IntoValue as _, ScalarValue, Value};
     use super::ArcStr;
 
     pub(super) fn to_output<S: ScalarValue>(v: &ArcStr) -> Value<S> {
         v.into_value()
     }
 
-    pub(super) fn from_input(s: &impl ScalarValue) -> Result<ArcStr, String> {
-        s.as_str()
-            .map(Into::into)
-            .ok_or_else(|| format!("Expected `String`, found: {s}"))
+    pub(super) fn from_input(s: &str) -> Result<ArcStr, Infallible> {
+        Ok(s.into())
     }
 }
 
@@ -194,18 +192,17 @@ mod impl_arcstr_scalar {
 type CompactString = compact_str::CompactString;
 
 mod impl_compactstring_scalar {
-    use crate::{IntoValue as _, ScalarValue, Value};
+    use std::convert::Infallible;
 
+    use crate::{IntoValue as _, ScalarValue, Value};
     use super::CompactString;
 
     pub(super) fn to_output<S: ScalarValue>(v: &CompactString) -> Value<S> {
         v.into_value()
     }
 
-    pub(super) fn from_input(s: &impl ScalarValue) -> Result<CompactString, String> {
-        s.as_str()
-            .map(Into::into)
-            .ok_or_else(|| format!("Expected `String`, found: {s}"))
+    pub(super) fn from_input(s: &str) -> Result<CompactString, Infallible> {
+        Ok(s.into())
     }
 }
 
@@ -290,9 +287,8 @@ mod impl_boolean_scalar {
         Value::scalar(*v)
     }
 
-    pub(super) fn from_input(s: &impl ScalarValue) -> Result<Boolean, String> {
-        s.as_bool()
-            .ok_or_else(|| format!("Expected `Boolean`, found: {s}"))
+    pub(super) fn from_input(b: Boolean) -> Result<Boolean, Infallible> {
+        Ok(b)
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -312,9 +308,8 @@ mod impl_int_scalar {
         Value::scalar(*v)
     }
 
-    pub(super) fn from_input(s: &impl ScalarValue) -> Result<Int, String> {
-        s.as_int()
-            .ok_or_else(|| format!("Expected `Int`, found: {s}"))
+    pub(super) fn from_input(i: Int) -> Result<Int, Infallible> {
+        Ok(i)
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -339,9 +334,8 @@ mod impl_float_scalar {
         Value::scalar(*v)
     }
 
-    pub(super) fn from_input(s: &impl ScalarValue) -> Result<Float, String> {
-        s.as_float()
-            .ok_or_else(|| format!("Expected `Float`, found: {s}"))
+    pub(super) fn from_input(f: Float) -> Result<Float, Infallible> {
+        Ok(f)
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {

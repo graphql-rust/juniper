@@ -44,12 +44,8 @@ mod object_id {
         Value::scalar(v.to_hex())
     }
 
-    pub(super) fn from_input(s: &impl ScalarValue) -> Result<ObjectId, String> {
-        s.as_str()
-            .ok_or_else(|| format!("Expected `String`, found: {s}"))
-            .and_then(|s| {
-                ObjectId::parse_str(s).map_err(|e| format!("Failed to parse `ObjectID`: {e}"))
-            })
+    pub(super) fn from_input(s: &str) -> Result<ObjectId, Box<str>> {
+        ObjectId::parse_str(s).map_err(|e| format!("Failed to parse `ObjectID`: {e}").into())
     }
 }
 
@@ -83,13 +79,9 @@ mod date_time {
         )
     }
 
-    pub(super) fn from_input(s: &impl ScalarValue) -> Result<DateTime, String> {
-        s.as_str()
-            .ok_or_else(|| format!("Expected `String`, found: {s}"))
-            .and_then(|s| {
-                DateTime::parse_rfc3339_str(s)
-                    .map_err(|e| format!("Failed to parse `DateTime`: {e}"))
-            })
+    pub(super) fn from_input(s: &str) -> Result<DateTime, Box<str>> {
+        DateTime::parse_rfc3339_str(s)
+            .map_err(|e| format!("Failed to parse `DateTime`: {e}").into())
     }
 }
 

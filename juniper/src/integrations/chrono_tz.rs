@@ -45,13 +45,9 @@ mod tz {
         Value::scalar(v.name().to_owned())
     }
 
-    pub(super) fn from_input(s: &impl ScalarValue) -> Result<TimeZone, String> {
-        s.as_str()
-            .ok_or_else(|| format!("Expected `String`, found: {s}"))
-            .and_then(|s| {
-                s.parse::<TimeZone>()
-                    .map_err(|e| format!("Failed to parse `TimeZone`: {e}"))
-            })
+    pub(super) fn from_input(s: &str) -> Result<TimeZone, Box<str>> {
+        s.parse::<TimeZone>()
+            .map_err(|e| format!("Failed to parse `TimeZone`: {e}").into())
     }
 }
 

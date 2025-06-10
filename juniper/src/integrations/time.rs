@@ -62,12 +62,8 @@ mod local_date {
         )
     }
 
-    pub(super) fn from_input(s: &impl ScalarValue) -> Result<LocalDate, String> {
-        s.as_str()
-            .ok_or_else(|| format!("Expected `String`, found: {s}"))
-            .and_then(|s| {
-                LocalDate::parse(s, FORMAT).map_err(|e| format!("Invalid `LocalDate`: {e}"))
-            })
+    pub(super) fn from_input(s: &str) -> Result<LocalDate, Box<str>> {
+        LocalDate::parse(s, FORMAT).map_err(|e| format!("Invalid `LocalDate`: {e}").into())
     }
 }
 
@@ -121,18 +117,13 @@ mod local_time {
         )
     }
 
-    pub(super) fn from_input(s: &impl ScalarValue) -> Result<LocalTime, String> {
-        s.as_str()
-            .ok_or_else(|| format!("Expected `String`, found: {s}"))
-            .and_then(|s| {
-                // First, try to parse the most used format.
-                // At the end, try to parse the full format for the parsing
-                // error to be most informative.
-                LocalTime::parse(s, FORMAT_NO_MILLIS)
-                    .or_else(|_| LocalTime::parse(s, FORMAT_NO_SECS))
-                    .or_else(|_| LocalTime::parse(s, FORMAT))
-                    .map_err(|e| format!("Invalid `LocalTime`: {e}"))
-            })
+    pub(super) fn from_input(s: &str) -> Result<LocalTime, Box<str>> {
+        // First, try to parse the most used format.
+        // At the end, try to parse the full format for the parsing error to be most informative.
+        LocalTime::parse(s, FORMAT_NO_MILLIS)
+            .or_else(|_| LocalTime::parse(s, FORMAT_NO_SECS))
+            .or_else(|_| LocalTime::parse(s, FORMAT))
+            .map_err(|e| format!("Invalid `LocalTime`: {e}").into())
     }
 }
 
@@ -167,12 +158,8 @@ mod local_date_time {
         )
     }
 
-    pub(super) fn from_input(s: &impl ScalarValue) -> Result<LocalDateTime, String> {
-        s.as_str()
-            .ok_or_else(|| format!("Expected `String`, found: {s}"))
-            .and_then(|s| {
-                LocalDateTime::parse(s, FORMAT).map_err(|e| format!("Invalid `LocalDateTime`: {e}"))
-            })
+    pub(super) fn from_input(s: &str) -> Result<LocalDateTime, Box<str>> {
+        LocalDateTime::parse(s, FORMAT).map_err(|e| format!("Invalid `LocalDateTime`: {e}").into())
     }
 }
 
@@ -206,13 +193,10 @@ mod date_time {
         )
     }
 
-    pub(super) fn from_input(s: &impl ScalarValue) -> Result<DateTime, String> {
-        s.as_str()
-            .ok_or_else(|| format!("Expected `String`, found: {s}"))
-            .and_then(|s| {
-                DateTime::parse(s, &Rfc3339).map_err(|e| format!("Invalid `DateTime`: {e}"))
-            })
+    pub(super) fn from_input(s: &str) -> Result<DateTime, Box<str>> {
+        DateTime::parse(s, &Rfc3339)
             .map(|dt| dt.to_offset(UtcOffset::UTC))
+            .map_err(|e| format!("Invalid `DateTime`: {e}").into())
     }
 }
 
@@ -248,13 +232,9 @@ mod utc_offset {
         )
     }
 
-    pub(super) fn from_input(s: &impl ScalarValue) -> Result<UtcOffset, String> {
-        s.as_str()
-            .ok_or_else(|| format!("Expected `String`, found: {s}"))
-            .and_then(|s| {
-                UtcOffset::parse(s, UTC_OFFSET_FORMAT)
-                    .map_err(|e| format!("Invalid `UtcOffset`: {e}"))
-            })
+    pub(super) fn from_input(s: &str) -> Result<UtcOffset, Box<str>> {
+        UtcOffset::parse(s, UTC_OFFSET_FORMAT)
+            .map_err(|e| format!("Invalid `UtcOffset`: {e}").into())
     }
 }
 

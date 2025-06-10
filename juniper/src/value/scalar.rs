@@ -9,7 +9,7 @@ use arcstr::ArcStr;
 use derive_more::with_trait::{Display, Error, From};
 use serde::{Serialize, de::DeserializeOwned};
 
-use crate::{InputValue, FieldError, parser::{ParseError, ScalarToken}, IntoFieldError};
+use crate::{FieldError, parser::{ParseError, ScalarToken}, IntoFieldError};
 #[cfg(doc)]
 use crate::{Value, GraphQLValue};
 
@@ -171,6 +171,7 @@ pub trait ScalarValue:
     + for<'a> TryScalarValueTo<'a, f64, Error: IntoFieldError<Self>>
     + for<'a> TryScalarValueTo<'a, String, Error: IntoFieldError<Self>>
     + for<'a> TryScalarValueTo<'a, &'a str, Error: IntoFieldError<Self>>
+    + for<'a> TryScalarValueTo<'a, &'a Self, Error: IntoFieldError<Self>>
     + 'static
 {
     /// Checks whether this [`ScalarValue`] contains the value of the given
