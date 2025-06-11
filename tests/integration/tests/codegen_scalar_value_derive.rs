@@ -2,7 +2,7 @@
 
 pub mod common;
 
-use derive_more::with_trait::{Display, From}
+use derive_more::with_trait::{Display, From};
 use juniper::{DefaultScalarValue, ScalarValue};
 use serde::{Deserialize, Serialize};
 
@@ -154,7 +154,7 @@ mod allow_missing_attributes {
 
     #[test]
     fn into_another() {
-        assert!(CustomScalarValue::Int(5).to_int().is_none());
+        assert!(CustomScalarValue::Int(5).try_to_int().is_none());
         assert!(
             CustomScalarValue::from(0.5_f64)
                 .into_another::<DefaultScalarValue>()

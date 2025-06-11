@@ -9,7 +9,6 @@ use syn::{
     parse_quote,
     spanned::Spanned as _,
     token,
-    visit::Visit,
 };
 
 use crate::common::{
@@ -247,8 +246,6 @@ struct Definition {
 impl ToTokens for Definition {
     fn to_tokens(&self, into: &mut TokenStream) {
         self.impl_scalar_value_tokens().to_tokens(into);
-        //self.impl_from_tokens().to_tokens(into);
-        //self.impl_display_tokens().to_tokens(into);
     }
 }
 
@@ -354,158 +351,43 @@ impl Definition {
 
         let from_displayable = self.from_displayable.as_ref().map(|expr| {
             quote! {
-                fn from_displayable<Str: ::core::fmt::Display + ::core::any::Any + ?Sized>(
-                    __s: &Str,
-                ) -> Self {
-                    #expr(__s)
+                fn from_displayable<
+                    __T: ::core::fmt::Display + ::core::any::Any + ?::core::marker::Sized,
+                >(__v: &__T) -> Self {
+                    #expr(__v)
                 }
             }
         });
 
-        quote! {
-            #[automatically_derived]
-            impl #impl_gens ::juniper::ScalarValue for #ty_ident #ty_gens #where_clause {
-                #( #methods )*
-                #from_displayable
-            }
-
-            #( #impls )*
-        }
-    }
-
-    /// Returns generated code implementing:
-    /// - [`From`] each variant into enum itself.
-    /// - [`From`] enum into [`Option`] of each variant.
-    /// - [`From`] enum reference into [`Option`] of each variant reference.
-    fn impl_from_tokens(&self) -> TokenStream {
-        let ty_ident = &self.ident;
-        let (impl_gen, ty_gen, where_clause) = self.generics.split_for_impl();
-
-        // We don't impose additional bounds on generic parameters, because
-        // `ScalarValue` itself has `'static` bound.
-        let mut generics = self.generics.clone();
-        generics.params.push(parse_quote! { '___a });
-        let (lf_impl_gen, _, _) = generics.split_for_impl();
-
-        self.variants
-            .iter()
-            .map(|v| {
-                let var_ident = &v.ident;
-                //let var_name = var_ident.to_string();
-                let field = v.fields.iter().next().unwrap();
-                let var_ty = &field.ty;
-                let var_field = field
-                    .ident
-                    .as_ref()
-                    .map_or_else(|| quote! { (v) }, |i| quote! { { #i: v } });
-
-                quote! {
-                    /*
-                    #[automatically_derived]
-                    impl #impl_gen ::core::convert::From<#var_ty> for #ty_ident #ty_gen
-                        #where_clause
-                    {
-                        fn from(v: #var_ty) -> Self {
-                            Self::#var_ident #var_field
-                        }
-                    }*/
-
-                    #[automatically_derived]
-                    impl #impl_gen ::core::convert::From<#ty_ident #ty_gen>
-                     for ::core::option::Option<#var_ty> #where_clause
-                    {
-                        fn from(ty: #ty_ident #ty_gen) -> Self {
-                            if let #ty_ident::#var_ident #var_field = ty {
-                                ::core::option::Option::Some(v)
-                            } else {
-                                ::core::option::Option::None
-                            }
-                        }
-                    }
-
-                    #[automatically_derived]
-                    impl #lf_impl_gen ::core::convert::From<&'___a #ty_ident #ty_gen>
-                     for ::core::option::Option<&'___a #var_ty> #where_clause
-                    {
-                        fn from(ty: &'___a #ty_ident #ty_gen) -> Self {
-                            if let #ty_ident::#var_ident #var_field = ty {
-                                ::core::option::Option::Some(v)
-                            } else {
-                                ::core::option::Option::None
-                            }
-                        }
-                    }
-/*
-                    #[automatically_derived]
-                    impl #lf_impl_gen ::juniper::TryFromScalarValue<&'___a #ty_ident #ty_gen>
-                     for &'___a #var_ty #where_clause
-                    {
-                        type Error = ::juniper::WrongInputScalarTypeError<'___a, #ty_ident #ty_gen>;
-
-                        fn try_from_scalar_value(
-                            __value: &'___a #ty_ident #ty_gen
-                        ) -> ::core::result::Result<Self, Self::Error> {
-                            if let #ty_ident::#var_ident #var_field = __value {
-                                ::core::result::Result::Ok(v)
-                            } else {
-                                ::core::result::Result::Err(::juniper::WrongInputScalarTypeError {
-                                    type_name: ::juniper::arcstr::literal!(#var_name),
-                                    input: __value,
-                                })
-                            }
-                        }
-                    }*/
+        let is_type = {
+            let arms = self.variants.iter().map(|var| {
+                let var_ident = &var.ident;
+                let field = Field::try_from(var.fields.clone()).unwrap();
+                let var_pattern = field.match_arg();
+                
+                quote! { 
+                    Self::#var_ident #var_pattern => ::juniper::AnyExt::is::<__T>(v),
                 }
-            })
-            .collect()
-    }
-
-    /// Returns generated code implementing [`Display`] by matching over each
-    /// enum variant.
-    ///
-    /// [`Display`]: std::fmt::Display
-    fn impl_display_tokens(&self) -> TokenStream {
-        let ident = &self.ident;
-
-        let mut generics = self.generics.clone();
-        generics.make_where_clause();
-        for var in &self.variants {
-            let var_ty = &var.fields.iter().next().unwrap().ty;
-            let mut check = IsVariantGeneric::new(&self.generics);
-            check.visit_type(var_ty);
-            if check.res {
-                generics
-                    .where_clause
-                    .as_mut()
-                    .unwrap()
-                    .predicates
-                    .push(parse_quote! { #var_ty: ::core::fmt::Display });
-            }
-        }
-        let (impl_gen, ty_gen, where_clause) = generics.split_for_impl();
-
-        let arms = self.variants.iter().map(|v| {
-            let var_ident = &v.ident;
-            let field = v.fields.iter().next().unwrap();
-            let var_field = field
-                .ident
-                .as_ref()
-                .map_or_else(|| quote! { (v) }, |i| quote! { { #i: v } });
-
-            quote! { Self::#var_ident #var_field => ::core::fmt::Display::fmt(v, f), }
-        });
-
-        quote! {
-            #[automatically_derived]
-            impl #impl_gen ::core::fmt::Display for #ident #ty_gen
-                #where_clause
-            {
-                fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+            });
+            
+            quote! {
+                fn is_type<__T: ::core::any::Any + ?::core::marker::Sized>(&self) -> bool {
                     match self {
                         #( #arms )*
                     }
                 }
             }
+        };
+
+        quote! {
+            #[automatically_derived]
+            impl #impl_gens ::juniper::ScalarValue for #ty_ident #ty_gens #where_clause {
+                #is_type
+                #( #methods )*
+                #from_displayable
+            }
+
+            #( #impls )*
         }
     }
 }
@@ -572,46 +454,6 @@ impl Field {
         match self {
             Self::Named(_) => quote! { { #self: v } },
             Self::Unnamed => quote! { (v) },
-        }
-    }
-}
-
-/// [`Visit`]or checking whether a [`Variant`]'s [`Field`] contains generic
-/// parameters.
-struct IsVariantGeneric<'a> {
-    /// Indicates whether the checked [`Variant`]'s [`Field`] contains generic
-    /// parameters.
-    res: bool,
-
-    /// [`syn::Generics`] to search generic parameters in.
-    generics: &'a syn::Generics,
-}
-
-impl<'a> IsVariantGeneric<'a> {
-    /// Constructs a new [`IsVariantGeneric`] [`Visit`]or.
-    fn new(generics: &'a syn::Generics) -> Self {
-        Self {
-            res: false,
-            generics,
-        }
-    }
-}
-
-impl<'ast> Visit<'ast> for IsVariantGeneric<'_> {
-    fn visit_path(&mut self, path: &'ast syn::Path) {
-        if let Some(ident) = path.get_ident() {
-            let is_generic = self.generics.params.iter().any(|par| {
-                if let syn::GenericParam::Type(ty) = par {
-                    ty.ident == *ident
-                } else {
-                    false
-                }
-            });
-            if is_generic {
-                self.res = true;
-            } else {
-                syn::visit::visit_path(self, path);
-            }
         }
     }
 }

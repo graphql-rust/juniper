@@ -187,13 +187,7 @@ pub trait ScalarValue:
     /// assert_eq!(value.is_type::<f64>(), false);
     /// ```
     #[must_use]
-    fn is_type<'a, T>(&'a self) -> bool
-    where
-        T: 'a,
-        Self: TryScalarValueTo<'a, &'a T, Error: IntoFieldError<Self>>,
-    {
-        self.try_scalar_value_to().is_ok()
-    }
+    fn is_type<T: Any + ?Sized>(&self) -> bool;
 
     /// Tries to represent this [`ScalarValue`] as the specified type `T`.
     /// 
