@@ -6,7 +6,7 @@ publish = false
 
 [dev-dependencies]
 chrono = { version = "0.4", default-features = false }
-derive_more = { version = "2.0", features = ["display", "from"] }
+derive_more = { version = "2.0", features = ["display", "from", "try_into"] }
 futures = "0.3"
 itertools = "0.14"
 juniper = { path = "../../juniper", features = ["chrono"] }

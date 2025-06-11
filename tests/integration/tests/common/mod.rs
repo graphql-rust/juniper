@@ -1,6 +1,6 @@
 use std::fmt;
 
-use derive_more::with_trait::{Display, From};
+use derive_more::with_trait::{Display, From, TryInto};
 use juniper::{InputValue, IntoInputValue, IntoValue, ScalarValue, Value};
 use serde::{Deserialize, Deserializer, Serialize, de};
 use smartstring::alias::CompactString;
@@ -76,25 +76,16 @@ pub mod util {
     }
 }
 
-#[derive(Clone, Debug, Display, From, PartialEq, ScalarValue, Serialize)]
+#[derive(Clone, Debug, Display, From, PartialEq, ScalarValue, Serialize, TryInto)]
 #[serde(untagged)]
 pub enum MyScalarValue {
-    #[from]
     #[value(as_float, as_int)]
     Int(i32),
-
-    #[from]
     Long(i64),
-
-    #[from]
     #[value(as_float)]
     Float(f64),
-
-    #[from(&str, String)]
     #[value(as_str, as_string, into_string)]
     String(String),
-
-    #[from]
     #[value(as_bool)]
     Boolean(bool),
 }

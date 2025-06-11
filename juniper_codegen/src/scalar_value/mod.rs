@@ -262,27 +262,6 @@ impl Definition {
         generics.params.push(parse_quote! { #ref_lt });
         let (lt_impl_gens, _, _) = generics.split_for_impl();
 
-        let methods = [(
-            Method::IntoString,
-            quote! { fn into_string(self) -> ::core::option::Option<::std::string::String> },
-            quote! { ::std::string::String::from(v) },
-        )];
-        let methods = methods.iter().map(|(m, sig, def)| {
-            let arms = self.methods.get(m).into_iter().flatten().map(|v| {
-                let arm = v.match_arm();
-                let call = v.expr.as_ref().map_or(def.clone(), |f| quote! { #f(v) });
-                quote! { #arm => ::core::option::Option::Some(#call), }
-            });
-            quote! {
-                #sig {
-                    match self {
-                        #(#arms)*
-                        _ => ::core::option::Option::None,
-                    }
-                }
-            }
-        });
-
         let methods2 = [
             (
                 Method::AsInt,
@@ -383,7 +362,6 @@ impl Definition {
             #[automatically_derived]
             impl #impl_gens ::juniper::ScalarValue for #ty_ident #ty_gens #where_clause {
                 #is_type
-                #( #methods )*
                 #from_displayable
             }
 
