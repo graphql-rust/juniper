@@ -2,12 +2,12 @@
 
 pub mod common;
 
-use std::fmt;
+use std::{convert::Infallible, fmt};
 
 use chrono::{DateTime, TimeZone, Utc};
 use juniper::{
-    ParseScalarResult, ParseScalarValue, ScalarToken, ScalarValue, Value, execute, graphql_object,
-    graphql_scalar, graphql_value, graphql_vars,
+    ParseScalarResult, ParseScalarValue, Raw, ScalarToken, ScalarValue, Value, execute,
+    graphql_object, graphql_scalar, graphql_value, graphql_vars,
 };
 
 use self::common::{
@@ -20,6 +20,7 @@ use self::common::hygiene::*;
 
 mod all_custom_resolvers {
     use super::*;
+    use std::convert::Infallible;
 
     struct CustomCounter(i32);
 
@@ -36,10 +37,8 @@ mod all_custom_resolvers {
         Value::scalar(v.0)
     }
 
-    fn from_input(s: &impl ScalarValue) -> prelude::Result<Counter, prelude::String> {
-        s.as_int()
-            .map(CustomCounter)
-            .ok_or_else(|| format!("Expected `Counter`, found: {s}"))
+    fn from_input(i: i32) -> prelude::Result<Counter, Infallible> {
+        Ok(CustomCounter(i))
     }
 
     fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -117,10 +116,8 @@ mod explicit_name {
         Value::scalar(v.0)
     }
 
-    fn from_input(s: &impl ScalarValue) -> prelude::Result<CounterScalar, prelude::String> {
-        s.as_int()
-            .map(CustomCounter)
-            .ok_or_else(|| format!("Expected `Counter`, found: {s}"))
+    fn from_input(i: i32) -> prelude::Result<CounterScalar, Infallible> {
+        Ok(CustomCounter(i))
     }
 
     fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -217,10 +214,8 @@ mod delegated_parse_token {
         Value::scalar(v.0)
     }
 
-    fn from_input(s: &impl ScalarValue) -> prelude::Result<Counter, prelude::String> {
-        s.as_int()
-            .map(CustomCounter)
-            .ok_or_else(|| format!("Expected `Counter`, found: {s}"))
+    fn from_input(i: i32) -> prelude::Result<Counter, Infallible> {
+        Ok(CustomCounter(i))
     }
 
     struct QueryRoot;
@@ -299,11 +294,11 @@ mod multiple_delegated_parse_token {
         }
     }
 
-    fn from_input(s: &impl ScalarValue) -> prelude::Result<StringOrInt, prelude::String> {
-        s.as_string()
+    fn from_input(v: &Raw<impl ScalarValue>) -> prelude::Result<StringOrInt, prelude::Box<str>> {
+        v.try_to_string()
             .map(StringOrInt::String)
-            .or_else(|| s.as_int().map(StringOrInt::Int))
-            .ok_or_else(|| format!("Expected `String` or `Int`, found: {s}"))
+            .or_else(|| v.try_to_int().map(StringOrInt::Int))
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}").into())
     }
 
     struct QueryRoot;
@@ -363,18 +358,14 @@ mod where_attribute {
         Value::scalar(v.0.to_rfc3339())
     }
 
-    fn from_input<Tz>(s: &impl ScalarValue) -> prelude::Result<CustomDateTime<Tz>, prelude::String>
+    fn from_input<Tz>(s: &str) -> prelude::Result<CustomDateTime<Tz>, prelude::Box<str>>
     where
         Tz: From<Utc> + TimeZone,
         Tz::Offset: fmt::Display,
     {
-        s.as_str()
-            .ok_or_else(|| format!("Expected `String`, found: {s}"))
-            .and_then(|s| {
-                DateTime::parse_from_rfc3339(s)
-                    .map(|dt| CustomDateTimeScalar(dt.with_timezone(&Tz::from(Utc))))
-                    .map_err(|e| format!("Failed to parse `CustomDateTime`: {e}"))
-            })
+        DateTime::parse_from_rfc3339(s)
+            .map(|dt| CustomDateTimeScalar(dt.with_timezone(&Tz::from(Utc))))
+            .map_err(|e| format!("Failed to parse `CustomDateTime`: {e}").into())
     }
 
     struct QueryRoot;
@@ -434,10 +425,8 @@ mod with_self {
             Value::scalar(self.0)
         }
 
-        fn from_input(s: &impl ScalarValue) -> prelude::Result<Self, prelude::String> {
-            s.as_int()
-                .map(Self)
-                .ok_or_else(|| format!("Expected `Counter`, found: {s}"))
+        fn from_input(i: i32) -> prelude::Result<Self, Infallible> {
+            Ok(Self(i))
         }
 
         fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -525,19 +514,15 @@ mod with_module {
         }
 
         pub(super) fn from_input<Tz>(
-            s: &impl ScalarValue,
-        ) -> prelude::Result<CustomDateTime<Tz>, prelude::String>
+            s: &str,
+        ) -> prelude::Result<CustomDateTime<Tz>, prelude::Box<str>>
         where
             Tz: From<Utc> + TimeZone,
             Tz::Offset: fmt::Display,
         {
-            s.as_str()
-                .ok_or_else(|| format!("Expected `String`, found: {s}"))
-                .and_then(|s| {
-                    DateTime::parse_from_rfc3339(s)
-                        .map(|dt| CustomDateTimeScalar(dt.with_timezone(&Tz::from(Utc))))
-                        .map_err(|e| format!("Failed to parse `CustomDateTime`: {e}"))
-                })
+            DateTime::parse_from_rfc3339(s)
+                .map(|dt| CustomDateTimeScalar(dt.with_timezone(&Tz::from(Utc))))
+                .map_err(|e| format!("Failed to parse `CustomDateTime`: {e}").into())
         }
     }
 
@@ -601,12 +586,8 @@ mod description_from_doc_comment {
             Value::scalar(v.0)
         }
 
-        pub(super) fn from_input(
-            s: &impl ScalarValue,
-        ) -> prelude::Result<Counter, prelude::String> {
-            s.as_int()
-                .map(CustomCounter)
-                .ok_or_else(|| format!("Expected `Counter`, found: {s}"))
+        pub(super) fn from_input(i: i32) -> prelude::Result<Counter, Infallible> {
+            Ok(CustomCounter(i))
         }
     }
 
@@ -687,12 +668,8 @@ mod description_from_attribute {
             Value::scalar(v.0)
         }
 
-        pub(super) fn from_input(
-            s: &impl ScalarValue,
-        ) -> prelude::Result<Counter, prelude::String> {
-            s.as_int()
-                .map(CustomCounter)
-                .ok_or_else(|| format!("Expected `Counter`, found: {s}"))
+        pub(super) fn from_input(i: i32) -> prelude::Result<Counter, Infallible> {
+            Ok(CustomCounter(i))
         }
     }
 
@@ -773,12 +750,8 @@ mod custom_scalar {
             Value::scalar(v.0)
         }
 
-        pub(super) fn from_input(
-            s: &impl ScalarValue,
-        ) -> prelude::Result<Counter, prelude::String> {
-            s.as_int()
-                .map(CustomCounter)
-                .ok_or_else(|| format!("Expected `Counter`, found: {s}"))
+        pub(super) fn from_input(i: i32) -> prelude::Result<Counter, Infallible> {
+            Ok(CustomCounter(i))
         }
     }
 
@@ -859,12 +832,8 @@ mod generic_scalar {
             Value::scalar(v.0)
         }
 
-        pub(super) fn from_input(
-            s: &impl ScalarValue,
-        ) -> prelude::Result<Counter, prelude::String> {
-            s.as_int()
-                .map(CustomCounter)
-                .ok_or_else(|| format!("Expected `Counter`, found: {s}"))
+        pub(super) fn from_input(i: i32) -> prelude::Result<Counter, Infallible> {
+            Ok(CustomCounter(i))
         }
     }
 
@@ -945,12 +914,8 @@ mod bounded_generic_scalar {
             Value::scalar(v.0)
         }
 
-        pub(super) fn from_input(
-            s: &impl ScalarValue,
-        ) -> prelude::Result<Counter, prelude::String> {
-            s.as_int()
-                .map(CustomCounter)
-                .ok_or_else(|| format!("Expected `Counter`, found: {s}"))
+        pub(super) fn from_input(i: i32) -> prelude::Result<Counter, Infallible> {
+            Ok(CustomCounter(i))
         }
     }
 

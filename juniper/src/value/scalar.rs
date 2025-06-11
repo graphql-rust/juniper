@@ -10,10 +10,7 @@ use std::{
     fmt, ptr,
 };
 
-use crate::{
-    FieldError, IntoFieldError, Raw,
-    parser::{ParseError, ScalarToken},
-};
+use crate::{FieldError, IntoFieldError, Raw, parser::{ParseError, ScalarToken}};
 #[cfg(doc)]
 use crate::{GraphQLValue, Value};
 
@@ -193,73 +190,141 @@ pub trait ScalarValue:
     fn is_type<'a, T>(&'a self) -> bool
     where
         T: 'a,
-        Option<&'a T>: From<&'a Self>,
+        Self: TryScalarValueTo<'a, &'a T, Error: IntoFieldError<Self>>,
     {
-        <Option<&'a T>>::from(self).is_some()
+        self.try_scalar_value_to().is_ok()
     }
 
-    /// Represents this [`ScalarValue`] as an integer value.
+    /// Tries to represent this [`ScalarValue`] as the specified type `T`.
+    /// 
+    /// This method could be used instead of other helpers in case the [`TryScalarValueTo::Error`] 
+    /// is needed.
     ///
-    /// This function is used for implementing [`GraphQLValue`] for [`i32`] for
-    /// all possible [`ScalarValue`]s. Implementations should convert all the
-    /// supported integer types with 32 bit or less to an integer, if requested.
+    /// # Implementation
+    ///
+    /// This method is an ergonomic alias for the [`TryScalarValueTo`]`<T>` conversion.
+    ///
+    /// Implementations should not implement this method, but rather implement the 
+    /// [`TryScalarValueTo`]`<T>` conversion directly.
+    fn try_to<'a, T>(&'a self) -> Result<T, <Self as TryScalarValueTo<'a, T>>::Error>
+    where
+        T: 'a,
+        Self: TryScalarValueTo<'a, T, Error: IntoFieldError<Self>>,
+    {
+        self.try_scalar_value_to()
+    }
+    
+    /// Tries to represent this [`ScalarValue`] as a [`bool`] value.
+    /// 
+    /// Use the [`ScalarValue::try_to::<bool>()`] method in case the [`TryScalarValueTo::Error`] is 
+    /// needed.
+    /// 
+    /// # Implementation
+    ///
+    /// This method is an ergonomic alias for the [`TryScalarValueTo`]`<`[`bool`]`>` conversion, 
+    /// which is used for implementing [`GraphQLValue`] for [`bool`] for all possible 
+    /// [`ScalarValue`]s.
+    ///
+    /// Implementations should not implement this method, but rather implement the 
+    /// [`TryScalarValueTo`]`<`[`bool`]`>` conversions for all the supported boolean types.
     #[must_use]
-    fn as_int(&self) -> Option<i32> {
-        self.try_scalar_value_to().ok()
+    fn try_to_bool(&self) -> Option<bool> {
+        self.try_to().ok()
     }
 
-    /// Represents this [`ScalarValue`] as a [`String`] value.
+    /// Tries to represent this [`ScalarValue`] as an [`i32`] value.
     ///
-    /// This function is used for implementing [`GraphQLValue`] for [`String`]
-    /// for all possible [`ScalarValue`]s.
+    /// Use the [`ScalarValue::try_to::<i32>()`] method in case the [`TryScalarValueTo::Error`] is 
+    /// needed.
+    ///
+    /// # Implementation
+    /// 
+    /// This method is an ergonomic alias for the [`TryScalarValueTo`]`<`[`i32`]`>` conversion, 
+    /// which is used for implementing [`GraphQLValue`] for [`i32`] for all possible 
+    /// [`ScalarValue`]s.
+    ///
+    /// Implementations should not implement this method, but rather implement the 
+    /// [`TryScalarValueTo`]`<`[`i32`]`>` conversions for all the supported integer types with 
+    /// 32 bit or less to an integer, if requested.
     #[must_use]
-    fn as_string(&self) -> Option<String> {
-        self.try_scalar_value_to().ok()
+    fn try_to_int(&self) -> Option<i32> {
+        self.try_to().ok()
+    }
+
+    /// Tries to represent this [`ScalarValue`] as a [`f64`] value.
+    ///
+    /// Use the [`ScalarValue::try_to::<f64>()`] method in case the [`TryScalarValueTo::Error`] is 
+    /// needed.
+    /// 
+    /// # Implementation
+    /// 
+    /// This method is an ergonomic alias for the [`TryScalarValueTo`]`<`[`f64`]`>` conversion, 
+    /// which is used for implementing [`GraphQLValue`] for [`f64`] for all possible 
+    /// [`ScalarValue`]s.
+    ///
+    /// Implementations should not implement this method, but rather implement the 
+    /// [`TryScalarValueTo`]`<`[`f64`]`>` conversions for all the supported integer types with 
+    /// 64 bit and all floating point values with 64 bit or less to a float, if requested.
+    #[must_use]
+    fn try_to_float(&self) -> Option<f64> {
+        self.try_to().ok()
+    }
+
+    /// Tries to represent this [`ScalarValue`] as a [`String`] value.
+    /// 
+    /// Allocates every time is called. For read-only and non-owning use of the underlying 
+    /// [`String`] value, consider using the [`ScalarValue::try_as_str()`] method.
+    ///
+    /// Use the [`ScalarValue::try_to::<String>()`] method in case the [`TryScalarValueTo::Error`] 
+    /// is needed.
+    ///
+    /// # Implementation
+    ///
+    /// This method is an ergonomic alias for the [`TryScalarValueTo`]`<`[`String`]`>` conversion, 
+    /// which is used for implementing [`GraphQLValue`] for [`String`] for all possible 
+    /// [`ScalarValue`]s.
+    ///
+    /// Implementations should not implement this method, but rather implement the 
+    /// [`TryScalarValueTo`]`<`[`String`]`>` conversions for all the supported string types, if 
+    /// requested.
+    #[must_use]
+    fn try_to_string(&self) -> Option<String> {
+        self.try_to().ok()
     }
 
     /// Converts this [`ScalarValue`] into a [`String`] value.
     ///
-    /// Same as [`ScalarValue::as_string()`], but takes ownership, so allows to
+    /// Same as [`ScalarValue::try_to_string()`], but takes ownership, so allows to
     /// omit redundant cloning.
     #[must_use]
     fn into_string(self) -> Option<String>;
 
-    /// Represents this [`ScalarValue`] as a [`str`] value.
+    /// Tries to represent this [`ScalarValue`] as a [`str`] value.
     ///
-    /// This function is used for implementing [`GraphQLValue`] for [`str`] for
-    /// all possible [`ScalarValue`]s.
-    #[must_use]
-    fn as_str(&self) -> Option<&str> {
-        self.try_scalar_value_to().ok()
-    }
-
-    /// Represents this [`ScalarValue`] as a float value.
+    /// Use the [`ScalarValue::try_to::<&str>()`] method in case the [`TryScalarValueTo::Error`] 
+    /// is needed.
     ///
-    /// This function is used for implementing [`GraphQLValue`] for [`f64`] for
-    /// all possible [`ScalarValue`]s. Implementations should convert all
-    /// supported integer types with 64 bit or less and all floating point
-    /// values with 64 bit or less to a float, if requested.
-    #[must_use]
-    fn as_float(&self) -> Option<f64> {
-        self.try_scalar_value_to().ok()
-    }
-
-    /// Represents this [`ScalarValue`] as a boolean value
+    /// # Implementation
     ///
-    /// This function is used for implementing [`GraphQLValue`] for [`bool`] for
-    /// all possible [`ScalarValue`]s.
+    /// This method is an ergonomic alias for the [`TryScalarValueTo`]`<&`[`str`]`>` conversion, 
+    /// which is used for implementing [`GraphQLValue`] for [`String`] for all possible 
+    /// [`ScalarValue`]s.
+    ///
+    /// Implementations should not implement this method, but rather implement the 
+    /// [`TryScalarValueTo`]`<&`[`str`]`>` conversions for all the supported string types, if 
+    /// requested.
     #[must_use]
-    fn as_bool(&self) -> Option<bool> {
-        self.try_scalar_value_to().ok()
+    fn try_as_str(&self) -> Option<&str> {
+        self.try_to().ok()
     }
 
     /// Converts this [`ScalarValue`] into another one.
     fn into_another<S: ScalarValue>(self) -> S {
-        if let Some(i) = self.as_int() {
+        if let Some(i) = self.try_to_int() {
             S::from(i)
-        } else if let Some(f) = self.as_float() {
+        } else if let Some(f) = self.try_to_float() {
             S::from(f)
-        } else if let Some(b) = self.as_bool() {
+        } else if let Some(b) = self.try_to_bool() {
             S::from(b)
         } else if let Some(s) = self.into_string() {
             S::from(s)
@@ -327,7 +392,7 @@ pub struct ScalarValueFmt<'a, S: ScalarValue>(pub &'a S);
 
 impl<'a, S: ScalarValue> Display for ScalarValueFmt<'a, S> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(s) = self.0.as_str() {
+        if let Some(s) = self.0.try_as_str() {
             write!(f, "\"{s}\"")
         } else {
             Display::fmt(&self.0, f)
@@ -372,7 +437,7 @@ pub enum DefaultScalarValue {
     /// [`Int` scalar][0] as a signed 32‐bit numeric non‐fractional value.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Int
-    #[from(i32)]
+    #[from]
     #[value(as_float, as_int)]
     Int(i32),
 
@@ -381,7 +446,7 @@ pub enum DefaultScalarValue {
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Float
     /// [IEEE 754]: https://en.wikipedia.org/wiki/IEEE_floating_point
-    #[from(f64)]
+    #[from]
     #[value(as_float)]
     Float(f64),
 

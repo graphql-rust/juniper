@@ -250,8 +250,8 @@ where
 
     match value {
         // TODO: avoid this bad duplicate as_str() call. (value system refactor)
-        InputValue::Scalar(scalar) if scalar.as_str().is_some() => {
-            if let Some(name) = scalar.as_str() {
+        InputValue::Scalar(scalar) if scalar.try_as_str().is_some() => {
+            if let Some(name) = scalar.try_as_str() {
                 if !meta.values.iter().any(|ev| ev.name == *name) {
                     errors.push(unification_error(
                         var_name,

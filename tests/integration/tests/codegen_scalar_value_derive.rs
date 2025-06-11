@@ -2,6 +2,7 @@
 
 pub mod common;
 
+use derive_more::with_trait::{Display, From}
 use juniper::{DefaultScalarValue, ScalarValue};
 use serde::{Deserialize, Serialize};
 
@@ -11,7 +12,7 @@ use self::common::hygiene::*;
 mod trivial {
     use super::*;
 
-    #[derive(Clone, Debug, Deserialize, PartialEq, ScalarValue, Serialize)]
+    #[derive(Clone, Debug, Deserialize, Display, From, PartialEq, ScalarValue, Serialize)]
     #[serde(untagged)]
     pub enum CustomScalarValue {
         #[value(as_float, as_int)]
@@ -52,7 +53,7 @@ mod trivial {
 mod named_fields {
     use super::*;
 
-    #[derive(Clone, Debug, Deserialize, PartialEq, ScalarValue, Serialize)]
+    #[derive(Clone, Debug, Deserialize, Display, From, PartialEq, ScalarValue, Serialize)]
     #[serde(untagged)]
     pub enum CustomScalarValue {
         #[value(as_float, as_int)]
@@ -93,7 +94,7 @@ mod named_fields {
 mod custom_fn {
     use super::*;
 
-    #[derive(Clone, Debug, Deserialize, PartialEq, ScalarValue, Serialize)]
+    #[derive(Clone, Debug, Deserialize, Display, From, PartialEq, ScalarValue, Serialize)]
     #[serde(untagged)]
     pub enum CustomScalarValue {
         #[value(as_float, as_int)]
@@ -138,7 +139,7 @@ mod custom_fn {
 mod allow_missing_attributes {
     use super::*;
 
-    #[derive(Clone, Debug, Deserialize, PartialEq, ScalarValue, Serialize)]
+    #[derive(Clone, Debug, Deserialize, Display, From, PartialEq, ScalarValue, Serialize)]
     #[serde(untagged)]
     #[value(allow_missing_attributes)]
     pub enum CustomScalarValue {
@@ -153,7 +154,7 @@ mod allow_missing_attributes {
 
     #[test]
     fn into_another() {
-        assert!(CustomScalarValue::Int(5).as_int().is_none());
+        assert!(CustomScalarValue::Int(5).to_int().is_none());
         assert!(
             CustomScalarValue::from(0.5_f64)
                 .into_another::<DefaultScalarValue>()

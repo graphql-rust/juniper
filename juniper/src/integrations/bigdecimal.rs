@@ -44,16 +44,16 @@ mod bigdecimal_scalar {
     }
 
     pub(super) fn from_input(v: &Raw<impl ScalarValue>) -> Result<BigDecimal, Box<str>> {
-        if let Some(i) = v.as_int() {
+        if let Some(i) = v.try_to_int() {
             Ok(BigDecimal::from(i))
-        } else if let Some(f) = v.as_float() {
+        } else if let Some(f) = v.try_to_float() {
             // See akubera/bigdecimal-rs#103 for details:
             // https://github.com/akubera/bigdecimal-rs/issues/103
             let mut buf = ryu::Buffer::new();
             BigDecimal::from_str(buf.format(f))
                 .map_err(|e| format!("Failed to parse `BigDecimal` from `Float`: {e}").into())
         } else {
-            v.as_str()
+            v.try_as_str()
                 .ok_or_else(|| {
                     WrongInputScalarTypeError {
                         type_name: arcstr::literal!("String"),

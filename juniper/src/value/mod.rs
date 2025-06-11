@@ -77,17 +77,6 @@ impl<S> Value<S> {
         }
     }
 
-    /// View the underlying float value, if present.
-    pub fn as_float_value(&self) -> Option<f64>
-    where
-        S: ScalarValue,
-    {
-        match self {
-            Self::Scalar(s) => s.as_float(),
-            _ => None,
-        }
-    }
-
     /// View the underlying object value, if present.
     pub fn as_object_value(&self) -> Option<&Object<S>> {
         match self {
@@ -139,18 +128,16 @@ impl<S> Value<S> {
     }
 
     /// Maps the [`ScalarValue`] type of this [`Value`] into the specified one.
-    pub fn map_scalar_value<Into>(self) -> Value<Into>
+    pub fn map_scalar_value<T>(self) -> Value<T>
     where
         S: ScalarValue,
-        Into: ScalarValue,
+        T: ScalarValue,
     {
-        if TypeId::of::<Into>() == TypeId::of::<S>() {
-            // SAFETY: This is safe, because we're transmuting the value into
-            //         itself, so no invariants may change and we're just
-            //         satisfying the type checker.
-            //         As `mem::transmute_copy` creates a copy of data, we need
-            //         `mem::ManuallyDrop` here to omit double-free when
-            //         `S: Drop`.
+        if TypeId::of::<T>() == TypeId::of::<S>() {
+            // SAFETY: This is safe, because we're transmuting the value into itself, so no 
+            //         invariants may change, and we're just satisfying the type checker.
+            //         As `mem::transmute_copy` creates a copy of the data, we need the
+            //         `mem::ManuallyDrop` here to omit double-free when `S: Drop`.
             let val = mem::ManuallyDrop::new(self);
             unsafe { mem::transmute_copy(&*val) }
         } else {

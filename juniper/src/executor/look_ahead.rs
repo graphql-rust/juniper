@@ -772,7 +772,7 @@ impl<'a, S: ScalarValue> ChildrenBuilder<'a, '_, S> {
                                     LookAheadValue::from_input_value(v.as_ref(), Some(self.vars))
                                         .item
                                 {
-                                    s.as_bool().unwrap_or(false)
+                                    s.try_to_bool().unwrap_or(false)
                                 } else {
                                     false
                                 }
@@ -788,7 +788,7 @@ impl<'a, S: ScalarValue> ChildrenBuilder<'a, '_, S> {
                                     LookAheadValue::from_input_value(v.as_ref(), Some(self.vars))
                                         .item
                                 {
-                                    b.as_bool().map(Not::not).unwrap_or(false)
+                                    b.try_to_bool().map(Not::not).unwrap_or(false)
                                 } else {
                                     false
                                 }

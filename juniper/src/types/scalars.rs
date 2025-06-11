@@ -37,8 +37,8 @@ impl ID {
     }
 
     fn from_input<S: ScalarValue>(v: &Raw<S>) -> Result<Self, WrongInputScalarTypeError<'_, S>> {
-        v.as_string()
-            .or_else(|| v.as_int().as_ref().map(ToString::to_string))
+        v.try_to_string()
+            .or_else(|| v.try_to_int().as_ref().map(ToString::to_string))
             .map(|s| Self(s.into()))
             .ok_or_else(|| WrongInputScalarTypeError {
                 type_name: arcstr::literal!("String` or `Int"),

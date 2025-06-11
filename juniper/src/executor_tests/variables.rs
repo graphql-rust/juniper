@@ -19,7 +19,7 @@ impl TestComplexScalar {
     }
 
     fn from_input(s: &impl ScalarValue) -> Result<Self, String> {
-        s.as_str()
+        s.try_as_str()
             .filter(|s| *s == "SerializedValue")
             .map(|_| Self)
             .ok_or_else(|| format!(r#"Expected "SerializedValue" string, found: {s}"#))

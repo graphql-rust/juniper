@@ -594,7 +594,7 @@ impl Definition {
                 fn from_input_value(
                     v: &::juniper::InputValue<#scalar>,
                 ) -> ::core::result::Result<Self, Self::Error> {
-                    match v.as_enum_value().or_else(|| v.as_string_value()) {
+                    match v.as_enum_value().or_else(|| v.as_scalar()?.try_as_str()) {
                         #( #variants )*
                         _ => ::core::result::Result::Err(
                             ::std::format!("Unknown enum value: {}", v),

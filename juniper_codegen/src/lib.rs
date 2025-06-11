@@ -453,7 +453,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///         input: &impl ScalarValue,
 ///     ) -> Result<Self, String> {
 ///         //            ^^^^^^ must implement `IntoFieldError`
-///         input.as_str()
+///         input.try_as_str()
 ///             .ok_or_else(|| format!("Expected `String`, found: {input}"))
 ///             .and_then(|str| {
 ///                 str.strip_prefix("id: ")
@@ -502,9 +502,9 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// }
 ///
 /// fn from_input(v: &impl ScalarValue) -> Result<StringOrInt, String> {
-///     v.as_string()
+///     v.try_to_string()
 ///         .map(StringOrInt::String)
-///         .or_else(|| v.as_int().map(StringOrInt::Int))
+///         .or_else(|| v.try_to_int().map(StringOrInt::Int))
 ///         .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
 /// }
 ///
@@ -545,9 +545,9 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///     }
 ///
 ///     pub(super) fn from_input(v: &impl ScalarValue) -> Result<StringOrInt, String> {
-///         v.as_string()
+///         v.try_to_string()
 ///             .map(StringOrInt::String)
-///             .or_else(|| v.as_int().map(StringOrInt::Int))
+///             .or_else(|| v.try_to_int().map(StringOrInt::Int))
 ///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
 ///     }
 ///
@@ -583,9 +583,9 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///     }
 ///
 ///     fn from_input(v: &impl ScalarValue) -> Result<Self, String> {
-///         v.as_string()
+///         v.try_to_string()
 ///             .map(Self::String)
-///             .or_else(|| v.as_int().map(Self::Int))
+///             .or_else(|| v.try_to_int().map(Self::Int))
 ///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
 ///     }
 ///
@@ -631,9 +631,9 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///     }
 ///
 ///     pub(super) fn from_input(v: &impl ScalarValue) -> Result<StringOrInt, String> {
-///         v.as_string()
+///         v.try_to_string()
 ///             .map(StringOrInt::String)
-///             .or_else(|| v.as_int().map(StringOrInt::Int))
+///             .or_else(|| v.try_to_int().map(StringOrInt::Int))
 ///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
 ///     }
 ///
@@ -741,7 +741,7 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 ///     }
 ///
 ///     pub(super) fn from_input(v: &CustomScalarValue) -> Result<Date, String> {
-///       v.as_str()
+///       v.try_as_str()
 ///           .ok_or_else(|| format!("Expected `String`, found: {v}"))
 ///           .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {e}")))
 ///     }

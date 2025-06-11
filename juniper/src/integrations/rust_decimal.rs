@@ -42,13 +42,13 @@ mod rust_decimal_scalar {
     }
 
     pub(super) fn from_input(v: &Raw<impl ScalarValue>) -> Result<Decimal, Box<str>> {
-        if let Some(i) = v.as_int() {
+        if let Some(i) = v.try_to_int() {
             Ok(Decimal::from(i))
-        } else if let Some(f) = v.as_float() {
+        } else if let Some(f) = v.try_to_float() {
             Decimal::try_from(f)
                 .map_err(|e| format!("Failed to parse `Decimal` from `Float`: {e}").into())
         } else {
-            v.as_str()
+            v.try_as_str()
                 .ok_or_else(|| {
                     WrongInputScalarTypeError {
                         type_name: arcstr::literal!("String"),
