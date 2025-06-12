@@ -407,7 +407,8 @@ impl<'a, S: ScalarValue> IntoFieldError<S> for WrongInputScalarTypeError<'a, S> 
     }
 }
 
-pub struct ScalarValueFmt<'a, S: ScalarValue>(pub &'a S);
+/// [`Display`]-formatter for a [`ScalarValue`] to render as a [`Value`].
+pub(crate) struct ScalarValueFmt<'a, S: ScalarValue>(pub &'a S);
 
 impl<'a, S: ScalarValue> Display for ScalarValueFmt<'a, S> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

@@ -6,11 +6,12 @@ use std::{any::TypeId, borrow::Cow, fmt, mem};
 use arcstr::ArcStr;
 use compact_str::CompactString;
 
+pub(crate) use self::scalar::ScalarValueFmt;
 pub use self::{
     object::Object,
     scalar::{
         AnyExt, DefaultScalarValue, ParseScalarResult, ParseScalarValue, Scalar, ScalarValue,
-        ScalarValueFmt, TryScalarValueTo, WrongInputScalarTypeError,
+        TryScalarValueTo, WrongInputScalarTypeError,
     },
 };
 use crate::{
