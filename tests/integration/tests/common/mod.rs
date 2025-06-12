@@ -79,14 +79,14 @@ pub mod util {
 #[derive(Clone, Debug, Display, From, PartialEq, ScalarValue, Serialize, TryInto)]
 #[serde(untagged)]
 pub enum MyScalarValue {
-    #[value(as_float, as_int)]
+    #[value(to_float, to_int)]
     Int(i32),
     Long(i64),
-    #[value(as_float)]
+    #[value(to_float)]
     Float(f64),
-    #[value(as_str, as_string, into_string)]
+    #[value(as_str, to_string)]
     String(String),
-    #[value(as_bool)]
+    #[value(to_bool)]
     Boolean(bool),
 }
 

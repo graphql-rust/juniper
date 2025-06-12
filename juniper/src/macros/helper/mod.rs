@@ -2,17 +2,17 @@
 
 pub mod subscription;
 
-use std::{convert::Infallible, fmt};
+use std::convert::Infallible;
 
+use derive_more::with_trait::Display;
 use futures::future::{self, BoxFuture};
 
-use crate::FieldError;
+use crate::{FieldError, InputValue, ScalarValue};
 
-/// This trait is used by [`graphql_scalar!`] macro to retrieve [`Error`] type
-/// from a [`Result`].
+/// This trait is used by [`graphql_scalar`] macro to retrieve [`Error`] type from a [`Result`].
 ///
 /// [`Error`]: Result::Error
-/// [`graphql_scalar!`]: macro@crate::graphql_scalar
+/// [`graphql_scalar`]: macro@crate::graphql_scalar
 pub trait ExtractError {
     /// Extracted [`Error`] type of this [`Result`].
     ///
@@ -28,7 +28,7 @@ impl<T, E> ExtractError for Result<T, E> {
 /// which immediately resolves into [`FieldError`].
 pub fn err_fut<'ok, D, Ok, S>(msg: D) -> BoxFuture<'ok, Result<Ok, FieldError<S>>>
 where
-    D: fmt::Display,
+    D: Display,
     Ok: Send + 'ok,
     S: Send + 'static,
 {
@@ -53,6 +53,11 @@ where
 {
     Box::pin(future::err(err_unnamed_type(name)))
 }
+
+/// Error of an [`InputValue`] not representing a [`ScalarValue`], used in macro expansions.
+#[derive(Display)]
+#[display("Expected GraphQL scalar, found: {_0}")]
+pub struct NotScalarError<'a, S: ScalarValue>(pub &'a InputValue<S>);
 
 /// [Autoref-based specialized][0] coercion into a [`Result`] for a function call for providing a
 /// return-type polymorphism in macros.

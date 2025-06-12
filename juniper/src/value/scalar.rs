@@ -37,9 +37,10 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// # Deriving
 ///
 /// There is a custom derive (`#[derive(`[`ScalarValue`](macro@crate::ScalarValue)`)]`) available,
-/// that implements most of the required traits automatically for an enum representing a
-/// [`ScalarValue`]. However, [`Serialize`] and [`Deserialize`] implementations
-/// are expected to be provided.
+/// that implements most of the required [`juniper`] traits automatically for an enum representing a
+/// [`ScalarValue`]. However, [`Serialize`] and [`Deserialize`] implementations are expected to be
+/// provided, as we as [`Display`], [`From`] and [`TryInto`] ones (for which it's convenient to use
+/// [`derive_more`]).
 ///
 /// # Example
 ///
@@ -61,14 +62,23 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// #[serde(untagged)]
 /// #[value(from_displayable_with = from_compact_str)]
 /// enum MyScalarValue {
-///     #[value(as_float, as_int)]
+///     #[from]
+///     #[value(to_float, to_int)]
 ///     Int(i32),
+///
+///     #[from]
 ///     Long(i64),
-///     #[value(as_float)]
+///     
+///     #[from]
+///     #[value(to_float)]
 ///     Float(f64),
-///     #[value(as_str, as_string, into_string)]
+///
+///     #[from(&str, String, CompactString)]
+///     #[value(as_str, to_string)]
 ///     String(CompactString),
-///     #[value(as_bool)]
+///     
+///     #[from]
+///     #[value(to_bool)]
 ///     Boolean(bool),
 /// }
 ///
@@ -84,10 +94,17 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 ///     }
 /// }
 ///
-/// // Macro cannot infer and generate this impl if a custom string type is used.
-/// impl From<String> for MyScalarValue {
-///     fn from(value: String) -> Self {
-///         Self::String(value.into())
+/// // `derive_more::TryInto` is not capable for transitive conversions yet,
+/// // so this impl is manual as a custom string type is used instead of `String`.
+/// impl TryFrom<MyScalarValue> for String {
+///     type Error = MyScalarValue;
+///
+///     fn try_from(value: MyScalarValue) -> Result<Self, Self::Error> {
+///         if let MyScalarValue::String(s) = value {
+///             Ok(s.into())
+///         } else {
+///             Err(value)
+///         }
 ///     }
 /// }
 ///
@@ -157,6 +174,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// }
 /// ```
 ///
+/// [`juniper`]: crate
 /// [`CompactString`]: compact_str::CompactString
 /// [`Deserialize`]: trait@serde::Deserialize
 /// [`Serialize`]: trait@serde::Serialize
@@ -484,7 +502,7 @@ pub enum DefaultScalarValue {
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Int
     #[from]
-    #[value(as_float, as_int)]
+    #[value(to_float, to_int)]
     Int(i32),
 
     /// [`Float` scalar][0] as a signed double‐precision fractional values as
@@ -493,7 +511,7 @@ pub enum DefaultScalarValue {
     /// [0]: https://spec.graphql.org/October2021#sec-Float
     /// [IEEE 754]: https://en.wikipedia.org/wiki/IEEE_floating_point
     #[from]
-    #[value(as_float)]
+    #[value(to_float)]
     Float(f64),
 
     /// [`String` scalar][0] as a textual data, represented as UTF‐8 character
@@ -501,13 +519,13 @@ pub enum DefaultScalarValue {
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-String
     #[from(&str, Cow<'_, str>, String)]
-    #[value(as_str, as_string, into_string)]
+    #[value(as_str, to_string)]
     String(String),
 
     /// [`Boolean` scalar][0] as a `true` or `false` value.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Boolean
-    #[from(bool)]
-    #[value(as_bool)]
+    #[from]
+    #[value(to_bool)]
     Boolean(bool),
 }

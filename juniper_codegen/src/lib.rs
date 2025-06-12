@@ -766,13 +766,13 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
 
 /// `#[derive(ScalarValue)]` macro for deriving a [`ScalarValue`] implementation.
 ///
-/// To derive a [`ScalarValue`] on enum you should mark the corresponding enum
-/// variants with `as_int`, `as_float`, `as_string`, `into_string`, `as_str` and
-/// `as_bool` attribute arguments (names correspond to [`ScalarValue`] required
-/// methods).
+/// To derive a [`ScalarValue`] on enum you either could mark the corresponding enum variants with
+/// `to_int`, `to_float`, `to_string`, `as_str` and `to_bool` attribute arguments (names correspond
+/// to the similar [`ScalarValue`] methods aliasing the required [`TryScalarValueTo`] conversions),
+/// or implement the required [`TryScalarValueTo`] conversions by hand.
 ///
-/// Additional `from_displayable_with` argument could be used to specify a custom
-/// implementation to override the default `ScalarValue::from_displayable()` method.
+/// Additional `from_displayable_with` argument could be used to specify a custom function to
+/// override the default `ScalarValue::from_displayable()` method.
 ///
 /// ```rust
 /// # use std::{any::Any, fmt};
@@ -784,19 +784,18 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// #[serde(untagged)]
 /// #[value(from_displayable_with = from_custom_str)]
 /// enum MyScalarValue {
-///     #[value(as_float, as_int)]
+///     #[value(to_float, to_int)]
 ///     Int(i32),
 ///     Long(i64),
-///     #[value(as_float)]
+///     #[value(to_float)]
 ///     Float(f64),
 ///     #[value(
-///         into_string,
 ///         as_str,
-///         as_string = String::clone,
+///         to_string = String::clone,
 ///     )]
 ///     //              ^^^^^^^^^^^^^ custom resolvers may be provided
 ///     String(String),
-///     #[value(as_bool)]
+///     #[value(to_bool)]
 ///     Boolean(bool),
 /// }
 ///
@@ -884,6 +883,7 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// ```
 ///
 /// [`ScalarValue`]: juniper::ScalarValue
+/// [`TryScalarValueTo`]: juniper::TryScalarValueTo
 #[proc_macro_derive(ScalarValue, attributes(value))]
 pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
     diagnostic::entry_point(|| {

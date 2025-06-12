@@ -774,7 +774,7 @@ impl Methods {
                     use ::juniper::macros::helper::ToResultCall as _;
 
                     let input = ::juniper::InputValue::as_scalar(input)
-                        .ok_or_else(|| format!("Expected GraphQL scalar, found: {input}"))?;
+                        .ok_or_else(|| ::juniper::macros::helper::NotScalarError(input))?;
                     let input = ::juniper::TryScalarValueTo::try_scalar_value_to(input)
                         .map_err(::juniper::executor::IntoFieldError::<#scalar>::into_field_error)?;
                     let func: fn(_) -> _ = #from_input;
