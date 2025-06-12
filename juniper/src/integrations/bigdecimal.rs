@@ -10,7 +10,7 @@
 
 use std::str::FromStr as _;
 
-use crate::{Raw, ScalarValue, Value, WrongInputScalarTypeError, graphql_scalar};
+use crate::{Raw, ScalarValue, Value, graphql_scalar};
 
 // TODO: Try remove on upgrade of `bigdecimal` crate.
 mod for_minimal_versions_check_only {
@@ -53,15 +53,8 @@ mod bigdecimal_scalar {
             BigDecimal::from_str(buf.format(f))
                 .map_err(|e| format!("Failed to parse `BigDecimal` from `Float`: {e}").into())
         } else {
-            v.try_as_str()
-                .ok_or_else(|| {
-                    WrongInputScalarTypeError {
-                        type_name: arcstr::literal!("String"),
-                        input: &**v,
-                    }
-                    .to_string()
-                    .into()
-                })
+            v.try_to::<&str>()
+                .map_err(|e| e.to_string().into())
                 .and_then(|s| {
                     BigDecimal::from_str(s).map_err(|e| {
                         format!("Failed to parse `BigDecimal` from `String`: {e}").into()

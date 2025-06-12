@@ -4,7 +4,7 @@
 
 pub mod common;
 
-use std::{convert::Infallible, fmt};
+use std::fmt;
 
 use chrono::{DateTime, TimeZone, Utc};
 use juniper::{
@@ -31,8 +31,8 @@ mod trivial {
             Value::scalar(self.0)
         }
 
-        fn from_input(i: i32) -> prelude::Result<Self, Infallible> {
-            Ok(Self(i))
+        fn from_input(i: i32) -> Self {
+            Self(i)
         }
 
         fn parse_token<S: ScalarValue>(t: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -226,19 +226,16 @@ mod transparent_with_resolver {
 mod all_custom_resolvers {
     use super::*;
 
-    #[graphql_scalar(
+    #[graphql_scalar]
+    #[graphql(
         to_output_with = to_output,
-        from_input_with = from_input,
+        from_input_with = Counter,
     )]
-    #[graphql_scalar(parse_token_with = parse_token)]
+    #[graphql(parse_token_with = parse_token)]
     struct Counter(i32);
 
     fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
         Value::scalar(v.0)
-    }
-
-    fn from_input(i: i32) -> prelude::Result<Counter, Infallible> {
-        Ok(Counter(i))
     }
 
     fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -310,8 +307,8 @@ mod explicit_name {
             Value::scalar(self.0)
         }
 
-        fn from_input(i: i32) -> prelude::Result<Self, Infallible> {
-            Ok(Self(i))
+        fn from_input(i: i32) -> Self {
+            Self(i)
         }
 
         fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -384,8 +381,8 @@ mod delegated_parse_token {
             Value::scalar(self.0)
         }
 
-        fn from_input(i: i32) -> prelude::Result<Self, Infallible> {
-            Ok(Self(i))
+        fn from_input(i: i32) -> Self {
+            Self(i)
         }
     }
 
@@ -588,8 +585,8 @@ mod with_self {
             Value::scalar(self.0)
         }
 
-        fn from_input(i: i32) -> prelude::Result<Self, Infallible> {
-            Ok(Self(i))
+        fn from_input(i: i32) -> Self {
+            Self(i)
         }
 
         fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -743,8 +740,8 @@ mod description_from_doc_comment {
             Value::scalar(self.0)
         }
 
-        fn from_input(i: i32) -> prelude::Result<Self, Infallible> {
-            Ok(Self(i))
+        fn from_input(i: i32) -> Self {
+            Self(i)
         }
     }
 
@@ -817,8 +814,8 @@ mod description_from_attribute {
             Value::scalar(self.0)
         }
 
-        fn from_input(i: i32) -> prelude::Result<Self, Infallible> {
-            Ok(Self(i))
+        fn from_input(i: i32) -> Self {
+            Self(i)
         }
     }
 
@@ -891,8 +888,8 @@ mod custom_scalar {
             Value::scalar(self.0)
         }
 
-        fn from_input(i: i32) -> prelude::Result<Self, Infallible> {
-            Ok(Self(i))
+        fn from_input(i: i32) -> Self {
+            Self(i)
         }
     }
 
@@ -965,8 +962,8 @@ mod generic_scalar {
             Value::scalar(self.0)
         }
 
-        fn from_input(i: i32) -> prelude::Result<Self, Infallible> {
-            Ok(Self(i))
+        fn from_input(i: i32) -> Self {
+            Self(i)
         }
     }
 
@@ -1038,8 +1035,8 @@ mod bounded_generic_scalar {
             Value::scalar(self.0)
         }
 
-        fn from_input(i: i32) -> prelude::Result<Self, Infallible> {
-            Ok(Self(i))
+        fn from_input(i: i32) -> Self {
+            Self(i)
         }
     }
 

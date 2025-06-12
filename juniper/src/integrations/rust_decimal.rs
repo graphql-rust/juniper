@@ -35,7 +35,6 @@ type Decimal = rust_decimal::Decimal;
 
 mod rust_decimal_scalar {
     use super::*;
-    use crate::WrongInputScalarTypeError;
 
     pub(super) fn to_output<S: ScalarValue>(v: &Decimal) -> Value<S> {
         Value::scalar(v.to_string())
@@ -48,15 +47,8 @@ mod rust_decimal_scalar {
             Decimal::try_from(f)
                 .map_err(|e| format!("Failed to parse `Decimal` from `Float`: {e}").into())
         } else {
-            v.try_as_str()
-                .ok_or_else(|| {
-                    WrongInputScalarTypeError {
-                        type_name: arcstr::literal!("String"),
-                        input: &**v,
-                    }
-                    .to_string()
-                    .into()
-                })
+            v.try_to::<&str>()
+                .map_err(|e| e.to_string().into())
                 .and_then(|s| {
                     Decimal::from_str(s)
                         .map_err(|e| format!("Failed to parse `Decimal` from `String`: {e}").into())

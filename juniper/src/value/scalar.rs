@@ -171,12 +171,12 @@ pub trait ScalarValue:
     + From<bool>
     + From<i32>
     + From<f64>
-    + for<'a> TryScalarValueTo<'a, bool, Error: IntoFieldError<Self>>
-    + for<'a> TryScalarValueTo<'a, i32, Error: IntoFieldError<Self>>
-    + for<'a> TryScalarValueTo<'a, f64, Error: IntoFieldError<Self>>
-    + for<'a> TryScalarValueTo<'a, String, Error: IntoFieldError<Self>>
-    + for<'a> TryScalarValueTo<'a, &'a str, Error: IntoFieldError<Self>>
-    + for<'a> TryScalarValueTo<'a, &'a Self, Error: IntoFieldError<Self>>
+    + for<'a> TryScalarValueTo<'a, bool, Error: Display + IntoFieldError<Self>>
+    + for<'a> TryScalarValueTo<'a, i32, Error: Display + IntoFieldError<Self>>
+    + for<'a> TryScalarValueTo<'a, f64, Error: Display + IntoFieldError<Self>>
+    + for<'a> TryScalarValueTo<'a, String, Error: Display + IntoFieldError<Self>>
+    + for<'a> TryScalarValueTo<'a, &'a str, Error: Display + IntoFieldError<Self>>
+    + for<'a> TryScalarValueTo<'a, &'a Self, Error: Display + IntoFieldError<Self>>
     + TryInto<String>
     + 'static
 {

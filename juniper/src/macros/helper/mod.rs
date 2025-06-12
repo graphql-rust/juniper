@@ -6,10 +6,7 @@ use std::{convert::Infallible, fmt};
 
 use futures::future::{self, BoxFuture};
 
-use crate::{
-    DefaultScalarValue, FieldError, FieldResult, GraphQLScalar, InputValue, IntoFieldError,
-    ScalarValue,
-};
+use crate::FieldError;
 
 /// This trait is used by [`graphql_scalar!`] macro to retrieve [`Error`] type
 /// from a [`Result`].

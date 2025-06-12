@@ -1,5 +1,3 @@
-use std::convert::Infallible;
-
 use juniper::{graphql_scalar, ScalarValue, Value};
 
 struct ScalarSpecifiedByUrl;
@@ -18,8 +16,8 @@ mod scalar {
         Value::scalar(0)
     }
 
-    pub(super) fn from_input(_: &impl ScalarValue) -> Result<ScalarSpecifiedByUrl, Infallible> {
-        Ok(ScalarSpecifiedByUrl)
+    pub(super) fn from_input(_: &Raw<impl ScalarValue>) -> ScalarSpecifiedByUrl {
+        ScalarSpecifiedByUrl
     }
 }
 

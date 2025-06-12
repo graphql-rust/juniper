@@ -1,4 +1,4 @@
-use std::{char, convert::Infallible, marker::PhantomData, rc::Rc, thread::JoinHandle};
+use std::{char, convert::identity, marker::PhantomData, rc::Rc, thread::JoinHandle};
 
 use derive_more::with_trait::{Deref, Display, From, Into};
 use serde::{Deserialize, Serialize};
@@ -56,7 +56,7 @@ impl ID {
 }
 
 #[graphql_scalar]
-#[graphql(with = impl_string_scalar)]
+#[graphql(with = impl_string_scalar, from_input_with = identity::<String>)]
 type String = std::string::String;
 
 mod impl_string_scalar {
@@ -64,10 +64,6 @@ mod impl_string_scalar {
 
     pub(super) fn to_output<S: ScalarValue>(v: &str) -> Value<S> {
         Value::scalar(v.to_owned())
-    }
-
-    pub(super) fn from_input(s: String) -> Result<String, Infallible> {
-        Ok(s)
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -179,8 +175,6 @@ where
 type ArcStr = arcstr::ArcStr;
 
 mod impl_arcstr_scalar {
-    use std::convert::Infallible;
-
     use super::ArcStr;
     use crate::{IntoValue as _, ScalarValue, Value};
 
@@ -188,8 +182,8 @@ mod impl_arcstr_scalar {
         v.into_value()
     }
 
-    pub(super) fn from_input(s: &str) -> Result<ArcStr, Infallible> {
-        Ok(s.into())
+    pub(super) fn from_input(s: &str) -> ArcStr {
+        s.into()
     }
 }
 
@@ -198,8 +192,6 @@ mod impl_arcstr_scalar {
 type CompactString = compact_str::CompactString;
 
 mod impl_compactstring_scalar {
-    use std::convert::Infallible;
-
     use super::CompactString;
     use crate::{IntoValue as _, ScalarValue, Value};
 
@@ -207,8 +199,8 @@ mod impl_compactstring_scalar {
         v.into_value()
     }
 
-    pub(super) fn from_input(s: &str) -> Result<CompactString, Infallible> {
-        Ok(s.into())
+    pub(super) fn from_input(s: &str) -> CompactString {
+        s.into()
     }
 }
 
@@ -283,7 +275,7 @@ where
 }
 
 #[graphql_scalar]
-#[graphql(with = impl_boolean_scalar)]
+#[graphql(with = impl_boolean_scalar, from_input_with = identity::<Boolean>)]
 type Boolean = bool;
 
 mod impl_boolean_scalar {
@@ -293,10 +285,6 @@ mod impl_boolean_scalar {
         Value::scalar(*v)
     }
 
-    pub(super) fn from_input(b: Boolean) -> Result<Boolean, Infallible> {
-        Ok(b)
-    }
-
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
         // `Boolean`s are parsed separately, they shouldn't reach this code path.
         Err(ParseError::unexpected_token(Token::Scalar(value)))
@@ -304,7 +292,7 @@ mod impl_boolean_scalar {
 }
 
 #[graphql_scalar]
-#[graphql(with = impl_int_scalar)]
+#[graphql(with = impl_int_scalar, from_input_with = identity::<Int>)]
 type Int = i32;
 
 mod impl_int_scalar {
@@ -312,10 +300,6 @@ mod impl_int_scalar {
 
     pub(super) fn to_output<S: ScalarValue>(v: &Int) -> Value<S> {
         Value::scalar(*v)
-    }
-
-    pub(super) fn from_input(i: Int) -> Result<Int, Infallible> {
-        Ok(i)
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -330,7 +314,7 @@ mod impl_int_scalar {
 }
 
 #[graphql_scalar]
-#[graphql(with = impl_float_scalar)]
+#[graphql(with = impl_float_scalar, from_input_with = identity::<Float>)]
 type Float = f64;
 
 mod impl_float_scalar {
@@ -338,10 +322,6 @@ mod impl_float_scalar {
 
     pub(super) fn to_output<S: ScalarValue>(v: &Float) -> Value<S> {
         Value::scalar(*v)
-    }
-
-    pub(super) fn from_input(f: Float) -> Result<Float, Infallible> {
-        Ok(f)
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {

@@ -2,7 +2,7 @@
 
 pub mod common;
 
-use std::{convert::Infallible, fmt};
+use std::fmt;
 
 use chrono::{DateTime, TimeZone, Utc};
 use juniper::{
@@ -20,13 +20,12 @@ use self::common::hygiene::*;
 
 mod all_custom_resolvers {
     use super::*;
-    use std::convert::Infallible;
 
     struct CustomCounter(i32);
 
     #[graphql_scalar(
         to_output_with = to_output,
-        from_input_with = from_input,
+        from_input_with = CustomCounter,
     )]
     #[graphql_scalar(
         parse_token_with = parse_token,
@@ -35,10 +34,6 @@ mod all_custom_resolvers {
 
     fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
         Value::scalar(v.0)
-    }
-
-    fn from_input(i: i32) -> prelude::Result<Counter, Infallible> {
-        Ok(CustomCounter(i))
     }
 
     fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -107,17 +102,13 @@ mod explicit_name {
     #[graphql_scalar(
         name = "Counter",
         to_output_with = to_output,
-        from_input_with = from_input,
+        from_input_with = CustomCounter,
         parse_token_with = parse_token,
     )]
     type CounterScalar = CustomCounter;
 
     fn to_output<S: ScalarValue>(v: &CounterScalar) -> Value<S> {
         Value::scalar(v.0)
-    }
-
-    fn from_input(i: i32) -> prelude::Result<CounterScalar, Infallible> {
-        Ok(CustomCounter(i))
     }
 
     fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -205,17 +196,13 @@ mod delegated_parse_token {
 
     #[graphql_scalar(
         to_output_with = to_output,
-        from_input_with = from_input,
+        from_input_with = CustomCounter,
         parse_token(i32),
     )]
     type Counter = CustomCounter;
 
     fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
         Value::scalar(v.0)
-    }
-
-    fn from_input(i: i32) -> prelude::Result<Counter, Infallible> {
-        Ok(CustomCounter(i))
     }
 
     struct QueryRoot;
@@ -425,8 +412,8 @@ mod with_self {
             Value::scalar(self.0)
         }
 
-        fn from_input(i: i32) -> prelude::Result<Self, Infallible> {
-            Ok(Self(i))
+        fn from_input(i: i32) -> Self {
+            Self(i)
         }
 
         fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -586,8 +573,8 @@ mod description_from_doc_comment {
             Value::scalar(v.0)
         }
 
-        pub(super) fn from_input(i: i32) -> prelude::Result<Counter, Infallible> {
-            Ok(CustomCounter(i))
+        pub(super) fn from_input(i: i32) -> Counter {
+            CustomCounter(i)
         }
     }
 
@@ -668,8 +655,8 @@ mod description_from_attribute {
             Value::scalar(v.0)
         }
 
-        pub(super) fn from_input(i: i32) -> prelude::Result<Counter, Infallible> {
-            Ok(CustomCounter(i))
+        pub(super) fn from_input(i: i32) -> Counter {
+            CustomCounter(i)
         }
     }
 
@@ -750,8 +737,8 @@ mod custom_scalar {
             Value::scalar(v.0)
         }
 
-        pub(super) fn from_input(i: i32) -> prelude::Result<Counter, Infallible> {
-            Ok(CustomCounter(i))
+        pub(super) fn from_input(i: i32) -> Counter {
+            CustomCounter(i)
         }
     }
 
@@ -832,8 +819,8 @@ mod generic_scalar {
             Value::scalar(v.0)
         }
 
-        pub(super) fn from_input(i: i32) -> prelude::Result<Counter, Infallible> {
-            Ok(CustomCounter(i))
+        pub(super) fn from_input(i: i32) -> Counter {
+            CustomCounter(i)
         }
     }
 
@@ -914,8 +901,8 @@ mod bounded_generic_scalar {
             Value::scalar(v.0)
         }
 
-        pub(super) fn from_input(i: i32) -> prelude::Result<Counter, Infallible> {
-            Ok(CustomCounter(i))
+        pub(super) fn from_input(i: i32) -> Counter {
+            CustomCounter(i)
         }
     }
 

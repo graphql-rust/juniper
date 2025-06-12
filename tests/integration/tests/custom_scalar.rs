@@ -22,11 +22,11 @@ mod long {
         Value::scalar(*v)
     }
 
-    pub(super) fn from_input(s: &MyScalarValue) -> Result<Long, String> {
+    pub(super) fn from_input(s: &MyScalarValue) -> Result<Long, Box<str>> {
         if let MyScalarValue::Long(i) = s {
             Ok(*i)
         } else {
-            Err(format!("Expected `MyScalarValue::Long`, found: {s}"))
+            Err(format!("Expected `MyScalarValue::Long`, found: {s}").into())
         }
     }
 

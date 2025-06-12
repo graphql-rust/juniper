@@ -1,5 +1,5 @@
 use crate::{
-    GraphQLInputObject, GraphQLScalar, InputValue, ScalarValue, Value,
+    GraphQLInputObject, GraphQLScalar, ScalarValue, Value,
     executor::Variables,
     graphql_object, graphql_value, graphql_vars,
     parser::SourcePosition,
@@ -18,11 +18,12 @@ impl TestComplexScalar {
         graphql_value!("SerializedValue")
     }
 
-    fn from_input(s: &impl ScalarValue) -> Result<Self, String> {
-        s.try_as_str()
-            .filter(|s| *s == "SerializedValue")
-            .map(|_| Self)
-            .ok_or_else(|| format!(r#"Expected "SerializedValue" string, found: {s}"#))
+    fn from_input(s: &str) -> Result<Self, Box<str>> {
+        if s == "SerializedValue" {
+            Ok(Self)
+        } else {
+            Err(format!(r#"Expected "SerializedValue" string, found: "{s}""#).into())
+        }
     }
 }
 
