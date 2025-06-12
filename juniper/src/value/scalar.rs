@@ -368,13 +368,29 @@ pub trait ScalarValue:
     }
 }
 
+/// Fallible representation of a [`ScalarValue`] as one of the types it consists of, or derived ones
+/// from them.
+///
+/// # Implementation
+///
+/// Implementing this trait for a type allows to specify this type directly in the `from_input()`
+/// function when implementing a [`GraphQLScalar`] via [derive macro](macro@GraphQLScalar).
+///
+/// `#[derive(`[`ScalarValue`](macro@crate::ScalarValue)`)]` automatically implements this trait for
+/// all the required primitive types if `#[to_<type>]` and `#[as_<type>]` attributes are specified.
 pub trait TryScalarValueTo<'me, T: 'me> {
+    /// Error if this [`ScalarValue`] doesn't represent the expected type.
     type Error;
 
+    /// Tries to represent this [`ScalarValue`] as the expected type.
+    ///
+    /// # Errors
+    ///
+    /// If this [`ScalarValue`] doesn't represent the expected type.
     fn try_scalar_value_to(&'me self) -> Result<T, Self::Error>;
 }
 
-impl<'me, S: ?Sized> TryScalarValueTo<'me, &'me S> for S {
+impl<'me, S: ScalarValue> TryScalarValueTo<'me, &'me S> for S {
     type Error = Infallible;
 
     fn try_scalar_value_to(&'me self) -> Result<&'me S, Self::Error> {
@@ -382,7 +398,7 @@ impl<'me, S: ?Sized> TryScalarValueTo<'me, &'me S> for S {
     }
 }
 
-impl<'me, S: ?Sized> TryScalarValueTo<'me, &'me Scalar<S>> for S {
+impl<'me, S: ScalarValue> TryScalarValueTo<'me, &'me Scalar<S>> for S {
     type Error = Infallible;
 
     fn try_scalar_value_to(&'me self) -> Result<&'me Scalar<S>, Self::Error> {
@@ -427,9 +443,8 @@ impl<'a, S: ScalarValue> Display for ScalarValueFmt<'a, S> {
 /// expansions.
 #[derive(Debug, Deref, Display, RefCast)]
 #[display("{}", ScalarValueFmt(_0))]
-#[display(bound(T: ScalarValue))]
 #[repr(transparent)]
-pub struct Scalar<T: ?Sized>(T);
+pub struct Scalar<T: ScalarValue>(T);
 
 /// Extension of [`Any`] for using its methods directly on the value without `dyn`.
 pub trait AnyExt: Any {
