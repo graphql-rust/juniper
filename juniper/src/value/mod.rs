@@ -9,7 +9,7 @@ use compact_str::CompactString;
 pub use self::{
     object::Object,
     scalar::{
-        AnyExt, DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarValue,
+        AnyExt, DefaultScalarValue, ParseScalarResult, ParseScalarValue, Scalar, ScalarValue,
         ScalarValueFmt, TryScalarValueTo, WrongInputScalarTypeError,
     },
 };

@@ -56,9 +56,9 @@ pub mod tests;
 #[cfg(test)]
 mod executor_tests;
 
-use derive_more::with_trait::{Deref, Display, From};
+use derive_more::with_trait::{Display, From};
 use itertools::Itertools as _;
-use ref_cast::RefCast;
+
 // Needs to be public because macros use it.
 pub use crate::util::to_camel_case;
 
@@ -103,7 +103,7 @@ pub use crate::{
     },
     validation::RuleError,
     value::{
-        AnyExt, DefaultScalarValue, IntoValue, Object, ParseScalarResult, ParseScalarValue,
+        AnyExt, DefaultScalarValue, IntoValue, Object, ParseScalarResult, ParseScalarValue, Scalar,
         ScalarValue, ScalarValueFmt, TryScalarValueTo, Value, WrongInputScalarTypeError,
     },
 };
@@ -319,7 +319,3 @@ where
         context,
     )
 }
-
-#[derive(Debug, Deref, Display, RefCast)]
-#[repr(transparent)]
-pub struct Raw<T: ?Sized>(T);

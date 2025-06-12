@@ -6,7 +6,7 @@ use std::fmt;
 
 use chrono::{DateTime, TimeZone, Utc};
 use juniper::{
-    GraphQLScalar, ParseScalarResult, ParseScalarValue, Raw, ScalarToken, ScalarValue, Value,
+    GraphQLScalar, ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue, Value,
     execute, graphql_object, graphql_value, graphql_vars,
 };
 
@@ -457,7 +457,7 @@ mod multiple_delegated_parse_token {
             }
         }
 
-        fn from_input(v: &Raw<impl ScalarValue>) -> prelude::Result<Self, prelude::Box<str>> {
+        fn from_input(v: &Scalar<impl ScalarValue>) -> prelude::Result<Self, prelude::Box<str>> {
             v.try_to_string()
                 .map(Self::String)
                 .or_else(|| v.try_to_int().map(Self::Int))

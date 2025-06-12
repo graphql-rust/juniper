@@ -8,7 +8,7 @@ use std::fmt;
 
 use chrono::{DateTime, TimeZone, Utc};
 use juniper::{
-    ParseScalarResult, ParseScalarValue, Raw, ScalarToken, ScalarValue, Value, execute,
+    ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue, Value, execute,
     graphql_object, graphql_scalar, graphql_value, graphql_vars,
 };
 
@@ -159,7 +159,7 @@ mod transparent_with_resolver {
     use super::*;
 
     #[graphql_scalar]
-    #[graphql(
+    #[graphql_scalar(
         transparent,
         to_output_with = Self::to_output,
     )]
@@ -462,7 +462,7 @@ mod multiple_delegated_parse_token {
             }
         }
 
-        fn from_input(v: &Raw<impl ScalarValue>) -> prelude::Result<Self, prelude::Box<str>> {
+        fn from_input(v: &Scalar<impl ScalarValue>) -> prelude::Result<Self, prelude::Box<str>> {
             v.try_to_string()
                 .map(Self::String)
                 .or_else(|| v.try_to_int().map(Self::Int))

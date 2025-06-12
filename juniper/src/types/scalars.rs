@@ -4,7 +4,7 @@ use derive_more::with_trait::{Deref, Display, From, Into};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    GraphQLScalar, Raw,
+    GraphQLScalar, Scalar,
     ast::{InputValue, Selection, ToInputValue},
     executor::{ExecutionResult, Executor, Registry},
     graphql_scalar,
@@ -36,7 +36,7 @@ impl ID {
         Value::scalar(self.0.clone().into_string())
     }
 
-    fn from_input<S: ScalarValue>(v: &Raw<S>) -> Result<Self, WrongInputScalarTypeError<'_, S>> {
+    fn from_input<S: ScalarValue>(v: &Scalar<S>) -> Result<Self, WrongInputScalarTypeError<'_, S>> {
         v.try_to_string()
             .or_else(|| v.try_to_int().as_ref().map(ToString::to_string))
             .map(|s| Self(s.into()))

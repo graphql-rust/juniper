@@ -1,8 +1,8 @@
 use std::convert::Infallible;
 
 use arcstr::ArcStr;
-use derive_more::with_trait::{Display, Error, From, TryInto};
-use ref_cast::RefCast as _;
+use derive_more::with_trait::{Deref, Display, Error, From, TryInto};
+use ref_cast::RefCast;
 use serde::{Serialize, de::DeserializeOwned};
 use std::{
     any::{Any, TypeId},
@@ -11,11 +11,11 @@ use std::{
 };
 
 use crate::{
-    FieldError, IntoFieldError, Raw,
+    FieldError, IntoFieldError,
     parser::{ParseError, ScalarToken},
 };
 #[cfg(doc)]
-use crate::{GraphQLValue, Value};
+use crate::{GraphQLScalar, GraphQLValue, Value};
 
 pub use juniper_codegen::ScalarValue;
 
@@ -382,11 +382,11 @@ impl<'me, S: ?Sized> TryScalarValueTo<'me, &'me S> for S {
     }
 }
 
-impl<'me, S: ?Sized> TryScalarValueTo<'me, &'me Raw<S>> for S {
+impl<'me, S: ?Sized> TryScalarValueTo<'me, &'me Scalar<S>> for S {
     type Error = Infallible;
 
-    fn try_scalar_value_to(&'me self) -> Result<&'me Raw<S>, Self::Error> {
-        Ok(Raw::ref_cast(self))
+    fn try_scalar_value_to(&'me self) -> Result<&'me Scalar<S>, Self::Error> {
+        Ok(Scalar::ref_cast(self))
     }
 }
 
@@ -418,6 +418,17 @@ impl<'a, S: ScalarValue> Display for ScalarValueFmt<'a, S> {
         }
     }
 }
+
+/// Transparent wrapper over a value, indicating it being a [`ScalarValue`].
+///
+/// Used in [`GraphQLScalar`] definitions to distinguish a concrete type for a generic
+/// [`ScalarValue`], since Rust type inference fail do so for a generic value directly in macro
+/// expansions.
+#[derive(Debug, Deref, Display, RefCast)]
+#[display("{}", ScalarValueFmt(_0))]
+#[display(bound(T: ScalarValue))]
+#[repr(transparent)]
+pub struct Scalar<T: ?Sized>(T);
 
 /// Extension of [`Any`] for using its methods directly on the value without `dyn`.
 pub trait AnyExt: Any {

@@ -1,8 +1,9 @@
-use juniper::{graphql_scalar, ScalarValue, Value};
+use juniper::{graphql_scalar, Scalar, ScalarValue, Value};
 
 struct ScalarSpecifiedByUrl;
 
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     specified_by_url = "not an url",
     with = scalar,
     parse_token(i32),
@@ -16,7 +17,7 @@ mod scalar {
         Value::scalar(0)
     }
 
-    pub(super) fn from_input(_: &Raw<impl ScalarValue>) -> ScalarSpecifiedByUrl {
+    pub(super) fn from_input(_: &Scalar<impl ScalarValue>) -> ScalarSpecifiedByUrl {
         ScalarSpecifiedByUrl
     }
 }

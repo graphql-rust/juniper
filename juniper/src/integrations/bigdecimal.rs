@@ -10,7 +10,7 @@
 
 use std::str::FromStr as _;
 
-use crate::{Raw, ScalarValue, Value, graphql_scalar};
+use crate::{Scalar, ScalarValue, Value, graphql_scalar};
 
 // TODO: Try remove on upgrade of `bigdecimal` crate.
 mod for_minimal_versions_check_only {
@@ -43,7 +43,7 @@ mod bigdecimal_scalar {
         Value::scalar(v.to_string())
     }
 
-    pub(super) fn from_input(v: &Raw<impl ScalarValue>) -> Result<BigDecimal, Box<str>> {
+    pub(super) fn from_input(v: &Scalar<impl ScalarValue>) -> Result<BigDecimal, Box<str>> {
         if let Some(i) = v.try_to_int() {
             Ok(BigDecimal::from(i))
         } else if let Some(f) = v.try_to_float() {
