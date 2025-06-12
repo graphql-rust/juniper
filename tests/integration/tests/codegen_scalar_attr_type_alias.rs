@@ -23,11 +23,12 @@ mod all_custom_resolvers {
 
     struct CustomCounter(i32);
 
-    #[graphql_scalar(
+    #[graphql_scalar]
+    #[graphql(
         to_output_with = to_output,
         from_input_with = CustomCounter,
     )]
-    #[graphql_scalar(
+    #[graphql(
         parse_token_with = parse_token,
     )]
     type Counter = CustomCounter;
@@ -99,7 +100,8 @@ mod explicit_name {
 
     struct CustomCounter(i32);
 
-    #[graphql_scalar(
+    #[graphql_scalar]
+    #[graphql(
         name = "Counter",
         to_output_with = to_output,
         from_input_with = CustomCounter,
@@ -194,7 +196,8 @@ mod delegated_parse_token {
 
     struct CustomCounter(i32);
 
-    #[graphql_scalar(
+    #[graphql_scalar]
+    #[graphql(
         to_output_with = to_output,
         from_input_with = CustomCounter,
         parse_token(i32),
@@ -267,7 +270,8 @@ mod multiple_delegated_parse_token {
         Int(i32),
     }
 
-    #[graphql_scalar(
+    #[graphql_scalar]
+    #[graphql(
         to_output_with = to_output,
         from_input_with = from_input,
         parse_token(prelude::String, i32),
@@ -327,7 +331,8 @@ mod where_attribute {
 
     struct CustomDateTimeScalar<Tz: TimeZone>(DateTime<Tz>);
 
-    #[graphql_scalar(
+    #[graphql_scalar]
+    #[graphql(
         to_output_with = to_output,
         from_input_with = from_input,
         parse_token(prelude::String),
@@ -404,7 +409,8 @@ mod with_self {
 
     struct CustomCounter(i32);
 
-    #[graphql_scalar(with = Self)]
+    #[graphql_scalar]
+    #[graphql(with = Self)]
     type Counter = CustomCounter;
 
     impl Counter {
@@ -480,7 +486,8 @@ mod with_module {
 
     struct CustomDateTimeScalar<Tz: TimeZone>(DateTime<Tz>);
 
-    #[graphql_scalar(
+    #[graphql_scalar]
+    #[graphql(
         with = custom_date_time,
         parse_token(prelude::String),
         where(Tz: From<Utc> + TimeZone, Tz::Offset: fmt::Display),
@@ -563,7 +570,8 @@ mod description_from_doc_comment {
     struct CustomCounter(i32);
 
     /// Description
-    #[graphql_scalar(with = counter, parse_token(i32))]
+    #[graphql_scalar]
+    #[graphql(with = counter, parse_token(i32))]
     type Counter = CustomCounter;
 
     mod counter {
@@ -641,7 +649,8 @@ mod description_from_attribute {
     struct CustomCounter(i32);
 
     /// Doc comment
-    #[graphql_scalar(
+    #[graphql_scalar]
+    #[graphql(
         description = "Description from attribute",
         with = counter,
         parse_token(i32),
@@ -723,7 +732,8 @@ mod custom_scalar {
     struct CustomCounter(i32);
 
     /// Description
-    #[graphql_scalar(
+    #[graphql_scalar]
+    #[graphql(
         scalar = MyScalarValue,
         with = counter,
         parse_token(i32),
@@ -805,7 +815,8 @@ mod generic_scalar {
     struct CustomCounter(i32);
 
     /// Description
-    #[graphql_scalar(
+    #[graphql_scalar]
+    #[graphql(
         scalar = S: ScalarValue,
         with = counter,
         parse_token(i32),
@@ -887,7 +898,8 @@ mod bounded_generic_scalar {
     struct CustomCounter(i32);
 
     /// Description
-    #[graphql_scalar(
+    #[graphql_scalar]
+    #[graphql(
         scalar = S: ScalarValue + prelude::Clone,
         with = counter,
         parse_token(i32),
