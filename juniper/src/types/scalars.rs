@@ -480,7 +480,7 @@ impl<T> Default for EmptySubscription<T> {
 mod tests {
     use crate::{
         parser::ScalarToken,
-        value::{DefaultScalarValue, ParseScalarValue},
+        value::{DefaultScalarValue, ParseScalarValue, ScalarValue as _},
     };
 
     use super::{EmptyMutation, EmptySubscription, ID};
@@ -488,20 +488,20 @@ mod tests {
     #[test]
     fn test_id_from_string() {
         let actual = ID::from(String::from("foo"));
-        let expected = ID(String::from("foo"));
+        let expected = ID("foo".into());
         assert_eq!(actual, expected);
     }
 
     #[test]
     fn test_id_new() {
         let actual = ID::new("foo");
-        let expected = ID(String::from("foo"));
+        let expected = ID("foo".into());
         assert_eq!(actual, expected);
     }
 
     #[test]
     fn test_id_deref() {
-        let id = ID(String::from("foo"));
+        let id = ID("foo".into());
         assert_eq!(id.len(), 3);
     }
 
@@ -517,7 +517,7 @@ mod tests {
             let s =
                 <String as ParseScalarValue<DefaultScalarValue>>::from_str(ScalarToken::String(s));
             assert!(s.is_ok(), "A parsing error occurred: {s:?}");
-            let s: Option<String> = s.unwrap().into();
+            let s: Option<String> = s.unwrap().try_to().ok();
             assert!(s.is_some(), "No string returned");
             assert_eq!(s.unwrap(), expected);
         }
@@ -545,7 +545,7 @@ mod tests {
             let n = <f64 as ParseScalarValue<DefaultScalarValue>>::from_str(ScalarToken::Int(v));
             assert!(n.is_ok(), "A parsing error occurred: {:?}", n.unwrap_err());
 
-            let n: Option<f64> = n.unwrap().into();
+            let n: Option<f64> = n.unwrap().try_to().ok();
             assert!(n.is_some(), "No `f64` returned");
             assert_eq!(n.unwrap(), f64::from(expected));
         }
@@ -563,7 +563,7 @@ mod tests {
             let n = <f64 as ParseScalarValue<DefaultScalarValue>>::from_str(ScalarToken::Float(v));
             assert!(n.is_ok(), "A parsing error occurred: {:?}", n.unwrap_err());
 
-            let n: Option<f64> = n.unwrap().into();
+            let n: Option<f64> = n.unwrap().try_to().ok();
             assert!(n.is_some(), "No `f64` returned");
             assert_eq!(n.unwrap(), expected);
         }

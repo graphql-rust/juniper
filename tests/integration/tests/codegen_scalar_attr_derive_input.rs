@@ -4,12 +4,12 @@
 
 pub mod common;
 
-use std::{fmt, convert::Infallible};
+use std::{convert::Infallible, fmt};
 
 use chrono::{DateTime, TimeZone, Utc};
 use juniper::{
-    ParseScalarResult, ParseScalarValue, ScalarToken, ScalarValue, Value, execute, graphql_object,
-    graphql_scalar, graphql_value, graphql_vars, Raw,
+    ParseScalarResult, ParseScalarValue, Raw, ScalarToken, ScalarValue, Value, execute,
+    graphql_object, graphql_scalar, graphql_value, graphql_vars,
 };
 
 use self::common::{

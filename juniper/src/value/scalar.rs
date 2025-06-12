@@ -10,7 +10,10 @@ use std::{
     fmt, ptr,
 };
 
-use crate::{FieldError, IntoFieldError, Raw, parser::{ParseError, ScalarToken}};
+use crate::{
+    FieldError, IntoFieldError, Raw,
+    parser::{ParseError, ScalarToken},
+};
 #[cfg(doc)]
 use crate::{GraphQLValue, Value};
 
@@ -180,13 +183,13 @@ pub trait ScalarValue:
     /// Checks whether this [`ScalarValue`] contains the value of the provided type `T`.
     ///
     /// # Implementation
-    /// 
+    ///
     /// Implementations should implement this method.
-    /// 
+    ///
     /// This is usually an enum dispatch with calling [`AnyExt::is::<T>()`] method on each variant.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// # use juniper::{ScalarValue, DefaultScalarValue};
     /// #
@@ -199,15 +202,15 @@ pub trait ScalarValue:
     fn is_type<T: Any + ?Sized>(&self) -> bool;
 
     /// Tries to represent this [`ScalarValue`] as the specified type `T`.
-    /// 
-    /// This method could be used instead of other helpers in case the [`TryScalarValueTo::Error`] 
+    ///
+    /// This method could be used instead of other helpers in case the [`TryScalarValueTo::Error`]
     /// is needed.
     ///
     /// # Implementation
     ///
     /// This method is an ergonomic alias for the [`TryScalarValueTo<T>`] conversion.
     ///
-    /// Implementations should not implement this method, but rather implement the 
+    /// Implementations should not implement this method, but rather implement the
     /// [`TryScalarValueTo<T>`] conversion directly.
     fn try_to<'a, T>(&'a self) -> Result<T, <Self as TryScalarValueTo<'a, T>>::Error>
     where
@@ -216,18 +219,18 @@ pub trait ScalarValue:
     {
         self.try_scalar_value_to()
     }
-    
+
     /// Tries to represent this [`ScalarValue`] as a [`bool`] value.
-    /// 
-    /// Use the [`ScalarValue::try_to::<bool>()`] method in case the [`TryScalarValueTo::Error`] is 
+    ///
+    /// Use the [`ScalarValue::try_to::<bool>()`] method in case the [`TryScalarValueTo::Error`] is
     /// needed.
-    /// 
+    ///
     /// # Implementation
     ///
-    /// This method is an ergonomic alias for the [`TryScalarValueTo<bool>`] conversion, which is 
+    /// This method is an ergonomic alias for the [`TryScalarValueTo<bool>`] conversion, which is
     /// used for implementing [`GraphQLValue`] for [`bool`] for all possible [`ScalarValue`]s.
     ///
-    /// Implementations should not implement this method, but rather implement the 
+    /// Implementations should not implement this method, but rather implement the
     /// [`TryScalarValueTo<bool>`] conversions for all the supported boolean types.
     #[must_use]
     fn try_to_bool(&self) -> Option<bool> {
@@ -236,16 +239,16 @@ pub trait ScalarValue:
 
     /// Tries to represent this [`ScalarValue`] as an [`i32`] value.
     ///
-    /// Use the [`ScalarValue::try_to::<i32>()`] method in case the [`TryScalarValueTo::Error`] is 
+    /// Use the [`ScalarValue::try_to::<i32>()`] method in case the [`TryScalarValueTo::Error`] is
     /// needed.
     ///
     /// # Implementation
-    /// 
-    /// This method is an ergonomic alias for the [`TryScalarValueTo<i32>`] conversion, which is 
+    ///
+    /// This method is an ergonomic alias for the [`TryScalarValueTo<i32>`] conversion, which is
     /// used for implementing [`GraphQLValue`] for [`i32`] for all possible [`ScalarValue`]s.
     ///
-    /// Implementations should not implement this method, but rather implement the 
-    /// [`TryScalarValueTo<i32>`] conversions for all the supported integer types with 32 bit or 
+    /// Implementations should not implement this method, but rather implement the
+    /// [`TryScalarValueTo<i32>`] conversions for all the supported integer types with 32 bit or
     /// less to an integer, if requested.
     #[must_use]
     fn try_to_int(&self) -> Option<i32> {
@@ -254,16 +257,16 @@ pub trait ScalarValue:
 
     /// Tries to represent this [`ScalarValue`] as a [`f64`] value.
     ///
-    /// Use the [`ScalarValue::try_to::<f64>()`] method in case the [`TryScalarValueTo::Error`] is 
+    /// Use the [`ScalarValue::try_to::<f64>()`] method in case the [`TryScalarValueTo::Error`] is
     /// needed.
-    /// 
+    ///
     /// # Implementation
-    /// 
-    /// This method is an ergonomic alias for the [`TryScalarValueTo<f64>`] conversion, which is 
+    ///
+    /// This method is an ergonomic alias for the [`TryScalarValueTo<f64>`] conversion, which is
     /// used for implementing [`GraphQLValue`] for [`f64`] for all possible [`ScalarValue`]s.
     ///
-    /// Implementations should not implement this method, but rather implement the 
-    /// [`TryScalarValueTo<f64>`] conversions for all the supported integer types with 64 bit and 
+    /// Implementations should not implement this method, but rather implement the
+    /// [`TryScalarValueTo<f64>`] conversions for all the supported integer types with 64 bit and
     /// all floating point values with 64 bit or less to a float, if requested.
     #[must_use]
     fn try_to_float(&self) -> Option<f64> {
@@ -271,19 +274,19 @@ pub trait ScalarValue:
     }
 
     /// Tries to represent this [`ScalarValue`] as a [`String`] value.
-    /// 
-    /// Allocates every time is called. For read-only and non-owning use of the underlying 
+    ///
+    /// Allocates every time is called. For read-only and non-owning use of the underlying
     /// [`String`] value, consider using the [`ScalarValue::try_as_str()`] method.
     ///
-    /// Use the [`ScalarValue::try_to::<String>()`] method in case the [`TryScalarValueTo::Error`] 
+    /// Use the [`ScalarValue::try_to::<String>()`] method in case the [`TryScalarValueTo::Error`]
     /// is needed.
     ///
     /// # Implementation
     ///
-    /// This method is an ergonomic alias for the [`TryScalarValueTo<String>`] conversion, which is 
+    /// This method is an ergonomic alias for the [`TryScalarValueTo<String>`] conversion, which is
     /// used for implementing [`GraphQLValue`] for [`String`] for all possible [`ScalarValue`]s.
     ///
-    /// Implementations should not implement this method, but rather implement the 
+    /// Implementations should not implement this method, but rather implement the
     /// [`TryScalarValueTo<String>`] conversions for all the supported string types, if requested.
     #[must_use]
     fn try_to_string(&self) -> Option<String> {
@@ -292,16 +295,16 @@ pub trait ScalarValue:
 
     /// Tries to convert this [`ScalarValue`] into a [`String`] value.
     ///
-    /// Similar to the [`ScalarValue::try_to_string()`] method, but takes ownership, so allows to 
+    /// Similar to the [`ScalarValue::try_to_string()`] method, but takes ownership, so allows to
     /// omit redundant [`Clone`]ing.
     ///
     /// Use the [`TryInto<String>`] conversion in case the [`TryInto::Error`] is needed.
-    /// 
+    ///
     /// # Implementation
     ///
     /// This method is an ergonomic alias for the [`TryInto<String>`] conversion.
     ///
-    /// Implementations should not implement this method, but rather implement the 
+    /// Implementations should not implement this method, but rather implement the
     /// [`TryInto<String>`] conversion for all the supported string types, if requested.
     #[must_use]
     fn try_into_string(self) -> Option<String> {
@@ -310,17 +313,17 @@ pub trait ScalarValue:
 
     /// Tries to represent this [`ScalarValue`] as a [`str`] value.
     ///
-    /// Use the [`ScalarValue::try_to::<&str>()`] method in case the [`TryScalarValueTo::Error`] 
+    /// Use the [`ScalarValue::try_to::<&str>()`] method in case the [`TryScalarValueTo::Error`]
     /// is needed.
     ///
     /// # Implementation
     ///
-    /// This method is an ergonomic alias for the [`TryScalarValueTo`]`<&`[`str`]`>` conversion, 
-    /// which is used for implementing [`GraphQLValue`] for [`String`] for all possible 
+    /// This method is an ergonomic alias for the [`TryScalarValueTo`]`<&`[`str`]`>` conversion,
+    /// which is used for implementing [`GraphQLValue`] for [`String`] for all possible
     /// [`ScalarValue`]s.
     ///
-    /// Implementations should not implement this method, but rather implement the 
-    /// [`TryScalarValueTo`]`<&`[`str`]`>` conversions for all the supported string types, if 
+    /// Implementations should not implement this method, but rather implement the
+    /// [`TryScalarValueTo`]`<&`[`str`]`>` conversions for all the supported string types, if
     /// requested.
     #[must_use]
     fn try_as_str(&self) -> Option<&str> {
@@ -329,10 +332,10 @@ pub trait ScalarValue:
 
     /// Converts this [`ScalarValue`] into another one via [`i32`], [`f64`], [`bool`] or [`String`]
     /// conversion.
-    /// 
+    ///
     /// # Panics
-    /// 
-    /// If this [`ScalarValue`] doesn't represent at least one of [`i32`], [`f64`], [`bool`] or 
+    ///
+    /// If this [`ScalarValue`] doesn't represent at least one of [`i32`], [`f64`], [`bool`] or
     /// [`String`].
     #[must_use]
     fn into_another<S: ScalarValue>(self) -> S {

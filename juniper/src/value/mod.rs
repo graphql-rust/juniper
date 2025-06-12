@@ -134,7 +134,7 @@ impl<S> Value<S> {
         T: ScalarValue,
     {
         if TypeId::of::<T>() == TypeId::of::<S>() {
-            // SAFETY: This is safe, because we're transmuting the value into itself, so no 
+            // SAFETY: This is safe, because we're transmuting the value into itself, so no
             //         invariants may change, and we're just satisfying the type checker.
             //         As `mem::transmute_copy` creates a copy of the data, we need the
             //         `mem::ManuallyDrop` here to omit double-free when `S: Drop`.

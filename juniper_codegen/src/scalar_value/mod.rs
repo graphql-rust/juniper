@@ -343,12 +343,12 @@ impl Definition {
                 let var_ident = &var.ident;
                 let field = Field::try_from(var.fields.clone()).unwrap();
                 let var_pattern = field.match_arg();
-                
-                quote! { 
+
+                quote! {
                     Self::#var_ident #var_pattern => ::juniper::AnyExt::is::<__T>(v),
                 }
             });
-            
+
             quote! {
                 fn is_type<__T: ::core::any::Any + ?::core::marker::Sized>(&self) -> bool {
                     match self {

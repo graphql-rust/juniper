@@ -12,7 +12,9 @@ use self::common::hygiene::*;
 mod trivial {
     use super::*;
 
-    #[derive(Clone, Debug, Deserialize, Display, From, PartialEq, ScalarValue, Serialize, TryInto)]
+    #[derive(
+        Clone, Debug, Deserialize, Display, From, PartialEq, ScalarValue, Serialize, TryInto,
+    )]
     #[serde(untagged)]
     pub enum CustomScalarValue {
         #[value(as_float, as_int)]
@@ -53,7 +55,9 @@ mod trivial {
 mod named_fields {
     use super::*;
 
-    #[derive(Clone, Debug, Deserialize, Display, From, PartialEq, ScalarValue, Serialize, TryInto)]
+    #[derive(
+        Clone, Debug, Deserialize, Display, From, PartialEq, ScalarValue, Serialize, TryInto,
+    )]
     #[serde(untagged)]
     pub enum CustomScalarValue {
         #[value(as_float, as_int)]
@@ -94,7 +98,9 @@ mod named_fields {
 mod custom_fn {
     use super::*;
 
-    #[derive(Clone, Debug, Deserialize, Display, From, PartialEq, ScalarValue, Serialize, TryInto)]
+    #[derive(
+        Clone, Debug, Deserialize, Display, From, PartialEq, ScalarValue, Serialize, TryInto,
+    )]
     #[serde(untagged)]
     pub enum CustomScalarValue {
         #[value(as_float, as_int)]
@@ -139,7 +145,9 @@ mod custom_fn {
 mod allow_missing_attributes {
     use super::*;
 
-    #[derive(Clone, Debug, Deserialize, Display, From, PartialEq, ScalarValue, Serialize, TryInto)]
+    #[derive(
+        Clone, Debug, Deserialize, Display, From, PartialEq, ScalarValue, Serialize, TryInto,
+    )]
     #[serde(untagged)]
     #[value(allow_missing_attributes)]
     pub enum CustomScalarValue {
