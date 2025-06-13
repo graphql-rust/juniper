@@ -445,8 +445,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// struct UserId(String);
 ///
 /// impl UserId {
-///     /// Checks whether the [`ScalarValue`] is a [`String`] beginning with
-///     /// `id: ` and strips it.
+///     /// Checks whether the [`ScalarValue`] is a [`String`] beginning with `id: ` and strips it.
 ///     fn from_input(
 ///         input: &str,
 ///         //     ^^^^ any concrete type having `TryScalarValueTo` implementation could be used
