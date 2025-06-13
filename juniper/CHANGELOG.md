@@ -67,6 +67,31 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Switched `ParseError::UnexpectedToken` to `compact_str::CompactString` instead of `smartstring::SmartString`. ([20609366])
 - Replaced `Value`'s `From` implementations with `IntoValue` ones. ([#1324])
 - Replaced `InputValue`'s `From` implementations with `IntoInputValue` ones. ([#1324])
+- `Value` enum: ([#1327])
+    - Removed `as_float_value()`, `as_string_value()` and `as_scalar_value()` methods (use `as_scalar()` method and then `ScalarValue` methods instead).
+- `InputValue` enum: ([#1327])
+    - Removed `as_float_value()`, `as_int_value()`, `as_string_value()` and `as_scalar_value()` methods (use `as_scalar()` method and then `ScalarValue` methods instead).
+- `ScalarValue` trait: ([#1327])
+    - Switched from `From` conversions to `TryScalarValueTo` conversions.
+    - Made to require `TryScalarValueTo` conversions for `bool`, `f64`, `i32`, `String` and `&str` types (could be derived with `#[value(<conversion>)]` attributes of `#[derive(ScalarValue)]` macro).
+    - Made to require `TryInto<String>` conversion (could be derived with `derive_more::TryInto`).
+    - Made `is_type()` method required and to accept `Any` type.
+    - Renamed `as_bool()` method to as `try_to_bool()` and made it defined by default as `TryScalarValueTo<bool>` alias.
+    - Renamed `as_float()` method to as `try_to_float()` and made it defined by default as `TryScalarValueTo<f64>` alias.
+    - Renamed `as_int()` method to as `try_to_int()` and made it defined by default as `TryScalarValueTo<i32>` alias.
+    - Renamed `as_string()` method to as `try_to_string()` and made it defined by default as `TryScalarValueTo<String>` alias.
+    - Renamed `as_str()` method to as `try_as_str()` and made it defined by default as `TryScalarValueTo<&str>` alias.
+    - Renamed `into_string()` method to as `try_into_string()` and made it defined by default as `TryInto<String>` alias.
+- `#[derive(ScalarValue)]` macro: ([#1327])
+    - Renamed `#[value(as_bool)]` attribute as `#[value(to_bool)]`.
+    - Renamed `#[value(as_float)]` attribute as `#[value(to_float)]`.
+    - Renamed `#[value(as_int)]` attribute as `#[value(to_int)]`.
+    - Renamed `#[value(as_string)]` attribute as `#[value(to_string)]`.
+    - Removed `#[value(into_string)]` attribute.
+    - Removed `#[value(allow_missing_attributes)]` attribute (now attributes can always be omitted).
+    - `From` and `Display` implementations are not derived anymore (recommended way is to use [`derive_more` crate] for this).
+- `#[derive(GraphQLScalar)]` and `#[graphql_scalar]` macros: ([#1327])
+    - Made provided `from_input()` function to accept `ScalarValue` (or anything `TryScalarValueTo`-convertible) directly instead of `InputValue`.
 
 ### Added
 
@@ -82,8 +107,15 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - `http::GraphQLResponse::into_result()` method. ([#1293])
 - `String` scalar implementation for `arcstr::ArcStr`. ([#1247])
 - `String` scalar implementation for `compact_str::CompactString`. ([20609366])
-- `ScalarValue::from_displayable()` method allowing to specialize `ScalarValue` conversion from custom string types. ([#1324], [#819])
 - `IntoValue` and `IntoInputValue` conversion traits allowing to work around orphan rules with custom `ScalarValue`. ([#1324])
+- `ScalarValue` trait: ([#1327])
+    - `from_displayable()` method allowing to specialize `ScalarValue` conversion from custom string types. ([#1324], [#819])
+    - `try_to::<T>()` method defined by default as `TryScalarValueTo<T>` alias.
+- `TryScalarValueTo` conversion trait aiding `ScalarValue` trait. ([#1327])
+- `#[derive(GraphQLScalar)]` and `#[graphql_scalar]` macros: ([#1327])
+    - Support for specifying concrete types as input argument in provided `from_input()` function.
+    - Support for non-`Result` return type in provided `from_input()` function.
+    - `Scalar` transparent wrapper for aiding type inference in `from_input()` function when input argument is generic `ScalarValue`.
 
 ### Changed
 
@@ -110,6 +142,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1318]: /../../pull/1318
 [#1324]: /../../pull/1324
 [#1326]: /../../pull/1326
+[#1327]: /../../pull/1327
 [1b1fc618]: /../../commit/1b1fc61879ffdd640d741e187dc20678bf7ab295
 [20609366]: /../../commit/2060936635609b0186d46d8fbd06eb30fce660e3
 
@@ -313,6 +346,7 @@ See [old CHANGELOG](/../../blob/juniper-v0.15.12/juniper/CHANGELOG.md).
 [`bson` crate]: https://docs.rs/bson
 [`chrono` crate]: https://docs.rs/chrono
 [`chrono-tz` crate]: https://docs.rs/chrono-tz
+[`derive_more` crate]: https://docs.rs/derive_more
 [`jiff` crate]: https://docs.rs/jiff
 [`time` crate]: https://docs.rs/time
 [Cargo feature]: https://doc.rust-lang.org/cargo/reference/features.html
