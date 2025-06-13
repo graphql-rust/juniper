@@ -76,12 +76,12 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - Made to require `TryScalarValueTo` conversions for `bool`, `f64`, `i32`, `String` and `&str` types (could be derived with `#[value(<conversion>)]` attributes of `#[derive(ScalarValue)]` macro).
     - Made to require `TryInto<String>` conversion (could be derived with `derive_more::TryInto`).
     - Made `is_type()` method required and to accept `Any` type.
-    - Renamed `as_bool()` method to as `try_to_bool()` and made it defined by default as `TryScalarValueTo<bool>` alias.
-    - Renamed `as_float()` method to as `try_to_float()` and made it defined by default as `TryScalarValueTo<f64>` alias.
-    - Renamed `as_int()` method to as `try_to_int()` and made it defined by default as `TryScalarValueTo<i32>` alias.
-    - Renamed `as_string()` method to as `try_to_string()` and made it defined by default as `TryScalarValueTo<String>` alias.
-    - Renamed `as_str()` method to as `try_as_str()` and made it defined by default as `TryScalarValueTo<&str>` alias.
-    - Renamed `into_string()` method to as `try_into_string()` and made it defined by default as `TryInto<String>` alias.
+    - Renamed `as_bool()` method as `try_to_bool()` and made it defined by default as `TryScalarValueTo<bool>` alias.
+    - Renamed `as_float()` method as `try_to_float()` and made it defined by default as `TryScalarValueTo<f64>` alias.
+    - Renamed `as_int()` method as `try_to_int()` and made it defined by default as `TryScalarValueTo<i32>` alias.
+    - Renamed `as_string()` method as `try_to_string()` and made it defined by default as `TryScalarValueTo<String>` alias.
+    - Renamed `as_str()` method as `try_as_str()` and made it defined by default as `TryScalarValueTo<&str>` alias.
+    - Renamed `into_string()` method as `try_into_string()` and made it defined by default as `TryInto<String>` alias.
 - `#[derive(ScalarValue)]` macro: ([#1327])
     - Renamed `#[value(as_bool)]` attribute as `#[value(to_bool)]`.
     - Renamed `#[value(as_float)]` attribute as `#[value(to_float)]`.
