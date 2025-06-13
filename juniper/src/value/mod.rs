@@ -67,17 +67,6 @@ impl<S> Value<S> {
         matches!(*self, Self::Null)
     }
 
-    /// View the underlying scalar value if present
-    pub fn as_scalar_value<'a, T>(&'a self) -> Option<&'a T>
-    where
-        Option<&'a T>: From<&'a S>,
-    {
-        match self {
-            Self::Scalar(s) => s.into(),
-            _ => None,
-        }
-    }
-
     /// View the underlying object value, if present.
     pub fn as_object_value(&self) -> Option<&Object<S>> {
         match self {
@@ -118,14 +107,6 @@ impl<S> Value<S> {
             Self::Scalar(s) => Some(s),
             _ => None,
         }
-    }
-
-    /// View the underlying string value, if present.
-    pub fn as_string_value<'a>(&'a self) -> Option<&'a str>
-    where
-        Option<&'a String>: From<&'a S>,
-    {
-        self.as_scalar_value::<String>().map(String::as_str)
     }
 
     /// Maps the [`ScalarValue`] type of this [`Value`] into the specified one.

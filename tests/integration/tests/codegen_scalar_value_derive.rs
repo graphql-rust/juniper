@@ -162,11 +162,7 @@ mod missing_conv_attr {
         type Error = &'static str;
 
         fn try_scalar_value_to(&'me self) -> prelude::Result<i32, Self::Error> {
-            if let CustomScalarValue::Int(x) = self {
-                Ok(*x)
-            } else {
-                Err("Not `Int` definitely")
-            }
+            Err("Not `Int` definitely")
         }
     }
 

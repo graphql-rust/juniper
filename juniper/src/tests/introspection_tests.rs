@@ -2,15 +2,14 @@ use std::collections::HashSet;
 
 use pretty_assertions::assert_eq;
 
+use super::schema_introspection::*;
 use crate::{
-    graphql_vars,
+    ScalarValue as _, graphql_vars,
     introspection::IntrospectionFormat,
     schema::model::RootNode,
     tests::fixtures::starwars::schema::{Database, Query},
     types::scalars::{EmptyMutation, EmptySubscription},
 };
-
-use super::schema_introspection::*;
 
 #[tokio::test]
 async fn test_introspection_query_type_name() {
@@ -270,8 +269,9 @@ async fn test_introspection_possible_types() {
                 .expect("possible type not an object")
                 .get_field_value("name")
                 .expect("'name' not present in type")
-                .as_scalar_value::<String>()
-                .expect("'name' not a string") as &str
+                .as_scalar()
+                .and_then(|s| s.try_as_str())
+                .expect("'name' not a string")
         })
         .collect::<HashSet<_>>();
 
