@@ -365,15 +365,13 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
     })
 }
 
-/// `#[derive(GraphQLScalar)]` macro for deriving a [GraphQL scalar][0]
-/// implementation.
+/// `#[derive(GraphQLScalar)]` macro for deriving a [GraphQL scalar][0] implementation.
 ///
 /// # Transparent delegation
 ///
-/// Quite often we want to create a custom [GraphQL scalar][0] type by just
-/// wrapping an existing one, inheriting all its behavior. In Rust, this is
-/// often called as ["newtype pattern"][1]. This is achieved by annotating
-/// the definition with the `#[graphql(transparent)]` attribute:
+/// Quite often we want to create a custom [GraphQL scalar][0] type by just wrapping an existing
+/// one, inheriting all its behavior. In Rust, this is often called as ["newtype pattern"][1]. This
+/// could be achieved by annotating the definition with the `#[graphql(transparent)]` attribute:
 /// ```rust
 /// # use juniper::{GraphQLObject, GraphQLScalar};
 /// #
@@ -415,8 +413,8 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// struct UserId(String);
 /// ```
 ///
-/// All the methods inherited from `Newtype`'s field may also be overridden
-/// with the attributes described below.
+/// All the methods inherited from `Newtype`'s field may also be overridden with the attributes
+/// described below.
 ///
 /// # Custom resolving
 ///
@@ -440,7 +438,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// Customization of a [GraphQL scalar][0] type parsing is possible via
 /// `#[graphql(from_input_with = <fn path>)]` attribute:
 /// ```rust
-/// # use juniper::{DefaultScalarValue, GraphQLScalar, ScalarValue};
+/// # use juniper::{GraphQLScalar, ScalarValue};
 /// #
 /// #[derive(GraphQLScalar)]
 /// #[graphql(from_input_with = Self::from_input, transparent)]
@@ -450,34 +448,57 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///     /// Checks whether the [`ScalarValue`] is a [`String`] beginning with
 ///     /// `id: ` and strips it.
 ///     fn from_input(
-///         input: &impl ScalarValue,
-///     ) -> Result<Self, String> {
-///         //            ^^^^^^ must implement `IntoFieldError`
-///         input.try_as_str()
-///             .ok_or_else(|| format!("Expected `String`, found: {input}"))
-///             .and_then(|str| {
-///                 str.strip_prefix("id: ")
-///                     .ok_or_else(|| {
-///                         format!(
-///                             "Expected `UserId` to begin with `id: `, \
-///                              found: {input}",
-///                         )
-///                     })
+///         input: &str,
+///         //     ^^^^ any concrete type having `TryScalarValueTo` implementation could be used
+///     ) -> Result<Self, Box<str>> {
+///     //                ^^^^^^^^ must implement `IntoFieldError`
+///         input
+///             .strip_prefix("id: ")
+///             .ok_or_else(|| {
+///                 format!("Expected `UserId` to begin with `id: `, found: {input}").into()
 ///             })
 ///             .map(|id| Self(id.into()))
 ///     }
 /// }
 /// ```
 ///
+/// The provided function is polymorphic by input and output types:
+/// ```rust
+/// # use juniper::{GraphQLScalar, Scalar, ScalarValue};
+/// #
+/// #[derive(GraphQLScalar)]
+/// #[graphql(from_input_with = Self::from_input, transparent)]
+/// struct UserId(String);
+///
+/// impl UserId {
+///     fn from_input(
+///         input: &Scalar<impl ScalarValue>,
+///         //      ^^^^^^ for generic argument using `Scalar` transparent wrapper is required,
+///         //             otherwise Rust won't be able to infer the required type
+///     ) -> Self {
+///     //   ^^^^ if the result is infallible, it's OK to not use `Result`
+///         Self(
+///             input
+///                 .try_to_int().map(|i| i.to_string())
+///                 .or_else(|| input.try_to_bool().map(|f| f.to_string()))
+///                 .or_else(|| input.try_to_float().map(|b| b.to_string()))
+///                 .or_else(|| input.try_to_string())
+///                 .unwrap_or_else(|| {
+///                     unreachable!("`ScalarValue` is at least one of primitive GraphQL types")
+///                 }),
+///         )
+///     }
+/// }
+/// ```
+///
 /// # Custom token parsing
 ///
-/// Customization of which tokens a [GraphQL scalar][0] type should be parsed is
-/// possible via `#[graphql(parse_token_with = <fn path>)]` or
-/// `#[graphql(parse_token(<types>)]` attributes:
+/// Customization of which tokens a [GraphQL scalar][0] type should be parsed is possible via
+/// `#[graphql(parse_token_with = <fn path>)]` or `#[graphql(parse_token(<types>)]` attributes:
 /// ```rust
 /// # use juniper::{
-/// #     GraphQLScalar, ParseScalarResult, ParseScalarValue, ScalarValue,
-/// #     ScalarToken, Value,
+/// #     GraphQLScalar, ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue,
+/// #     Value,
 /// # };
 /// #
 /// #[derive(GraphQLScalar)]
@@ -501,11 +522,11 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///     }
 /// }
 ///
-/// fn from_input(v: &impl ScalarValue) -> Result<StringOrInt, String> {
+/// fn from_input(v: &Scalar<impl ScalarValue>) -> Result<StringOrInt, Box<str>> {
 ///     v.try_to_string()
 ///         .map(StringOrInt::String)
 ///         .or_else(|| v.try_to_int().map(StringOrInt::Int))
-///         .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
+///         .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}").into())
 /// }
 ///
 /// fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -513,18 +534,17 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///         .or_else(|_| <i32 as ParseScalarValue<S>>::from_str(value))
 /// }
 /// ```
-/// > __NOTE:__ Once we provide all 3 custom functions, there is no sense in
-/// >           following the [newtype pattern][1] anymore.
+/// > __NOTE:__ Once we provide all 3 custom functions, there is no sense in following the
+/// >           [newtype pattern][1] anymore.
 ///
 /// # Full behavior
 ///
-/// Instead of providing all custom functions separately, it's possible to
-/// provide a module holding the appropriate `to_output()`, `from_input()` and
-/// `parse_token()` functions:
+/// Instead of providing all custom functions separately, it's possible to provide a module holding
+/// the appropriate `to_output()`, `from_input()` and `parse_token()` functions:
 /// ```rust
 /// # use juniper::{
-/// #     GraphQLScalar, ParseScalarResult, ParseScalarValue, ScalarValue,
-/// #     ScalarToken, Value,
+/// #     GraphQLScalar, ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue,
+/// #     Value,
 /// # };
 /// #
 /// #[derive(GraphQLScalar)]
@@ -544,11 +564,11 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///         }
 ///     }
 ///
-///     pub(super) fn from_input(v: &impl ScalarValue) -> Result<StringOrInt, String> {
+///     pub(super) fn from_input(v: &Scalar<impl ScalarValue>) -> Result<StringOrInt, Box<str>> {
 ///         v.try_to_string()
 ///             .map(StringOrInt::String)
 ///             .or_else(|| v.try_to_int().map(StringOrInt::Int))
-///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
+///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}").into())
 ///     }
 ///
 ///     pub(super) fn parse_token<S: ScalarValue>(t: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -563,8 +583,8 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// A regular `impl` block is also suitable for that:
 /// ```rust
 /// # use juniper::{
-/// #     GraphQLScalar, ParseScalarResult, ParseScalarValue, ScalarValue,
-/// #     ScalarToken, Value,
+/// #     GraphQLScalar, ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue,
+/// #     Value,
 /// # };
 /// #
 /// #[derive(GraphQLScalar)]
@@ -582,11 +602,11 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///         }
 ///     }
 ///
-///     fn from_input(v: &impl ScalarValue) -> Result<Self, String> {
+///     fn from_input(v: &Scalar<impl ScalarValue>) -> Result<Self, Box<str>> {
 ///         v.try_to_string()
 ///             .map(Self::String)
 ///             .or_else(|| v.try_to_int().map(Self::Int))
-///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
+///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}").into())
 ///     }
 ///
 ///     fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<S>
@@ -603,9 +623,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///
 /// At the same time, any custom function still may be specified separately:
 /// ```rust
-/// # use juniper::{
-/// #     GraphQLScalar, ParseScalarResult, ScalarValue, ScalarToken, Value,
-/// # };
+/// # use juniper::{GraphQLScalar, ParseScalarResult, Scalar, ScalarToken, ScalarValue, Value};
 /// #
 /// #[derive(GraphQLScalar)]
 /// #[graphql(
@@ -630,11 +648,11 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///         }
 ///     }
 ///
-///     pub(super) fn from_input(v: &impl ScalarValue) -> Result<StringOrInt, String> {
+///     pub(super) fn from_input(v: &Scalar<impl ScalarValue>) -> Result<StringOrInt, Box<str>> {
 ///         v.try_to_string()
 ///             .map(StringOrInt::String)
 ///             .or_else(|| v.try_to_int().map(StringOrInt::Int))
-///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
+///             .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}").into())
 ///     }
 ///
 ///     // No need in `parse_token()` function.
@@ -645,18 +663,17 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///
 /// # Custom `ScalarValue`
 ///
-/// By default, this macro generates code, which is generic over a
-/// [`ScalarValue`] type. Concrete [`ScalarValue`] type may be specified via
-/// `#[graphql(scalar = <type>)]` attribute.
+/// By default, this macro generates code, which is generic over a [`ScalarValue`] type. Concrete
+/// [`ScalarValue`] type may be specified via the `#[graphql(scalar = <type>)]` attribute.
 ///
-/// It also may be used to provide additional bounds to the [`ScalarValue`]
-/// generic, like the following: `#[graphql(scalar = S: Trait)]`.
+/// It also may be used to provide additional bounds to the [`ScalarValue`] generic, like the
+/// following: `#[graphql(scalar = S: Trait)]`.
 ///
 /// # Additional arbitrary trait bounds
 ///
-/// [GraphQL scalar][0] type implementation may be bound with any additional
-/// trait bounds via `#[graphql(where(<bounds>))]` attribute, like the
-/// following: `#[graphql(where(S: Trait, Self: fmt::Debug + fmt::Display))]`.
+/// [GraphQL scalar][0] type implementation may be bound with any additional trait bounds via
+/// `#[graphql(where(<bounds>))]` attribute, like the following:
+/// `#[graphql(where(S: Trait, Self: fmt::Debug + fmt::Display))]`.
 ///
 /// [0]: https://spec.graphql.org/October2021#sec-Scalars
 /// [1]: https://rust-unofficial.github.io/patterns/patterns/behavioural/newtype.html
@@ -670,9 +687,8 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
     })
 }
 
-/// `#[graphql_scalar]` macro.is interchangeable with
-/// `#[derive(`[`GraphQLScalar`]`)]` macro, and is used for deriving a
-/// [GraphQL scalar][0] implementation.
+/// `#[graphql_scalar]` macro.is interchangeable with the `#[derive(`[`GraphQLScalar`]`)]` macro,
+/// and is used for deriving a [GraphQL scalar][0] implementation.
 ///
 /// ```rust
 /// # use juniper::graphql_scalar;
@@ -696,11 +712,10 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 ///
 /// # Foreign types
 ///
-/// Additionally, `#[graphql_scalar]` can be used directly on foreign types via
-/// type alias, without using the [newtype pattern][1].
+/// Additionally, `#[graphql_scalar]` can be used directly on foreign types via type alias, without
+/// using the [newtype pattern][1].
 ///
-/// > __NOTE:__ To satisfy [orphan rules] you should provide local
-/// >           [`ScalarValue`] implementation.
+/// > __NOTE:__ To satisfy [orphan rules] you should provide local [`ScalarValue`] implementation.
 ///
 /// ```rust
 /// # mod date {
@@ -740,10 +755,8 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 ///         Value::scalar(v.to_string())
 ///     }
 ///
-///     pub(super) fn from_input(v: &CustomScalarValue) -> Result<Date, String> {
-///       v.try_as_str()
-///           .ok_or_else(|| format!("Expected `String`, found: {v}"))
-///           .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {e}")))
+///     pub(super) fn from_input(s: &str) -> Result<Date, Box<str>> {
+///         s.parse().map_err(|e| format!("Failed to parse `Date`: {e}").into())
 ///     }
 /// }
 /// #
@@ -777,10 +790,10 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// ```rust
 /// # use std::{any::Any, fmt};
 /// #
-/// # use serde::{de, Deserialize, Deserializer, Serialize};
+/// use derive_more::with_trait::{Display, From, TryInto};
 /// # use juniper::ScalarValue;
-/// #
-/// #[derive(Clone, Debug, PartialEq, ScalarValue, Serialize)]
+/// # use serde::{de, Deserialize, Deserializer, Serialize};
+/// #[derive(Clone, Debug, Display, From, PartialEq, ScalarValue, Serialize, TryInto)]
 /// #[serde(untagged)]
 /// #[value(from_displayable_with = from_custom_str)]
 /// enum MyScalarValue {
@@ -801,7 +814,7 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
 ///
 /// // Custom implementation of `ScalarValue::from_displayable()` method for
 /// // possible efficient conversions into `MyScalarValue` from custom string types.
-/// fn from_custom_str<Str: fmt::Display + Any + ?Sized>(s: &Str) -> MyScalarValue {
+/// fn from_custom_str<Str: Display + Any + ?Sized>(s: &Str) -> MyScalarValue {
 ///     use juniper::AnyExt as _; // allows downcasting directly on types without `dyn`
 ///
 ///     // Imagine this is some custom optimized string type.
