@@ -10,14 +10,28 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
 
 ### BC Breaks
 
+- `#[derive(ScalarValue)]` macro: ([#1327])
+    - Renamed `#[value(as_bool)]` attribute as `#[value(to_bool)]`.
+    - Renamed `#[value(as_float)]` attribute as `#[value(to_float)]`.
+    - Renamed `#[value(as_int)]` attribute as `#[value(to_int)]`.
+    - Renamed `#[value(as_string)]` attribute as `#[value(to_string)]`.
+    - Removed `#[value(into_string)]` attribute.
+    - Removed `#[value(allow_missing_attributes)]` attribute.
+    - `From` and `Display` implementations are not derived anymore.
+- `#[derive(GraphQLScalar)]` and `#[graphql_scalar]` macros: ([#1327])
+    - Made provided `from_input()` function to accept `ScalarValue` directly instead of `InputValue`.
 - Bumped up [MSRV] to 1.85. ([#1272], [1b1fc618])
 
 ### Added
 
-- Support of top-level `#[value(from_displayable_with = ...)]` attribute in `derive(ScalarValue)`. ([#1324])
+- Support of top-level `#[value(from_displayable_with = ...)]` attribute in `#[derive(ScalarValue)]` macro. ([#1324])
+- `#[derive(GraphQLScalar)]` and `#[graphql_scalar]` macros: ([#1327])
+    - Support for specifying concrete types as input argument in provided `from_input()` function. 
+    - Support for non-`Result` return type in provided `from_input()` function. 
 
 [#1272]: /../../pull/1272
 [#1324]: /../../pull/1324
+[#1327]: /../../pull/1327
 [1b1fc618]: /../../commit/1b1fc61879ffdd640d741e187dc20678bf7ab295
 
 
