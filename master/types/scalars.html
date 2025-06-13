@@ -245,31 +245,54 @@ fn to_output&lt;S: ScalarValue&gt;(v: &amp;Incremented) -&gt; Value&lt;S&gt; {
 <h3 id="input-value-parsing"><a class="header" href="#input-value-parsing">Input value parsing</a></h3>
 <p>Customization of a <a href="https://spec.graphql.org/October2021#sec-Scalars.Custom-Scalars">custom GraphQL scalar</a> value parsing is possible via <code>#[graphql(from_input_with = &lt;fn path&gt;)]</code> attribute:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
-</span><span class="boring">use juniper::{GraphQLScalar, InputValue, ScalarValue};
+</span><span class="boring">use juniper::{GraphQLScalar, ScalarValue};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
 #[graphql(from_input_with = Self::from_input, transparent)]
 struct UserId(String);
 
 impl UserId {
-    /// Checks whether the [`InputValue`] is a [`String`] beginning with `id: ` 
-    /// and strips it.
-    fn from_input&lt;S&gt;(input: &amp;InputValue&lt;S&gt;) -&gt; Result&lt;Self, String&gt; 
-    where
-        S: ScalarValue
-    {
-        input.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {input}"))
-            .and_then(|str| {
-                str.strip_prefix("id: ")
-                    .ok_or_else(|| {
-                        format!(
-                            "Expected `UserId` to begin with `id: `, \
-                             found: {input}",
-                        )
-                    })
+    /// Checks whether the [`InputValue`] is a [`String`] beginning with `id: ` and strips it.
+    fn from_input(
+        input: &amp;str,
+        //     ^^^^ any concrete type having `TryScalarValueTo` implementation could be used
+    ) -&gt; Result&lt;Self, Box&lt;str&gt;&gt; {
+    //                ^^^^^^^^ must implement `IntoFieldError`
+        input
+            .strip_prefix("id: ")
+            .ok_or_else(|| {
+                format!("Expected `UserId` to begin with `id: `, found: {input}").into()
             })
-            .map(|id| Self(id.to_owned()))
+            .map(|id| Self(id.into()))
+    }
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre></pre>
+<p>The provided function is polymorphic by input and output types:</p>
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{GraphQLScalar, Scalar, ScalarValue};
+</span><span class="boring">
+</span>#[derive(GraphQLScalar)]
+#[graphql(from_input_with = Self::from_input, transparent)]
+struct UserId(String);
+
+impl UserId {
+    fn from_input(
+        input: &amp;Scalar&lt;impl ScalarValue&gt;,
+        //      ^^^^^^ for generic argument using `Scalar` transparent wrapper is required,
+        //             otherwise Rust won't be able to infer the required type
+    ) -&gt; Self {
+    //   ^^^^ if the result is infallible, it's OK to not use `Result`
+        Self(
+            input
+                .try_to_int().map(|i| i.to_string())
+                .or_else(|| input.try_to_bool().map(|f| f.to_string()))
+                .or_else(|| input.try_to_float().map(|b| b.to_string()))
+                .or_else(|| input.try_to_string())
+                .unwrap_or_else(|| {
+                    unreachable!("`ScalarValue` is at least one of primitive GraphQL types")
+                }),
+        )
     }
 }
 <span class="boring">
@@ -278,8 +301,7 @@ impl UserId {
 <p>Customization of which tokens a <a href="https://spec.graphql.org/October2021#sec-Scalars">custom GraphQL scalar</a> type should be parsed from, is possible via <code>#[graphql(parse_token_with = &lt;fn path&gt;)]</code> or <code>#[graphql(parse_token(&lt;types&gt;)]</code> attributes:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
-</span><span class="boring">    GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
-</span><span class="boring">    ScalarValue, ScalarToken, Value,
+</span><span class="boring">    GraphQLScalar, ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue, Value,
 </span><span class="boring">};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
@@ -303,11 +325,11 @@ fn to_output&lt;S: ScalarValue&gt;(v: &amp;StringOrInt) -&gt; Value&lt;S&gt; {
     }
 }
 
-fn from_input&lt;S: ScalarValue&gt;(v: &amp;InputValue&lt;S&gt;) -&gt; Result&lt;StringOrInt, String&gt; {
-    v.as_string_value()
-        .map(|s| StringOrInt::String(s.into()))
-        .or_else(|| v.as_int_value().map(StringOrInt::Int))
-        .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
+fn from_input(v: &amp;Scalar&lt;impl ScalarValue&gt;) -&gt; Result&lt;StringOrInt, Box&lt;str&gt;&gt; {
+    v.try_to_string()
+        .map(StringOrInt::String)
+        .or_else(|| v.try_to_int().map(StringOrInt::Int))
+        .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}").into())
 }
 
 fn parse_token&lt;S: ScalarValue&gt;(value: ScalarToken&lt;'_&gt;) -&gt; ParseScalarResult&lt;S&gt; {
@@ -323,8 +345,7 @@ fn parse_token&lt;S: ScalarValue&gt;(value: ScalarToken&lt;'_&gt;) -&gt; ParseSc
 <p>Instead of providing all custom functions separately, it's possible to provide a module holding the appropriate <code>to_output()</code>, <code>from_input()</code> and <code>parse_token()</code> functions via <code>#[graphql(with = &lt;module path&gt;)]</code> attribute:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
-</span><span class="boring">    GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
-</span><span class="boring">    ScalarValue, ScalarToken, Value,
+</span><span class="boring">    GraphQLScalar, ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue, Value,
 </span><span class="boring">};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
@@ -344,11 +365,11 @@ mod string_or_int {
         }
     }
 
-    pub(super) fn from_input&lt;S: ScalarValue&gt;(v: &amp;InputValue&lt;S&gt;) -&gt; Result&lt;StringOrInt, String&gt; {
-        v.as_string_value()
-            .map(|s| StringOrInt::String(s.into()))
-            .or_else(|| v.as_int_value().map(StringOrInt::Int))
-            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
+    pub(super) fn from_input(v: &amp;Scalar&lt;impl ScalarValue&gt;) -&gt; Result&lt;StringOrInt, Box&lt;str&gt;&gt; {
+        v.try_to_string()
+            .map(StringOrInt::String)
+            .or_else(|| v.try_to_int().map(StringOrInt::Int))
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}").into())
     }
 
     pub(super) fn parse_token&lt;S: ScalarValue&gt;(t: ScalarToken&lt;'_&gt;) -&gt; ParseScalarResult&lt;S&gt; {
@@ -361,8 +382,7 @@ mod string_or_int {
 <p>A regular <code>impl</code> block is also suitable for that:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
-</span><span class="boring">    GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
-</span><span class="boring">    ScalarValue, ScalarToken, Value,
+</span><span class="boring">    GraphQLScalar, ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue, Value,
 </span><span class="boring">};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
@@ -380,14 +400,11 @@ impl StringOrInt {
         }
     }
 
-    fn from_input&lt;S&gt;(v: &amp;InputValue&lt;S&gt;) -&gt; Result&lt;Self, String&gt;
-    where
-        S: ScalarValue
-    {
-        v.as_string_value()
-            .map(|s| Self::String(s.into()))
-            .or_else(|| v.as_int_value().map(Self::Int))
-            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
+    fn from_input(v: &amp;Scalar&lt;impl ScalarValue&gt;) -&gt; Result&lt;Self, Box&lt;str&gt;&gt; {
+        v.try_to_string()
+            .map(Self::String)
+            .or_else(|| v.try_to_int().map(Self::Int))
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}").into())
     }
 
     fn parse_token&lt;S&gt;(value: ScalarToken&lt;'_&gt;) -&gt; ParseScalarResult&lt;S&gt;
@@ -403,8 +420,7 @@ impl StringOrInt {
 <p>At the same time, any custom function still may be specified separately, if required:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
-</span><span class="boring">    GraphQLScalar, InputValue, ParseScalarResult, ScalarValue,
-</span><span class="boring">    ScalarToken, Value
+</span><span class="boring">    GraphQLScalar, ParseScalarResult, Scalar, ScalarToken, ScalarValue, Value,
 </span><span class="boring">};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
@@ -430,14 +446,11 @@ mod string_or_int {
         }
     }
 
-    pub(super) fn from_input&lt;S&gt;(v: &amp;InputValue&lt;S&gt;) -&gt; Result&lt;StringOrInt, String&gt;
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .map(|s| StringOrInt::String(s.into()))
-            .or_else(|| v.as_int_value().map(StringOrInt::Int))
-            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
+    pub(super) fn from_input(v: &amp;Scalar&lt;impl ScalarValue&gt;) -&gt; Result&lt;StringOrInt, Box&lt;str&gt;&gt; {
+        v.try_to_string()
+            .map(StringOrInt::String)
+            .or_else(|| v.try_to_int().map(StringOrInt::Int))
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}").into())
     }
 
     // No need in `parse_token()` function.
@@ -471,9 +484,10 @@ mod string_or_int {
 </span><span class="boring">}
 </span><span class="boring">
 </span><span class="boring">use juniper::DefaultScalarValue as CustomScalarValue;
-</span>use juniper::{InputValue, ScalarValue, Value, graphql_scalar};
+</span>use juniper::{ScalarValue, Value, graphql_scalar};
 
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = date_scalar, 
     parse_token(String),
     scalar = CustomScalarValue,
@@ -489,10 +503,8 @@ mod date_scalar {
         Value::scalar(v.to_string())
     }
 
-    pub(super) fn from_input(v: &amp;InputValue&lt;CustomScalarValue&gt;) -&gt; Result&lt;Date, String&gt; {
-      v.as_string_value()
-          .ok_or_else(|| format!("Expected `String`, found: {v}"))
-          .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {e}")))
+    pub(super) fn from_input(s: &amp;str) -&gt; Result&lt;Date, Box&lt;str&gt;&gt; {
+        s.parse().map_err(|e| format!("Failed to parse `Date`: {e}").into())
     }
 }
 <span class="boring">
