@@ -8,7 +8,7 @@ struct ScalarSpecifiedByUrl;
     with = scalar,
     parse_token(i32),
 )]
-type Scalar = ScalarSpecifiedByUrl;
+type MyScalar = ScalarSpecifiedByUrl;
 
 mod scalar {
     use super::*;

@@ -1,5 +1,11 @@
 error: GraphQL scalar all the resolvers have to be provided via `with` attribute argument or a combination of `to_output_with`, `from_input_with`, `parse_token_with`/`parse_token` attribute arguments
- --> fail/scalar/type_alias/attr_with_not_all_resolvers.rs:6:1
+ --> fail/scalar/type_alias/attr_with_not_all_resolvers.rs:7:1
   |
-6 | type CustomScalar = Scalar;
+7 | type CustomScalar = Scalar;
   | ^^^^
+
+error: cannot find attribute `graphql` in this scope
+ --> fail/scalar/type_alias/attr_with_not_all_resolvers.rs:6:3
+  |
+6 | #[graphql(to_output_with = Scalar::to_output)]
+  |   ^^^^^^^

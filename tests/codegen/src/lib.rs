@@ -5,8 +5,10 @@
 
 #[cfg(test)]
 mod for_codegen_tests_only {
+    use derive_more as _;
     use futures as _;
     use juniper as _;
+    use serde as _;
 }
 
 #[rustversion::stable]

@@ -2,7 +2,8 @@ use juniper::{graphql_scalar, Value};
 
 struct Scalar;
 
-#[graphql_scalar(to_output_with = Scalar::to_output)]
+#[graphql_scalar]
+#[graphql(to_output_with = Scalar::to_output)]
 type CustomScalar = Scalar;
 
 impl Scalar {
