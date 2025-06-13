@@ -207,10 +207,10 @@ impl<S> FieldError<S> {
     /// Maps the [`ScalarValue`] type of this [`FieldError`] into the specified
     /// one.
     #[must_use]
-    pub fn map_scalar_value<Into>(self) -> FieldError<Into>
+    pub fn map_scalar_value<T>(self) -> FieldError<T>
     where
         S: ScalarValue,
-        Into: ScalarValue,
+        T: ScalarValue,
     {
         FieldError {
             message: self.message,
@@ -277,6 +277,12 @@ impl<S> IntoFieldError<S> for String {
 }
 
 impl<S> IntoFieldError<S> for Cow<'_, str> {
+    fn into_field_error(self) -> FieldError<S> {
+        FieldError::<S>::from(self)
+    }
+}
+
+impl<S> IntoFieldError<S> for Box<str> {
     fn into_field_error(self) -> FieldError<S> {
         FieldError::<S>::from(self)
     }

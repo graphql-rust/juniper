@@ -2,17 +2,17 @@
 
 pub mod subscription;
 
-use std::fmt;
+use std::convert::Infallible;
 
+use derive_more::with_trait::Display;
 use futures::future::{self, BoxFuture};
 
-use crate::FieldError;
+use crate::{FieldError, InputValue, ScalarValue};
 
-/// This trait is used by [`graphql_scalar!`] macro to retrieve [`Error`] type
-/// from a [`Result`].
+/// This trait is used by [`graphql_scalar`] macro to retrieve [`Error`] type from a [`Result`].
 ///
 /// [`Error`]: Result::Error
-/// [`graphql_scalar!`]: macro@crate::graphql_scalar
+/// [`graphql_scalar`]: macro@crate::graphql_scalar
 pub trait ExtractError {
     /// Extracted [`Error`] type of this [`Result`].
     ///
@@ -28,7 +28,7 @@ impl<T, E> ExtractError for Result<T, E> {
 /// which immediately resolves into [`FieldError`].
 pub fn err_fut<'ok, D, Ok, S>(msg: D) -> BoxFuture<'ok, Result<Ok, FieldError<S>>>
 where
-    D: fmt::Display,
+    D: Display,
     Ok: Send + 'ok,
     S: Send + 'static,
 {
@@ -52,4 +52,45 @@ where
     S: Send + 'static,
 {
     Box::pin(future::err(err_unnamed_type(name)))
+}
+
+/// Error of an [`InputValue`] not representing a [`ScalarValue`], used in macro expansions.
+#[derive(Display)]
+#[display("Expected GraphQL scalar, found: {_0}")]
+pub struct NotScalarError<'a, S: ScalarValue>(pub &'a InputValue<S>);
+
+/// [Autoref-based specialized][0] coercion into a [`Result`] for a function call for providing a
+/// return-type polymorphism in macros.
+///
+/// [0]: https://lukaskalbertodt.github.io/2019/12/05/generalized-autoref-based-specialization.html
+pub trait ToResultCall {
+    /// Input of this function.
+    type Input;
+    /// Output of this function.
+    type Output;
+    /// Error of the [`Result`] coercion for this function.
+    type Error;
+
+    /// Calls this function, coercing its output into a [`Result`].
+    fn __to_result_call(&self, input: Self::Input) -> Result<Self::Output, Self::Error>;
+}
+
+impl<I, O> ToResultCall for fn(I) -> O {
+    type Input = I;
+    type Output = O;
+    type Error = Infallible;
+
+    fn __to_result_call(&self, input: Self::Input) -> Result<Self::Output, Self::Error> {
+        Ok(self(input))
+    }
+}
+
+impl<I, O, E> ToResultCall for &fn(I) -> Result<O, E> {
+    type Input = I;
+    type Output = O;
+    type Error = E;
+
+    fn __to_result_call(&self, input: Self::Input) -> Result<Self::Output, Self::Error> {
+        self(input)
+    }
 }

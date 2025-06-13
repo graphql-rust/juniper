@@ -770,7 +770,16 @@ impl Methods {
                 from_input: Some(from_input),
                 ..
             } => {
-                quote! { #from_input(input) }
+                quote! {
+                    use ::juniper::macros::helper::ToResultCall as _;
+
+                    let input = ::juniper::InputValue::as_scalar(input)
+                        .ok_or_else(|| ::juniper::macros::helper::NotScalarError(input))?;
+                    let input = ::juniper::TryScalarValueTo::try_scalar_value_to(input)
+                        .map_err(::juniper::executor::IntoFieldError::<#scalar>::into_field_error)?;
+                    let func: fn(_) -> _ = #from_input;
+                    (&&func).__to_result_call(input)
+                }
             }
             Self::Delegated { field, .. } => {
                 let field_ty = field.ty();

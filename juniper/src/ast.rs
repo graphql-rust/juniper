@@ -8,7 +8,7 @@ use indexmap::IndexMap;
 use crate::{
     executor::Variables,
     parser::Spanning,
-    value::{DefaultScalarValue, ScalarValue},
+    value::{DefaultScalarValue, ScalarValue, ScalarValueFmt},
 };
 
 /// Type literal in a syntax tree.
@@ -359,45 +359,12 @@ impl<S> InputValue<S> {
         }
     }
 
-    /// View the underlying int value, if present.
-    pub fn as_int_value(&self) -> Option<i32>
-    where
-        S: ScalarValue,
-    {
-        self.as_scalar_value().and_then(|s| s.as_int())
-    }
-
-    /// View the underlying float value, if present.
-    pub fn as_float_value(&self) -> Option<f64>
-    where
-        S: ScalarValue,
-    {
-        self.as_scalar_value().and_then(|s| s.as_float())
-    }
-
-    /// View the underlying string value, if present.
-    pub fn as_string_value(&self) -> Option<&str>
-    where
-        S: ScalarValue,
-    {
-        self.as_scalar_value().and_then(|s| s.as_str())
-    }
-
     /// View the underlying scalar value, if present.
     pub fn as_scalar(&self) -> Option<&S> {
         match self {
             Self::Scalar(s) => Some(s),
             _ => None,
         }
-    }
-
-    /// View the underlying scalar value, if present.
-    pub fn as_scalar_value<'a, T>(&'a self) -> Option<&'a T>
-    where
-        T: 'a,
-        Option<&'a T>: From<&'a S>,
-    {
-        self.as_scalar().and_then(Into::into)
     }
 
     /// Converts this [`InputValue`] to a [`Spanning::unlocated`] object value.
@@ -473,13 +440,7 @@ impl<S: ScalarValue> fmt::Display for InputValue<S> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Null => write!(f, "null"),
-            Self::Scalar(s) => {
-                if let Some(s) = s.as_str() {
-                    write!(f, "\"{s}\"")
-                } else {
-                    write!(f, "{s}")
-                }
-            }
+            Self::Scalar(s) => fmt::Display::fmt(&ScalarValueFmt(s), f),
             Self::Enum(v) => write!(f, "{v}"),
             Self::Variable(v) => write!(f, "${v}"),
             Self::List(v) => {

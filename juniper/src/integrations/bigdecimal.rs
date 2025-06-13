@@ -10,7 +10,7 @@
 
 use std::str::FromStr as _;
 
-use crate::{InputValue, ScalarValue, Value, graphql_scalar};
+use crate::{Scalar, ScalarValue, Value, graphql_scalar};
 
 // TODO: Try remove on upgrade of `bigdecimal` crate.
 mod for_minimal_versions_check_only {
@@ -43,21 +43,22 @@ mod bigdecimal_scalar {
         Value::scalar(v.to_string())
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<BigDecimal, String> {
-        if let Some(i) = v.as_int_value() {
+    pub(super) fn from_input(v: &Scalar<impl ScalarValue>) -> Result<BigDecimal, Box<str>> {
+        if let Some(i) = v.try_to_int() {
             Ok(BigDecimal::from(i))
-        } else if let Some(f) = v.as_float_value() {
+        } else if let Some(f) = v.try_to_float() {
             // See akubera/bigdecimal-rs#103 for details:
             // https://github.com/akubera/bigdecimal-rs/issues/103
             let mut buf = ryu::Buffer::new();
             BigDecimal::from_str(buf.format(f))
-                .map_err(|e| format!("Failed to parse `BigDecimal` from `Float`: {e}"))
+                .map_err(|e| format!("Failed to parse `BigDecimal` from `Float`: {e}").into())
         } else {
-            v.as_string_value()
-                .ok_or_else(|| format!("Expected `String`, found: {v}"))
+            v.try_to::<&str>()
+                .map_err(|e| e.to_string().into())
                 .and_then(|s| {
-                    BigDecimal::from_str(s)
-                        .map_err(|e| format!("Failed to parse `BigDecimal` from `String`: {e}"))
+                    BigDecimal::from_str(s).map_err(|e| {
+                        format!("Failed to parse `BigDecimal` from `String`: {e}").into()
+                    })
                 })
         }
     }

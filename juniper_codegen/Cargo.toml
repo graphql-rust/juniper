@@ -29,7 +29,7 @@ syn = { version = "2.0", features = ["extra-traits", "full", "visit", "visit-mut
 url = "2.0"
 
 [dev-dependencies]
-derive_more = { version = "2.0", features = ["from"] }
+derive_more = { version = "2.0", features = ["from", "try_into"] }
 futures = "0.3.22"
 juniper = { path = "../juniper" }
 serde = "1.0.122"

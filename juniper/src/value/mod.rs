@@ -6,14 +6,17 @@ use std::{any::TypeId, borrow::Cow, fmt, mem};
 use arcstr::ArcStr;
 use compact_str::CompactString;
 
+pub(crate) use self::scalar::ScalarValueFmt;
+pub use self::{
+    object::Object,
+    scalar::{
+        AnyExt, DefaultScalarValue, ParseScalarResult, ParseScalarValue, Scalar, ScalarValue,
+        TryScalarValueTo, WrongInputScalarTypeError,
+    },
+};
 use crate::{
     ast::{InputValue, ToInputValue},
     parser::Spanning,
-};
-
-pub use self::{
-    object::Object,
-    scalar::{AnyExt, DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarValue},
 };
 
 /// Serializable value returned from query and field execution.
@@ -64,28 +67,6 @@ impl<S> Value<S> {
         matches!(*self, Self::Null)
     }
 
-    /// View the underlying scalar value if present
-    pub fn as_scalar_value<'a, T>(&'a self) -> Option<&'a T>
-    where
-        Option<&'a T>: From<&'a S>,
-    {
-        match self {
-            Self::Scalar(s) => s.into(),
-            _ => None,
-        }
-    }
-
-    /// View the underlying float value, if present.
-    pub fn as_float_value(&self) -> Option<f64>
-    where
-        S: ScalarValue,
-    {
-        match self {
-            Self::Scalar(s) => s.as_float(),
-            _ => None,
-        }
-    }
-
     /// View the underlying object value, if present.
     pub fn as_object_value(&self) -> Option<&Object<S>> {
         match self {
@@ -128,27 +109,17 @@ impl<S> Value<S> {
         }
     }
 
-    /// View the underlying string value, if present.
-    pub fn as_string_value<'a>(&'a self) -> Option<&'a str>
-    where
-        Option<&'a String>: From<&'a S>,
-    {
-        self.as_scalar_value::<String>().map(String::as_str)
-    }
-
     /// Maps the [`ScalarValue`] type of this [`Value`] into the specified one.
-    pub fn map_scalar_value<Into>(self) -> Value<Into>
+    pub fn map_scalar_value<T>(self) -> Value<T>
     where
         S: ScalarValue,
-        Into: ScalarValue,
+        T: ScalarValue,
     {
-        if TypeId::of::<Into>() == TypeId::of::<S>() {
-            // SAFETY: This is safe, because we're transmuting the value into
-            //         itself, so no invariants may change and we're just
-            //         satisfying the type checker.
-            //         As `mem::transmute_copy` creates a copy of data, we need
-            //         `mem::ManuallyDrop` here to omit double-free when
-            //         `S: Drop`.
+        if TypeId::of::<T>() == TypeId::of::<S>() {
+            // SAFETY: This is safe, because we're transmuting the value into itself, so no
+            //         invariants may change, and we're just satisfying the type checker.
+            //         As `mem::transmute_copy` creates a copy of the data, we need the
+            //         `mem::ManuallyDrop` here to omit double-free when `S: Drop`.
             let val = mem::ManuallyDrop::new(self);
             unsafe { mem::transmute_copy(&*val) }
         } else {
@@ -194,13 +165,7 @@ impl<S: ScalarValue> fmt::Display for Value<S> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Null => write!(f, "null"),
-            Self::Scalar(s) => {
-                if let Some(string) = s.as_string() {
-                    write!(f, "\"{string}\"")
-                } else {
-                    write!(f, "{s}")
-                }
-            }
+            Self::Scalar(s) => fmt::Display::fmt(&ScalarValueFmt(s), f),
             Self::List(list) => {
                 write!(f, "[")?;
                 for (idx, item) in list.iter().enumerate() {

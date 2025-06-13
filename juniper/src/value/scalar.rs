@@ -1,15 +1,21 @@
+use std::convert::Infallible;
+
+use arcstr::ArcStr;
+use derive_more::with_trait::{Deref, Display, Error, From, TryInto};
+use ref_cast::RefCast;
+use serde::{Serialize, de::DeserializeOwned};
 use std::{
     any::{Any, TypeId},
     borrow::Cow,
     fmt, ptr,
 };
 
-use derive_more::with_trait::From;
-use serde::{Serialize, de::DeserializeOwned};
-
-use crate::parser::{ParseError, ScalarToken};
+use crate::{
+    FieldError, IntoFieldError,
+    parser::{ParseError, ScalarToken},
+};
 #[cfg(doc)]
-use crate::{InputValue, Value};
+use crate::{GraphQLScalar, GraphQLValue, Value};
 
 pub use juniper_codegen::ScalarValue;
 
@@ -31,9 +37,10 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// # Deriving
 ///
 /// There is a custom derive (`#[derive(`[`ScalarValue`](macro@crate::ScalarValue)`)]`) available,
-/// that implements most of the required traits automatically for an enum representing a
-/// [`ScalarValue`]. However, [`Serialize`] and [`Deserialize`] implementations
-/// are expected to be provided.
+/// that implements most of the required [`juniper`] traits automatically for an enum representing a
+/// [`ScalarValue`]. However, [`Serialize`] and [`Deserialize`] implementations are expected to be
+/// provided, as we as [`Display`], [`From`] and [`TryInto`] ones (for which it's convenient to use
+/// [`derive_more`]).
 ///
 /// # Example
 ///
@@ -47,21 +54,31 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// # use std::{any::Any, fmt};
 /// #
 /// # use compact_str::CompactString;
-/// # use juniper::ScalarValue;
-/// # use serde::{de, Deserialize, Deserializer, Serialize};
-/// #
-/// #[derive(Clone, Debug, PartialEq, ScalarValue, Serialize)]
+/// use derive_more::{Display, From, TryInto};
+/// use juniper::ScalarValue;
+/// use serde::{de, Deserialize, Deserializer, Serialize};
+///
+/// #[derive(Clone, Debug, Display, From, PartialEq, ScalarValue, Serialize, TryInto)]
 /// #[serde(untagged)]
 /// #[value(from_displayable_with = from_compact_str)]
 /// enum MyScalarValue {
-///     #[value(as_float, as_int)]
+///     #[from]
+///     #[value(to_float, to_int)]
 ///     Int(i32),
+///
+///     #[from]
 ///     Long(i64),
-///     #[value(as_float)]
+///     
+///     #[from]
+///     #[value(to_float)]
 ///     Float(f64),
-///     #[value(as_str, as_string, into_string)]
+///
+///     #[from(&str, String, CompactString)]
+///     #[value(as_str, to_string)]
 ///     String(CompactString),
-///     #[value(as_bool)]
+///     
+///     #[from]
+///     #[value(to_bool)]
 ///     Boolean(bool),
 /// }
 ///
@@ -77,10 +94,17 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 ///     }
 /// }
 ///
-/// // Macro cannot infer and generate this impl if a custom string type is used.
-/// impl From<String> for MyScalarValue {
-///     fn from(value: String) -> Self {
-///         Self::String(value.into())
+/// // `derive_more::TryInto` is not capable for transitive conversions yet,
+/// // so this impl is manual as a custom string type is used instead of `String`.
+/// impl TryFrom<MyScalarValue> for String {
+///     type Error = MyScalarValue;
+///
+///     fn try_from(value: MyScalarValue) -> Result<Self, Self::Error> {
+///         if let MyScalarValue::String(s) = value {
+///             Ok(s.into())
+///         } else {
+///             Err(value)
+///         }
 ///     }
 /// }
 ///
@@ -150,6 +174,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// }
 /// ```
 ///
+/// [`juniper`]: crate
 /// [`CompactString`]: compact_str::CompactString
 /// [`Deserialize`]: trait@serde::Deserialize
 /// [`Serialize`]: trait@serde::Serialize
@@ -164,12 +189,26 @@ pub trait ScalarValue:
     + From<bool>
     + From<i32>
     + From<f64>
+    + for<'a> TryScalarValueTo<'a, bool, Error: Display + IntoFieldError<Self>>
+    + for<'a> TryScalarValueTo<'a, i32, Error: Display + IntoFieldError<Self>>
+    + for<'a> TryScalarValueTo<'a, f64, Error: Display + IntoFieldError<Self>>
+    + for<'a> TryScalarValueTo<'a, String, Error: Display + IntoFieldError<Self>>
+    + for<'a> TryScalarValueTo<'a, &'a str, Error: Display + IntoFieldError<Self>>
+    + for<'a> TryScalarValueTo<'a, &'a Self, Error: Display + IntoFieldError<Self>>
+    + TryInto<String>
     + 'static
 {
-    /// Checks whether this [`ScalarValue`] contains the value of the given
-    /// type.
+    /// Checks whether this [`ScalarValue`] contains the value of the provided type `T`.
     ///
-    /// ```
+    /// # Implementation
+    ///
+    /// Implementations should implement this method.
+    ///
+    /// This is usually an enum dispatch with calling [`AnyExt::is::<T>()`] method on each variant.
+    ///
+    /// # Example
+    ///
+    /// ```rust
     /// # use juniper::{ScalarValue, DefaultScalarValue};
     /// #
     /// let value = DefaultScalarValue::Int(42);
@@ -178,77 +217,153 @@ pub trait ScalarValue:
     /// assert_eq!(value.is_type::<f64>(), false);
     /// ```
     #[must_use]
-    fn is_type<'a, T>(&'a self) -> bool
+    fn is_type<T: Any + ?Sized>(&self) -> bool;
+
+    /// Tries to represent this [`ScalarValue`] as the specified type `T`.
+    ///
+    /// This method could be used instead of other helpers in case the [`TryScalarValueTo::Error`]
+    /// is needed.
+    ///
+    /// # Implementation
+    ///
+    /// This method is an ergonomic alias for the [`TryScalarValueTo<T>`] conversion.
+    ///
+    /// Implementations should not implement this method, but rather implement the
+    /// [`TryScalarValueTo<T>`] conversion directly.
+    fn try_to<'a, T>(&'a self) -> Result<T, <Self as TryScalarValueTo<'a, T>>::Error>
     where
         T: 'a,
-        Option<&'a T>: From<&'a Self>,
+        Self: TryScalarValueTo<'a, T, Error: IntoFieldError<Self>>,
     {
-        <Option<&'a T>>::from(self).is_some()
+        self.try_scalar_value_to()
     }
 
-    /// Represents this [`ScalarValue`] as an integer value.
+    /// Tries to represent this [`ScalarValue`] as a [`bool`] value.
     ///
-    /// This function is used for implementing [`GraphQLValue`] for [`i32`] for
-    /// all possible [`ScalarValue`]s. Implementations should convert all the
-    /// supported integer types with 32 bit or less to an integer, if requested.
+    /// Use the [`ScalarValue::try_to::<bool>()`] method in case the [`TryScalarValueTo::Error`] is
+    /// needed.
     ///
-    /// [`GraphQLValue`]: crate::GraphQLValue
+    /// # Implementation
+    ///
+    /// This method is an ergonomic alias for the [`TryScalarValueTo<bool>`] conversion, which is
+    /// used for implementing [`GraphQLValue`] for [`bool`] for all possible [`ScalarValue`]s.
+    ///
+    /// Implementations should not implement this method, but rather implement the
+    /// [`TryScalarValueTo<bool>`] conversions for all the supported boolean types.
     #[must_use]
-    fn as_int(&self) -> Option<i32>;
+    fn try_to_bool(&self) -> Option<bool> {
+        self.try_to().ok()
+    }
 
-    /// Represents this [`ScalarValue`] as a [`String`] value.
+    /// Tries to represent this [`ScalarValue`] as an [`i32`] value.
     ///
-    /// This function is used for implementing [`GraphQLValue`] for [`String`]
-    /// for all possible [`ScalarValue`]s.
+    /// Use the [`ScalarValue::try_to::<i32>()`] method in case the [`TryScalarValueTo::Error`] is
+    /// needed.
     ///
-    /// [`GraphQLValue`]: crate::GraphQLValue
+    /// # Implementation
+    ///
+    /// This method is an ergonomic alias for the [`TryScalarValueTo<i32>`] conversion, which is
+    /// used for implementing [`GraphQLValue`] for [`i32`] for all possible [`ScalarValue`]s.
+    ///
+    /// Implementations should not implement this method, but rather implement the
+    /// [`TryScalarValueTo<i32>`] conversions for all the supported integer types with 32 bit or
+    /// less to an integer, if requested.
     #[must_use]
-    fn as_string(&self) -> Option<String>;
+    fn try_to_int(&self) -> Option<i32> {
+        self.try_to().ok()
+    }
 
-    /// Converts this [`ScalarValue`] into a [`String`] value.
+    /// Tries to represent this [`ScalarValue`] as a [`f64`] value.
     ///
-    /// Same as [`ScalarValue::as_string()`], but takes ownership, so allows to
-    /// omit redundant cloning.
+    /// Use the [`ScalarValue::try_to::<f64>()`] method in case the [`TryScalarValueTo::Error`] is
+    /// needed.
+    ///
+    /// # Implementation
+    ///
+    /// This method is an ergonomic alias for the [`TryScalarValueTo<f64>`] conversion, which is
+    /// used for implementing [`GraphQLValue`] for [`f64`] for all possible [`ScalarValue`]s.
+    ///
+    /// Implementations should not implement this method, but rather implement the
+    /// [`TryScalarValueTo<f64>`] conversions for all the supported integer types with 64 bit and
+    /// all floating point values with 64 bit or less to a float, if requested.
     #[must_use]
-    fn into_string(self) -> Option<String>;
+    fn try_to_float(&self) -> Option<f64> {
+        self.try_to().ok()
+    }
 
-    /// Represents this [`ScalarValue`] as a [`str`] value.
+    /// Tries to represent this [`ScalarValue`] as a [`String`] value.
     ///
-    /// This function is used for implementing [`GraphQLValue`] for [`str`] for
-    /// all possible [`ScalarValue`]s.
+    /// Allocates every time is called. For read-only and non-owning use of the underlying
+    /// [`String`] value, consider using the [`ScalarValue::try_as_str()`] method.
     ///
-    /// [`GraphQLValue`]: crate::GraphQLValue
+    /// Use the [`ScalarValue::try_to::<String>()`] method in case the [`TryScalarValueTo::Error`]
+    /// is needed.
+    ///
+    /// # Implementation
+    ///
+    /// This method is an ergonomic alias for the [`TryScalarValueTo<String>`] conversion, which is
+    /// used for implementing [`GraphQLValue`] for [`String`] for all possible [`ScalarValue`]s.
+    ///
+    /// Implementations should not implement this method, but rather implement the
+    /// [`TryScalarValueTo<String>`] conversions for all the supported string types, if requested.
     #[must_use]
-    fn as_str(&self) -> Option<&str>;
+    fn try_to_string(&self) -> Option<String> {
+        self.try_to().ok()
+    }
 
-    /// Represents this [`ScalarValue`] as a float value.
+    /// Tries to convert this [`ScalarValue`] into a [`String`] value.
     ///
-    /// This function is used for implementing [`GraphQLValue`] for [`f64`] for
-    /// all possible [`ScalarValue`]s. Implementations should convert all
-    /// supported integer types with 64 bit or less and all floating point
-    /// values with 64 bit or less to a float, if requested.
+    /// Similar to the [`ScalarValue::try_to_string()`] method, but takes ownership, so allows to
+    /// omit redundant [`Clone`]ing.
     ///
-    /// [`GraphQLValue`]: crate::GraphQLValue
+    /// Use the [`TryInto<String>`] conversion in case the [`TryInto::Error`] is needed.
+    ///
+    /// # Implementation
+    ///
+    /// This method is an ergonomic alias for the [`TryInto<String>`] conversion.
+    ///
+    /// Implementations should not implement this method, but rather implement the
+    /// [`TryInto<String>`] conversion for all the supported string types, if requested.
     #[must_use]
-    fn as_float(&self) -> Option<f64>;
+    fn try_into_string(self) -> Option<String> {
+        self.try_into().ok()
+    }
 
-    /// Represents this [`ScalarValue`] as a boolean value
+    /// Tries to represent this [`ScalarValue`] as a [`str`] value.
     ///
-    /// This function is used for implementing [`GraphQLValue`] for [`bool`] for
-    /// all possible [`ScalarValue`]s.
+    /// Use the [`ScalarValue::try_to::<&str>()`] method in case the [`TryScalarValueTo::Error`]
+    /// is needed.
     ///
-    /// [`GraphQLValue`]: crate::GraphQLValue
-    fn as_bool(&self) -> Option<bool>;
+    /// # Implementation
+    ///
+    /// This method is an ergonomic alias for the [`TryScalarValueTo`]`<&`[`str`]`>` conversion,
+    /// which is used for implementing [`GraphQLValue`] for [`String`] for all possible
+    /// [`ScalarValue`]s.
+    ///
+    /// Implementations should not implement this method, but rather implement the
+    /// [`TryScalarValueTo`]`<&`[`str`]`>` conversions for all the supported string types, if
+    /// requested.
+    #[must_use]
+    fn try_as_str(&self) -> Option<&str> {
+        self.try_to().ok()
+    }
 
-    /// Converts this [`ScalarValue`] into another one.
+    /// Converts this [`ScalarValue`] into another one via [`i32`], [`f64`], [`bool`] or [`String`]
+    /// conversion.
+    ///
+    /// # Panics
+    ///
+    /// If this [`ScalarValue`] doesn't represent at least one of [`i32`], [`f64`], [`bool`] or
+    /// [`String`].
+    #[must_use]
     fn into_another<S: ScalarValue>(self) -> S {
-        if let Some(i) = self.as_int() {
+        if let Some(i) = self.try_to_int() {
             S::from(i)
-        } else if let Some(f) = self.as_float() {
+        } else if let Some(f) = self.try_to_float() {
             S::from(f)
-        } else if let Some(b) = self.as_bool() {
+        } else if let Some(b) = self.try_to_bool() {
             S::from(b)
-        } else if let Some(s) = self.into_string() {
+        } else if let Some(s) = self.try_into_string() {
             S::from(s)
         } else {
             unreachable!("`ScalarValue` must represent at least one of the GraphQL spec types")
@@ -260,7 +375,7 @@ pub trait ScalarValue:
     /// This method should be implemented if [`ScalarValue`] implementation uses some custom string
     /// type inside to enable efficient conversion from values of this type.
     ///
-    /// Default implementation allocates by converting [`ToString`] and [`From`]`<`[`String`]`>`.
+    /// Default implementation allocates by converting [`ToString`] and [`From<String>`].
     ///
     /// # Example
     ///
@@ -270,6 +385,84 @@ pub trait ScalarValue:
         s.to_string().into()
     }
 }
+
+/// Fallible representation of a [`ScalarValue`] as one of the types it consists of, or derived ones
+/// from them.
+///
+/// # Implementation
+///
+/// Implementing this trait for a type allows to specify this type directly in the `from_input()`
+/// function when implementing a [`GraphQLScalar`] via [derive macro](macro@GraphQLScalar).
+///
+/// `#[derive(`[`ScalarValue`](macro@crate::ScalarValue)`)]` automatically implements this trait for
+/// all the required primitive types if `#[to_<type>]` and `#[as_<type>]` attributes are specified.
+pub trait TryScalarValueTo<'me, T: 'me> {
+    /// Error if this [`ScalarValue`] doesn't represent the expected type.
+    type Error;
+
+    /// Tries to represent this [`ScalarValue`] as the expected type.
+    ///
+    /// # Errors
+    ///
+    /// If this [`ScalarValue`] doesn't represent the expected type.
+    fn try_scalar_value_to(&'me self) -> Result<T, Self::Error>;
+}
+
+impl<'me, S: ScalarValue> TryScalarValueTo<'me, &'me S> for S {
+    type Error = Infallible;
+
+    fn try_scalar_value_to(&'me self) -> Result<&'me S, Self::Error> {
+        Ok(self)
+    }
+}
+
+impl<'me, S: ScalarValue> TryScalarValueTo<'me, &'me Scalar<S>> for S {
+    type Error = Infallible;
+
+    fn try_scalar_value_to(&'me self) -> Result<&'me Scalar<S>, Self::Error> {
+        Ok(Scalar::ref_cast(self))
+    }
+}
+
+/// Error of a [`ScalarValue`] not matching the expected type.
+#[derive(Clone, Debug, Display, Error)]
+#[display("Expected `{type_name}`, found: {}", ScalarValueFmt(*input))]
+pub struct WrongInputScalarTypeError<'a, S: ScalarValue> {
+    /// Type name of the expected GraphQL scalar.
+    pub type_name: ArcStr,
+
+    /// Input [`ScalarValue`] not matching the expected type.
+    pub input: &'a S,
+}
+
+impl<'a, S: ScalarValue> IntoFieldError<S> for WrongInputScalarTypeError<'a, S> {
+    fn into_field_error(self) -> FieldError<S> {
+        FieldError::<S>::from(self)
+    }
+}
+
+/// [`Display`]-formatter for a [`ScalarValue`] to render as a [`Value`].
+pub(crate) struct ScalarValueFmt<'a, S: ScalarValue>(pub &'a S);
+
+impl<'a, S: ScalarValue> Display for ScalarValueFmt<'a, S> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(s) = self.0.try_as_str() {
+            write!(f, "\"{s}\"")
+        } else {
+            Display::fmt(&self.0, f)
+        }
+    }
+}
+
+/// Transparent wrapper over a value, indicating it being a [`ScalarValue`].
+///
+/// Used in [`GraphQLScalar`] definitions to distinguish a concrete type for a generic
+/// [`ScalarValue`], since Rust type inference fail do so for a generic value directly in macro
+/// expansions.
+#[derive(Debug, Deref, Display, RefCast)]
+#[display("{}", ScalarValueFmt(_0))]
+#[repr(transparent)]
+pub struct Scalar<T: ScalarValue>(T);
 
 /// Extension of [`Any`] for using its methods directly on the value without `dyn`.
 pub trait AnyExt: Any {
@@ -302,14 +495,14 @@ impl<T: Any + ?Sized> AnyExt for T {}
 /// These types closely follow the [GraphQL specification][0].
 ///
 /// [0]: https://spec.graphql.org/October2021
-#[derive(Clone, Debug, From, PartialEq, ScalarValue, Serialize)]
+#[derive(Clone, Debug, Display, From, PartialEq, ScalarValue, Serialize, TryInto)]
 #[serde(untagged)]
 pub enum DefaultScalarValue {
     /// [`Int` scalar][0] as a signed 32‐bit numeric non‐fractional value.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Int
-    #[from(ignore)]
-    #[value(as_float, as_int)]
+    #[from]
+    #[value(to_float, to_int)]
     Int(i32),
 
     /// [`Float` scalar][0] as a signed double‐precision fractional values as
@@ -317,22 +510,22 @@ pub enum DefaultScalarValue {
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Float
     /// [IEEE 754]: https://en.wikipedia.org/wiki/IEEE_floating_point
-    #[from(ignore)]
-    #[value(as_float)]
+    #[from]
+    #[value(to_float)]
     Float(f64),
 
     /// [`String` scalar][0] as a textual data, represented as UTF‐8 character
     /// sequences.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-String
-    #[from(&str, Cow<'_, str>)]
-    #[value(as_str, as_string, into_string)]
+    #[from(&str, Cow<'_, str>, String)]
+    #[value(as_str, to_string)]
     String(String),
 
     /// [`Boolean` scalar][0] as a `true` or `false` value.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Boolean
-    #[from(ignore)]
-    #[value(as_bool)]
+    #[from]
+    #[value(to_bool)]
     Boolean(bool),
 }

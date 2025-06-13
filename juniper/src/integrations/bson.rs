@@ -13,7 +13,7 @@
 //! [s1]: https://graphql-scalars.dev/docs/scalars/object-id
 //! [s4]: https://graphql-scalars.dev/docs/scalars/date-time
 
-use crate::{InputValue, ScalarValue, Value, graphql_scalar};
+use crate::{ScalarValue, Value, graphql_scalar};
 
 // TODO: Try remove on upgrade of `bson` crate.
 mod for_minimal_versions_check_only {
@@ -44,12 +44,8 @@ mod object_id {
         Value::scalar(v.to_hex())
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<ObjectId, String> {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| {
-                ObjectId::parse_str(s).map_err(|e| format!("Failed to parse `ObjectID`: {e}"))
-            })
+    pub(super) fn from_input(s: &str) -> Result<ObjectId, Box<str>> {
+        ObjectId::parse_str(s).map_err(|e| format!("Failed to parse `ObjectID`: {e}").into())
     }
 }
 
@@ -83,13 +79,9 @@ mod date_time {
         )
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<DateTime, String> {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| {
-                DateTime::parse_rfc3339_str(s)
-                    .map_err(|e| format!("Failed to parse `DateTime`: {e}"))
-            })
+    pub(super) fn from_input(s: &str) -> Result<DateTime, Box<str>> {
+        DateTime::parse_rfc3339_str(s)
+            .map_err(|e| format!("Failed to parse `DateTime`: {e}").into())
     }
 }
 

@@ -11,7 +11,7 @@
 //! [1]: http://www.iana.org/time-zones
 //! [s1]: https://graphql-scalars.dev/docs/scalars/time-zone
 
-use crate::{InputValue, ScalarValue, Value, graphql_scalar};
+use crate::{ScalarValue, Value, graphql_scalar};
 
 // TODO: Try remove on upgrade of `chrono-tz` crate.
 mod for_minimal_versions_check_only {
@@ -45,13 +45,9 @@ mod tz {
         Value::scalar(v.name().to_owned())
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<TimeZone, String> {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| {
-                s.parse::<TimeZone>()
-                    .map_err(|e| format!("Failed to parse `TimeZone`: {e}"))
-            })
+    pub(super) fn from_input(s: &str) -> Result<TimeZone, Box<str>> {
+        s.parse::<TimeZone>()
+            .map_err(|e| format!("Failed to parse `TimeZone`: {e}").into())
     }
 }
 
