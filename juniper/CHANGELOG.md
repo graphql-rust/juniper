@@ -108,9 +108,9 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - `String` scalar implementation for `arcstr::ArcStr`. ([#1247])
 - `String` scalar implementation for `compact_str::CompactString`. ([20609366])
 - `IntoValue` and `IntoInputValue` conversion traits allowing to work around orphan rules with custom `ScalarValue`. ([#1324])
-- `ScalarValue` trait: ([#1327])
+- `ScalarValue` trait:
     - `from_displayable()` method allowing to specialize `ScalarValue` conversion from custom string types. ([#1324], [#819])
-    - `try_to::<T>()` method defined by default as `TryScalarValueTo<T>` alias.
+    - `try_to::<T>()` method defined by default as `TryScalarValueTo<T>` alias. ([#1327])
 - `TryScalarValueTo` conversion trait aiding `ScalarValue` trait. ([#1327])
 - `#[derive(GraphQLScalar)]` and `#[graphql_scalar]` macros: ([#1327])
     - Support for specifying concrete types as input argument in provided `from_input()` function.
