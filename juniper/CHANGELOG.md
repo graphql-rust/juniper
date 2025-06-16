@@ -92,6 +92,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - `From` and `Display` implementations are not derived anymore (recommended way is to use [`derive_more` crate] for this).
 - `#[derive(GraphQLScalar)]` and `#[graphql_scalar]` macros: ([#1327])
     - Made provided `from_input()` function to accept `ScalarValue` (or anything `TryScalarValueTo`-convertible) directly instead of `InputValue`.
+- Removed `LocalBoxFuture` usage from `http::tests::WsIntegration` trait. ([todo])
 
 ### Added
 
@@ -145,6 +146,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1327]: /../../pull/1327
 [1b1fc618]: /../../commit/1b1fc61879ffdd640d741e187dc20678bf7ab295
 [20609366]: /../../commit/2060936635609b0186d46d8fbd06eb30fce660e3
+[todo]: /../../commit/todo
 
 
 
