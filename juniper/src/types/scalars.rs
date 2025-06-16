@@ -176,14 +176,20 @@ type ArcStr = arcstr::ArcStr;
 
 mod impl_arcstr_scalar {
     use super::ArcStr;
-    use crate::{IntoValue as _, ScalarValue, Value};
+    use crate::{IntoValue as _, Scalar, ScalarValue, TryScalarValueTo, Value};
 
     pub(super) fn to_output<S: ScalarValue>(v: &ArcStr) -> Value<S> {
         v.into_value()
     }
 
-    pub(super) fn from_input(s: &str) -> ArcStr {
-        s.into()
+    pub(super) fn from_input<S: ScalarValue>(
+        v: &Scalar<S>,
+    ) -> Result<ArcStr, <S as TryScalarValueTo<'_, &str>>::Error> {
+        if let Some(s) = v.downcast_type::<ArcStr>() {
+            Ok(s.clone())
+        } else {
+            v.try_to::<&str>().map(ArcStr::from)
+        }
     }
 }
 
@@ -193,14 +199,20 @@ type CompactString = compact_str::CompactString;
 
 mod impl_compactstring_scalar {
     use super::CompactString;
-    use crate::{IntoValue as _, ScalarValue, Value};
+    use crate::{IntoValue as _, Scalar, ScalarValue, TryScalarValueTo, Value};
 
     pub(super) fn to_output<S: ScalarValue>(v: &CompactString) -> Value<S> {
         v.into_value()
     }
 
-    pub(super) fn from_input(s: &str) -> CompactString {
-        s.into()
+    pub(super) fn from_input<S: ScalarValue>(
+        v: &Scalar<S>,
+    ) -> Result<CompactString, <S as TryScalarValueTo<'_, &str>>::Error> {
+        if let Some(s) = v.downcast_type::<CompactString>() {
+            Ok(s.clone())
+        } else {
+            v.try_to::<&str>().map(CompactString::from)
+        }
     }
 }
 
