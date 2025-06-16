@@ -376,8 +376,6 @@ pub mod tests {
 
     use serde_json::Value as Json;
 
-    use crate::LocalBoxFuture;
-
     /// Normalized response content we expect to get back from
     /// the http framework integration we are testing.
     #[derive(Debug)]
@@ -653,7 +651,7 @@ pub mod tests {
         fn run(
             &self,
             messages: Vec<WsIntegrationMessage>,
-        ) -> LocalBoxFuture<Result<(), anyhow::Error>>;
+        ) -> impl Future<Output = Result<(), anyhow::Error>>;
     }
 
     /// WebSocket framework integration message.

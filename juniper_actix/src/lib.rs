@@ -758,7 +758,7 @@ mod subscription_tests {
     use actix_test::start;
     use actix_web::{App, Error, HttpRequest, HttpResponse, web};
     use juniper::{
-        EmptyMutation, LocalBoxFuture,
+        EmptyMutation,
         futures::{SinkExt, StreamExt},
         http::tests::{WsIntegration, WsIntegrationMessage, graphql_transport_ws, graphql_ws},
         tests::fixtures::starwars::schema::{Database, Query, Subscription},
@@ -770,11 +770,8 @@ mod subscription_tests {
 
     struct TestWsIntegration(&'static str);
 
-    impl TestWsIntegration {
-        async fn run_async(
-            &self,
-            messages: Vec<WsIntegrationMessage>,
-        ) -> Result<(), anyhow::Error> {
+    impl WsIntegration for TestWsIntegration {
+        async fn run(&self, messages: Vec<WsIntegrationMessage>) -> Result<(), anyhow::Error> {
             let proto = self.0;
 
             let mut server = start(|| {
@@ -834,15 +831,6 @@ mod subscription_tests {
             }
 
             Ok(())
-        }
-    }
-
-    impl WsIntegration for TestWsIntegration {
-        fn run(
-            &self,
-            messages: Vec<WsIntegrationMessage>,
-        ) -> LocalBoxFuture<'_, Result<(), anyhow::Error>> {
-            Box::pin(self.run_async(messages))
         }
     }
 
