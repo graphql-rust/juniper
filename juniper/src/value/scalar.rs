@@ -209,7 +209,7 @@ pub trait ScalarValue:
     /// # Example
     ///
     /// ```rust
-    /// # use juniper::{ScalarValue, DefaultScalarValue};
+    /// # use juniper::{ScalarValue as _, DefaultScalarValue};
     /// #
     /// let value = DefaultScalarValue::Int(42);
     ///
@@ -228,18 +228,46 @@ pub trait ScalarValue:
     ///
     /// This is usually an enum dispatch with calling [`AnyExt::downcast_ref::<T>()`] method on each 
     /// variant.
-    /// 
-    /// TODO
     ///
     /// # Example
     ///
     /// ```rust
-    /// # use juniper::{ScalarValue, DefaultScalarValue};
+    /// # use juniper::{ScalarValue as _, DefaultScalarValue};
     /// #
     /// let value = DefaultScalarValue::Int(42);
     ///
     /// assert_eq!(value.downcast_type::<i32>(), Some(&42));
     /// assert_eq!(value.downcast_type::<f64>(), None);
+    /// ```
+    /// 
+    /// # [`GraphQLScalar`] implementation
+    /// 
+    /// This method is especially useful for performance, when a [`GraphQLScalar`] is implemented
+    /// generically over a [`ScalarValue`], but based on the type that is very likely could be used 
+    /// in an optimized [`ScalarValue`] implementation.
+    /// 
+    /// ```rust
+    /// # use arcstr::ArcStr;
+    /// # use juniper::{GraphQLScalar, Scalar, ScalarValue, TryScalarValueTo, Value};
+    /// #
+    /// #[derive(GraphQLScalar)]
+    /// #[graphql(from_input_with = Self::from_input, transparent)]
+    /// struct Name(ArcStr);
+    /// 
+    /// impl Name {
+    ///     fn from_input<S: ScalarValue>(
+    ///         v: &Scalar<S>,
+    ///     ) -> Result<Self, <S as TryScalarValueTo<'_, &str>>::Error> {
+    ///         // Check if our `ScalarValue` is represented by an `ArcStr` already, and if so, 
+    ///         // do the cheap `Clone` instead of allocating a new `ArcStr` in its `From<&str>` 
+    ///         // implementation.
+    ///         if let Some(s) = v.downcast_type::<ArcStr>() {
+    ///              Ok(Self(s.clone()))
+    ///         } else {
+    ///             v.try_to::<&str>().map(|s| Self(s.into()))
+    ///         }
+    ///     }
+    /// }
     /// ```
     #[must_use]
     fn downcast_type<T: Any>(&self) -> Option<&T>;
