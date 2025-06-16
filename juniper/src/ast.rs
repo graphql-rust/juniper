@@ -200,24 +200,18 @@ pub type Document<'a, S> = [Definition<'a, S>];
 #[doc(hidden)]
 pub type OwnedDocument<'a, S> = Vec<Definition<'a, S>>;
 
-/// Parsing of an unstructured input value into a Rust data type.
+/// Parsing of an unstructured [`InputValue`] into a Rust data type.
 ///
-/// The conversion _can_ fail, and must in that case return [`Err`]. Thus not
-/// restricted in the definition of this trait, the returned [`Err`] should be
-/// convertible with [`IntoFieldError`] to fit well into the library machinery.
+/// The conversion _can_ fail, and must in that case return an [`Err`]. Thus, not restricted in the
+/// definition of this trait, the returned [`Err`] should be convertible with the [`IntoFieldError`]
+/// trait to fit well into the library machinery.
 ///
-/// Implemented automatically by the convenience proc macro [`graphql_scalar!`]
-/// or by deriving `GraphQLEnum`.
-///
-/// Must be implemented manually when manually exposing new enums or scalars.
-///
-/// [`graphql_scalar!`]: macro@crate::graphql_scalar
 /// [`IntoFieldError`]: crate::IntoFieldError
 pub trait FromInputValue<S = DefaultScalarValue>: Sized {
     /// Type of this conversion error.
     ///
-    /// Thus not restricted, it should be convertible with [`IntoFieldError`] to
-    /// fit well into the library machinery.
+    /// Thus, not restricted, it should be convertible with the [`IntoFieldError`] trait to fit well
+    /// into the library machinery.
     ///
     /// [`IntoFieldError`]: crate::IntoFieldError
     type Error;

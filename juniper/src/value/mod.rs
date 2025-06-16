@@ -10,8 +10,8 @@ pub(crate) use self::scalar::ScalarValueFmt;
 pub use self::{
     object::Object,
     scalar::{
-        AnyExt, DefaultScalarValue, ParseScalarResult, ParseScalarValue, Scalar, ScalarValue,
-        TryScalarValueTo, WrongInputScalarTypeError,
+        AnyExt, DefaultScalarValue, FromScalarValue, ParseScalarResult, ParseScalarValue, Scalar,
+        ScalarValue, TryScalarValueTo, WrongInputScalarTypeError,
     },
 };
 use crate::{

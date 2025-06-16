@@ -320,6 +320,7 @@ impl ToTokens for Definition {
         self.impl_value_tokens().to_tokens(into);
         self.impl_value_async_tokens().to_tokens(into);
         self.impl_to_input_value_tokens().to_tokens(into);
+        self.impl_from_scalar_value_tokens().to_tokens(into);
         self.impl_from_input_value_tokens().to_tokens(into);
         self.impl_parse_scalar_value_tokens().to_tokens(into);
         self.impl_reflection_traits_tokens().to_tokens(into);
@@ -487,6 +488,54 @@ impl Definition {
         }
     }
 
+    /// Returns generated code implementing [`FromScalarValue`] trait for this [GraphQL scalar][1].
+    ///
+    /// [`FromScalarValue`]: juniper::FromScalarValue
+    /// [1]: https://spec.graphql.org/October2021#sec-Scalars
+    fn impl_from_scalar_value_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+
+        let (ty, generics) = self.impl_self_and_generics(false);
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        let body = match &self.methods {
+            Methods::Custom { from_input, .. }
+            | Methods::Delegated {
+                from_input: Some(from_input),
+                ..
+            } => {
+                quote! {
+                    use ::juniper::macros::helper::ToResultCall as _;
+
+                    let input = ::juniper::TryScalarValueTo::try_scalar_value_to(input)
+                        .map_err(::juniper::executor::IntoFieldError::<#scalar>::into_field_error)?;
+                    let func: fn(_) -> _ = #from_input;
+                    (&&func)
+                        .__to_result_call(input)
+                        .map_err(::juniper::executor::IntoFieldError::<#scalar>::into_field_error)
+                }
+            }
+            Methods::Delegated { field, .. } => {
+                let field_ty = field.ty();
+                let self_constructor = field.closure_constructor();
+
+                quote! {
+                    <#field_ty as ::juniper::FromScalarValue<#scalar>>::from_scalar_value(input)
+                        .map(#self_constructor)
+                }
+            }
+        };
+
+        quote! {
+            #[automatically_derived]
+            impl #impl_gens ::juniper::FromScalarValue<#scalar> for #ty #where_clause {
+                fn from_scalar_value(input: &#scalar) -> ::juniper::FieldResult<Self, #scalar> {
+                    #body
+                }
+            }
+        }
+    }
+
     /// Returns generated code implementing [`FromInputValue`] trait for this
     /// [GraphQL scalar][1].
     ///
@@ -495,23 +544,42 @@ impl Definition {
     fn impl_from_input_value_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let from_input_value = self.methods.expand_from_input_value(scalar);
-
         let (ty, generics) = self.impl_self_and_generics(false);
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
+        let body = match &self.methods {
+            Methods::Custom { .. }
+            | Methods::Delegated {
+                from_input: Some(_),
+                ..
+            } => {
+                quote! {
+                    let input = ::juniper::InputValue::as_scalar(input)
+                        .ok_or_else(|| ::juniper::macros::helper::NotScalarError(input))?;
+                    ::juniper::FromScalarValue::<#scalar>::from_scalar_value(input)
+                }
+            }
+            Methods::Delegated { field, .. } => {
+                let field_ty = field.ty();
+                let self_constructor = field.closure_constructor();
+
+                quote! {
+                    <#field_ty as ::juniper::FromInputValue<#scalar>>::from_input_value(input)
+                        .map(#self_constructor)
+                        .map_err(::juniper::executor::IntoFieldError::<#scalar>::into_field_error)
+                }
+            }
+        };
+
         quote! {
             #[automatically_derived]
-            impl #impl_gens ::juniper::FromInputValue<#scalar> for #ty
-                #where_clause
-            {
+            impl #impl_gens ::juniper::FromInputValue<#scalar> for #ty #where_clause {
                 type Error = ::juniper::executor::FieldError<#scalar>;
 
                 fn from_input_value(
                     input: &::juniper::InputValue<#scalar>,
                 ) -> ::core::result::Result<Self, Self::Error> {
-                    #from_input_value
-                        .map_err(::juniper::executor::IntoFieldError::<#scalar>::into_field_error)
+                    #body
                 }
             }
         }
@@ -755,38 +823,6 @@ impl Methods {
             Self::Delegated { field, .. } => {
                 quote! {
                     ::juniper::ToInputValue::<#scalar>::to_input_value(&self.#field)
-                }
-            }
-        }
-    }
-
-    /// Expands [`FromInputValue::from_input_value`][1] method.
-    ///
-    /// [1]: juniper::FromInputValue::from_input_value
-    fn expand_from_input_value(&self, scalar: &scalar::Type) -> TokenStream {
-        match self {
-            Self::Custom { from_input, .. }
-            | Self::Delegated {
-                from_input: Some(from_input),
-                ..
-            } => {
-                quote! {
-                    use ::juniper::macros::helper::ToResultCall as _;
-
-                    let input = ::juniper::InputValue::as_scalar(input)
-                        .ok_or_else(|| ::juniper::macros::helper::NotScalarError(input))?;
-                    let input = ::juniper::TryScalarValueTo::try_scalar_value_to(input)
-                        .map_err(::juniper::executor::IntoFieldError::<#scalar>::into_field_error)?;
-                    let func: fn(_) -> _ = #from_input;
-                    (&&func).__to_result_call(input)
-                }
-            }
-            Self::Delegated { field, .. } => {
-                let field_ty = field.ty();
-                let self_constructor = field.closure_constructor();
-                quote! {
-                    <#field_ty as ::juniper::FromInputValue<#scalar>>::from_input_value(input)
-                        .map(#self_constructor)
                 }
             }
         }

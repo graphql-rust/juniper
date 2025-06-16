@@ -262,7 +262,7 @@ impl Definition {
                         #( #downcast_type_arms )*
                     }
                 }
-                
+
                 #from_displayable
             }
         }
