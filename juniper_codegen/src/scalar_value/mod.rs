@@ -216,26 +216,27 @@ impl Definition {
         let ty_ident = &self.ident;
         let (impl_gens, ty_gens, where_clause) = self.generics.split_for_impl();
 
-        let is_type = {
-            let arms = self.variants.iter().map(|var| {
-                let var_ident = &var.ident;
-                let field = Field::try_from(var.fields.clone())
-                    .unwrap_or_else(|_| unreachable!("already checked"));
-                let var_pattern = field.match_arg();
-
-                quote! {
-                    Self::#var_ident #var_pattern => ::juniper::AnyExt::is::<__T>(v),
-                }
-            });
+        let is_type_arms = self.variants.iter().map(|var| {
+            let var_ident = &var.ident;
+            let field = Field::try_from(var.fields.clone())
+                .unwrap_or_else(|_| unreachable!("already checked"));
+            let var_pattern = field.match_arg();
 
             quote! {
-                fn is_type<__T: ::core::any::Any + ?::core::marker::Sized>(&self) -> bool {
-                    match self {
-                        #( #arms )*
-                    }
-                }
+                Self::#var_ident #var_pattern => ::juniper::AnyExt::is::<__T>(v),
             }
-        };
+        });
+
+        let downcast_type_arms = self.variants.iter().map(|var| {
+            let var_ident = &var.ident;
+            let field = Field::try_from(var.fields.clone())
+                .unwrap_or_else(|_| unreachable!("already checked"));
+            let var_pattern = field.match_arg();
+
+            quote! {
+                Self::#var_ident #var_pattern => ::juniper::AnyExt::downcast_ref(v),
+            }
+        });
 
         let from_displayable = self.from_displayable.as_ref().map(|expr| {
             quote! {
@@ -250,7 +251,18 @@ impl Definition {
         quote! {
             #[automatically_derived]
             impl #impl_gens ::juniper::ScalarValue for #ty_ident #ty_gens #where_clause {
-                #is_type
+                fn is_type<__T: ::core::any::Any + ?::core::marker::Sized>(&self) -> bool {
+                    match self {
+                        #( #is_type_arms )*
+                    }
+                }
+
+                fn downcast_type<__T: ::core::any::Any>(&self) -> ::core::option::Option<&__T> {
+                    match self {
+                        #( #downcast_type_arms )*
+                    }
+                }
+                
                 #from_displayable
             }
         }

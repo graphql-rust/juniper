@@ -219,6 +219,31 @@ pub trait ScalarValue:
     #[must_use]
     fn is_type<T: Any + ?Sized>(&self) -> bool;
 
+    /// Downcasts this [`ScalarValue`] as the value of the provided type `T`, if this 
+    /// [`ScalarValue`] represents the one.
+    ///
+    /// # Implementation
+    ///
+    /// Implementations should implement this method.
+    ///
+    /// This is usually an enum dispatch with calling [`AnyExt::downcast_ref::<T>()`] method on each 
+    /// variant.
+    /// 
+    /// TODO
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use juniper::{ScalarValue, DefaultScalarValue};
+    /// #
+    /// let value = DefaultScalarValue::Int(42);
+    ///
+    /// assert_eq!(value.downcast_type::<i32>(), Some(&42));
+    /// assert_eq!(value.downcast_type::<f64>(), None);
+    /// ```
+    #[must_use]
+    fn downcast_type<T: Any>(&self) -> Option<&T>;
+
     /// Tries to represent this [`ScalarValue`] as the specified type `T`.
     ///
     /// This method could be used instead of other helpers in case the [`TryScalarValueTo::Error`]
