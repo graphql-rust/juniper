@@ -247,42 +247,95 @@ pub trait ScalarValue:
     ///
     /// ```rust
     /// # use arcstr::ArcStr;
-    /// # use juniper::{FromScalarValue, GraphQLScalar, Scalar, ScalarValue, TryScalarValueTo, Value};
+    /// # use juniper::{FieldResult, GraphQLScalar, Scalar, ScalarValue, TryScalarValueTo, Value};
     /// #
     /// #[derive(GraphQLScalar)]
     /// #[graphql(from_input_with = Self::from_input, transparent)]
     /// struct Name(ArcStr);
     ///
     /// impl Name {
-    ///     fn from_input<S: ScalarValue>(
-    ///         v: &Scalar<S>,
-    ///     ) -> Result<Self, <&str as FromScalarValue<S>>::Error> {
+    ///     fn from_input<S: ScalarValue>(v: &Scalar<S>) -> FieldResult<Self, S> {
     ///         // Check if our `ScalarValue` is represented by an `ArcStr` already, and if so,
     ///         // do the cheap `Clone` instead of allocating a new `ArcStr` in its `From<&str>`
     ///         // implementation.
-    ///         if let Some(s) = v.downcast_type::<ArcStr>() {
-    ///              Ok(Self(s.clone()))
+    ///         let s = if let Some(s) = v.downcast_type::<ArcStr>() {
+    ///             s.clone()
     ///         } else {
-    ///             v.try_to::<&str>().map(|s| Self(s.into()))
+    ///             v.try_to::<&str>().map(ArcStr::from)?
+    ///         };
+    ///         if s.chars().next().is_some_and(char::is_uppercase) {
+    ///             Ok(Self(s))
+    ///         } else {
+    ///             Err("`Name` should start with a capital letter".into())
+    ///         }
+    ///     }
+    /// }
+    /// ```
+    /// 
+    /// However, this method is needed only when the type doesn't implement a [`GraphQLScalar`] 
+    /// itself, or does it in non-optimal way. In reality, the [`ArcStr`] already implements a
+    /// [`GraphQLScalar`] and does the [`ScalarValue::downcast_type()`] check in its implementation,
+    /// which can be naturally reused by calling the [`ScalarValue::try_to()`] method.
+    ///
+    /// ```rust
+    /// # use arcstr::ArcStr;
+    /// # use juniper::{FieldResult, GraphQLScalar, Scalar, ScalarValue, TryScalarValueTo, Value};
+    /// #
+    /// #[derive(GraphQLScalar)]
+    /// #[graphql(from_input_with = Self::from_input, transparent)]
+    /// struct Name(ArcStr);
+    ///
+    /// impl Name {
+    ///     fn from_input(s: ArcStr) -> Result<Self, &'static str> {
+    ///         //           ^^^^^^ macro expansion will call the `ScalarValue::try_to()` method
+    ///         //                  to extract this type from the `ScalarValue` to this function
+    ///         if s.chars().next().is_some_and(char::is_uppercase) {
+    ///             Ok(Self(s))
+    ///         } else {
+    ///             Err("`Name` should start with a capital letter")
     ///         }
     ///     }
     /// }
     /// ```
     #[must_use]
     fn downcast_type<T: Any>(&self) -> Option<&T>;
-
-    /// TODO: renew docs
+    
     /// Tries to represent this [`ScalarValue`] as the specified type `T`.
+    /// 
+    /// This method is the recommended way to parse a defined [`GraphQLScalar`] type `T` from a
+    /// [`ScalarValue`].
+    /// 
+    /// This method could be used instead of other `try_*` helpers in case the 
+    /// [`FromScalarValue::Error`] is needed.
+    /// 
+    /// # Example
+    /// 
+    /// ```rust
+    /// # use juniper::{DefaultScalarValue, GraphQLScalar, ScalarValue as _};
+    /// 
+    /// let v = DefaultScalarValue::Boolean(false);
+    /// assert_eq!(v.try_to::<bool>().unwrap(), false);
+    /// assert!(v.try_to::<f64>().is_err());
+    /// 
+    /// #[derive(Debug, GraphQLScalar, PartialEq)]
+    /// #[graphql(transparent)]
+    /// struct Name(String);
     ///
-    /// This method could be used instead of other helpers in case the [`TryScalarValueTo::Error`]
-    /// is needed.
+    /// let v = DefaultScalarValue::String("John".into());
+    /// assert_eq!(v.try_to::<String>().unwrap(), "John");
+    /// assert_eq!(v.try_to::<&str>().unwrap(), "John");
+    /// assert_eq!(v.try_to::<Name>().unwrap(), Name("John".into()));
+    /// assert!(v.try_to::<i32>().is_err());
+    /// ```
     ///
     /// # Implementation
     ///
-    /// This method is an ergonomic alias for the [`TryScalarValueTo<T>`] conversion.
+    /// This method is an ergonomic alias for the [`FromScalarValue<T>`] conversion.
     ///
-    /// Implementations should not implement this method, but rather implement the
-    /// [`TryScalarValueTo<T>`] conversion directly.
+    /// Implementations should not implement this method, but rather implement only the
+    /// [`TryScalarValueTo<T>`] conversion directly in case `T` is a primitive built-in GraphQL 
+    /// scalar type ([`bool`], [`f64`], [`i32`], [`&str`], or [`String`]), otherwise the
+    /// [`FromScalarValue<T>`] conversion is provided when a [`GraphQLScalar`] is implemented.
     fn try_to<'a, T>(&'a self) -> Result<T, T::Error>
     where
         T: FromScalarValue<'a, Self> + 'a,
