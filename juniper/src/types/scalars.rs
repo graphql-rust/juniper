@@ -4,7 +4,7 @@ use derive_more::with_trait::{Deref, Display, From, Into};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    IntoFieldError,FieldResult, GraphQLScalar, Scalar,
+    FieldResult, GraphQLScalar, IntoFieldError, Scalar,
     ast::{InputValue, Selection, ToInputValue},
     executor::{ExecutionResult, Executor, Registry},
     graphql_scalar,
@@ -16,7 +16,10 @@ use crate::{
         base::{GraphQLType, GraphQLValue},
         subscriptions::GraphQLSubscriptionValue,
     },
-    value::{FromScalarValue, ParseScalarResult, ScalarValue, Value, WrongInputScalarTypeError},
+    value::{
+        FromScalarValue, ParseScalarResult, ScalarValue, TryScalarValueTo, Value,
+        WrongInputScalarTypeError,
+    },
 };
 
 /// An ID as defined by the GraphQL specification
@@ -56,7 +59,7 @@ impl ID {
 }
 
 #[graphql_scalar]
-#[graphql(with = impl_string_scalar, from_input_with = identity::<String>)]
+#[graphql(with = impl_string_scalar, from_input_with = __builtin)]
 type String = std::string::String;
 
 mod impl_string_scalar {
@@ -170,21 +173,22 @@ where
     })
 }
 
+
 #[graphql_scalar]
 #[graphql(name = "String", with = impl_arcstr_scalar, parse_token(String))]
 type ArcStr = arcstr::ArcStr;
 
 mod impl_arcstr_scalar {
     use super::ArcStr;
-    use crate::{IntoValue as _, Scalar, ScalarValue, TryScalarValueTo, Value};
+    use crate::{IntoValue as _, Scalar, ScalarValue, Value, FieldResult};
 
     pub(super) fn to_output<S: ScalarValue>(v: &ArcStr) -> Value<S> {
         v.into_value()
     }
-
+    
     pub(super) fn from_input<S: ScalarValue>(
         v: &Scalar<S>,
-    ) -> Result<ArcStr, <S as TryScalarValueTo<'_, &str>>::Error> {
+    ) -> FieldResult<ArcStr, S> {
         if let Some(s) = v.downcast_type::<ArcStr>() {
             Ok(s.clone())
         } else {
@@ -199,7 +203,7 @@ type CompactString = compact_str::CompactString;
 
 mod impl_compactstring_scalar {
     use super::CompactString;
-    use crate::{IntoValue as _, Scalar, ScalarValue, TryScalarValueTo, Value};
+    use crate::{IntoValue as _, Scalar, ScalarValue, FieldResult, Value};
 
     pub(super) fn to_output<S: ScalarValue>(v: &CompactString) -> Value<S> {
         v.into_value()
@@ -207,7 +211,7 @@ mod impl_compactstring_scalar {
 
     pub(super) fn from_input<S: ScalarValue>(
         v: &Scalar<S>,
-    ) -> Result<CompactString, <S as TryScalarValueTo<'_, &str>>::Error> {
+    ) -> FieldResult<CompactString, S> {
         if let Some(s) = v.downcast_type::<CompactString>() {
             Ok(s.clone())
         } else {
@@ -286,8 +290,18 @@ where
     }
 }
 
+impl<'s, S> FromScalarValue<'s, S> for &'s str
+where
+    S: TryScalarValueTo<'s, Self, Error: IntoFieldError<S>> + 's,
+{
+    fn from_scalar_value(v: &'s S) -> FieldResult<Self, S> {
+        v.try_scalar_value_to()
+            .map_err(IntoFieldError::into_field_error)
+    }
+}
+
 #[graphql_scalar]
-#[graphql(with = impl_boolean_scalar, from_input_with = identity::<Boolean>)]
+#[graphql(with = impl_boolean_scalar, from_input_with = __builtin)]
 type Boolean = bool;
 
 mod impl_boolean_scalar {
@@ -304,7 +318,7 @@ mod impl_boolean_scalar {
 }
 
 #[graphql_scalar]
-#[graphql(with = impl_int_scalar, from_input_with = identity::<Int>)]
+#[graphql(with = impl_int_scalar, from_input_with = __builtin)]
 type Int = i32;
 
 mod impl_int_scalar {
@@ -326,7 +340,7 @@ mod impl_int_scalar {
 }
 
 #[graphql_scalar]
-#[graphql(with = impl_float_scalar, from_input_with = identity::<Float>)]
+#[graphql(with = impl_float_scalar, from_input_with = __builtin)]
 type Float = f64;
 
 mod impl_float_scalar {

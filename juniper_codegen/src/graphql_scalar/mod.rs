@@ -495,8 +495,12 @@ impl Definition {
     fn impl_from_scalar_value_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let (ty, generics) = self.impl_self_and_generics(false);
-        let (impl_gens, _, where_clause) = generics.split_for_impl();
+        let ref_lt = quote! { '___a };
+        let (ty, mut generics) = self.impl_self_and_generics(false);
+        generics.params.push(parse_quote! { #ref_lt });
+        generics.make_where_clause().predicates.push(parse_quote! {
+            Self: #ref_lt
+        });
 
         let body = match &self.methods {
             Methods::Custom { from_input, .. }
@@ -504,32 +508,46 @@ impl Definition {
                 from_input: Some(from_input),
                 ..
             } => {
-                quote! {
-                    use ::juniper::macros::helper::ToResultCall as _;
+                if from_input == &parse_quote! { __builtin } {
+                    quote! {
+                        ::juniper::TryScalarValueTo::try_scalar_value_to(input)
+                            .map_err(::juniper::executor::IntoFieldError::<#scalar>::into_field_error)
+                    }
+                } else {
+                    quote! {
+                        use ::juniper::macros::helper::ToResultCall as _;
 
-                    let input = ::juniper::TryScalarValueTo::try_scalar_value_to(input)
-                        .map_err(::juniper::executor::IntoFieldError::<#scalar>::into_field_error)?;
-                    let func: fn(_) -> _ = #from_input;
-                    (&&func)
-                        .__to_result_call(input)
-                        .map_err(::juniper::executor::IntoFieldError::<#scalar>::into_field_error)
+                        let input = ::juniper::ScalarValue::try_to(input)?;
+                        let func: fn(_) -> _ = #from_input;
+                        (&&func)
+                            .__to_result_call(input)
+                            .map_err(::juniper::executor::IntoFieldError::<#scalar>::into_field_error)
+                    }
                 }
             }
             Methods::Delegated { field, .. } => {
                 let field_ty = field.ty();
                 let self_constructor = field.closure_constructor();
 
+                generics.make_where_clause().predicates.push(parse_quote! {
+                    #field_ty: ::juniper::FromScalarValue<#ref_lt, #scalar>
+                });
+
                 quote! {
-                    <#field_ty as ::juniper::FromScalarValue<#scalar>>::from_scalar_value(input)
-                        .map(#self_constructor)
+                    <#field_ty as ::juniper::FromScalarValue<#ref_lt, #scalar>>
+                        ::from_scalar_value(input).map(#self_constructor)
                 }
             }
         };
 
+        let (lt_impl_gens, _, where_clause) = generics.split_for_impl();
+
         quote! {
             #[automatically_derived]
-            impl #impl_gens ::juniper::FromScalarValue<#scalar> for #ty #where_clause {
-                fn from_scalar_value(input: &#scalar) -> ::juniper::FieldResult<Self, #scalar> {
+            impl #lt_impl_gens ::juniper::FromScalarValue<#ref_lt, #scalar> for #ty #where_clause {
+                fn from_scalar_value(
+                    input: &#ref_lt #scalar,
+                ) -> ::juniper::FieldResult<Self, #scalar> {
                     #body
                 }
             }

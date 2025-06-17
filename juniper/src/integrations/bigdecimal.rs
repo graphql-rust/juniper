@@ -54,7 +54,7 @@ mod bigdecimal_scalar {
                 .map_err(|e| format!("Failed to parse `BigDecimal` from `Float`: {e}").into())
         } else {
             v.try_to::<&str>()
-                .map_err(|e| e.to_string().into())
+                .map_err(|e| e.message().into())
                 .and_then(|s| {
                     BigDecimal::from_str(s).map_err(|e| {
                         format!("Failed to parse `BigDecimal` from `String`: {e}").into()

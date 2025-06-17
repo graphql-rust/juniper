@@ -87,13 +87,13 @@ where
     }
 }
 
-impl<T, S> FromScalarValue<S> for Box<T>
+impl<'s, T, S> FromScalarValue<'s, S> for Box<T>
 where
     S: ScalarValue,
-    T: FromScalarValue<S>,
+    T: FromScalarValue<'s, S> + 's,
 {
-    fn from_scalar_value(v: &S) -> FieldResult<Self, S> {
-        <T as FromScalarValue<S>>::from_scalar_value(v).map(Self::new)
+    fn from_scalar_value(v: &'s S) -> FieldResult<Self, S> {
+        T::from_scalar_value(v).map(Self::new)
     }
 }
 
@@ -285,13 +285,13 @@ where
     }
 }
 
-impl<T, S> FromScalarValue<S> for Arc<T>
+impl<'s, T, S> FromScalarValue<'s, S> for Arc<T>
 where
     S: ScalarValue,
-    T: FromScalarValue<S>,
+    T: FromScalarValue<'s, S> + 's,
 {
-    fn from_scalar_value(v: &S) -> FieldResult<Self, S> {
-        <T as FromScalarValue<S>>::from_scalar_value(v).map(Self::new)
+    fn from_scalar_value(v: &'s S) -> FieldResult<Self, S> {
+        T::from_scalar_value(v).map(Self::new)
     }
 }
 
