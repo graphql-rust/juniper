@@ -283,12 +283,31 @@ pub trait ScalarValue:
     ///
     /// Implementations should not implement this method, but rather implement the
     /// [`TryScalarValueTo<T>`] conversion directly.
-    fn try_to<'a, T>(&'a self) -> Result<T, <Self as TryScalarValueTo<'a, T>>::Error>
+    fn try_to2<'a, T>(&'a self) -> Result<T, <Self as TryScalarValueTo<'a, T>>::Error>
     where
         T: 'a,
         Self: TryScalarValueTo<'a, T, Error: IntoFieldError<Self>>,
     {
         self.try_scalar_value_to()
+    }
+
+    /// Tries to represent this [`ScalarValue`] as the specified type `T`.
+    ///
+    /// This method could be used instead of other helpers in case the [`TryScalarValueTo::Error`]
+    /// is needed.
+    ///
+    /// # Implementation
+    ///
+    /// This method is an ergonomic alias for the [`TryScalarValueTo<T>`] conversion.
+    ///
+    /// Implementations should not implement this method, but rather implement the
+    /// [`TryScalarValueTo<T>`] conversion directly.
+    fn try_to<'a, T>(&'a self) -> Result<T, <Self as TryScalarValueTo<'a, Scalar<T>>>::Error>
+    where
+        T: 'a,
+        Self: TryScalarValueTo<'a, Scalar<T>, Error: IntoFieldError<Self>>,
+    {
+        self.try_scalar_value_to().map(|s: Scalar<T>| s.0)
     }
 
     /// Tries to represent this [`ScalarValue`] as a [`bool`] value.
@@ -477,6 +496,22 @@ impl<'me, S: ScalarValue> TryScalarValueTo<'me, &'me Scalar<S>> for S {
     }
 }
 
+impl<'me, S: ScalarValue> TryScalarValueTo<'me, Scalar<&'me str>> for S {
+    type Error = FieldError<Self>;
+
+    fn try_scalar_value_to(&'me self) -> FieldResult<Scalar<&'me str>, Self> {
+        self.try_scalar_value_to().map(Scalar)
+    }
+}
+
+impl<'me, T: FromScalarValue<S> + 'me, S: ScalarValue> TryScalarValueTo<'me, Scalar<T>> for S {
+    type Error = FieldError<Self>;
+
+    fn try_scalar_value_to(&'me self) -> FieldResult<Scalar<T>, Self> {
+        T::from_scalar_value(self).map(Scalar)
+    }
+}
+
 pub trait FromScalarValue<S = DefaultScalarValue>: Sized {
     /// Performs the conversion.
     fn from_scalar_value(v: &S) -> FieldResult<Self, S>;
@@ -519,8 +554,9 @@ impl<'a, S: ScalarValue> Display for ScalarValueFmt<'a, S> {
 /// expansions.
 #[derive(Debug, Deref, Display, RefCast)]
 #[display("{}", ScalarValueFmt(_0))]
+#[display(bound(T: ScalarValue))]
 #[repr(transparent)]
-pub struct Scalar<T: ScalarValue>(T);
+pub struct Scalar<T>(T);
 
 /// Extension of [`Any`] for using its methods directly on the value without `dyn`.
 pub trait AnyExt: Any {

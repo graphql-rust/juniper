@@ -4,7 +4,7 @@ use derive_more::with_trait::{Deref, Display, From, Into};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    GraphQLScalar, Scalar,
+    IntoFieldError,FieldResult, GraphQLScalar, Scalar,
     ast::{InputValue, Selection, ToInputValue},
     executor::{ExecutionResult, Executor, Registry},
     graphql_scalar,
@@ -16,7 +16,7 @@ use crate::{
         base::{GraphQLType, GraphQLValue},
         subscriptions::GraphQLSubscriptionValue,
     },
-    value::{ParseScalarResult, ScalarValue, Value, WrongInputScalarTypeError},
+    value::{FromScalarValue, ParseScalarResult, ScalarValue, Value, WrongInputScalarTypeError},
 };
 
 /// An ID as defined by the GraphQL specification
