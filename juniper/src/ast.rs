@@ -609,13 +609,13 @@ impl<'a, S> VariableDefinitions<'a, S> {
 }
 
 #[cfg(test)]
-mod tests {
+mod spec_input_value_fmt {
     use crate::graphql_input_value;
 
     use super::InputValue;
 
     #[test]
-    fn test_input_value_fmt() {
+    fn correct() {
         let value: InputValue = graphql_input_value!(null);
         assert_eq!(value.to_string(), "null");
 

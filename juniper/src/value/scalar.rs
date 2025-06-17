@@ -194,7 +194,6 @@ pub trait ScalarValue:
     + for<'a> TryScalarValueTo<'a, f64, Error: Display + IntoFieldError<Self>>
     + for<'a> TryScalarValueTo<'a, String, Error: Display + IntoFieldError<Self>>
     + for<'a> TryScalarValueTo<'a, &'a str, Error: Display + IntoFieldError<Self>>
-    + for<'a> TryScalarValueTo<'a, &'a Self, Error: Display + IntoFieldError<Self>>
     + TryInto<String>
     + 'static
 {
@@ -248,14 +247,16 @@ pub trait ScalarValue:
     ///
     /// ```rust
     /// # use arcstr::ArcStr;
-    /// # use juniper::{FieldResult, GraphQLScalar, Scalar, ScalarValue, TryScalarValueTo, Value};
+    /// # use juniper::{FromScalarValue, GraphQLScalar, Scalar, ScalarValue, TryScalarValueTo, Value};
     /// #
     /// #[derive(GraphQLScalar)]
     /// #[graphql(from_input_with = Self::from_input, transparent)]
     /// struct Name(ArcStr);
     ///
     /// impl Name {
-    ///     fn from_input<S: ScalarValue>(v: &Scalar<S>) -> FieldResult<Self, S> {
+    ///     fn from_input<S: ScalarValue>(
+    ///         v: &Scalar<S>,
+    ///     ) -> Result<Self, <&str as FromScalarValue<S>>::Error> {
     ///         // Check if our `ScalarValue` is represented by an `ArcStr` already, and if so,
     ///         // do the cheap `Clone` instead of allocating a new `ArcStr` in its `From<&str>`
     ///         // implementation.
@@ -282,7 +283,7 @@ pub trait ScalarValue:
     ///
     /// Implementations should not implement this method, but rather implement the
     /// [`TryScalarValueTo<T>`] conversion directly.
-    fn try_to<'a, T>(&'a self) -> FieldResult<T, Self>
+    fn try_to<'a, T>(&'a self) -> Result<T, T::Error>
     where
         T: FromScalarValue<'a, Self> + 'a,
     {
@@ -303,7 +304,7 @@ pub trait ScalarValue:
     /// [`TryScalarValueTo<bool>`] conversions for all the supported boolean types.
     #[must_use]
     fn try_to_bool(&self) -> Option<bool> {
-        self.try_scalar_value_to().ok()
+        self.try_to().ok()
     }
 
     /// Tries to represent this [`ScalarValue`] as an [`i32`] value.
@@ -321,7 +322,7 @@ pub trait ScalarValue:
     /// less to an integer, if requested.
     #[must_use]
     fn try_to_int(&self) -> Option<i32> {
-        self.try_scalar_value_to().ok()
+        self.try_to().ok()
     }
 
     /// Tries to represent this [`ScalarValue`] as a [`f64`] value.
@@ -339,7 +340,7 @@ pub trait ScalarValue:
     /// all floating point values with 64 bit or less to a float, if requested.
     #[must_use]
     fn try_to_float(&self) -> Option<f64> {
-        self.try_scalar_value_to().ok()
+        self.try_to().ok()
     }
 
     /// Tries to represent this [`ScalarValue`] as a [`String`] value.
@@ -359,7 +360,7 @@ pub trait ScalarValue:
     /// [`TryScalarValueTo<String>`] conversions for all the supported string types, if requested.
     #[must_use]
     fn try_to_string(&self) -> Option<String> {
-        self.try_scalar_value_to().ok()
+        self.try_to().ok()
     }
 
     /// Tries to convert this [`ScalarValue`] into a [`String`] value.
@@ -396,7 +397,7 @@ pub trait ScalarValue:
     /// requested.
     #[must_use]
     fn try_as_str(&self) -> Option<&str> {
-        self.try_scalar_value_to().ok()
+        self.try_to().ok()
     }
 
     /// Converts this [`ScalarValue`] into another one via [`i32`], [`f64`], [`bool`] or [`String`]
@@ -449,7 +450,7 @@ pub trait ScalarValue:
 /// all the required primitive types if `#[to_<type>]` and `#[as_<type>]` attributes are specified.
 pub trait TryScalarValueTo<'me, T: 'me> {
     /// Error if this [`ScalarValue`] doesn't represent the expected type.
-    type Error;
+    type Error: 'me;
 
     /// Tries to represent this [`ScalarValue`] as the expected type.
     ///
@@ -459,47 +460,25 @@ pub trait TryScalarValueTo<'me, T: 'me> {
     fn try_scalar_value_to(&'me self) -> Result<T, Self::Error>;
 }
 
-impl<'me, S: ScalarValue> TryScalarValueTo<'me, &'me S> for S {
-    type Error = Infallible;
-
-    fn try_scalar_value_to(&'me self) -> Result<&'me S, Self::Error> {
-        Ok(self)
-    }
-}
-
-impl<'me, S: ScalarValue> TryScalarValueTo<'me, &'me Scalar<S>> for S {
-    type Error = Infallible;
-
-    fn try_scalar_value_to(&'me self) -> Result<&'me Scalar<S>, Self::Error> {
-        Ok(Scalar::ref_cast(self))
-    }
-}
-
-impl<'me, T, S> TryScalarValueTo<'me, Scalar<T>> for S
-where
-    T: FromScalarValue<'me, S> + 'me,
-    S: ScalarValue,
-{
-    type Error = FieldError<Self>;
-
-    fn try_scalar_value_to(&'me self) -> FieldResult<Scalar<T>, Self> {
-        T::from_scalar_value(self).map(Scalar)
-    }
-}
-
 pub trait FromScalarValue<'s, S: 's = DefaultScalarValue>: Sized {
+    type Error: IntoFieldError<S> + 's;
+
     /// Performs the conversion.
-    fn from_scalar_value(v: &'s S) -> FieldResult<Self, S>;
+    fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error>;
 }
 
 impl<'s, S> FromScalarValue<'s, S> for &'s S {
-    fn from_scalar_value(v: &'s S) -> FieldResult<Self, S> {
+    type Error = Infallible;
+
+    fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
         Ok(v)
     }
 }
 
-impl<'s, S> FromScalarValue<'s, S> for &'s Scalar<S> {
-    fn from_scalar_value(v: &'s S) -> FieldResult<Self, S> {
+impl<'s, S: ScalarValue> FromScalarValue<'s, S> for &'s Scalar<S> {
+    type Error = Infallible;
+
+    fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
         Ok(Scalar::ref_cast(v))
     }
 }
@@ -541,9 +520,8 @@ impl<'a, S: ScalarValue> Display for ScalarValueFmt<'a, S> {
 /// expansions.
 #[derive(Debug, Deref, Display, RefCast)]
 #[display("{}", ScalarValueFmt(_0))]
-#[display(bound(T: ScalarValue))]
 #[repr(transparent)]
-pub struct Scalar<T>(T);
+pub struct Scalar<T: ScalarValue>(T);
 
 /// Extension of [`Any`] for using its methods directly on the value without `dyn`.
 pub trait AnyExt: Any {

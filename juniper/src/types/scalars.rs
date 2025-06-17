@@ -69,9 +69,10 @@ mod impl_string_scalar {
     where
         S: TryScalarValueTo<'s, Self, Error: IntoFieldError<S>> + 's,
     {
-        fn from_scalar_value(v: &'s S) -> FieldResult<Self, S> {
+        type Error = S::Error;
+
+        fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
             v.try_scalar_value_to()
-                .map_err(IntoFieldError::into_field_error)
         }
     }
 
@@ -189,13 +190,15 @@ type ArcStr = arcstr::ArcStr;
 
 mod impl_arcstr_scalar {
     use super::ArcStr;
-    use crate::{FieldResult, IntoValue as _, Scalar, ScalarValue, Value};
+    use crate::{FromScalarValue, IntoValue as _, Scalar, ScalarValue, Value};
 
     pub(super) fn to_output<S: ScalarValue>(v: &ArcStr) -> Value<S> {
         v.into_value()
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &Scalar<S>) -> FieldResult<ArcStr, S> {
+    pub(super) fn from_input<S: ScalarValue>(
+        v: &Scalar<S>,
+    ) -> Result<ArcStr, <&str as FromScalarValue<S>>::Error> {
         if let Some(s) = v.downcast_type::<ArcStr>() {
             Ok(s.clone())
         } else {
@@ -210,13 +213,15 @@ type CompactString = compact_str::CompactString;
 
 mod impl_compactstring_scalar {
     use super::CompactString;
-    use crate::{FieldResult, IntoValue as _, Scalar, ScalarValue, Value};
+    use crate::{FromScalarValue, IntoValue as _, Scalar, ScalarValue, Value};
 
     pub(super) fn to_output<S: ScalarValue>(v: &CompactString) -> Value<S> {
         v.into_value()
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &Scalar<S>) -> FieldResult<CompactString, S> {
+    pub(super) fn from_input<S: ScalarValue>(
+        v: &Scalar<S>,
+    ) -> Result<CompactString, <&str as FromScalarValue<S>>::Error> {
         if let Some(s) = v.downcast_type::<CompactString>() {
             Ok(s.clone())
         } else {
@@ -299,9 +304,10 @@ impl<'s, S> FromScalarValue<'s, S> for &'s str
 where
     S: TryScalarValueTo<'s, Self, Error: IntoFieldError<S>> + 's,
 {
-    fn from_scalar_value(v: &'s S) -> FieldResult<Self, S> {
+    type Error = S::Error;
+
+    fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
         v.try_scalar_value_to()
-            .map_err(IntoFieldError::into_field_error)
     }
 }
 
@@ -316,9 +322,10 @@ mod impl_boolean_scalar {
     where
         S: TryScalarValueTo<'s, Self, Error: IntoFieldError<S>> + 's,
     {
-        fn from_scalar_value(v: &'s S) -> FieldResult<Self, S> {
+        type Error = S::Error;
+
+        fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
             v.try_scalar_value_to()
-                .map_err(IntoFieldError::into_field_error)
         }
     }
 
@@ -343,9 +350,10 @@ mod impl_int_scalar {
     where
         S: TryScalarValueTo<'s, Self, Error: IntoFieldError<S>> + 's,
     {
-        fn from_scalar_value(v: &'s S) -> FieldResult<Self, S> {
+        type Error = S::Error;
+
+        fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
             v.try_scalar_value_to()
-                .map_err(IntoFieldError::into_field_error)
         }
     }
 
@@ -375,9 +383,10 @@ mod impl_float_scalar {
     where
         S: TryScalarValueTo<'s, Self, Error: IntoFieldError<S>> + 's,
     {
-        fn from_scalar_value(v: &'s S) -> FieldResult<Self, S> {
+        type Error = S::Error;
+
+        fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
             v.try_scalar_value_to()
-                .map_err(IntoFieldError::into_field_error)
         }
     }
 

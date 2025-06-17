@@ -3,7 +3,7 @@ use std::{fmt, sync::Arc};
 use arcstr::ArcStr;
 
 use crate::{
-    BoxFuture, FieldResult,
+    BoxFuture,
     ast::{FromInputValue, InputValue, Selection, ToInputValue},
     executor::{ExecutionResult, Executor, Registry},
     schema::meta::MetaType,
@@ -92,7 +92,9 @@ where
     S: ScalarValue,
     T: FromScalarValue<'s, S> + 's,
 {
-    fn from_scalar_value(v: &'s S) -> FieldResult<Self, S> {
+    type Error = T::Error;
+
+    fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
         T::from_scalar_value(v).map(Self::new)
     }
 }
@@ -290,7 +292,9 @@ where
     S: ScalarValue,
     T: FromScalarValue<'s, S> + 's,
 {
-    fn from_scalar_value(v: &'s S) -> FieldResult<Self, S> {
+    type Error = T::Error;
+
+    fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
         T::from_scalar_value(v).map(Self::new)
     }
 }

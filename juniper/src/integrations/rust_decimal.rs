@@ -48,7 +48,7 @@ mod rust_decimal_scalar {
                 .map_err(|e| format!("Failed to parse `Decimal` from `Float`: {e}").into())
         } else {
             v.try_to::<&str>()
-                .map_err(|e| e.message().into())
+                .map_err(|e| e.to_string().into())
                 .and_then(|s| {
                     Decimal::from_str(s)
                         .map_err(|e| format!("Failed to parse `Decimal` from `String`: {e}").into())
