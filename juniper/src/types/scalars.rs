@@ -1,4 +1,4 @@
-use std::{char, convert::identity, marker::PhantomData, rc::Rc, thread::JoinHandle};
+use std::{char, marker::PhantomData, rc::Rc, thread::JoinHandle};
 
 use derive_more::with_trait::{Deref, Display, From, Into};
 use serde::{Deserialize, Serialize};
@@ -64,6 +64,16 @@ type String = std::string::String;
 
 mod impl_string_scalar {
     use super::*;
+
+    impl<'s, S> FromScalarValue<'s, S> for String
+    where
+        S: TryScalarValueTo<'s, Self, Error: IntoFieldError<S>> + 's,
+    {
+        fn from_scalar_value(v: &'s S) -> FieldResult<Self, S> {
+            v.try_scalar_value_to()
+                .map_err(IntoFieldError::into_field_error)
+        }
+    }
 
     pub(super) fn to_output<S: ScalarValue>(v: &str) -> Value<S> {
         Value::scalar(v.to_owned())
@@ -173,22 +183,19 @@ where
     })
 }
 
-
 #[graphql_scalar]
 #[graphql(name = "String", with = impl_arcstr_scalar, parse_token(String))]
 type ArcStr = arcstr::ArcStr;
 
 mod impl_arcstr_scalar {
     use super::ArcStr;
-    use crate::{IntoValue as _, Scalar, ScalarValue, Value, FieldResult};
+    use crate::{FieldResult, IntoValue as _, Scalar, ScalarValue, Value};
 
     pub(super) fn to_output<S: ScalarValue>(v: &ArcStr) -> Value<S> {
         v.into_value()
     }
-    
-    pub(super) fn from_input<S: ScalarValue>(
-        v: &Scalar<S>,
-    ) -> FieldResult<ArcStr, S> {
+
+    pub(super) fn from_input<S: ScalarValue>(v: &Scalar<S>) -> FieldResult<ArcStr, S> {
         if let Some(s) = v.downcast_type::<ArcStr>() {
             Ok(s.clone())
         } else {
@@ -203,15 +210,13 @@ type CompactString = compact_str::CompactString;
 
 mod impl_compactstring_scalar {
     use super::CompactString;
-    use crate::{IntoValue as _, Scalar, ScalarValue, FieldResult, Value};
+    use crate::{FieldResult, IntoValue as _, Scalar, ScalarValue, Value};
 
     pub(super) fn to_output<S: ScalarValue>(v: &CompactString) -> Value<S> {
         v.into_value()
     }
 
-    pub(super) fn from_input<S: ScalarValue>(
-        v: &Scalar<S>,
-    ) -> FieldResult<CompactString, S> {
+    pub(super) fn from_input<S: ScalarValue>(v: &Scalar<S>) -> FieldResult<CompactString, S> {
         if let Some(s) = v.downcast_type::<CompactString>() {
             Ok(s.clone())
         } else {
@@ -307,6 +312,16 @@ type Boolean = bool;
 mod impl_boolean_scalar {
     use super::*;
 
+    impl<'s, S> FromScalarValue<'s, S> for Boolean
+    where
+        S: TryScalarValueTo<'s, Self, Error: IntoFieldError<S>> + 's,
+    {
+        fn from_scalar_value(v: &'s S) -> FieldResult<Self, S> {
+            v.try_scalar_value_to()
+                .map_err(IntoFieldError::into_field_error)
+        }
+    }
+
     pub(super) fn to_output<S: ScalarValue>(v: &Boolean) -> Value<S> {
         Value::scalar(*v)
     }
@@ -323,6 +338,16 @@ type Int = i32;
 
 mod impl_int_scalar {
     use super::*;
+
+    impl<'s, S> FromScalarValue<'s, S> for Int
+    where
+        S: TryScalarValueTo<'s, Self, Error: IntoFieldError<S>> + 's,
+    {
+        fn from_scalar_value(v: &'s S) -> FieldResult<Self, S> {
+            v.try_scalar_value_to()
+                .map_err(IntoFieldError::into_field_error)
+        }
+    }
 
     pub(super) fn to_output<S: ScalarValue>(v: &Int) -> Value<S> {
         Value::scalar(*v)
@@ -345,6 +370,16 @@ type Float = f64;
 
 mod impl_float_scalar {
     use super::*;
+
+    impl<'s, S> FromScalarValue<'s, S> for Float
+    where
+        S: TryScalarValueTo<'s, Self, Error: IntoFieldError<S>> + 's,
+    {
+        fn from_scalar_value(v: &'s S) -> FieldResult<Self, S> {
+            v.try_scalar_value_to()
+                .map_err(IntoFieldError::into_field_error)
+        }
+    }
 
     pub(super) fn to_output<S: ScalarValue>(v: &Float) -> Value<S> {
         Value::scalar(*v)

@@ -250,6 +250,8 @@ impl Attr {
         if attr.description.is_none() {
             attr.description = Description::parse_from_doc_attrs(attrs)?;
         }
+        
+        // TODO: check whether `__builtin` is from inside `juniper` crate only.
 
         Ok(attr)
     }
@@ -492,7 +494,7 @@ impl Definition {
     ///
     /// [`FromScalarValue`]: juniper::FromScalarValue
     /// [1]: https://spec.graphql.org/October2021#sec-Scalars
-    fn impl_from_scalar_value_tokens(&self) -> TokenStream {
+    fn impl_from_scalar_value_tokens(&self) -> Option<TokenStream> {
         let scalar = &self.scalar;
 
         let ref_lt = quote! { '___a };
@@ -509,20 +511,16 @@ impl Definition {
                 ..
             } => {
                 if from_input == &parse_quote! { __builtin } {
-                    quote! {
-                        ::juniper::TryScalarValueTo::try_scalar_value_to(input)
-                            .map_err(::juniper::executor::IntoFieldError::<#scalar>::into_field_error)
-                    }
-                } else {
-                    quote! {
-                        use ::juniper::macros::helper::ToResultCall as _;
+                    return None;
+                }
+                quote! {
+                    use ::juniper::macros::helper::ToResultCall as _;
 
-                        let input = ::juniper::ScalarValue::try_to(input)?;
-                        let func: fn(_) -> _ = #from_input;
-                        (&&func)
-                            .__to_result_call(input)
-                            .map_err(::juniper::executor::IntoFieldError::<#scalar>::into_field_error)
-                    }
+                    let input = ::juniper::ScalarValue::try_to(input)?;
+                    let func: fn(_) -> _ = #from_input;
+                    (&&func)
+                        .__to_result_call(input)
+                        .map_err(::juniper::executor::IntoFieldError::<#scalar>::into_field_error)
                 }
             }
             Methods::Delegated { field, .. } => {
@@ -542,7 +540,7 @@ impl Definition {
 
         let (lt_impl_gens, _, where_clause) = generics.split_for_impl();
 
-        quote! {
+        Some(quote! {
             #[automatically_derived]
             impl #lt_impl_gens ::juniper::FromScalarValue<#ref_lt, #scalar> for #ty #where_clause {
                 fn from_scalar_value(
@@ -551,7 +549,7 @@ impl Definition {
                     #body
                 }
             }
-        }
+        })
     }
 
     /// Returns generated code implementing [`FromInputValue`] trait for this

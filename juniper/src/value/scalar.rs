@@ -270,25 +270,7 @@ pub trait ScalarValue:
     #[must_use]
     fn downcast_type<T: Any>(&self) -> Option<&T>;
 
-    /// Tries to represent this [`ScalarValue`] as the specified type `T`.
-    ///
-    /// This method could be used instead of other helpers in case the [`TryScalarValueTo::Error`]
-    /// is needed.
-    ///
-    /// # Implementation
-    ///
-    /// This method is an ergonomic alias for the [`TryScalarValueTo<T>`] conversion.
-    ///
-    /// Implementations should not implement this method, but rather implement the
-    /// [`TryScalarValueTo<T>`] conversion directly.
-    fn try_to2<'a, T>(&'a self) -> Result<T, <Self as TryScalarValueTo<'a, T>>::Error>
-    where
-        T: 'a,
-        Self: TryScalarValueTo<'a, T, Error: IntoFieldError<Self>>,
-    {
-        self.try_scalar_value_to()
-    }
-
+    /// TODO: renew docs
     /// Tries to represent this [`ScalarValue`] as the specified type `T`.
     ///
     /// This method could be used instead of other helpers in case the [`TryScalarValueTo::Error`]
