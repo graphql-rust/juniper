@@ -82,6 +82,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - Renamed `as_string()` method as `try_to_string()` and made it defined by default as `TryToPrimitive<String>` alias. ([#1327])
     - Renamed `as_str()` method as `try_as_str()` and made it defined by default as `TryToPrimitive<&str>` alias. ([#1327])
     - Renamed `into_string()` method as `try_into_string()` and made it defined by default as `TryInto<String>` alias. ([#1327])
+    - Required new `downcast_type::<T>()` method (could be derived with `#[derive(ScalarValue)]` macro). ([#1329])
 - `#[derive(ScalarValue)]` macro: ([#1327])
     - Renamed `#[value(as_bool)]` attribute as `#[value(to_bool)]`.
     - Renamed `#[value(as_float)]` attribute as `#[value(to_float)]`.
@@ -114,7 +115,6 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - `ScalarValue` trait:
     - `from_displayable()` method allowing to specialize `ScalarValue` conversion from custom string types. ([#1324], [#819])
     - `try_to::<T>()` method defined by default as `FromScalarValue<T>` alias. ([#1327], [#1329])
-    - `downcast_type::<T>()` method. ([#1329])
 - `#[derive(GraphQLScalar)]` and `#[graphql_scalar]` macros:
     - Support for specifying concrete types as input argument in provided `from_input()` function. ([#1327])
     - Support for non-`Result` return type in provided `from_input()` function. ([#1327])
