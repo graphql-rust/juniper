@@ -274,7 +274,7 @@ impl Definition {
         let (_, ty_gens, where_clause) = self.generics.split_for_impl();
 
         let ref_lt = quote! { '___a };
-        // We don't impose additional bounds on generic parameters, 
+        // We don't impose additional bounds on generic parameters,
         // because `ScalarValue` itself has `'static` bound.
         let mut generics = self.generics.clone();
         generics.params.push(parse_quote! { #ref_lt });
@@ -326,7 +326,7 @@ impl Definition {
             });
             Some(quote! {
                 #[automatically_derived]
-                impl #lt_impl_gens ::juniper::TryToPrimitive<#ref_lt, #as_ty> for #ty_ident #ty_gens 
+                impl #lt_impl_gens ::juniper::TryToPrimitive<#ref_lt, #as_ty> for #ty_ident #ty_gens
                      #where_clause
                 {
                     type Error = ::juniper::WrongInputScalarTypeError<#ref_lt, #ty_ident #ty_gens>;

@@ -350,7 +350,7 @@ pub trait ScalarValue:
     ///
     /// # Implementation
     ///
-    /// This method is an ergonomic alias for the [`TryToPrimitive<bool>`] conversion, which is used 
+    /// This method is an ergonomic alias for the [`TryToPrimitive<bool>`] conversion, which is used
     /// for implementing [`GraphQLValue`] for [`bool`] for all possible [`ScalarValue`]s.
     ///
     /// Implementations should not implement this method, but rather implement the
@@ -367,7 +367,7 @@ pub trait ScalarValue:
     ///
     /// # Implementation
     ///
-    /// This method is an ergonomic alias for the [`TryToPrimitive<i32>`] conversion, which is used 
+    /// This method is an ergonomic alias for the [`TryToPrimitive<i32>`] conversion, which is used
     /// for implementing [`GraphQLValue`] for [`i32`] for all possible [`ScalarValue`]s.
     ///
     /// Implementations should not implement this method, but rather implement the
@@ -385,7 +385,7 @@ pub trait ScalarValue:
     ///
     /// # Implementation
     ///
-    /// This method is an ergonomic alias for the [`TryToPrimitive<f64>`] conversion, which is used 
+    /// This method is an ergonomic alias for the [`TryToPrimitive<f64>`] conversion, which is used
     /// for implementing [`GraphQLValue`] for [`f64`] for all possible [`ScalarValue`]s.
     ///
     /// Implementations should not implement this method, but rather implement the
@@ -441,7 +441,7 @@ pub trait ScalarValue:
     ///
     /// # Implementation
     ///
-    /// This method is an ergonomic alias for the [`TryToPrimitive`]`<&`[`str`]`>` conversion, which 
+    /// This method is an ergonomic alias for the [`TryToPrimitive`]`<&`[`str`]`>` conversion, which
     /// is used for implementing [`GraphQLValue`] for [`String`] for all possible [`ScalarValue`]s.
     ///
     /// Implementations should not implement this method, but rather implement the

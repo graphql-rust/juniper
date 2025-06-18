@@ -1,11 +1,11 @@
-error[E0277]: the trait bound `for<'a> DefaultScalarValue: TryScalarValueTo<'a, i32>` is not satisfied
+error[E0277]: the trait bound `for<'a> DefaultScalarValue: TryToPrimitive<'a, i32>` is not satisfied
  --> fail/scalar_value/missing_attributes.rs:6:10
   |
 6 | pub enum DefaultScalarValue {
-  |          ^^^^^^^^^^^^^^^^^^ the trait `for<'a> TryScalarValueTo<'a, i32>` is not implemented for `DefaultScalarValue`
+  |          ^^^^^^^^^^^^^^^^^^ the trait `for<'a> TryToPrimitive<'a, i32>` is not implemented for `DefaultScalarValue`
   |
-  = help: the following other types implement trait `TryScalarValueTo<'me, T>`:
-            `DefaultScalarValue` implements `TryScalarValueTo<'_, &str>`
-            `DefaultScalarValue` implements `TryScalarValueTo<'_, bool>`
-            `DefaultScalarValue` implements `TryScalarValueTo<'_, f64>`
-            `DefaultScalarValue` implements `TryScalarValueTo<'_, std::string::String>`
+  = help: the following other types implement trait `TryToPrimitive<'me, T>`:
+            `DefaultScalarValue` implements `TryToPrimitive<'_, &str>`
+            `DefaultScalarValue` implements `TryToPrimitive<'_, bool>`
+            `DefaultScalarValue` implements `TryToPrimitive<'_, f64>`
+            `DefaultScalarValue` implements `TryToPrimitive<'_, std::string::String>`
