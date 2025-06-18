@@ -10,7 +10,7 @@ pub use self::{
     object::Object,
     scalar::{
         AnyExt, DefaultScalarValue, FromScalarValue, ParseScalarResult, ParseScalarValue, Scalar,
-        ScalarValue, TryToPrimitive, WrongInputScalarTypeError,
+        ScalarValue, TryToPrimitive, WrongInputScalarTypeError, IntoScalarValue,
     },
 };
 use crate::{
