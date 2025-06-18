@@ -198,7 +198,7 @@ mod impl_arcstr_scalar {
 
     pub(super) fn from_input<S: ScalarValue>(
         v: &Scalar<S>,
-    ) -> Result<ArcStr, <&str as FromScalarValue<S>>::Error> {
+    ) -> Result<ArcStr, <&str as FromScalarValue<'_, S>>::Error> {
         if let Some(s) = v.downcast_type::<ArcStr>() {
             Ok(s.clone())
         } else {
@@ -221,7 +221,7 @@ mod impl_compactstring_scalar {
 
     pub(super) fn from_input<S: ScalarValue>(
         v: &Scalar<S>,
-    ) -> Result<CompactString, <&str as FromScalarValue<S>>::Error> {
+    ) -> Result<CompactString, <&str as FromScalarValue<'_, S>>::Error> {
         if let Some(s) = v.downcast_type::<CompactString>() {
             Ok(s.clone())
         } else {
