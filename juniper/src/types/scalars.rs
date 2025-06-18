@@ -317,7 +317,7 @@ impl<S: ScalarValue> ToScalarValue<S> for str {
     }
 }
 
-impl<S> ToInputValue<S> for &str
+impl<S> ToInputValue<S> for str
 where
     str: ToScalarValue<S>,
 {

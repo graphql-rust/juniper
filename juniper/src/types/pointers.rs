@@ -1,4 +1,4 @@
-use std::{fmt, sync::Arc};
+use std::sync::Arc;
 
 use arcstr::ArcStr;
 
@@ -11,7 +11,7 @@ use crate::{
         async_await::GraphQLValueAsync,
         base::{Arguments, GraphQLType, GraphQLValue},
     },
-    value::{FromScalarValue, ToScalarValue, ScalarValue},
+    value::{FromScalarValue, ScalarValue, ToScalarValue},
 };
 
 impl<S, T> GraphQLType<S> for Box<T>
@@ -122,8 +122,7 @@ where
 
 impl<T, S> ToInputValue<S> for Box<T>
 where
-    S: fmt::Debug,
-    T: ToInputValue<S>,
+    T: ToInputValue<S> + ?Sized,
 {
     fn to_input_value(&self) -> InputValue<S> {
         (**self).to_input_value()
@@ -224,8 +223,7 @@ where
 
 impl<T, S> ToInputValue<S> for &T
 where
-    S: fmt::Debug,
-    T: ToInputValue<S>,
+    T: ToInputValue<S> + ?Sized,
 {
     fn to_input_value(&self) -> InputValue<S> {
         (**self).to_input_value()
@@ -340,8 +338,7 @@ where
 
 impl<T, S> ToInputValue<S> for Arc<T>
 where
-    S: fmt::Debug,
-    T: ToInputValue<S>,
+    T: ToInputValue<S> + ?Sized,
 {
     fn to_input_value(&self) -> InputValue<S> {
         (**self).to_input_value()
