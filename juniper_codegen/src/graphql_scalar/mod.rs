@@ -251,8 +251,6 @@ impl Attr {
             attr.description = Description::parse_from_doc_attrs(attrs)?;
         }
 
-        // TODO: check whether `__builtin` is from inside `juniper` crate only.
-
         Ok(attr)
     }
 }
@@ -579,19 +577,17 @@ impl Definition {
             | Methods::Delegated {
                 from_input: Some(_),
                 ..
-            } => {
-                (
-                    quote! {
-                        ::juniper::executor::FieldError<#scalar>
-                    },
-                    quote! {
-                        let input = ::juniper::InputValue::as_scalar(input)
-                            .ok_or_else(|| ::juniper::macros::helper::NotScalarError(input))?;
-                        ::juniper::ScalarValue::try_to(input)
-                            .map_err(::juniper::IntoFieldError::<#scalar>::into_field_error)
-                    },
-                )
-            }
+            } => (
+                quote! {
+                    ::juniper::executor::FieldError<#scalar>
+                },
+                quote! {
+                    let input = ::juniper::InputValue::as_scalar(input)
+                        .ok_or_else(|| ::juniper::macros::helper::NotScalarError(input))?;
+                    ::juniper::ScalarValue::try_to(input)
+                        .map_err(::juniper::IntoFieldError::<#scalar>::into_field_error)
+                },
+            ),
             Methods::Delegated { field, .. } => {
                 let field_ty = field.ty();
                 let self_constructor = field.closure_constructor();

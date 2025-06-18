@@ -11,7 +11,7 @@ use std::{
 };
 
 use crate::{
-    FieldError, FieldResult, IntoFieldError,
+    FieldError, IntoFieldError,
     parser::{ParseError, ScalarToken},
 };
 #[cfg(doc)]
@@ -271,8 +271,8 @@ pub trait ScalarValue:
     ///     }
     /// }
     /// ```
-    /// 
-    /// However, this method is needed only when the type doesn't implement a [`GraphQLScalar`] 
+    ///
+    /// However, this method is needed only when the type doesn't implement a [`GraphQLScalar`]
     /// itself, or does it in non-optimal way. In reality, the [`ArcStr`] already implements a
     /// [`GraphQLScalar`] and does the [`ScalarValue::downcast_type()`] check in its implementation,
     /// which can be naturally reused by calling the [`ScalarValue::try_to()`] method.
@@ -299,24 +299,24 @@ pub trait ScalarValue:
     /// ```
     #[must_use]
     fn downcast_type<T: Any>(&self) -> Option<&T>;
-    
+
     /// Tries to represent this [`ScalarValue`] as the specified type `T`.
-    /// 
+    ///
     /// This method is the recommended way to parse a defined [`GraphQLScalar`] type `T` from a
     /// [`ScalarValue`].
-    /// 
-    /// This method could be used instead of other `try_*` helpers in case the 
+    ///
+    /// This method could be used instead of other `try_*` helpers in case the
     /// [`FromScalarValue::Error`] is needed.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// # use juniper::{DefaultScalarValue, GraphQLScalar, ScalarValue as _};
-    /// 
+    ///
     /// let v = DefaultScalarValue::Boolean(false);
     /// assert_eq!(v.try_to::<bool>().unwrap(), false);
     /// assert!(v.try_to::<f64>().is_err());
-    /// 
+    ///
     /// #[derive(Debug, GraphQLScalar, PartialEq)]
     /// #[graphql(transparent)]
     /// struct Name(String);
@@ -333,7 +333,7 @@ pub trait ScalarValue:
     /// This method is an ergonomic alias for the [`FromScalarValue<T>`] conversion.
     ///
     /// Implementations should not implement this method, but rather implement only the
-    /// [`TryScalarValueTo<T>`] conversion directly in case `T` is a primitive built-in GraphQL 
+    /// [`TryScalarValueTo<T>`] conversion directly in case `T` is a primitive built-in GraphQL
     /// scalar type ([`bool`], [`f64`], [`i32`], [`&str`], or [`String`]), otherwise the
     /// [`FromScalarValue<T>`] conversion is provided when a [`GraphQLScalar`] is implemented.
     fn try_to<'a, T>(&'a self) -> Result<T, T::Error>
@@ -513,10 +513,28 @@ pub trait TryScalarValueTo<'me, T: 'me> {
     fn try_scalar_value_to(&'me self) -> Result<T, Self::Error>;
 }
 
+/// Parsing of a [`ScalarValue`] into a Rust data type.
+///
+/// The conversion _can_ fail, and must in that case return an [`Err`].
+///
+/// Use the [`ScalarValue::try_to()`] method as a shortcut for this conversion.
+///
+/// # Implementation
+///
+/// Implementing this trait for a type allows to specify this type directly in the `from_input()`
+/// function when implementing a [`GraphQLScalar`] via [derive macro](macro@GraphQLScalar).
+///
+/// Also, `#[derive(`[`GraphQLScalar`](macro@GraphQLScalar)`)]` automatically implements this trait
+/// for a type.
 pub trait FromScalarValue<'s, S: 's = DefaultScalarValue>: Sized {
+    /// Parsing error of a [`ScalarValue`].
     type Error: IntoFieldError<S> + 's;
 
-    /// Performs the conversion.
+    /// Parses the provided [`ScalarValue`].
+    ///
+    /// # Errors
+    ///
+    /// If this type cannot be parsed from the provided [`ScalarValue`].
     fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error>;
 }
 

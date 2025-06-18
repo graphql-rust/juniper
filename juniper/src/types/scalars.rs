@@ -4,7 +4,7 @@ use derive_more::with_trait::{Deref, Display, From, Into};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    FieldResult, GraphQLScalar, IntoFieldError, Scalar,
+    GraphQLScalar, IntoFieldError, Scalar,
     ast::{InputValue, Selection, ToInputValue},
     executor::{ExecutionResult, Executor, Registry},
     graphql_scalar,
