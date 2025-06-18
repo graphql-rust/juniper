@@ -1,5 +1,5 @@
 use crate::{
-    GraphQLInputObject, GraphQLScalar, ScalarValue, Value,
+    GraphQLInputObject, GraphQLScalar,
     executor::Variables,
     graphql_object, graphql_value, graphql_vars,
     parser::SourcePosition,
@@ -14,8 +14,8 @@ use crate::{
 struct TestComplexScalar;
 
 impl TestComplexScalar {
-    fn to_output<S: ScalarValue>(&self) -> Value<S> {
-        graphql_value!("SerializedValue")
+    fn to_output(&self) -> &'static str {
+        "SerializedValue"
     }
 
     fn from_input(s: &str) -> Result<Self, Box<str>> {

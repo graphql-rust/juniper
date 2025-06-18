@@ -7,7 +7,7 @@ use std::convert::Infallible;
 use derive_more::with_trait::Display;
 use futures::future::{self, BoxFuture};
 
-use crate::{FieldError, InputValue, ScalarValue};
+use crate::{FieldError, InputValue, ScalarValue, ToScalarValue};
 
 /// This trait is used by [`graphql_scalar`] macro to retrieve [`Error`] type from a [`Result`].
 ///
@@ -92,5 +92,36 @@ impl<I, O, E> ToResultCall for &fn(I) -> Result<O, E> {
 
     fn __to_result_call(&self, input: Self::Input) -> Result<Self::Output, Self::Error> {
         self(input)
+    }
+}
+
+/// [Autoref-based specialized][0] coercion into a [`ScalarValue`] for a function call for providing
+/// a return-type polymorphism in macros.
+///
+/// [0]: https://lukaskalbertodt.github.io/2019/12/05/generalized-autoref-based-specialization.html
+pub trait ToScalarValueCall<S: ScalarValue> {
+    /// Input of this function.
+    type Input;
+
+    /// Calls this function, coercing its output into a [`ScalarValue`].
+    fn __to_scalar_value_call(&self, input: Self::Input) -> S;
+}
+
+impl<I, S: ScalarValue> ToScalarValueCall<S> for &fn(I) -> S {
+    type Input = I;
+
+    fn __to_scalar_value_call(&self, input: Self::Input) -> S {
+        self(input)
+    }
+}
+
+impl<I, O, S: ScalarValue> ToScalarValueCall<S> for fn(I) -> O
+where
+    O: ToScalarValue<S>,
+{
+    type Input = I;
+
+    fn __to_scalar_value_call(&self, input: Self::Input) -> S {
+        self(input).to_scalar_value()
     }
 }

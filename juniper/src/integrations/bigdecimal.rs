@@ -8,9 +8,7 @@
 //!
 //! [`BigDecimal`]: bigdecimal::BigDecimal
 
-use std::str::FromStr as _;
-
-use crate::{Scalar, ScalarValue, Value, graphql_scalar};
+use crate::graphql_scalar;
 
 // TODO: Try remove on upgrade of `bigdecimal` crate.
 mod for_minimal_versions_check_only {
@@ -29,7 +27,8 @@ mod for_minimal_versions_check_only {
 /// See also [`bigdecimal`] crate for details.
 ///
 /// [`bigdecimal`]: https://docs.rs/bigdecimal
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = bigdecimal_scalar,
     parse_token(i32, f64, String),
     specified_by_url = "https://docs.rs/bigdecimal",
@@ -37,10 +36,11 @@ mod for_minimal_versions_check_only {
 type BigDecimal = bigdecimal::BigDecimal;
 
 mod bigdecimal_scalar {
-    use super::*;
+    use super::BigDecimal;
+    use crate::{Scalar, ScalarValue};
 
-    pub(super) fn to_output<S: ScalarValue>(v: &BigDecimal) -> Value<S> {
-        Value::scalar(v.to_string())
+    pub(super) fn to_output(v: &BigDecimal) -> String {
+        v.to_string() // TODO: Optimize via `Display`?
     }
 
     pub(super) fn from_input(v: &Scalar<impl ScalarValue>) -> Result<BigDecimal, Box<str>> {
@@ -50,13 +50,14 @@ mod bigdecimal_scalar {
             // See akubera/bigdecimal-rs#103 for details:
             // https://github.com/akubera/bigdecimal-rs/issues/103
             let mut buf = ryu::Buffer::new();
-            BigDecimal::from_str(buf.format(f))
+            buf.format(f)
+                .parse::<BigDecimal>()
                 .map_err(|e| format!("Failed to parse `BigDecimal` from `Float`: {e}").into())
         } else {
             v.try_to::<&str>()
                 .map_err(|e| e.to_string().into())
                 .and_then(|s| {
-                    BigDecimal::from_str(s).map_err(|e| {
+                    s.parse::<BigDecimal>().map_err(|e| {
                         format!("Failed to parse `BigDecimal` from `String`: {e}").into()
                     })
                 })
@@ -66,8 +67,6 @@ mod bigdecimal_scalar {
 
 #[cfg(test)]
 mod test {
-    use std::str::FromStr as _;
-
     use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::BigDecimal;
@@ -91,7 +90,7 @@ mod test {
         ] {
             let input: InputValue = input;
             let parsed = BigDecimal::from_input_value(&input);
-            let expected = BigDecimal::from_str(expected).unwrap();
+            let expected = expected.parse::<BigDecimal>().unwrap();
 
             assert!(
                 parsed.is_ok(),
@@ -130,7 +129,7 @@ mod test {
             "123",
             "43.44",
         ] {
-            let actual: InputValue = BigDecimal::from_str(raw).unwrap().to_input_value();
+            let actual: InputValue = raw.parse::<BigDecimal>().unwrap().to_input_value();
 
             assert_eq!(actual, graphql_input_value!((raw)), "on value: {raw}");
         }

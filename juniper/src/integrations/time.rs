@@ -27,7 +27,7 @@ use time::{
     macros::format_description,
 };
 
-use crate::{ScalarValue, Value, graphql_scalar};
+use crate::graphql_scalar;
 
 /// Date in the proleptic Gregorian calendar (without time zone).
 ///
@@ -40,7 +40,8 @@ use crate::{ScalarValue, Value, graphql_scalar};
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-date
 /// [2]: https://docs.rs/time/*/time/struct.Date.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = local_date,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-date",
@@ -55,11 +56,10 @@ mod local_date {
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-date
     const FORMAT: &[BorrowedFormatItem<'_>] = format_description!("[year]-[month]-[day]");
 
-    pub(super) fn to_output<S: ScalarValue>(v: &LocalDate) -> Value<S> {
-        Value::scalar(
-            v.format(FORMAT)
-                .unwrap_or_else(|e| panic!("failed to format `LocalDate`: {e}")),
-        )
+    pub(super) fn to_output(v: &LocalDate) -> String {
+        // TODO: Optimize via `Display`?
+        v.format(FORMAT)
+            .unwrap_or_else(|e| panic!("failed to format `LocalDate`: {e}"))
     }
 
     pub(super) fn from_input(s: &str) -> Result<LocalDate, Box<str>> {
@@ -79,7 +79,8 @@ mod local_date {
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
 /// [2]: https://docs.rs/time/*/time/struct.Time.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = local_time,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-time",
@@ -106,15 +107,14 @@ mod local_time {
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
     const FORMAT_NO_SECS: &[BorrowedFormatItem<'_>] = format_description!("[hour]:[minute]");
 
-    pub(super) fn to_output<S: ScalarValue>(v: &LocalTime) -> Value<S> {
-        Value::scalar(
-            if v.millisecond() == 0 {
-                v.format(FORMAT_NO_MILLIS)
-            } else {
-                v.format(FORMAT)
-            }
-            .unwrap_or_else(|e| panic!("failed to format `LocalTime`: {e}")),
-        )
+    pub(super) fn to_output(v: &LocalTime) -> String {
+        // TODO: Optimize via `Display`?
+        if v.millisecond() == 0 {
+            v.format(FORMAT_NO_MILLIS)
+        } else {
+            v.format(FORMAT)
+        }
+        .unwrap_or_else(|e| panic!("failed to format `LocalTime`: {e}"))
     }
 
     pub(super) fn from_input(s: &str) -> Result<LocalTime, Box<str>> {
@@ -135,7 +135,8 @@ mod local_time {
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-date-time
 /// [2]: https://docs.rs/time/*/time/struct.PrimitiveDateTime.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = local_date_time,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-date-time",
@@ -151,11 +152,10 @@ mod local_date_time {
     const FORMAT: &[BorrowedFormatItem<'_>] =
         format_description!("[year]-[month]-[day]T[hour]:[minute]:[second]");
 
-    pub(super) fn to_output<S: ScalarValue>(v: &LocalDateTime) -> Value<S> {
-        Value::scalar(
-            v.format(FORMAT)
-                .unwrap_or_else(|e| panic!("failed to format `LocalDateTime`: {e}")),
-        )
+    pub(super) fn to_output(v: &LocalDateTime) -> String {
+        // TODO: Optimize via `Display`?
+        v.format(FORMAT)
+            .unwrap_or_else(|e| panic!("failed to format `LocalDateTime`: {e}"))
     }
 
     pub(super) fn from_input(s: &str) -> Result<LocalDateTime, Box<str>> {
@@ -175,7 +175,8 @@ mod local_date_time {
 /// [0]: https://datatracker.ietf.org/doc/html/rfc3339#section-5.6
 /// [1]: https://graphql-scalars.dev/docs/scalars/date-time
 /// [2]: https://docs.rs/time/*/time/struct.OffsetDateTime.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = date_time,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/date-time",
@@ -185,12 +186,11 @@ pub type DateTime = time::OffsetDateTime;
 mod date_time {
     use super::*;
 
-    pub(super) fn to_output<S: ScalarValue>(v: &DateTime) -> Value<S> {
-        Value::scalar(
-            v.to_offset(UtcOffset::UTC)
-                .format(&Rfc3339)
-                .unwrap_or_else(|e| panic!("failed to format `DateTime`: {e}")),
-        )
+    pub(super) fn to_output(v: &DateTime) -> String {
+        // TODO: Optimize via `Display`?
+        v.to_offset(UtcOffset::UTC)
+            .format(&Rfc3339)
+            .unwrap_or_else(|e| panic!("failed to format `DateTime`: {e}"))
     }
 
     pub(super) fn from_input(s: &str) -> Result<DateTime, Box<str>> {
@@ -215,7 +215,8 @@ const UTC_OFFSET_FORMAT: &[BorrowedFormatItem<'_>] =
 /// [0]: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 /// [1]: https://graphql-scalars.dev/docs/scalars/utc-offset
 /// [2]: https://docs.rs/time/*/time/struct.UtcOffset.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = utc_offset,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/utc-offset",
@@ -225,11 +226,10 @@ pub type UtcOffset = time::UtcOffset;
 mod utc_offset {
     use super::*;
 
-    pub(super) fn to_output<S: ScalarValue>(v: &UtcOffset) -> Value<S> {
-        Value::scalar(
-            v.format(UTC_OFFSET_FORMAT)
-                .unwrap_or_else(|e| panic!("failed to format `UtcOffset`: {e}")),
-        )
+    pub(super) fn to_output(v: &UtcOffset) -> String {
+        // TODO: Optimize via `Display`?
+        v.format(UTC_OFFSET_FORMAT)
+            .unwrap_or_else(|e| panic!("failed to format `UtcOffset`: {e}"))
     }
 
     pub(super) fn from_input(s: &str) -> Result<UtcOffset, Box<str>> {
