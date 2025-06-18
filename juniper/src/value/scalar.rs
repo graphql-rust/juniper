@@ -54,7 +54,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// # use std::{any::Any, fmt};
 /// #
 /// # use compact_str::CompactString;
-/// use derive_more::{Display, From, TryInto};
+/// use derive_more::with_trait::{Display, From, TryInto};
 /// use juniper::ScalarValue;
 /// use serde::{de, Deserialize, Deserializer, Serialize};
 ///
@@ -84,7 +84,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 ///
 /// // Custom implementation of `ScalarValue::from_displayable()` method
 /// // for efficient conversions from `CompactString` into `MyScalarValue`.
-/// fn from_compact_str<Str: fmt::Display + Any + ?Sized>(s: &Str) -> MyScalarValue {
+/// fn from_compact_str<Str: Display + Any + ?Sized>(s: &Str) -> MyScalarValue {
 ///     use juniper::AnyExt as _; // allows downcasting directly on types without `dyn`
 ///
 ///     if let Some(s) = s.downcast_ref::<CompactString>() {
@@ -180,7 +180,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// [`Serialize`]: trait@serde::Serialize
 pub trait ScalarValue:
     fmt::Debug
-    + fmt::Display
+    + Display
     + PartialEq
     + Clone
     + DeserializeOwned
@@ -474,7 +474,7 @@ pub trait ScalarValue:
         }
     }
 
-    /// Creates this [`ScalarValue`] from the provided [`fmt::Display`] type.
+    /// Creates this [`ScalarValue`] from the provided [`Display`]able type.
     ///
     /// This method should be implemented if [`ScalarValue`] implementation uses some custom string
     /// type inside to enable efficient conversion from values of this type.
@@ -485,7 +485,7 @@ pub trait ScalarValue:
     ///
     /// See the [example in trait documentation](ScalarValue#example) for how it can be used.
     #[must_use]
-    fn from_displayable<Str: fmt::Display + Any + ?Sized>(s: &Str) -> Self {
+    fn from_displayable<Str: Display + Any + ?Sized>(s: &Str) -> Self {
         s.to_string().into()
     }
 }
@@ -549,13 +549,13 @@ impl<'s, S: ScalarValue> FromScalarValue<'s, S> for &'s Scalar<S> {
     type Error = Infallible;
 
     fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
-        Ok(Scalar::ref_cast(v))
+        Ok(v.into())
     }
 }
 
 /// Error of a [`ScalarValue`] not matching the expected type.
 #[derive(Clone, Debug, Display, Error)]
-#[display("Expected `{type_name}`, found: {}", ScalarValueFmt(*input))]
+#[display("Expected `{type_name}`, found: {}", <&Scalar<_>>::from(*input))]
 pub struct WrongInputScalarTypeError<'a, S: ScalarValue> {
     /// Type name of the expected GraphQL scalar.
     pub type_name: ArcStr,
@@ -570,10 +570,22 @@ impl<'a, S: ScalarValue> IntoFieldError<S> for WrongInputScalarTypeError<'a, S> 
     }
 }
 
-/// [`Display`]-formatter for a [`ScalarValue`] to render as a [`Value`].
-pub(crate) struct ScalarValueFmt<'a, S: ScalarValue>(pub &'a S);
+/// Transparent wrapper over a value, indicating it being a [`ScalarValue`].
+///
+/// Used in [`GraphQLScalar`] definitions to distinguish a concrete type for a generic
+/// [`ScalarValue`], since Rust type inference fail do so for a generic value directly in macro
+/// expansions.
+#[derive(Debug, Deref, RefCast)]
+#[repr(transparent)]
+pub struct Scalar<T: ScalarValue>(T);
 
-impl<'a, S: ScalarValue> Display for ScalarValueFmt<'a, S> {
+impl<'a, T: ScalarValue> From<&'a T> for &'a Scalar<T> {
+    fn from(value: &'a T) -> Self {
+        Scalar::ref_cast(value)
+    }
+}
+
+impl<S: ScalarValue> Display for Scalar<S> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(s) = self.0.try_as_str() {
             write!(f, "\"{s}\"")
@@ -582,16 +594,6 @@ impl<'a, S: ScalarValue> Display for ScalarValueFmt<'a, S> {
         }
     }
 }
-
-/// Transparent wrapper over a value, indicating it being a [`ScalarValue`].
-///
-/// Used in [`GraphQLScalar`] definitions to distinguish a concrete type for a generic
-/// [`ScalarValue`], since Rust type inference fail do so for a generic value directly in macro
-/// expansions.
-#[derive(Debug, Deref, Display, RefCast)]
-#[display("{}", ScalarValueFmt(_0))]
-#[repr(transparent)]
-pub struct Scalar<T: ScalarValue>(T);
 
 /// Extension of [`Any`] for using its methods directly on the value without `dyn`.
 pub trait AnyExt: Any {

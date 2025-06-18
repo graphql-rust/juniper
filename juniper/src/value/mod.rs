@@ -6,7 +6,6 @@ use std::{any::TypeId, borrow::Cow, fmt, mem};
 use arcstr::ArcStr;
 use compact_str::CompactString;
 
-pub(crate) use self::scalar::ScalarValueFmt;
 pub use self::{
     object::Object,
     scalar::{
@@ -165,7 +164,7 @@ impl<S: ScalarValue> fmt::Display for Value<S> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Null => write!(f, "null"),
-            Self::Scalar(s) => fmt::Display::fmt(&ScalarValueFmt(s), f),
+            Self::Scalar(s) => fmt::Display::fmt(<&Scalar<_>>::from(s), f),
             Self::List(list) => {
                 write!(f, "[")?;
                 for (idx, item) in list.iter().enumerate() {

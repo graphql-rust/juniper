@@ -8,7 +8,7 @@ use indexmap::IndexMap;
 use crate::{
     executor::Variables,
     parser::Spanning,
-    value::{DefaultScalarValue, ScalarValue, ScalarValueFmt},
+    value::{DefaultScalarValue, Scalar, ScalarValue},
 };
 
 /// Type literal in a syntax tree.
@@ -434,7 +434,7 @@ impl<S: ScalarValue> fmt::Display for InputValue<S> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Null => write!(f, "null"),
-            Self::Scalar(s) => fmt::Display::fmt(&ScalarValueFmt(s), f),
+            Self::Scalar(s) => fmt::Display::fmt(<&Scalar<_>>::from(s), f),
             Self::Enum(v) => write!(f, "{v}"),
             Self::Variable(v) => write!(f, "${v}"),
             Self::List(v) => {
