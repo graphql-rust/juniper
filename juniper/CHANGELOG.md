@@ -114,6 +114,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - `ScalarValue` trait:
     - `from_displayable()` method allowing to specialize `ScalarValue` conversion from custom string types. ([#1324], [#819])
     - `try_to::<T>()` method defined by default as `FromScalarValue<T>` alias. ([#1327], [#1329])
+    - `downcast_type::<T>()` method. ([#1329])
 - `#[derive(GraphQLScalar)]` and `#[graphql_scalar]` macros:
     - Support for specifying concrete types as input argument in provided `from_input()` function. ([#1327])
     - Support for non-`Result` return type in provided `from_input()` function. ([#1327])
