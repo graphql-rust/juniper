@@ -3,7 +3,7 @@
 pub mod common;
 
 use derive_more::with_trait::{Display, From, TryInto};
-use juniper::{DefaultScalarValue, ScalarValue, TryScalarValueTo};
+use juniper::{DefaultScalarValue, ScalarValue, TryToPrimitive};
 use serde::{Deserialize, Serialize};
 
 // Override `std::prelude` items to check whether macros expand hygienically.
@@ -158,10 +158,10 @@ mod missing_conv_attr {
         Boolean(bool),
     }
 
-    impl<'me> TryScalarValueTo<'me, i32> for CustomScalarValue {
+    impl<'me> TryToPrimitive<'me, i32> for CustomScalarValue {
         type Error = &'static str;
 
-        fn try_scalar_value_to(&'me self) -> prelude::Result<i32, Self::Error> {
+        fn try_to_primitive(&'me self) -> prelude::Result<i32, Self::Error> {
             Err("Not `Int` definitely")
         }
     }

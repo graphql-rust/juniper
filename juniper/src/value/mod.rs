@@ -11,7 +11,7 @@ pub use self::{
     object::Object,
     scalar::{
         AnyExt, DefaultScalarValue, FromScalarValue, ParseScalarResult, ParseScalarValue, Scalar,
-        ScalarValue, TryScalarValueTo, WrongInputScalarTypeError,
+        ScalarValue, TryToPrimitive, WrongInputScalarTypeError,
     },
 };
 use crate::{

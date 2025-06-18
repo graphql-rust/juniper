@@ -206,7 +206,7 @@ struct Definition {
 impl ToTokens for Definition {
     fn to_tokens(&self, into: &mut TokenStream) {
         self.impl_scalar_value_tokens().to_tokens(into);
-        self.impl_try_scalar_to_tokens().to_tokens(into);
+        self.impl_try_to_primitive_tokens().to_tokens(into);
     }
 }
 
@@ -268,14 +268,14 @@ impl Definition {
         }
     }
 
-    /// Returns generated code implementing `TryScalarValueTo`.
-    fn impl_try_scalar_to_tokens(&self) -> TokenStream {
+    /// Returns generated code implementing `TryToPrimitive`.
+    fn impl_try_to_primitive_tokens(&self) -> TokenStream {
         let ty_ident = &self.ident;
         let (_, ty_gens, where_clause) = self.generics.split_for_impl();
 
         let ref_lt = quote! { '___a };
-        // We don't impose additional bounds on generic parameters, because
-        // `ScalarValue` itself has `'static` bound.
+        // We don't impose additional bounds on generic parameters, 
+        // because `ScalarValue` itself has `'static` bound.
         let mut generics = self.generics.clone();
         generics.params.push(parse_quote! { #ref_lt });
         let (lt_impl_gens, _, _) = generics.split_for_impl();
@@ -326,12 +326,12 @@ impl Definition {
             });
             Some(quote! {
                 #[automatically_derived]
-                impl #lt_impl_gens ::juniper::TryScalarValueTo<#ref_lt, #as_ty>
-                 for #ty_ident #ty_gens #where_clause
+                impl #lt_impl_gens ::juniper::TryToPrimitive<#ref_lt, #as_ty> for #ty_ident #ty_gens 
+                     #where_clause
                 {
                     type Error = ::juniper::WrongInputScalarTypeError<#ref_lt, #ty_ident #ty_gens>;
 
-                    fn try_scalar_value_to(
+                    fn try_to_primitive(
                         &#ref_lt self,
                     ) -> ::core::result::Result<#as_ty, Self::Error> {
                         match self {

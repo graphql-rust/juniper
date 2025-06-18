@@ -17,7 +17,7 @@ use crate::{
         subscriptions::GraphQLSubscriptionValue,
     },
     value::{
-        FromScalarValue, ParseScalarResult, ScalarValue, TryScalarValueTo, Value,
+        FromScalarValue, ParseScalarResult, ScalarValue, TryToPrimitive, Value,
         WrongInputScalarTypeError,
     },
 };
@@ -67,12 +67,12 @@ mod impl_string_scalar {
 
     impl<'s, S> FromScalarValue<'s, S> for String
     where
-        S: TryScalarValueTo<'s, Self, Error: IntoFieldError<S>> + 's,
+        S: TryToPrimitive<'s, Self, Error: IntoFieldError<S>> + 's,
     {
         type Error = S::Error;
 
         fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
-            v.try_scalar_value_to()
+            v.try_to_primitive()
         }
     }
 
@@ -302,12 +302,12 @@ where
 
 impl<'s, S> FromScalarValue<'s, S> for &'s str
 where
-    S: TryScalarValueTo<'s, Self, Error: IntoFieldError<S>> + 's,
+    S: TryToPrimitive<'s, Self, Error: IntoFieldError<S>> + 's,
 {
     type Error = S::Error;
 
     fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
-        v.try_scalar_value_to()
+        v.try_to_primitive()
     }
 }
 
@@ -320,12 +320,12 @@ mod impl_boolean_scalar {
 
     impl<'s, S> FromScalarValue<'s, S> for Boolean
     where
-        S: TryScalarValueTo<'s, Self, Error: IntoFieldError<S>> + 's,
+        S: TryToPrimitive<'s, Self, Error: IntoFieldError<S>> + 's,
     {
         type Error = S::Error;
 
         fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
-            v.try_scalar_value_to()
+            v.try_to_primitive()
         }
     }
 
@@ -348,12 +348,12 @@ mod impl_int_scalar {
 
     impl<'s, S> FromScalarValue<'s, S> for Int
     where
-        S: TryScalarValueTo<'s, Self, Error: IntoFieldError<S>> + 's,
+        S: TryToPrimitive<'s, Self, Error: IntoFieldError<S>> + 's,
     {
         type Error = S::Error;
 
         fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
-            v.try_scalar_value_to()
+            v.try_to_primitive()
         }
     }
 
@@ -381,12 +381,12 @@ mod impl_float_scalar {
 
     impl<'s, S> FromScalarValue<'s, S> for Float
     where
-        S: TryScalarValueTo<'s, Self, Error: IntoFieldError<S>> + 's,
+        S: TryToPrimitive<'s, Self, Error: IntoFieldError<S>> + 's,
     {
         type Error = S::Error;
 
         fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
-            v.try_scalar_value_to()
+            v.try_to_primitive()
         }
     }
 
