@@ -10,7 +10,10 @@ use std::{
     fmt, ptr,
 };
 
-use crate::{FieldError, IntoFieldError, parser::{ParseError, ScalarToken}, Value};
+use crate::{
+    FieldError, IntoFieldError,
+    parser::{ParseError, ScalarToken},
+};
 #[cfg(doc)]
 use crate::{GraphQLScalar, GraphQLValue, Value};
 
@@ -567,16 +570,10 @@ impl<'a, S: ScalarValue> IntoFieldError<S> for WrongInputScalarTypeError<'a, S> 
     }
 }
 
-pub trait IntoScalarValue<S = DefaultScalarValue>: Sized {
+pub trait ToScalarValue<S = DefaultScalarValue> {
     /// Converts this value into a [`ScalarValue`].
     #[must_use]
-    fn into_scalar_value(self) -> S;
-}
-
-impl<S: ScalarValue> IntoScalarValue<S> for S {
-    fn into_scalar_value(self) -> Self {
-        self
-    }
+    fn to_scalar_value(&self) -> S;
 }
 
 /// Transparent wrapper over a value, indicating it being a [`ScalarValue`].

@@ -17,7 +17,7 @@ use crate::{
         subscriptions::GraphQLSubscriptionValue,
     },
     value::{
-        FromScalarValue, ParseScalarResult, ScalarValue, TryToPrimitive, Value,
+        FromScalarValue, ParseScalarResult, ScalarValue, ToScalarValue, TryToPrimitive, Value,
         WrongInputScalarTypeError,
     },
 };
@@ -73,6 +73,15 @@ mod impl_string_scalar {
 
         fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
             v.try_to_primitive()
+        }
+    }
+
+    impl<S> ToScalarValue<S> for String
+    where
+        Self: Into<S>,
+    {
+        fn to_scalar_value(&self) -> S {
+            self.clone().into()
         }
     }
 
@@ -291,15 +300,6 @@ where
     }
 }
 
-impl<S> ToInputValue<S> for &str
-where
-    S: ScalarValue,
-{
-    fn to_input_value(&self) -> InputValue<S> {
-        InputValue::scalar(String::from(*self))
-    }
-}
-
 impl<'s, S> FromScalarValue<'s, S> for &'s str
 where
     S: TryToPrimitive<'s, Self, Error: IntoFieldError<S>> + 's,
@@ -308,6 +308,21 @@ where
 
     fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
         v.try_to_primitive()
+    }
+}
+
+impl<S: ScalarValue> ToScalarValue<S> for str {
+    fn to_scalar_value(&self) -> S {
+        S::from_displayable(self)
+    }
+}
+
+impl<S> ToInputValue<S> for &str
+where
+    str: ToScalarValue<S>,
+{
+    fn to_input_value(&self) -> InputValue<S> {
+        InputValue::scalar::<S>(self.to_scalar_value())
     }
 }
 
@@ -326,6 +341,15 @@ mod impl_boolean_scalar {
 
         fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
             v.try_to_primitive()
+        }
+    }
+
+    impl<S> ToScalarValue<S> for Boolean
+    where
+        Self: Into<S>,
+    {
+        fn to_scalar_value(&self) -> S {
+            (*self).into()
         }
     }
 
@@ -354,6 +378,15 @@ mod impl_int_scalar {
 
         fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
             v.try_to_primitive()
+        }
+    }
+
+    impl<S> ToScalarValue<S> for Int
+    where
+        Self: Into<S>,
+    {
+        fn to_scalar_value(&self) -> S {
+            (*self).into()
         }
     }
 
@@ -387,6 +420,15 @@ mod impl_float_scalar {
 
         fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
             v.try_to_primitive()
+        }
+    }
+
+    impl<S> ToScalarValue<S> for Float
+    where
+        Self: Into<S>,
+    {
+        fn to_scalar_value(&self) -> S {
+            (*self).into()
         }
     }
 

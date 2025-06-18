@@ -11,7 +11,7 @@ use crate::{
         async_await::GraphQLValueAsync,
         base::{Arguments, GraphQLType, GraphQLValue},
     },
-    value::{FromScalarValue, ScalarValue},
+    value::{FromScalarValue, ToScalarValue, ScalarValue},
 };
 
 impl<S, T> GraphQLType<S> for Box<T>
@@ -96,6 +96,15 @@ where
 
     fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
         T::from_scalar_value(v).map(Self::new)
+    }
+}
+
+impl<T, S> ToScalarValue<S> for Box<T>
+where
+    T: ToScalarValue<S> + ?Sized,
+{
+    fn to_scalar_value(&self) -> S {
+        (**self).to_scalar_value()
     }
 }
 
@@ -204,6 +213,15 @@ where
     }
 }
 
+impl<T, S> ToScalarValue<S> for &T
+where
+    T: ToScalarValue<S> + ?Sized,
+{
+    fn to_scalar_value(&self) -> S {
+        (**self).to_scalar_value()
+    }
+}
+
 impl<T, S> ToInputValue<S> for &T
 where
     S: fmt::Debug,
@@ -296,6 +314,15 @@ where
 
     fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
         T::from_scalar_value(v).map(Self::new)
+    }
+}
+
+impl<T, S> ToScalarValue<S> for Arc<T>
+where
+    T: ToScalarValue<S> + ?Sized,
+{
+    fn to_scalar_value(&self) -> S {
+        (**self).to_scalar_value()
     }
 }
 

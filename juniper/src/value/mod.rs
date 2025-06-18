@@ -9,8 +9,8 @@ use compact_str::CompactString;
 pub use self::{
     object::Object,
     scalar::{
-        AnyExt, DefaultScalarValue, FromScalarValue, ParseScalarResult, ParseScalarValue, Scalar,
-        ScalarValue, TryToPrimitive, WrongInputScalarTypeError, IntoScalarValue,
+        AnyExt, DefaultScalarValue, FromScalarValue, ToScalarValue, ParseScalarResult,
+        ParseScalarValue, Scalar, ScalarValue, TryToPrimitive, WrongInputScalarTypeError,
     },
 };
 use crate::{
