@@ -54,7 +54,7 @@ use std::str;
 
 use derive_more::with_trait::{Debug, Display, Error, Into};
 
-use crate::{ScalarValue, Value, graphql_scalar};
+use crate::graphql_scalar;
 
 /// Representation of a civil date in the Gregorian calendar.
 ///
@@ -68,7 +68,8 @@ use crate::{ScalarValue, Value, graphql_scalar};
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-date
 /// [2]: https://docs.rs/jiff/*/jiff/civil/struct.Date.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = local_date,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-date",
@@ -83,11 +84,8 @@ mod local_date {
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-date
     const FORMAT: &str = "%Y-%m-%d";
 
-    pub(super) fn to_output<S>(v: &LocalDate) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        Value::scalar(v.strftime(FORMAT).to_string())
+    pub(super) fn to_output(v: &LocalDate) -> String {
+        v.strftime(FORMAT).to_string() // TODO: Optimize via `Display`?
     }
 
     pub(super) fn from_input(s: &str) -> Result<LocalDate, Box<str>> {
@@ -107,7 +105,8 @@ mod local_date {
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
 /// [2]: https://docs.rs/jiff/*/jiff/civil/struct.Time.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = local_time,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-time",
@@ -132,18 +131,13 @@ mod local_time {
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
     const FORMAT_NO_SECS: &str = "%H:%M";
 
-    pub(super) fn to_output<S>(v: &LocalTime) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        Value::scalar(
-            if v.subsec_nanosecond() == 0 {
-                v.strftime(FORMAT_NO_MILLIS)
-            } else {
-                v.strftime(FORMAT)
-            }
-            .to_string(),
-        )
+    pub(super) fn to_output(v: &LocalTime) -> String {
+        if v.subsec_nanosecond() == 0 {
+            v.strftime(FORMAT_NO_MILLIS)
+        } else {
+            v.strftime(FORMAT)
+        }
+        .to_string() // TODO: Optimize via `Display`?
     }
 
     pub(super) fn from_input(s: &str) -> Result<LocalTime, Box<str>> {
@@ -170,7 +164,8 @@ mod local_time {
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-date-time
 /// [2]: https://docs.rs/jiff/*/jiff/civil/struct.DateTime.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = local_date_time,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-date-time",
@@ -185,11 +180,8 @@ mod local_date_time {
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-date-time
     const FORMAT: &str = "%Y-%m-%dT%H:%M:%S";
 
-    pub(super) fn to_output<S>(v: &LocalDateTime) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        Value::scalar(v.strftime(FORMAT).to_string())
+    pub(super) fn to_output(v: &LocalDateTime) -> String {
+        v.strftime(FORMAT).to_string() // TODO: Optimize via `Display`?
     }
 
     pub(super) fn from_input(s: &str) -> Result<LocalDateTime, Box<str>> {
@@ -208,7 +200,8 @@ mod local_date_time {
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/date-time
 /// [2]: https://docs.rs/jiff/*/jiff/struct.Timestamp.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = date_time,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/date-time",
@@ -225,11 +218,8 @@ mod date_time {
     /// [1]: https://graphql-scalars.dev/docs/scalars/date-time
     const FORMAT: &str = "%Y-%m-%dT%H:%M:%S%.fZ";
 
-    pub(super) fn to_output<S>(v: &DateTime) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        Value::scalar(v.strftime(FORMAT).to_string())
+    pub(super) fn to_output(v: &DateTime) -> String {
+        v.strftime(FORMAT).to_string() // TODO: Optimize via `Display`?
     }
 
     pub(super) fn from_input(s: &str) -> Result<DateTime, Box<str>> {
@@ -253,7 +243,8 @@ mod date_time {
 /// [3]: https://docs.rs/jiff/latest/jiff/struct.Timestamp.html
 /// [4]: https://docs.rs/jiff/latest/jiff/civil/struct.DateTime.html
 /// [5]: https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = zoned_date_time,
     parse_token(String),
     specified_by_url = "https://datatracker.ietf.org/doc/html/rfc9557#section-4.1",
@@ -265,11 +256,8 @@ mod zoned_date_time {
 
     use super::*;
 
-    pub(super) fn to_output<S>(v: &ZonedDateTime) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        Value::scalar(v.to_string())
+    pub(super) fn to_output(v: &ZonedDateTime) -> String {
+        v.to_string() // TODO: Optimize via `Display`?
     }
 
     pub(super) fn from_input(s: &str) -> Result<ZonedDateTime, Box<str>> {
@@ -288,7 +276,8 @@ mod zoned_date_time {
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/duration
 /// [2]: https://docs.rs/jiff/*/jiff/struct.Span.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = duration,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/duration",
@@ -300,11 +289,8 @@ mod duration {
 
     use super::*;
 
-    pub(super) fn to_output<S>(v: &Duration) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        Value::scalar(v.to_string())
+    pub(super) fn to_output(v: &Duration) -> String {
+        v.to_string() // TODO: Optimize via `Display`?
     }
 
     pub(super) fn from_input(s: &str) -> Result<Duration, Box<str>> {
@@ -326,7 +312,8 @@ mod duration {
 /// [2]: https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html
 /// [3]: https://graphql-scalars.dev/docs/scalars/time-zone
 /// [4]: https://graphql-scalars.dev/docs/scalars/utc-offset
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = time_zone_or_utc_offset,
     parse_token(String),
 )]
@@ -338,11 +325,8 @@ mod time_zone_or_utc_offset {
     /// Format of a [`TimeZoneOrUtcOffset`] scalar.
     const FORMAT: &str = "%:Q";
 
-    pub(super) fn to_output<S>(v: &TimeZoneOrUtcOffset) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        Value::scalar(v.iana_name().map_or_else(
+    pub(super) fn to_output(v: &TimeZoneOrUtcOffset) -> String {
+        v.iana_name().map_or_else(
             || {
                 // If no IANA time zone identifier is available, fall back to displaying the time
                 // offset directly (using format `[+-]HH:MM[:SS]` from RFC 9557, e.g. `+05:30`).
@@ -353,7 +337,7 @@ mod time_zone_or_utc_offset {
                     .to_string()
             },
             ToOwned::to_owned,
-        ))
+        ) // TODO: Optimize via `Display`?
     }
 
     pub(super) fn from_input(s: &str) -> Result<TimeZoneOrUtcOffset, Box<str>> {
@@ -392,7 +376,8 @@ pub enum TimeZoneParsingError {
 /// [0]: http://iana.org/time-zones
 /// [1]: https://graphql-scalars.dev/docs/scalars/time-zone
 /// [2]: https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = time_zone,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/time-zone",
@@ -425,11 +410,8 @@ impl str::FromStr for TimeZone {
 mod time_zone {
     use super::*;
 
-    pub(super) fn to_output<S>(v: &TimeZone) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        Value::scalar(v.to_string())
+    pub(super) fn to_output(v: &TimeZone) -> String {
+        v.to_string() // TODO: Optimize via `Display`?
     }
 
     pub(super) fn from_input(s: &str) -> Result<TimeZone, Box<str>> {
@@ -446,7 +428,8 @@ mod time_zone {
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/utc-offset
 /// [2]: https://docs.rs/jiff/latest/jiff/tz/struct.Offset.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = utc_offset,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/utc-offset",
@@ -469,16 +452,13 @@ mod utc_offset {
         Ok(offset)
     }
 
-    pub(super) fn to_output<S>(v: &UtcOffset) -> Value<S>
-    where
-        S: ScalarValue,
-    {
+    pub(super) fn to_output(v: &UtcOffset) -> String {
         let mut buf = String::new();
         let tm = jiff::fmt::strtime::BrokenDownTime::from(
             &jiff::Zoned::now().with_time_zone(jiff::tz::TimeZone::fixed(*v)),
         );
         tm.format(FORMAT, &mut buf).unwrap();
-        Value::scalar(buf)
+        buf // TODO: Optimize via `Display`?
     }
 
     pub(super) fn from_input(s: &str) -> Result<UtcOffset, Box<str>> {

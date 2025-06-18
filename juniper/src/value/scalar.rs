@@ -570,6 +570,12 @@ impl<'a, S: ScalarValue> IntoFieldError<S> for WrongInputScalarTypeError<'a, S> 
     }
 }
 
+pub trait ToScalarValue<S = DefaultScalarValue> {
+    /// Converts this value into a [`ScalarValue`].
+    #[must_use]
+    fn to_scalar_value(&self) -> S;
+}
+
 /// Transparent wrapper over a value, indicating it being a [`ScalarValue`].
 ///
 /// Used in [`GraphQLScalar`] definitions to distinguish a concrete type for a generic

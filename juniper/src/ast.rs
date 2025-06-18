@@ -231,8 +231,8 @@ pub trait FromInputValue<S = DefaultScalarValue>: Sized {
     }
 }
 
-/// Losslessly clones a Rust data type into an InputValue.
-pub trait ToInputValue<S = DefaultScalarValue>: Sized {
+/// Losslessly clones a Rust data type into an [`InputValue`].
+pub trait ToInputValue<S = DefaultScalarValue> {
     /// Performs the conversion.
     fn to_input_value(&self) -> InputValue<S>;
 }

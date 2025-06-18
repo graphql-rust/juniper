@@ -302,11 +302,10 @@ impl<S, T: FromInputValue<S>> FromInputValue<S> for Nullable<T> {
 impl<S, T> ToInputValue<S> for Nullable<T>
 where
     T: ToInputValue<S>,
-    S: ScalarValue,
 {
     fn to_input_value(&self) -> InputValue<S> {
-        match *self {
-            Self::Some(ref v) => v.to_input_value(),
+        match self {
+            Self::Some(v) => v.to_input_value(),
             _ => InputValue::null(),
         }
     }

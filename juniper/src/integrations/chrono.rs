@@ -23,7 +23,7 @@ use std::fmt;
 
 use chrono::{FixedOffset, TimeZone};
 
-use crate::{ScalarValue, Value, graphql_scalar};
+use crate::graphql_scalar;
 
 /// Date in the proleptic Gregorian calendar (without time zone).
 ///
@@ -36,7 +36,8 @@ use crate::{ScalarValue, Value, graphql_scalar};
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-date
 /// [2]: https://docs.rs/chrono/latest/chrono/naive/struct.NaiveDate.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = local_date,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-date",
@@ -44,18 +45,15 @@ use crate::{ScalarValue, Value, graphql_scalar};
 pub type LocalDate = chrono::NaiveDate;
 
 mod local_date {
-    use super::*;
+    use super::LocalDate;
 
     /// Format of a [`LocalDate` scalar][1].
     ///
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-date
     const FORMAT: &str = "%Y-%m-%d";
 
-    pub(super) fn to_output<S>(v: &LocalDate) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        Value::scalar(v.format(FORMAT).to_string())
+    pub(super) fn to_output(v: &LocalDate) -> String {
+        v.format(FORMAT).to_string() // TODO: Optimize via `Display`?
     }
 
     pub(super) fn from_input(s: &str) -> Result<LocalDate, Box<str>> {
@@ -75,7 +73,8 @@ mod local_date {
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
 /// [2]: https://docs.rs/chrono/latest/chrono/naive/struct.NaiveTime.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = local_time,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-time",
@@ -85,7 +84,7 @@ pub type LocalTime = chrono::NaiveTime;
 mod local_time {
     use chrono::Timelike as _;
 
-    use super::*;
+    use super::LocalTime;
 
     /// Full format of a [`LocalTime` scalar][1].
     ///
@@ -102,18 +101,13 @@ mod local_time {
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
     const FORMAT_NO_SECS: &str = "%H:%M";
 
-    pub(super) fn to_output<S>(v: &LocalTime) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        Value::scalar(
-            if v.nanosecond() == 0 {
-                v.format(FORMAT_NO_MILLIS)
-            } else {
-                v.format(FORMAT)
-            }
-            .to_string(),
-        )
+    pub(super) fn to_output(v: &LocalTime) -> String {
+        if v.nanosecond() == 0 {
+            v.format(FORMAT_NO_MILLIS)
+        } else {
+            v.format(FORMAT)
+        }
+        .to_string() // TODO: Optimize via `Display`?
     }
 
     pub(super) fn from_input(s: &str) -> Result<LocalTime, Box<str>> {
@@ -134,7 +128,8 @@ mod local_time {
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-date-time
 /// [2]: https://docs.rs/chrono/latest/chrono/naive/struct.NaiveDateTime.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = local_date_time,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-date-time",
@@ -142,18 +137,15 @@ mod local_time {
 pub type LocalDateTime = chrono::NaiveDateTime;
 
 mod local_date_time {
-    use super::*;
+    use super::LocalDateTime;
 
     /// Format of a [`LocalDateTime` scalar][1].
     ///
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-date-time
     const FORMAT: &str = "%Y-%m-%dT%H:%M:%S";
 
-    pub(super) fn to_output<S>(v: &LocalDateTime) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        Value::scalar(v.format(FORMAT).to_string())
+    pub(super) fn to_output(v: &LocalDateTime) -> String {
+        v.format(FORMAT).to_string() // TODO: Optimize via `Display`?
     }
 
     pub(super) fn from_input(s: &str) -> Result<LocalDateTime, Box<str>> {
@@ -174,7 +166,8 @@ mod local_date_time {
 /// [0]: https://datatracker.ietf.org/doc/html/rfc3339#section-5
 /// [1]: https://graphql-scalars.dev/docs/scalars/date-time
 /// [2]: https://docs.rs/chrono/latest/chrono/struct.DateTime.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = date_time,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/date-time",
@@ -186,20 +179,19 @@ mod local_date_time {
 pub type DateTime<Tz> = chrono::DateTime<Tz>;
 
 mod date_time {
-    use chrono::{SecondsFormat, Utc};
+    use std::fmt;
 
-    use super::*;
+    use chrono::{FixedOffset, SecondsFormat, TimeZone, Utc};
 
-    pub(super) fn to_output<S, Tz>(v: &DateTime<Tz>) -> Value<S>
+    use super::{DateTime, FromFixedOffset};
+
+    pub(super) fn to_output<Tz>(v: &DateTime<Tz>) -> String
     where
-        S: ScalarValue,
-        Tz: chrono::TimeZone,
+        Tz: TimeZone,
         Tz::Offset: fmt::Display,
     {
-        Value::scalar(
-            v.with_timezone(&Utc)
-                .to_rfc3339_opts(SecondsFormat::AutoSi, true),
-        )
+        v.with_timezone(&Utc)
+            .to_rfc3339_opts(SecondsFormat::AutoSi, true) // TODO: Optimize via `Display`?
     }
 
     pub(super) fn from_input<Tz>(s: &str) -> Result<DateTime<Tz>, Box<str>>

@@ -319,6 +319,7 @@ impl ToTokens for Definition {
         self.impl_type_tokens().to_tokens(into);
         self.impl_value_tokens().to_tokens(into);
         self.impl_value_async_tokens().to_tokens(into);
+        self.impl_to_scalar_value_tokens().to_tokens(into);
         self.impl_to_input_value_tokens().to_tokens(into);
         self.impl_from_scalar_value_tokens().to_tokens(into);
         self.impl_from_input_value_tokens().to_tokens(into);
@@ -402,16 +403,46 @@ impl Definition {
     fn impl_value_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let resolve = self.methods.expand_resolve(scalar);
+        let (ty, mut generics) = self.impl_self_and_generics(false);
 
-        let (ty, generics) = self.impl_self_and_generics(false);
+        let resolve_body = match &self.methods {
+            Methods::Custom { .. }
+            | Methods::Delegated {
+                to_output: Some(_), ..
+            } => {
+                generics.make_where_clause().predicates.push(parse_quote! {
+                    Self: ::juniper::ToScalarValue<#scalar>
+                });
+
+                quote! {
+                    ::core::result::Result::Ok(::juniper::Value::Scalar(
+                        ::juniper::ToScalarValue::<#scalar>::to_scalar_value(self)
+                    ))
+                }
+            }
+            Methods::Delegated { field, .. } => {
+                let field_ty = field.ty();
+
+                generics.make_where_clause().predicates.push(parse_quote! {
+                    #field_ty: ::juniper::GraphQLValue<#scalar>
+                });
+
+                quote! {
+                    ::juniper::GraphQLValue::<#scalar>::resolve(
+                        &self.#field,
+                        info,
+                        selection,
+                        executor,
+                    )
+                }
+            }
+        };
+
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
             #[automatically_derived]
-            impl #impl_gens ::juniper::GraphQLValue<#scalar> for #ty
-                #where_clause
-            {
+            impl #impl_gens ::juniper::GraphQLValue<#scalar> for #ty #where_clause {
                 type Context = ();
                 type TypeInfo = ();
 
@@ -428,7 +459,7 @@ impl Definition {
                     selection: ::core::option::Option<&[::juniper::Selection<'_, #scalar>]>,
                     executor: &::juniper::Executor<'_, '_, Self::Context, #scalar>,
                 ) -> ::juniper::ExecutionResult<#scalar> {
-                    #resolve
+                    #resolve_body
                 }
             }
         }
@@ -447,9 +478,7 @@ impl Definition {
 
         quote! {
             #[automatically_derived]
-            impl #impl_gens ::juniper::GraphQLValueAsync<#scalar> for #ty
-                #where_clause
-            {
+            impl #impl_gens ::juniper::GraphQLValueAsync<#scalar> for #ty #where_clause {
                 fn resolve_async<'b>(
                     &'b self,
                     info: &'b Self::TypeInfo,
@@ -463,6 +492,53 @@ impl Definition {
         }
     }
 
+    /// Returns generated code implementing [`ToScalarValue`] trait for this [GraphQL scalar][1].
+    ///
+    /// [`ToScalarValue`]: juniper::ToScalarValue
+    /// [1]: https://spec.graphql.org/October2021#sec-Scalars
+    fn impl_to_scalar_value_tokens(&self) -> TokenStream {
+        let scalar = &self.scalar;
+
+        let (ty, mut generics) = self.impl_self_and_generics(false);
+
+        let body = match &self.methods {
+            Methods::Custom { to_output, .. }
+            | Methods::Delegated {
+                to_output: Some(to_output),
+                ..
+            } => {
+                quote! {
+                    use ::juniper::macros::helper::ToScalarValueCall as _;
+
+                    let func: fn(_) -> _ = #to_output;
+                    (&&func).__to_scalar_value_call(self)
+                }
+            }
+            Methods::Delegated { field, .. } => {
+                let field_ty = field.ty();
+
+                generics.make_where_clause().predicates.push(parse_quote! {
+                    #field_ty: ::juniper::ToScalarValue<#scalar>
+                });
+
+                quote! {
+                    ::juniper::ToScalarValue::<#scalar>::to_scalar_value(&self.#field)
+                }
+            }
+        };
+
+        let (impl_gens, _, where_clause) = generics.split_for_impl();
+
+        quote! {
+            #[automatically_derived]
+            impl #impl_gens ::juniper::ToScalarValue<#scalar> for #ty #where_clause {
+                fn to_scalar_value(&self) -> #scalar {
+                    #body
+                }
+            }
+        }
+    }
+
     /// Returns generated code implementing [`InputValue`] trait for this
     /// [GraphQL scalar][1].
     ///
@@ -471,18 +547,43 @@ impl Definition {
     fn impl_to_input_value_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let to_input_value = self.methods.expand_to_input_value(scalar);
+        let (ty, mut generics) = self.impl_self_and_generics(false);
 
-        let (ty, generics) = self.impl_self_and_generics(false);
+        let body = match &self.methods {
+            Methods::Custom { .. }
+            | Methods::Delegated {
+                to_output: Some(_), ..
+            } => {
+                generics.make_where_clause().predicates.push(parse_quote! {
+                    Self: ::juniper::ToScalarValue<#scalar>
+                });
+
+                quote! {
+                    ::juniper::InputValue::Scalar(
+                        ::juniper::ToScalarValue::<#scalar>::to_scalar_value(self)
+                    )
+                }
+            }
+            Methods::Delegated { field, .. } => {
+                let field_ty = field.ty();
+
+                generics.make_where_clause().predicates.push(parse_quote! {
+                    #field_ty: ::juniper::ToInputValue<#scalar>
+                });
+
+                quote! {
+                    ::juniper::ToInputValue::<#scalar>::to_input_value(&self.#field)
+                }
+            }
+        };
+
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
             #[automatically_derived]
-            impl #impl_gens ::juniper::ToInputValue<#scalar> for #ty
-                #where_clause
-            {
+            impl #impl_gens ::juniper::ToInputValue<#scalar> for #ty #where_clause {
                 fn to_input_value(&self) -> ::juniper::InputValue<#scalar> {
-                    #to_input_value
+                    #body
                 }
             }
         }
@@ -818,54 +919,6 @@ enum Methods {
 }
 
 impl Methods {
-    /// Expands [`GraphQLValue::resolve`] method.
-    ///
-    /// [`GraphQLValue::resolve`]: juniper::GraphQLValue::resolve
-    fn expand_resolve(&self, scalar: &scalar::Type) -> TokenStream {
-        match self {
-            Self::Custom { to_output, .. }
-            | Self::Delegated {
-                to_output: Some(to_output),
-                ..
-            } => {
-                quote! { ::core::result::Result::Ok(#to_output(self)) }
-            }
-            Self::Delegated { field, .. } => {
-                quote! {
-                    ::juniper::GraphQLValue::<#scalar>::resolve(
-                        &self.#field,
-                        info,
-                        selection,
-                        executor,
-                    )
-                }
-            }
-        }
-    }
-
-    /// Expands [`ToInputValue::to_input_value`] method.
-    ///
-    /// [`ToInputValue::to_input_value`]: juniper::ToInputValue::to_input_value
-    fn expand_to_input_value(&self, scalar: &scalar::Type) -> TokenStream {
-        match self {
-            Self::Custom { to_output, .. }
-            | Self::Delegated {
-                to_output: Some(to_output),
-                ..
-            } => {
-                quote! {
-                    let v = #to_output(self);
-                    ::juniper::ToInputValue::to_input_value(&v)
-                }
-            }
-            Self::Delegated { field, .. } => {
-                quote! {
-                    ::juniper::ToInputValue::<#scalar>::to_input_value(&self.#field)
-                }
-            }
-        }
-    }
-
     /// Expands [`ParseScalarValue::from_str`] method.
     ///
     /// [`ParseScalarValue::from_str`]: juniper::ParseScalarValue::from_str
