@@ -448,7 +448,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///     /// Checks whether the [`ScalarValue`] is a [`String`] beginning with `id: ` and strips it.
 ///     fn from_input(
 ///         input: &str,
-///         //     ^^^^ any concrete type having `TryScalarValueTo` implementation could be used
+///         //     ^^^^ any concrete type having `FromScalarValue` implementation could be used
 ///     ) -> Result<Self, Box<str>> {
 ///     //                ^^^^^^^^ must implement `IntoFieldError`
 ///         input
@@ -475,7 +475,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///         //      ^^^^^^ for generic argument using `Scalar` transparent wrapper is required,
 ///         //             otherwise Rust won't be able to infer the required type
 ///     ) -> Self {
-///     //   ^^^^ if the result is infallible, it's OK to not use `Result`
+///     //   ^^^^ if the result is infallible, it's OK to omit `Result`
 ///         Self(
 ///             input
 ///                 .try_to_int().map(|i| i.to_string())
@@ -780,8 +780,8 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
 ///
 /// To derive a [`ScalarValue`] on enum you either could mark the corresponding enum variants with
 /// `to_int`, `to_float`, `to_string`, `as_str` and `to_bool` attribute arguments (names correspond
-/// to the similar [`ScalarValue`] methods aliasing the required [`TryScalarValueTo`] conversions),
-/// or implement the required [`TryScalarValueTo`] conversions by hand.
+/// to the similar [`ScalarValue`] methods aliasing the required [`TryToPrimitive`] conversions), or
+/// implement the required [`TryToPrimitive`] conversions by hand.
 ///
 /// Additional `from_displayable_with` argument could be used to specify a custom function to
 /// override the default `ScalarValue::from_displayable()` method.
@@ -895,7 +895,7 @@ pub fn graphql_scalar(attr: TokenStream, body: TokenStream) -> TokenStream {
 /// ```
 ///
 /// [`ScalarValue`]: juniper::ScalarValue
-/// [`TryScalarValueTo`]: juniper::TryScalarValueTo
+/// [`TryToPrimitive`]: juniper::TryToPrimitive
 #[proc_macro_derive(ScalarValue, attributes(value))]
 pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
     diagnostic::entry_point(|| {

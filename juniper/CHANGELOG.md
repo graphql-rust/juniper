@@ -71,17 +71,18 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - Removed `as_float_value()`, `as_string_value()` and `as_scalar_value()` methods (use `as_scalar()` method and then `ScalarValue` methods instead).
 - `InputValue` enum: ([#1327])
     - Removed `as_float_value()`, `as_int_value()`, `as_string_value()` and `as_scalar_value()` methods (use `as_scalar()` method and then `ScalarValue` methods instead).
-- `ScalarValue` trait: ([#1327])
-    - Switched from `From` conversions to `TryScalarValueTo` conversions.
-    - Made to require `TryScalarValueTo` conversions for `bool`, `f64`, `i32`, `String` and `&str` types (could be derived with `#[value(<conversion>)]` attributes of `#[derive(ScalarValue)]` macro).
-    - Made to require `TryInto<String>` conversion (could be derived with `derive_more::TryInto`).
-    - Made `is_type()` method required and to accept `Any` type.
-    - Renamed `as_bool()` method as `try_to_bool()` and made it defined by default as `TryScalarValueTo<bool>` alias.
-    - Renamed `as_float()` method as `try_to_float()` and made it defined by default as `TryScalarValueTo<f64>` alias.
-    - Renamed `as_int()` method as `try_to_int()` and made it defined by default as `TryScalarValueTo<i32>` alias.
-    - Renamed `as_string()` method as `try_to_string()` and made it defined by default as `TryScalarValueTo<String>` alias.
-    - Renamed `as_str()` method as `try_as_str()` and made it defined by default as `TryScalarValueTo<&str>` alias.
-    - Renamed `into_string()` method as `try_into_string()` and made it defined by default as `TryInto<String>` alias.
+- `ScalarValue` trait:
+    - Switched from `From` conversions to `TryToPrimitive` and `FromScalarValue` conversions. ([#1327], [#1329])
+    - Made to require `TryToPrimitive` conversions for `bool`, `f64`, `i32`, `String` and `&str` types (could be derived with `#[value(<conversion>)]` attributes of `#[derive(ScalarValue)]` macro). ([#1327], [#1329])
+    - Made to require `TryInto<String>` conversion (could be derived with `derive_more::TryInto`). ([#1327])
+    - Made `is_type()` method required and to accept `Any` type. ([#1327])
+    - Renamed `as_bool()` method as `try_to_bool()` and made it defined by default as `TryToPrimitive<bool>` alias. ([#1327])
+    - Renamed `as_float()` method as `try_to_float()` and made it defined by default as `TryToPrimitive<f64>` alias. ([#1327])
+    - Renamed `as_int()` method as `try_to_int()` and made it defined by default as `TryToPrimitive<i32>` alias. ([#1327])
+    - Renamed `as_string()` method as `try_to_string()` and made it defined by default as `TryToPrimitive<String>` alias. ([#1327])
+    - Renamed `as_str()` method as `try_as_str()` and made it defined by default as `TryToPrimitive<&str>` alias. ([#1327])
+    - Renamed `into_string()` method as `try_into_string()` and made it defined by default as `TryInto<String>` alias. ([#1327])
+    - Required new `downcast_type::<T>()` method (could be derived with `#[derive(ScalarValue)]` macro). ([#1329])
 - `#[derive(ScalarValue)]` macro: ([#1327])
     - Renamed `#[value(as_bool)]` attribute as `#[value(to_bool)]`.
     - Renamed `#[value(as_float)]` attribute as `#[value(to_float)]`.
@@ -90,9 +91,9 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - Removed `#[value(into_string)]` attribute.
     - Removed `#[value(allow_missing_attributes)]` attribute (now attributes can always be omitted).
     - `From` and `Display` implementations are not derived anymore (recommended way is to use [`derive_more` crate] for this).
-- `#[derive(GraphQLScalar)]` and `#[graphql_scalar]` macros: ([#1327])
-    - Made provided `from_input()` function to accept `ScalarValue` (or anything `TryScalarValueTo`-convertible) directly instead of `InputValue`.
-- Removed `LocalBoxFuture` usage from `http::tests::WsIntegration` trait. ([todo])
+- `#[derive(GraphQLScalar)]` and `#[graphql_scalar]` macros:
+    - Made provided `from_input()` function to accept `ScalarValue` (or anything `FromScalarValue`-convertible) directly instead of `InputValue`. ([#1327])
+- Removed `LocalBoxFuture` usage from `http::tests::WsIntegration` trait. ([4b14c015])
 
 ### Added
 
@@ -109,14 +110,16 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - `String` scalar implementation for `arcstr::ArcStr`. ([#1247])
 - `String` scalar implementation for `compact_str::CompactString`. ([20609366])
 - `IntoValue` and `IntoInputValue` conversion traits allowing to work around orphan rules with custom `ScalarValue`. ([#1324])
+- `FromScalarValue` conversion trait. ([#1329])
+- `TryToPrimitive` conversion trait aiding `ScalarValue` trait. ([#1327], [#1329])
 - `ScalarValue` trait:
     - `from_displayable()` method allowing to specialize `ScalarValue` conversion from custom string types. ([#1324], [#819])
-    - `try_to::<T>()` method defined by default as `TryScalarValueTo<T>` alias. ([#1327])
-- `TryScalarValueTo` conversion trait aiding `ScalarValue` trait. ([#1327])
-- `#[derive(GraphQLScalar)]` and `#[graphql_scalar]` macros: ([#1327])
-    - Support for specifying concrete types as input argument in provided `from_input()` function.
-    - Support for non-`Result` return type in provided `from_input()` function.
-    - `Scalar` transparent wrapper for aiding type inference in `from_input()` function when input argument is generic `ScalarValue`.
+    - `try_to::<T>()` method defined by default as `FromScalarValue<T>` alias. ([#1327], [#1329])
+- `#[derive(GraphQLScalar)]` and `#[graphql_scalar]` macros:
+    - Support for specifying concrete types as input argument in provided `from_input()` function. ([#1327])
+    - Support for non-`Result` return type in provided `from_input()` function. ([#1327])
+    - `Scalar` transparent wrapper for aiding type inference in `from_input()` function when input argument is generic `ScalarValue`. ([#1327])
+    - Generating of `FromScalarValue` implementation. ([#1329])
 
 ### Changed
 
@@ -144,9 +147,10 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1324]: /../../pull/1324
 [#1326]: /../../pull/1326
 [#1327]: /../../pull/1327
+[#1329]: /../../pull/1329
 [1b1fc618]: /../../commit/1b1fc61879ffdd640d741e187dc20678bf7ab295
 [20609366]: /../../commit/2060936635609b0186d46d8fbd06eb30fce660e3
-[todo]: /../../commit/todo
+[4b14c015]: /../../commit/4b14c015018d31cb6df848efdee24d96416b76d9
 
 
 

@@ -115,7 +115,7 @@ impl UserId {
     /// Checks whether the [`InputValue`] is a [`String`] beginning with `id: ` and strips it.
     fn from_input(
         input: &str,
-        //     ^^^^ any concrete type having `TryScalarValueTo` implementation could be used
+        //     ^^^^ any concrete type having `FromScalarValue` implementation could be used
     ) -> Result<Self, Box<str>> {
     //                ^^^^^^^^ must implement `IntoFieldError`
         input
@@ -145,7 +145,7 @@ impl UserId {
         //      ^^^^^^ for generic argument using `Scalar` transparent wrapper is required,
         //             otherwise Rust won't be able to infer the required type
     ) -> Self {
-    //   ^^^^ if the result is infallible, it's OK to not use `Result`
+    //   ^^^^ if the result is infallible, it's OK to omit `Result`
         Self(
             input
                 .try_to_int().map(|i| i.to_string())
