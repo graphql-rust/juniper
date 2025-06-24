@@ -9,7 +9,7 @@
 //! [`Uuid`]: uuid::Uuid
 //! [s1]: https://graphql-scalars.dev/docs/scalars/uuid
 
-use crate::graphql_scalar;
+use crate::{ScalarValue, graphql_scalar};
 
 /// [Universally Unique Identifier][0] (UUID).
 ///
@@ -24,6 +24,7 @@ use crate::graphql_scalar;
 #[graphql(
     name = "UUID",
     with = uuid_scalar,
+    to_output_with = ScalarValue::from_displayable,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/uuid",
 )]
@@ -31,10 +32,6 @@ type Uuid = uuid::Uuid;
 
 mod uuid_scalar {
     use super::Uuid;
-
-    pub(super) fn to_output(v: &Uuid) -> String {
-        v.to_string() // TODO: Optimize via `Display`?
-    }
 
     pub(super) fn from_input(s: &str) -> Result<Uuid, Box<str>> {
         Uuid::parse_str(s).map_err(|e| format!("Failed to parse `UUID`: {e}").into())

@@ -8,7 +8,7 @@
 //!
 //! [`Decimal`]: rust_decimal::Decimal
 
-use crate::graphql_scalar;
+use crate::{ScalarValue, graphql_scalar};
 
 /// 128 bit representation of a fixed-precision decimal number.
 ///
@@ -27,6 +27,7 @@ use crate::graphql_scalar;
 #[graphql_scalar]
 #[graphql(
     with = rust_decimal_scalar,
+    to_output_with = ScalarValue::from_displayable,
     parse_token(i32, f64, String),
     specified_by_url = "https://docs.rs/rust_decimal",
 )]
@@ -35,10 +36,6 @@ type Decimal = rust_decimal::Decimal;
 mod rust_decimal_scalar {
     use super::Decimal;
     use crate::{Scalar, ScalarValue};
-
-    pub(super) fn to_output(v: &Decimal) -> String {
-        v.to_string() // TODO: Optimize via `Display`?
-    }
 
     pub(super) fn from_input(v: &Scalar<impl ScalarValue>) -> Result<Decimal, Box<str>> {
         if let Some(i) = v.try_to_int() {

@@ -8,7 +8,7 @@
 //!
 //! [`BigDecimal`]: bigdecimal::BigDecimal
 
-use crate::graphql_scalar;
+use crate::{ScalarValue, graphql_scalar};
 
 // TODO: Try remove on upgrade of `bigdecimal` crate.
 mod for_minimal_versions_check_only {
@@ -30,6 +30,7 @@ mod for_minimal_versions_check_only {
 #[graphql_scalar]
 #[graphql(
     with = bigdecimal_scalar,
+    to_output_with = ScalarValue::from_displayable,
     parse_token(i32, f64, String),
     specified_by_url = "https://docs.rs/bigdecimal",
 )]
@@ -38,10 +39,6 @@ type BigDecimal = bigdecimal::BigDecimal;
 mod bigdecimal_scalar {
     use super::BigDecimal;
     use crate::{Scalar, ScalarValue};
-
-    pub(super) fn to_output(v: &BigDecimal) -> String {
-        v.to_string() // TODO: Optimize via `Display`?
-    }
 
     pub(super) fn from_input(v: &Scalar<impl ScalarValue>) -> Result<BigDecimal, Box<str>> {
         if let Some(i) = v.try_to_int() {

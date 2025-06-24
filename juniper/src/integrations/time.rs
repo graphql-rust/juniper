@@ -57,7 +57,6 @@ mod local_date {
     const FORMAT: &[BorrowedFormatItem<'_>] = format_description!("[year]-[month]-[day]");
 
     pub(super) fn to_output(v: &LocalDate) -> String {
-        // TODO: Optimize via `Display`?
         v.format(FORMAT)
             .unwrap_or_else(|e| panic!("failed to format `LocalDate`: {e}"))
     }
@@ -108,7 +107,6 @@ mod local_time {
     const FORMAT_NO_SECS: &[BorrowedFormatItem<'_>] = format_description!("[hour]:[minute]");
 
     pub(super) fn to_output(v: &LocalTime) -> String {
-        // TODO: Optimize via `Display`?
         if v.millisecond() == 0 {
             v.format(FORMAT_NO_MILLIS)
         } else {
@@ -153,7 +151,6 @@ mod local_date_time {
         format_description!("[year]-[month]-[day]T[hour]:[minute]:[second]");
 
     pub(super) fn to_output(v: &LocalDateTime) -> String {
-        // TODO: Optimize via `Display`?
         v.format(FORMAT)
             .unwrap_or_else(|e| panic!("failed to format `LocalDateTime`: {e}"))
     }
@@ -187,7 +184,6 @@ mod date_time {
     use super::*;
 
     pub(super) fn to_output(v: &DateTime) -> String {
-        // TODO: Optimize via `Display`?
         v.to_offset(UtcOffset::UTC)
             .format(&Rfc3339)
             .unwrap_or_else(|e| panic!("failed to format `DateTime`: {e}"))
@@ -227,7 +223,6 @@ mod utc_offset {
     use super::*;
 
     pub(super) fn to_output(v: &UtcOffset) -> String {
-        // TODO: Optimize via `Display`?
         v.format(UTC_OFFSET_FORMAT)
             .unwrap_or_else(|e| panic!("failed to format `UtcOffset`: {e}"))
     }

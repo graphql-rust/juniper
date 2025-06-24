@@ -107,7 +107,10 @@ pub trait ToScalarValueCall<S: ScalarValue> {
     fn __to_scalar_value_call(&self, input: Self::Input) -> S;
 }
 
-impl<I, S: ScalarValue> ToScalarValueCall<S> for &fn(I) -> S {
+impl<I, S> ToScalarValueCall<S> for &&&fn(I) -> S
+where
+    S: ScalarValue,
+{
     type Input = I;
 
     fn __to_scalar_value_call(&self, input: Self::Input) -> S {
@@ -115,13 +118,37 @@ impl<I, S: ScalarValue> ToScalarValueCall<S> for &fn(I) -> S {
     }
 }
 
-impl<I, O, S: ScalarValue> ToScalarValueCall<S> for fn(I) -> O
+impl<I, S> ToScalarValueCall<S> for &&fn(I) -> String
 where
+    S: ScalarValue,
+{
+    type Input = I;
+
+    fn __to_scalar_value_call(&self, input: Self::Input) -> S {
+        self(input).into()
+    }
+}
+
+impl<I, O, S> ToScalarValueCall<S> for &fn(I) -> O
+where
+    S: ScalarValue,
     O: ToScalarValue<S>,
 {
     type Input = I;
 
     fn __to_scalar_value_call(&self, input: Self::Input) -> S {
         self(input).to_scalar_value()
+    }
+}
+
+impl<I, O, S> ToScalarValueCall<S> for fn(I) -> O
+where
+    S: ScalarValue,
+    O: Display,
+{
+    type Input = I;
+
+    fn __to_scalar_value_call(&self, input: Self::Input) -> S {
+        S::from_display(&self(input))
     }
 }

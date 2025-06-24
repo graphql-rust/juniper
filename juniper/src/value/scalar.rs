@@ -488,6 +488,11 @@ pub trait ScalarValue:
     fn from_displayable<Str: Display + Any + ?Sized>(s: &Str) -> Self {
         s.to_string().into()
     }
+
+    #[must_use]
+    fn from_display<Str: Display + ?Sized>(s: &Str) -> Self {
+        s.to_string().into()
+    }
 }
 
 /// Fallible representation of a [`ScalarValue`] as one of the types it consists of, or derived ones

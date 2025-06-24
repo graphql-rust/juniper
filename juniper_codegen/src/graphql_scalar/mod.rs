@@ -424,7 +424,7 @@ impl Definition {
                 let field_ty = field.ty();
 
                 generics.make_where_clause().predicates.push(parse_quote! {
-                    #field_ty: ::juniper::GraphQLValue<#scalar>
+                    #field_ty: ::juniper::GraphQLValue<#scalar, Context = (), TypeInfo = ()>
                 });
 
                 quote! {
@@ -511,7 +511,7 @@ impl Definition {
                     use ::juniper::macros::helper::ToScalarValueCall as _;
 
                     let func: fn(_) -> _ = #to_output;
-                    (&&func).__to_scalar_value_call(self)
+                    (&&&&func).__to_scalar_value_call(self)
                 }
             }
             Methods::Delegated { field, .. } => {

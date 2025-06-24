@@ -45,6 +45,8 @@ use crate::graphql_scalar;
 pub type LocalDate = chrono::NaiveDate;
 
 mod local_date {
+    use std::fmt::Display;
+
     use super::LocalDate;
 
     /// Format of a [`LocalDate` scalar][1].
@@ -52,8 +54,8 @@ mod local_date {
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-date
     const FORMAT: &str = "%Y-%m-%d";
 
-    pub(super) fn to_output(v: &LocalDate) -> String {
-        v.format(FORMAT).to_string() // TODO: Optimize via `Display`?
+    pub(super) fn to_output(v: &LocalDate) -> impl Display {
+        v.format(FORMAT)
     }
 
     pub(super) fn from_input(s: &str) -> Result<LocalDate, Box<str>> {
@@ -82,6 +84,8 @@ mod local_date {
 pub type LocalTime = chrono::NaiveTime;
 
 mod local_time {
+    use std::fmt::Display;
+
     use chrono::Timelike as _;
 
     use super::LocalTime;
@@ -101,13 +105,12 @@ mod local_time {
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
     const FORMAT_NO_SECS: &str = "%H:%M";
 
-    pub(super) fn to_output(v: &LocalTime) -> String {
+    pub(super) fn to_output(v: &LocalTime) -> impl Display {
         if v.nanosecond() == 0 {
             v.format(FORMAT_NO_MILLIS)
         } else {
             v.format(FORMAT)
         }
-        .to_string() // TODO: Optimize via `Display`?
     }
 
     pub(super) fn from_input(s: &str) -> Result<LocalTime, Box<str>> {
@@ -137,6 +140,8 @@ mod local_time {
 pub type LocalDateTime = chrono::NaiveDateTime;
 
 mod local_date_time {
+    use std::fmt::Display;
+
     use super::LocalDateTime;
 
     /// Format of a [`LocalDateTime` scalar][1].
@@ -144,8 +149,8 @@ mod local_date_time {
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-date-time
     const FORMAT: &str = "%Y-%m-%dT%H:%M:%S";
 
-    pub(super) fn to_output(v: &LocalDateTime) -> String {
-        v.format(FORMAT).to_string() // TODO: Optimize via `Display`?
+    pub(super) fn to_output(v: &LocalDateTime) -> impl Display {
+        v.format(FORMAT)
     }
 
     pub(super) fn from_input(s: &str) -> Result<LocalDateTime, Box<str>> {
@@ -191,7 +196,7 @@ mod date_time {
         Tz::Offset: fmt::Display,
     {
         v.with_timezone(&Utc)
-            .to_rfc3339_opts(SecondsFormat::AutoSi, true) // TODO: Optimize via `Display`?
+            .to_rfc3339_opts(SecondsFormat::AutoSi, true)
     }
 
     pub(super) fn from_input<Tz>(s: &str) -> Result<DateTime<Tz>, Box<str>>

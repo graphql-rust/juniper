@@ -185,16 +185,17 @@ where
 }
 
 #[graphql_scalar]
-#[graphql(name = "String", with = impl_arcstr_scalar, parse_token(String))]
+#[graphql(
+    name = "String", 
+    with = impl_arcstr_scalar,
+    to_output_with = ScalarValue::from_displayable,
+    parse_token(String)
+)]
 type ArcStr = arcstr::ArcStr;
 
 mod impl_arcstr_scalar {
     use super::ArcStr;
     use crate::{FromScalarValue, Scalar, ScalarValue};
-
-    pub(super) fn to_output<S: ScalarValue>(v: &ArcStr) -> S {
-        S::from_displayable(v) // TODO: Better ergonomics?
-    }
 
     pub(super) fn from_input<S: ScalarValue>(
         v: &Scalar<S>,
@@ -208,16 +209,17 @@ mod impl_arcstr_scalar {
 }
 
 #[graphql_scalar]
-#[graphql(name = "String", with = impl_compactstring_scalar, parse_token(String))]
+#[graphql(
+    name = "String", 
+    with = impl_compactstring_scalar,
+    to_output_with = ScalarValue::from_displayable,
+    parse_token(String),
+)]
 type CompactString = compact_str::CompactString;
 
 mod impl_compactstring_scalar {
     use super::CompactString;
     use crate::{FromScalarValue, Scalar, ScalarValue};
-
-    pub(super) fn to_output<S: ScalarValue>(v: &CompactString) -> S {
-        S::from_displayable(v) // TODO: Better ergonomics?
-    }
 
     pub(super) fn from_input<S: ScalarValue>(
         v: &Scalar<S>,

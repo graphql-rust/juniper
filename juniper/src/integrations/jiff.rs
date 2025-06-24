@@ -54,7 +54,7 @@ use std::str;
 
 use derive_more::with_trait::{Debug, Display, Error, Into};
 
-use crate::graphql_scalar;
+use crate::{ScalarValue, graphql_scalar};
 
 /// Representation of a civil date in the Gregorian calendar.
 ///
@@ -84,8 +84,8 @@ mod local_date {
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-date
     const FORMAT: &str = "%Y-%m-%d";
 
-    pub(super) fn to_output(v: &LocalDate) -> String {
-        v.strftime(FORMAT).to_string() // TODO: Optimize via `Display`?
+    pub(super) fn to_output(v: &LocalDate) -> impl Display {
+        v.strftime(FORMAT)
     }
 
     pub(super) fn from_input(s: &str) -> Result<LocalDate, Box<str>> {
@@ -131,13 +131,12 @@ mod local_time {
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
     const FORMAT_NO_SECS: &str = "%H:%M";
 
-    pub(super) fn to_output(v: &LocalTime) -> String {
+    pub(super) fn to_output(v: &LocalTime) -> impl Display {
         if v.subsec_nanosecond() == 0 {
             v.strftime(FORMAT_NO_MILLIS)
         } else {
             v.strftime(FORMAT)
         }
-        .to_string() // TODO: Optimize via `Display`?
     }
 
     pub(super) fn from_input(s: &str) -> Result<LocalTime, Box<str>> {
@@ -180,8 +179,8 @@ mod local_date_time {
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-date-time
     const FORMAT: &str = "%Y-%m-%dT%H:%M:%S";
 
-    pub(super) fn to_output(v: &LocalDateTime) -> String {
-        v.strftime(FORMAT).to_string() // TODO: Optimize via `Display`?
+    pub(super) fn to_output(v: &LocalDateTime) -> impl Display {
+        v.strftime(FORMAT)
     }
 
     pub(super) fn from_input(s: &str) -> Result<LocalDateTime, Box<str>> {
@@ -209,8 +208,6 @@ mod local_date_time {
 pub type DateTime = jiff::Timestamp;
 
 mod date_time {
-    use std::str::FromStr as _;
-
     use super::*;
 
     /// Format of a [`DateTime` scalar][1].
@@ -218,12 +215,13 @@ mod date_time {
     /// [1]: https://graphql-scalars.dev/docs/scalars/date-time
     const FORMAT: &str = "%Y-%m-%dT%H:%M:%S%.fZ";
 
-    pub(super) fn to_output(v: &DateTime) -> String {
-        v.strftime(FORMAT).to_string() // TODO: Optimize via `Display`?
+    pub(super) fn to_output(v: &DateTime) -> impl Display {
+        v.strftime(FORMAT)
     }
 
     pub(super) fn from_input(s: &str) -> Result<DateTime, Box<str>> {
-        DateTime::from_str(s).map_err(|e| format!("Invalid `DateTime`: {e}").into())
+        s.parse()
+            .map_err(|e| format!("Invalid `DateTime`: {e}").into())
     }
 }
 
@@ -246,22 +244,18 @@ mod date_time {
 #[graphql_scalar]
 #[graphql(
     with = zoned_date_time,
+    to_output_with = ScalarValue::from_displayable,
     parse_token(String),
     specified_by_url = "https://datatracker.ietf.org/doc/html/rfc9557#section-4.1",
 )]
 pub type ZonedDateTime = jiff::Zoned;
 
 mod zoned_date_time {
-    use std::str::FromStr as _;
-
-    use super::*;
-
-    pub(super) fn to_output(v: &ZonedDateTime) -> String {
-        v.to_string() // TODO: Optimize via `Display`?
-    }
+    use super::ZonedDateTime;
 
     pub(super) fn from_input(s: &str) -> Result<ZonedDateTime, Box<str>> {
-        ZonedDateTime::from_str(s).map_err(|e| format!("Invalid `ZonedDateTime`: {e}").into())
+        s.parse()
+            .map_err(|e| format!("Invalid `ZonedDateTime`: {e}").into())
     }
 }
 
@@ -279,22 +273,18 @@ mod zoned_date_time {
 #[graphql_scalar]
 #[graphql(
     with = duration,
+    to_output_with = ScalarValue::from_displayable,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/duration",
 )]
 pub type Duration = jiff::Span;
 
 mod duration {
-    use std::str::FromStr as _;
-
-    use super::*;
-
-    pub(super) fn to_output(v: &Duration) -> String {
-        v.to_string() // TODO: Optimize via `Display`?
-    }
+    use super::Duration;
 
     pub(super) fn from_input(s: &str) -> Result<Duration, Box<str>> {
-        Duration::from_str(s).map_err(|e| format!("Invalid `Duration`: {e}").into())
+        s.parse()
+            .map_err(|e| format!("Invalid `Duration`: {e}").into())
     }
 }
 
@@ -379,6 +369,7 @@ pub enum TimeZoneParsingError {
 #[graphql_scalar]
 #[graphql(
     with = time_zone,
+    to_output_with = ScalarValue::from_displayable,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/time-zone",
 )]
@@ -408,11 +399,7 @@ impl str::FromStr for TimeZone {
 }
 
 mod time_zone {
-    use super::*;
-
-    pub(super) fn to_output(v: &TimeZone) -> String {
-        v.to_string() // TODO: Optimize via `Display`?
-    }
+    use super::TimeZone;
 
     pub(super) fn from_input(s: &str) -> Result<TimeZone, Box<str>> {
         s.parse()
