@@ -421,15 +421,45 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// Customization of a [GraphQL scalar][0] type resolving is possible via
 /// `#[graphql(to_output_with = <fn path>)]` attribute:
 /// ```rust
-/// # use juniper::{GraphQLScalar, IntoValue as _, ScalarValue, Value};
+/// # use juniper::GraphQLScalar;
 /// #
 /// #[derive(GraphQLScalar)]
 /// #[graphql(to_output_with = to_output, transparent)]
 /// struct Incremented(i32);
 ///
-/// /// Increments [`Incremented`] before converting into a [`Value`].
-/// fn to_output<S: ScalarValue>(v: &Incremented) -> Value<S> {
-///     (v.0 + 1).into_value()
+/// fn to_output(v: &Incremented) -> i32 {
+///     //                           ^^^ any concrete type having `ToScalarValue` implementation
+///     //                               could be used
+///     v.0 + 1
+/// }
+/// ```
+///
+/// The provided function is polymorphic by its output type:
+/// ```rust
+/// # use std::fmt::Display;
+/// # use juniper::{GraphQLScalar, ScalarValue};
+/// #
+/// #[derive(GraphQLScalar)]
+/// #[graphql(to_output_with = Self::to_output, transparent)]
+/// struct Incremented(i32);
+///
+/// impl Incremented {
+///     fn to_output<S: ScalarValue>(v: &Incremented) -> S {
+///         //       ^^^^^^^^^^^^^^ returning generic or concrete `ScalarValue` is also OK
+///         (v.0 + 1).into()
+///     }
+/// }
+///
+/// #[derive(GraphQLScalar)]
+/// #[graphql(to_output_with = Self::to_output, transparent)]
+/// struct CustomDateTime(jiff::Timestamp);
+///
+/// impl CustomDateTime {
+///     fn to_output(&self) -> impl Display {
+///         //                 ^^^^^^^^^^^^ in this case macro expansion uses the
+///         //                              `ScalarValue::from_displayable_non_static()` conversion
+///         self.0.strftime("%Y-%m-%d %H:%M:%S%.fZ")
+///     }
 /// }
 /// ```
 ///
@@ -450,7 +480,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///         input: &str,
 ///         //     ^^^^ any concrete type having `FromScalarValue` implementation could be used
 ///     ) -> Result<Self, Box<str>> {
-///     //                ^^^^^^^^ must implement `IntoFieldError`
+///         //            ^^^^^^^^ must implement `IntoFieldError`
 ///         input
 ///             .strip_prefix("id: ")
 ///             .ok_or_else(|| {
@@ -461,7 +491,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// }
 /// ```
 ///
-/// The provided function is polymorphic by input and output types:
+/// The provided function is polymorphic by its input and output types:
 /// ```rust
 /// # use juniper::{GraphQLScalar, Scalar, ScalarValue};
 /// #
@@ -497,7 +527,6 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// ```rust
 /// # use juniper::{
 /// #     GraphQLScalar, ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue,
-/// #     Value,
 /// # };
 /// #
 /// #[derive(GraphQLScalar)]
@@ -514,10 +543,12 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///     Int(i32),
 /// }
 ///
-/// fn to_output<S: ScalarValue>(v: &StringOrInt) -> Value<S> {
+/// fn to_output<S: ScalarValue>(v: &StringOrInt) -> S {
 ///     match v {
-///         StringOrInt::String(s) => Value::scalar(s.to_owned()),
-///         StringOrInt::Int(i) => Value::scalar(*i),
+///         StringOrInt::String(s) => S::from_displayable(s),
+///         //                        ^^^^^^^^^^^^^^^^^^^ preferable conversion for types
+///         //                                            represented by string token
+///         StringOrInt::Int(i) => (*i).into(),
 ///     }
 /// }
 ///
@@ -543,7 +574,6 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// ```rust
 /// # use juniper::{
 /// #     GraphQLScalar, ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue,
-/// #     Value,
 /// # };
 /// #
 /// #[derive(GraphQLScalar)]
@@ -556,10 +586,10 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// mod string_or_int {
 ///     use super::*;
 ///
-///     pub(super) fn to_output<S: ScalarValue>(v: &StringOrInt) -> Value<S> {
+///     pub(super) fn to_output<S: ScalarValue>(v: &StringOrInt) -> S {
 ///         match v {
-///             StringOrInt::String(s) => Value::scalar(s.to_owned()),
-///             StringOrInt::Int(i) => Value::scalar(*i),
+///             StringOrInt::String(s) => S::from_displayable(s),
+///             StringOrInt::Int(i) => (*i).into(),
 ///         }
 ///     }
 ///
@@ -583,7 +613,6 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// ```rust
 /// # use juniper::{
 /// #     GraphQLScalar, ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue,
-/// #     Value,
 /// # };
 /// #
 /// #[derive(GraphQLScalar)]
@@ -594,10 +623,10 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// }
 ///
 /// impl StringOrInt {
-///     fn to_output<S: ScalarValue>(&self) -> Value<S> {
+///     fn to_output<S: ScalarValue>(&self) -> S {
 ///         match self {
-///             Self::String(s) => Value::scalar(s.to_owned()),
-///             Self::Int(i) => Value::scalar(*i),
+///             Self::String(s) => S::from_displayable(s),
+///             Self::Int(i) => (*i).into(),
 ///         }
 ///     }
 ///
@@ -622,7 +651,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 ///
 /// At the same time, any custom function still may be specified separately:
 /// ```rust
-/// # use juniper::{GraphQLScalar, ParseScalarResult, Scalar, ScalarToken, ScalarValue, Value};
+/// # use juniper::{GraphQLScalar, ParseScalarResult, Scalar, ScalarToken, ScalarValue};
 /// #
 /// #[derive(GraphQLScalar)]
 /// #[graphql(
@@ -637,13 +666,10 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
 /// mod string_or_int {
 ///     use super::*;
 ///
-///     pub(super) fn to_output<S>(v: &StringOrInt) -> Value<S>
-///     where
-///         S: ScalarValue,
-///     {
+///     pub(super) fn to_output<S: ScalarValue>(v: &StringOrInt) -> S {
 ///         match v {
-///             StringOrInt::String(s) => Value::scalar(s.to_owned()),
-///             StringOrInt::Int(i) => Value::scalar(*i),
+///             StringOrInt::String(s) => S::from_displayable(s),
+///             StringOrInt::Int(i) => (*i).into(),
 ///         }
 ///     }
 ///
@@ -735,11 +761,12 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 /// # }
 /// #
 /// # use juniper::DefaultScalarValue as CustomScalarValue;
-/// use juniper::{graphql_scalar, ScalarValue, Value};
+/// use juniper::{graphql_scalar, ScalarValue};
 ///
 /// #[graphql_scalar]
 /// #[graphql(
 ///     with = date_scalar,
+///     to_output_with = ScalarValue::from_displayable, // use `Display` representation
 ///     parse_token(String),
 ///     scalar = CustomScalarValue,
 /// )]
@@ -748,11 +775,7 @@ pub fn derive_scalar(input: TokenStream) -> TokenStream {
 /// //          ^^^^^^^^^^ type from another crate
 ///
 /// mod date_scalar {
-///     use super::*;
-///
-///     pub(super) fn to_output(v: &Date) -> Value<CustomScalarValue> {
-///         Value::scalar(v.to_string())
-///     }
+///     use super::Date;
 ///
 ///     pub(super) fn from_input(s: &str) -> Result<Date, Box<str>> {
 ///         s.parse().map_err(|e| format!("Failed to parse `Date`: {e}").into())
