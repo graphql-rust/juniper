@@ -425,7 +425,7 @@ mod date_scalar {
 [`ID`]: https://spec.graphql.org/October2021#sec-ID
 [`LocalTime`]: https://graphql-scalars.dev/docs/scalars/local-time
 [`rust_decimal`]: https://docs.rs/rust_decimal
-[`ScalarValue`]: https://docs.rs/juniper/0.16.1/juniper/trait.ScalarValue.html
+[`ScalarValue`]: https://docs.rs/juniper/0.16.2/juniper/trait.ScalarValue.html
 [`serde`]: https://docs.rs/serde
 [`time`]: https://docs.rs/time
 [`time::Date`]: https://docs.rs/time/latest/time/struct.Date.html
@@ -453,5 +453,5 @@ mod date_scalar {
 [5]: https://spec.graphql.org/October2021/#sec-Scalars.Built-in-Scalars
 [6]: https://serde.rs/container-attrs.html#transparent
 [7]: https://spec.graphql.org/October2021#sec-Value-Resolution
-[8]: https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLScalar.html
-[9]: https://docs.rs/juniper/0.16.1/juniper/attr.graphql_scalar.html
+[8]: https://docs.rs/juniper/0.16.2/juniper/derive.GraphQLScalar.html
+[9]: https://docs.rs/juniper/0.16.2/juniper/attr.graphql_scalar.html

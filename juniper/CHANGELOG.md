@@ -6,17 +6,17 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 
 
-## [0.16.2] · unreleased
+## [0.16.2] · 2025-06-25
 [0.16.2]: /../../tree/juniper-v0.16.2/juniper
 
 [Diff](/../../compare/juniper-v0.16.1...juniper-v0.16.2) | [Milestone](/../../milestone/8)
 
 ### Fixed
 
-- Non-pinned versions of [GraphiQL]-related libraries in HTML page returned by `graphiql_source()`. ([todo], [#1332])
+- Non-pinned versions of [GraphiQL]-related libraries in HTML page returned by `graphiql_source()`. ([ed2ef133], [#1332])
 
 [#1332]: /../../issues/1332
-[todo]: /../../commit/todo
+[ed2ef133]: /../../commit/ed2ef13358a84bf9cc43835d4495b2b3395e7392
 
 
 

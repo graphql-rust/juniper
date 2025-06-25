@@ -7,7 +7,7 @@ Juniper (GraphQL server library for Rust)
 [![Rust 1.73+](https://img.shields.io/badge/rustc-1.73+-lightgray.svg "Rust 1.73+")](https://blog.rust-lang.org/2023/10/05/Rust-1.73.0.html)
 
 - [Juniper Book] ([current][Juniper Book] | [edge][Juniper Book edge])
-- [Changelog](https://github.com/graphql-rust/juniper/blob/juniper-v0.16.1/juniper/CHANGELOG.md)
+- [Changelog](https://github.com/graphql-rust/juniper/blob/juniper-v0.16.2/juniper/CHANGELOG.md)
 
 
 [GraphQL] is a data query language developed by [Facebook] and intended to serve mobile and web application frontends.
@@ -74,7 +74,7 @@ As an exception to other [GraphQL] libraries for other languages, [Juniper] buil
 
 ## License
 
-This project is licensed under [BSD 2-Clause License](https://github.com/graphql-rust/juniper/blob/juniper-v0.16.1/juniper/LICENSE).
+This project is licensed under [BSD 2-Clause License](https://github.com/graphql-rust/juniper/blob/juniper-v0.16.2/juniper/LICENSE).
 
 
 

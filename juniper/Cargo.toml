@@ -1,6 +1,6 @@
 [package]
 name = "juniper"
-version = "0.16.1"
+version = "0.16.2"
 edition = "2021"
 rust-version = "1.73"
 description = "GraphQL server library."
