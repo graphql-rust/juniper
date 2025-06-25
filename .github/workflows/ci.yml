@@ -288,8 +288,8 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
           target: ${{ matrix.target }}
 
-      - name: Switch Cargo workspace to `resolver = "2"`
-        run: sed -i 's/resolver = "1"/resolver = "2"/' Cargo.toml
+      - name: Switch Cargo workspace to `resolver = "3"`
+        run: sed -i 's/resolver = "1"/resolver = "3"/' Cargo.toml
 
       - run: cargo check --target ${{ matrix.target }} -p ${{ matrix.crate }}
                    ${{ (matrix.crate == 'juniper' && matrix.target == 'wasm32-unknown-unknown')
