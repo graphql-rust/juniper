@@ -47,65 +47,31 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// The preferred way to define a new [`ScalarValue`] representation is defining an enum containing
 /// a variant for each type that needs to be represented at the lowest level.
 ///
-/// The following example introduces a new variant that is able to store 64-bit integers, and uses
-/// a [`CompactString`] for a string representation.
+/// The following example introduces a new variant that is able to store 64-bit integers.
 ///
 /// ```rust
 /// # use std::{any::Any, fmt};
 /// #
-/// # use compact_str::CompactString;
 /// use derive_more::with_trait::{Display, From, TryInto};
 /// use juniper::ScalarValue;
 /// use serde::{de, Deserialize, Deserializer, Serialize};
 ///
 /// #[derive(Clone, Debug, Display, From, PartialEq, ScalarValue, Serialize, TryInto)]
 /// #[serde(untagged)]
-/// #[value(from_displayable_with = from_compact_str)]
 /// enum MyScalarValue {
-///     #[from]
 ///     #[value(to_float, to_int)]
 ///     Int(i32),
 ///
-///     #[from]
 ///     Long(i64),
-///     
-///     #[from]
+///
 ///     #[value(to_float)]
 ///     Float(f64),
 ///
-///     #[from(&str, String, CompactString)]
 ///     #[value(as_str, to_string)]
-///     String(CompactString),
-///     
-///     #[from]
+///     String(String),
+///
 ///     #[value(to_bool)]
 ///     Boolean(bool),
-/// }
-///
-/// // Custom implementation of `ScalarValue::from_displayable()` method
-/// // for efficient conversions from `CompactString` into `MyScalarValue`.
-/// fn from_compact_str<Str: Display + Any + ?Sized>(s: &Str) -> MyScalarValue {
-///     use juniper::AnyExt as _; // allows downcasting directly on types without `dyn`
-///
-///     if let Some(s) = s.downcast_ref::<CompactString>() {
-///         MyScalarValue::String(s.clone())
-///     } else {
-///         s.to_string().into()
-///     }
-/// }
-///
-/// // `derive_more::TryInto` is not capable for transitive conversions yet,
-/// // so this impl is manual as a custom string type is used instead of `String`.
-/// impl TryFrom<MyScalarValue> for String {
-///     type Error = MyScalarValue;
-///
-///     fn try_from(value: MyScalarValue) -> Result<Self, Self::Error> {
-///         if let MyScalarValue::String(s) = value {
-///             Ok(s.into())
-///         } else {
-///             Err(value)
-///         }
-///     }
 /// }
 ///
 /// impl<'de> Deserialize<'de> for MyScalarValue {
@@ -165,7 +131,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 ///             }
 ///
 ///             fn visit_string<E: de::Error>(self, s: String) -> Result<Self::Value, E> {
-///                 Ok(MyScalarValue::String(s.into()))
+///                 Ok(MyScalarValue::String(s))
 ///             }
 ///         }
 ///
@@ -711,6 +677,15 @@ impl<'a, S: ScalarValue> IntoFieldError<S> for WrongInputScalarTypeError<'a, S> 
     }
 }
 
+/// Conversion of a Rust data type into a [`ScalarValue`].
+///
+/// # Implementation
+///
+/// Implementing this trait for a type allows to specify this type directly in the `to_output()`
+/// function when implementing a [`GraphQLScalar`] via [derive macro](macro@GraphQLScalar).
+///
+/// Also, `#[derive(`[`GraphQLScalar`](macro@GraphQLScalar)`)]` automatically implements this trait
+/// for a type.
 pub trait ToScalarValue<S = DefaultScalarValue> {
     /// Converts this value into a [`ScalarValue`].
     #[must_use]
