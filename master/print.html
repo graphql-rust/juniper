@@ -213,11 +213,11 @@
 </blockquote>
 <h2 id="installation"><a class="header" href="#installation">Installation</a></h2>
 <pre><code class="language-toml">[dependencies]
-juniper = "0.16.1"
+juniper = "0.16.2"
 </code></pre>
 <h2 id="schema"><a class="header" href="#schema">Schema</a></h2>
 <p>Exposing simple enums and structs as <a href="https://graphql.org">GraphQL</a> types is just a matter of adding a custom <a href="https://doc.rust-lang.org/stable/reference/attributes/derive.html#derive">derive attribute</a> to them. <a href="https://docs.rs/juniper">Juniper</a> includes support for basic <a href="https://www.rust-lang.org">Rust</a> types that naturally map to <a href="https://graphql.org">GraphQL</a> features, such as <code>Option&lt;T&gt;</code>, <code>Vec&lt;T&gt;</code>, <code>Box&lt;T&gt;</code>, <code>Arc&lt;T&gt;</code>, <code>String</code>, <code>f64</code>, <code>i32</code>, references, slices and arrays.</p>
-<p>For more advanced mappings, <a href="https://docs.rs/juniper">Juniper</a> provides multiple macros to map your <a href="https://www.rust-lang.org">Rust</a> types to a <a href="https://graphql.org/learn/schema">GraphQL schema</a>. The most important one is the <a href="https://docs.rs/juniper/0.16.1/juniper/macro.graphql_object.html"><code>#[graphql_object]</code> attribute</a> that is used for declaring a <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a> with resolvers (typically used for declaring <a href="https://spec.graphql.org/October2021#sec-Root-Operation-Types"><code>Query</code> and <code>Mutation</code> roots</a>).</p>
+<p>For more advanced mappings, <a href="https://docs.rs/juniper">Juniper</a> provides multiple macros to map your <a href="https://www.rust-lang.org">Rust</a> types to a <a href="https://graphql.org/learn/schema">GraphQL schema</a>. The most important one is the <a href="https://docs.rs/juniper/0.16.2/juniper/macro.graphql_object.html"><code>#[graphql_object]</code> attribute</a> that is used for declaring a <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a> with resolvers (typically used for declaring <a href="https://spec.graphql.org/October2021#sec-Root-Operation-Types"><code>Query</code> and <code>Mutation</code> roots</a>).</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![expect(unused_variables, reason = "example")]
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">
@@ -424,8 +424,8 @@ fn main() {
 <p>When declaring a <a href="https://graphql.org/learn/schema">GraphQL schema</a>, most of the time we deal with <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL objects</a>, because they are the only place where we actually define the behavior once <a href="https://graphql.org/learn/schema">schema</a> gets <a href="https://spec.graphql.org/October2021#sec-Execution">executed</a>.</p>
 <p>There are two ways to define a <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a> in <a href="https://docs.rs/juniper">Juniper</a>:</p>
 <ol>
-<li>The easiest way, suitable for trivial cases, is to use the <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLObject.html"><code>#[derive(GraphQLObject)]</code> attribute</a> on a <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a>, as described below.</li>
-<li>The other way, using the <a href="https://docs.rs/juniper/0.16.1/juniper/attr.graphql_object.html"><code>#[graphql_object]</code> attribute</a>, is described in the <a href="types/objects/complex_fields.html">"Complex fields" chapter</a>.</li>
+<li>The easiest way, suitable for trivial cases, is to use the <a href="https://docs.rs/juniper/0.16.2/juniper/derive.GraphQLObject.html"><code>#[derive(GraphQLObject)]</code> attribute</a> on a <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a>, as described below.</li>
+<li>The other way, using the <a href="https://docs.rs/juniper/0.16.2/juniper/attr.graphql_object.html"><code>#[graphql_object]</code> attribute</a>, is described in the <a href="types/objects/complex_fields.html">"Complex fields" chapter</a>.</li>
 </ol>
 <h2 id="trivial"><a class="header" href="#trivial">Trivial</a></h2>
 <p>While any type in <a href="https://www.rust-lang.org">Rust</a> can be exposed as a <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a>, the most common one is a <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a>:</p>
@@ -441,7 +441,7 @@ struct Person {
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>This creates a <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a> type called <code>Person</code>, with two fields: <code>name</code> of type <code>String!</code>, and <code>age</code> of type <code>Int!</code>. Because of <a href="https://www.rust-lang.org">Rust</a>'s type system, everything is exported as <a href="https://spec.graphql.org/October2021#sec-Non-Null">non-<code>null</code></a> by default.</p>
 <blockquote>
-<p><strong>TIP</strong>: If a <code>null</code>able field is required, the most obvious way is to use <code>Option</code>. Or <a href="https://docs.rs/juniper/0.16.1/juniper/enum.Nullable.html"><code>Nullable</code></a> for distinguishing between <a href="https://spec.graphql.org/October2021#sel-EAFdRDHAAEJDAoBxzT">explicit and implicit <code>null</code>s</a>.</p>
+<p><strong>TIP</strong>: If a <code>null</code>able field is required, the most obvious way is to use <code>Option</code>. Or <a href="https://docs.rs/juniper/0.16.2/juniper/enum.Nullable.html"><code>Nullable</code></a> for distinguishing between <a href="https://spec.graphql.org/October2021#sel-EAFdRDHAAEJDAoBxzT">explicit and implicit <code>null</code>s</a>.</p>
 </blockquote>
 <h3 id="documentation"><a class="header" href="#documentation">Documentation</a></h3>
 <p>We should take advantage of the fact that <a href="https://graphql.org">GraphQL</a> is <a href="https://spec.graphql.org/October2021#sec-Introspection">self-documenting</a> and add descriptions to the defined <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a> type and its fields. <a href="https://docs.rs/juniper">Juniper</a> will automatically use associated <a href="https://doc.rust-lang.org/reference/comments.html#doc-comments">Rust doc comments</a> as <a href="https://spec.graphql.org/October2021#sec-Descriptions">GraphQL descriptions</a>:</p>
@@ -558,7 +558,7 @@ struct Person {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
-<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLObject.html"><code>#[derive(GraphQLObject)]</code></a> attribute.</p>
+<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.2/juniper/derive.GraphQLObject.html"><code>#[derive(GraphQLObject)]</code></a> attribute.</p>
 </blockquote>
 <h2 id="relationships"><a class="header" href="#relationships">Relationships</a></h2>
 <p><a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a> fields can be of any <a href="https://graphql.org">GraphQL</a> type, except <a href="https://spec.graphql.org/October2021#sec-Input-Objects">input objects</a>.</p>
@@ -588,7 +588,7 @@ struct House {
 <li>Defining a circular <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a>, where one of its <a href="https://spec.graphql.org/October2021#sec-Language.Fields">fields</a> returns the type itself.</li>
 <li>Using some other (non-<a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a>) <a href="https://www.rust-lang.org">Rust</a> type to represent a <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a>.</li>
 </ul>
-<p>To support these more complicated use cases, we need a way to define a <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL field</a> as a function. In <a href="https://docs.rs/juniper">Juniper</a> this is achievable by placing the <a href="https://docs.rs/juniper/0.16.1/juniper/attr.graphql_object.html"><code>#[graphql_object]</code> attribute</a> on an <a href="https://doc.rust-lang.org/reference/items/implementations.html#inherent-implementations"><code>impl</code> block</a>, which turns its methods into <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL fields</a>:</p>
+<p>To support these more complicated use cases, we need a way to define a <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL field</a> as a function. In <a href="https://docs.rs/juniper">Juniper</a> this is achievable by placing the <a href="https://docs.rs/juniper/0.16.2/juniper/attr.graphql_object.html"><code>#[graphql_object]</code> attribute</a> on an <a href="https://doc.rust-lang.org/reference/items/implementations.html#inherent-implementations"><code>impl</code> block</a>, which turns its methods into <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL fields</a>:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{GraphQLObject, graphql_object};
 </span><span class="boring">
@@ -766,7 +766,7 @@ impl Person {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
-<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.1/juniper/attr.graphql_object.html"><code>#[graphql_object]</code></a> attribute.</p>
+<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.2/juniper/attr.graphql_object.html"><code>#[graphql_object]</code></a> attribute.</p>
 </blockquote>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="context"><a class="header" href="#context">Context</a></h1>
 <p><em>Context</em> is a feature in <a href="https://docs.rs/juniper">Juniper</a> that lets <a href="https://spec.graphql.org/October2021#sec-Language.Fields">field</a> resolvers access global data, most commonly database connections or authentication information.</p>
@@ -944,12 +944,12 @@ impl Example {
 }
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
-<p><a href="https://docs.rs/juniper/0.16.1/juniper/executor/type.FieldResult.html"><code>FieldResult&lt;T&gt;</code></a> is an alias for <a href="https://docs.rs/juniper/0.16.1/juniper/executor/struct.FieldError.html"><code>Result&lt;T, FieldError&gt;</code></a>, which is the <a href="https://spec.graphql.org/October2021#sec-Errors.Field-errors">error type</a> all fallible <a href="https://spec.graphql.org/October2021#sec-Language.Fields">fields</a> must return. By using the <a href="https://doc.rust-lang.org/book/ch09-02-recoverable-errors-with-result.html#a-shortcut-for-propagating-errors-the--operator"><code>?</code> operator</a>, any type that implements the <a href="https://doc.rust-lang.org/stable/std/fmt/trait.Display.html"><code>Display</code> trait</a> (which most of the error types out there do) can be automatically converted into a <a href="https://docs.rs/juniper/0.16.1/juniper/executor/struct.FieldError.html"><code>FieldError</code></a>.</p>
+<p><a href="https://docs.rs/juniper/0.16.2/juniper/executor/type.FieldResult.html"><code>FieldResult&lt;T&gt;</code></a> is an alias for <a href="https://docs.rs/juniper/0.16.2/juniper/executor/struct.FieldError.html"><code>Result&lt;T, FieldError&gt;</code></a>, which is the <a href="https://spec.graphql.org/October2021#sec-Errors.Field-errors">error type</a> all fallible <a href="https://spec.graphql.org/October2021#sec-Language.Fields">fields</a> must return. By using the <a href="https://doc.rust-lang.org/book/ch09-02-recoverable-errors-with-result.html#a-shortcut-for-propagating-errors-the--operator"><code>?</code> operator</a>, any type that implements the <a href="https://doc.rust-lang.org/stable/std/fmt/trait.Display.html"><code>Display</code> trait</a> (which most of the error types out there do) can be automatically converted into a <a href="https://docs.rs/juniper/0.16.2/juniper/executor/struct.FieldError.html"><code>FieldError</code></a>.</p>
 <blockquote>
-<p><strong>TIP</strong>: If a custom conversion into a <a href="https://docs.rs/juniper/0.16.1/juniper/executor/struct.FieldError.html"><code>FieldError</code></a> is needed (to <a href="https://spec.graphql.org/October2021#sel-GAPHRPZCAACCC_7Q">fill up <code>extensions</code></a>, for example), the <a href="https://docs.rs/juniper/0.16.1/juniper/executor/trait.IntoFieldError.html"><code>IntoFieldError</code> trait</a> should be implemented.</p>
+<p><strong>TIP</strong>: If a custom conversion into a <a href="https://docs.rs/juniper/0.16.2/juniper/executor/struct.FieldError.html"><code>FieldError</code></a> is needed (to <a href="https://spec.graphql.org/October2021#sel-GAPHRPZCAACCC_7Q">fill up <code>extensions</code></a>, for example), the <a href="https://docs.rs/juniper/0.16.2/juniper/executor/trait.IntoFieldError.html"><code>IntoFieldError</code> trait</a> should be implemented.</p>
 </blockquote>
 <blockquote>
-<p><strong>NOTE</strong>: <a href="https://docs.rs/juniper/0.16.1/juniper/executor/struct.FieldError.html"><code>FieldError</code></a>s are <a href="https://spec.graphql.org/October2021#sec-Errors.Field-errors">GraphQL field errors</a> and are <a href="https://spec.graphql.org/October2021#sec-Introspection">not visible</a> in a <a href="https://graphql.org/learn/schema">GraphQL schema</a> in any way.</p>
+<p><strong>NOTE</strong>: <a href="https://docs.rs/juniper/0.16.2/juniper/executor/struct.FieldError.html"><code>FieldError</code></a>s are <a href="https://spec.graphql.org/October2021#sec-Errors.Field-errors">GraphQL field errors</a> and are <a href="https://spec.graphql.org/October2021#sec-Introspection">not visible</a> in a <a href="https://graphql.org/learn/schema">GraphQL schema</a> in any way.</p>
 </blockquote>
 <h2 id="error-payloads-null-and-partial-errors"><a class="header" href="#error-payloads-null-and-partial-errors">Error payloads, <code>null</code>, and partial errors</a></h2>
 <p><a href="https://docs.rs/juniper">Juniper</a>'s error behavior conforms to the <a href="https://spec.graphql.org/October2021#sec-Handling-Field-Errors">GraphQL specification</a>.</p>
@@ -996,7 +996,7 @@ impl Example {
 }
 </code></pre>
 <h2 id="additional-information"><a class="header" href="#additional-information">Additional information</a></h2>
-<p>Sometimes it's desirable to return additional structured error information to clients. This can be accomplished by implementing the <a href="https://docs.rs/juniper/0.16.1/juniper/executor/trait.IntoFieldError.html"><code>IntoFieldError</code> trait</a>:</p>
+<p>Sometimes it's desirable to return additional structured error information to clients. This can be accomplished by implementing the <a href="https://docs.rs/juniper/0.16.2/juniper/executor/trait.IntoFieldError.html"><code>IntoFieldError</code> trait</a>:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#[macro_use] extern crate juniper;
 </span><span class="boring">use juniper::{FieldError, IntoFieldError, ScalarValue, graphql_object};
 </span><span class="boring">
@@ -1402,7 +1402,7 @@ impl MutationResult&lt;ForumPost&gt; {
 <li>Either a <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a>, or a <a href="https://doc.rust-lang.org/reference/items/traits.html#traits">trait</a> (in case <a href="https://spec.graphql.org/October2021#sec-Language.Fields">fields</a> have <a href="https://spec.graphql.org/October2021#sec-Language.Arguments">arguments</a>), which acts only as a blueprint describing the required list of <a href="https://spec.graphql.org/October2021#sec-Language.Fields">fields</a>, and is not used in runtime at all.</li>
 <li>An auto-generated <a href="https://doc.rust-lang.org/reference/items/enumerations.html#enumerations">enum</a>, representing a dispatchable value-type for the <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interfaces</a>, which may be referred and returned by other <a href="https://spec.graphql.org/October2021#sec-Language.Fields">fields</a>.</li>
 </ol>
-<p>This may be done by using either the <a href="https://docs.rs/juniper/0.16.1/juniper/attr.graphql_interface.html"><code>#[graphql_interface]</code> attribute</a> or the <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLInterface.html"><code>#[derive(GraphQLInterface)]</code></a>:</p>
+<p>This may be done by using either the <a href="https://docs.rs/juniper/0.16.2/juniper/attr.graphql_interface.html"><code>#[graphql_interface]</code> attribute</a> or the <a href="https://docs.rs/juniper/0.16.2/juniper/derive.GraphQLInterface.html"><code>#[derive(GraphQLInterface)]</code></a>:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{GraphQLInterface, GraphQLObject, graphql_interface};
 </span><span class="boring">
@@ -1744,14 +1744,14 @@ trait Person {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
-<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.1/juniper/attr.graphql_interface.html"><code>#[graphql_interface]</code></a> attribute.</p>
+<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.2/juniper/attr.graphql_interface.html"><code>#[graphql_interface]</code></a> attribute.</p>
 </blockquote>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="unions"><a class="header" href="#unions">Unions</a></h1>
 <blockquote>
 <p><a href="https://spec.graphql.org/October2021#sec-Unions">GraphQL unions</a> represent an object that could be one of a list of <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a> types, but provides for no guaranteed fields between those types. They also differ from <a href="https://spec.graphql.org/October2021#sec-Interfaces">interfaces</a> in that <a href="https://spec.graphql.org/October2021#sec-Objects">object</a> types declare what <a href="https://spec.graphql.org/October2021#sec-Interfaces">interfaces</a> they implement, but are not aware of what <a href="https://spec.graphql.org/October2021#sec-Unions">unions</a> contain them.</p>
 </blockquote>
 <p>From the server's point of view, <a href="https://spec.graphql.org/October2021#sec-Unions">GraphQL unions</a> are somewhat similar to <a href="https://spec.graphql.org/October2021#sec-Interfaces">interfaces</a>: the main difference is that they don't contain fields on their own, and so, we only need to represent a value, <em>dispatchable</em> into concrete <a href="https://spec.graphql.org/October2021#sec-Objects">objects</a>.</p>
-<p>Obviously, the most straightforward approach to express <a href="https://spec.graphql.org/October2021#sec-Unions">GraphQL unions</a> in <a href="https://www.rust-lang.org">Rust</a> is to use <a href="https://doc.rust-lang.org/reference/items/enumerations.html#enumerations">enums</a>. In <a href="https://docs.rs/juniper">Juniper</a> this may be done by using <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLUnion.html"><code>#[derive(GraphQLUnion)]</code></a> attribute on them:</p>
+<p>Obviously, the most straightforward approach to express <a href="https://spec.graphql.org/October2021#sec-Unions">GraphQL unions</a> in <a href="https://www.rust-lang.org">Rust</a> is to use <a href="https://doc.rust-lang.org/reference/items/enumerations.html#enumerations">enums</a>. In <a href="https://docs.rs/juniper">Juniper</a> this may be done by using <a href="https://docs.rs/juniper/0.16.2/juniper/derive.GraphQLUnion.html"><code>#[derive(GraphQLUnion)]</code></a> attribute on them:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate derive_more;
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">use derive_more::From;
@@ -1881,14 +1881,14 @@ enum Character&lt;S&gt; {
 <p><strong>WARNING</strong>: It's the <em>library user's responsibility</em> to ensure that ignored <a href="https://doc.rust-lang.org/reference/items/enumerations.html#enumerations">enum</a> variant is <strong>never</strong> returned from resolvers, otherwise resolving the <a href="https://graphql.org">GraphQL</a> query will <strong>panic in runtime</strong>.</p>
 </blockquote>
 <blockquote>
-<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLUnion.html"><code>#[derive(GraphQLUnion)]</code></a> attribute.</p>
+<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.2/juniper/derive.GraphQLUnion.html"><code>#[derive(GraphQLUnion)]</code></a> attribute.</p>
 </blockquote>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="enums"><a class="header" href="#enums">Enums</a></h1>
 <blockquote>
 <p><a href="https://spec.graphql.org/October2021#sec-Enums">GraphQL enum</a> types, like <a href="https://spec.graphql.org/October2021#sec-Scalars">scalar</a> types, also represent leaf values in a GraphQL type system. However <a href="https://spec.graphql.org/October2021#sec-Enums">enum</a> types describe the set of possible values.</p>
 <p><a href="https://spec.graphql.org/October2021#sec-Enums">Enums</a> are not references for a numeric value, but are unique values in their own right. They may serialize as a string: the name of the represented value.</p>
 </blockquote>
-<p>With <a href="https://docs.rs/juniper">Juniper</a> a <a href="https://spec.graphql.org/October2021#sec-Enums">GraphQL enum</a> may be defined by using the <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLEnum.html"><code>#[derive(GraphQLEnum)]</code></a> attribute on a <a href="https://doc.rust-lang.org/reference/items/enumerations.html">Rust enum</a> as long as its variants do not have any fields:</p>
+<p>With <a href="https://docs.rs/juniper">Juniper</a> a <a href="https://spec.graphql.org/October2021#sec-Enums">GraphQL enum</a> may be defined by using the <a href="https://docs.rs/juniper/0.16.2/juniper/derive.GraphQLEnum.html"><code>#[derive(GraphQLEnum)]</code></a> attribute on a <a href="https://doc.rust-lang.org/reference/items/enumerations.html">Rust enum</a> as long as its variants do not have any fields:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLEnum;
 </span><span class="boring">
@@ -1995,14 +1995,14 @@ enum Episode&lt;T&gt; {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
-<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLEnum.html"><code>#[derive(GraphQLEnum)]</code></a> attribute.</p>
+<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.2/juniper/derive.GraphQLEnum.html"><code>#[derive(GraphQLEnum)]</code></a> attribute.</p>
 </blockquote>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="input-objects"><a class="header" href="#input-objects">Input objects</a></h1>
 <blockquote>
 <p><a href="https://spec.graphql.org/October2021#sec-Language.Fields">Fields</a> may accept <a href="https://spec.graphql.org/October2021#sec-Language.Arguments">arguments</a> to configure their behavior. These inputs are often <a href="https://spec.graphql.org/October2021#sec-Scalars">scalars</a> or <a href="https://spec.graphql.org/October2021#sec-Enums">enums</a>, but they sometimes need to represent more complex values.</p>
 <p>A <a href="https://spec.graphql.org/October2021#sec-Input-Objects">GraphQL input object</a> defines a set of input fields; the input fields are either <a href="https://spec.graphql.org/October2021#sec-Scalars">scalars</a>, <a href="https://spec.graphql.org/October2021#sec-Enums">enums</a>, or other <a href="https://spec.graphql.org/October2021#sec-Input-Objects">input objects</a>. This allows <a href="https://spec.graphql.org/October2021#sec-Language.Arguments">arguments</a> to accept arbitrarily complex structs.</p>
 </blockquote>
-<p>In <a href="https://docs.rs/juniper">Juniper</a>, defining a <a href="https://spec.graphql.org/October2021#sec-Input-Objects">GraphQL input object</a> is quite straightforward and similar to how <a href="types/objects/index.html">trivial GraphQL objects are defined</a> - by using the <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLInputObject.html"><code>#[derive(GraphQLInputObject)]</code> attribute</a> on a <a href="https://doc.rust-lang.org/reference/items/structs.html">Rust struct</a>:</p>
+<p>In <a href="https://docs.rs/juniper">Juniper</a>, defining a <a href="https://spec.graphql.org/October2021#sec-Input-Objects">GraphQL input object</a> is quite straightforward and similar to how <a href="types/objects/index.html">trivial GraphQL objects are defined</a> - by using the <a href="https://docs.rs/juniper/0.16.2/juniper/derive.GraphQLInputObject.html"><code>#[derive(GraphQLInputObject)]</code> attribute</a> on a <a href="https://doc.rust-lang.org/reference/items/structs.html">Rust struct</a>:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![expect(unused_variables, reason = "example")]
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{GraphQLInputObject, GraphQLObject, graphql_object};
@@ -2122,7 +2122,7 @@ struct Point2D {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
-<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLInputObject.html"><code>#[derive(GraphQLInputObject)]</code></a> attribute.</p>
+<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.2/juniper/derive.GraphQLInputObject.html"><code>#[derive(GraphQLInputObject)]</code></a> attribute.</p>
 </blockquote>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="scalars"><a class="header" href="#scalars">Scalars</a></h1>
 <p><a href="https://spec.graphql.org/October2021#sec-Scalars">GraphQL scalars</a> represent primitive leaf values in a GraphQL type system: numbers, strings, and booleans.</p>
@@ -2144,7 +2144,7 @@ struct Point2D {
 </blockquote>
 <h2 id="custom"><a class="header" href="#custom">Custom</a></h2>
 <p>We can create <a href="https://spec.graphql.org/October2021#sec-Scalars.Custom-Scalars">custom scalars</a> for other primitive values, but they are still <a href="https://spec.graphql.org/October2021#sel-FAHXJDCAACKB1qb">limited in the data types for representation</a>, and only introduce additional semantic meaning. This, also, often requires coordination with the client library, intended to consume the API we're building.</p>
-<p><a href="https://spec.graphql.org/October2021#sec-Scalars.Custom-Scalars">Custom scalars</a> can be defined in <a href="https://docs.rs/juniper">Juniper</a> by using either <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLScalar.html"><code>#[derive(GraphQLScalar)]</code></a> or <a href="https://docs.rs/juniper/0.16.1/juniper/attr.graphql_scalar.html"><code>#[graphql_scalar]</code></a> attributes, which do work pretty much the same way (except, <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLScalar.html"><code>#[derive(GraphQLScalar)]</code></a> cannot be used on <a href="https://doc.rust-lang.org/reference/items/type-aliases.html">type aliases</a>).</p>
+<p><a href="https://spec.graphql.org/October2021#sec-Scalars.Custom-Scalars">Custom scalars</a> can be defined in <a href="https://docs.rs/juniper">Juniper</a> by using either <a href="https://docs.rs/juniper/0.16.2/juniper/derive.GraphQLScalar.html"><code>#[derive(GraphQLScalar)]</code></a> or <a href="https://docs.rs/juniper/0.16.2/juniper/attr.graphql_scalar.html"><code>#[graphql_scalar]</code></a> attributes, which do work pretty much the same way (except, <a href="https://docs.rs/juniper/0.16.2/juniper/derive.GraphQLScalar.html"><code>#[derive(GraphQLScalar)]</code></a> cannot be used on <a href="https://doc.rust-lang.org/reference/items/type-aliases.html">type aliases</a>).</p>
 <h3 id="transparent-delegation"><a class="header" href="#transparent-delegation">Transparent delegation</a></h3>
 <p>Quite often, we want to create a <a href="https://spec.graphql.org/October2021#sec-Scalars.Custom-Scalars">custom GraphQL scalar</a> type by just wrapping an existing one, inheriting all its behavior. In <a href="https://www.rust-lang.org">Rust</a>, this is often called as <a href="https://rust-unofficial.github.io/patterns/patterns/behavioural/newtype.html">"newtype pattern"</a>. This may be achieved by providing a <code>#[graphql(transparent)]</code> attribute to the definition:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
@@ -2416,12 +2416,12 @@ mod string_or_int {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
-<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLScalar.html"><code>#[derive(GraphQLScalar)]</code></a> and <a href="https://docs.rs/juniper/0.16.1/juniper/attr.graphql_scalar.html"><code>#[graphql_scalar]</code></a> attributes.</p>
+<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.2/juniper/derive.GraphQLScalar.html"><code>#[derive(GraphQLScalar)]</code></a> and <a href="https://docs.rs/juniper/0.16.2/juniper/attr.graphql_scalar.html"><code>#[graphql_scalar]</code></a> attributes.</p>
 </blockquote>
 <h2 id="foreign"><a class="header" href="#foreign">Foreign</a></h2>
-<p>For implementing <a href="https://spec.graphql.org/October2021#sec-Scalars.Custom-Scalars">custom scalars</a> on foreign types there is <a href="https://docs.rs/juniper/0.16.1/juniper/attr.graphql_scalar.html"><code>#[graphql_scalar]</code></a> attribute.</p>
+<p>For implementing <a href="https://spec.graphql.org/October2021#sec-Scalars.Custom-Scalars">custom scalars</a> on foreign types there is <a href="https://docs.rs/juniper/0.16.2/juniper/attr.graphql_scalar.html"><code>#[graphql_scalar]</code></a> attribute.</p>
 <blockquote>
-<p><strong>NOTE</strong>: To satisfy <a href="https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules">orphan rules</a>, we should provide a local <a href="https://docs.rs/juniper/0.16.1/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> implementation.</p>
+<p><strong>NOTE</strong>: To satisfy <a href="https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules">orphan rules</a>, we should provide a local <a href="https://docs.rs/juniper/0.16.2/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> implementation.</p>
 </blockquote>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">mod date {
@@ -2508,10 +2508,10 @@ mod date_scalar {
 <p>Similarly, the <strong>subscription</strong> root operation type is also optional; if it is not provided, the service does not support subscriptions. If it is provided, it must be an <a href="https://spec.graphql.org/October2021#sec-Objects">Object</a> type.</p>
 <p>The <strong>query</strong>, <strong>mutation</strong>, and <strong>subscription</strong> root types must all be different types if provided.</p>
 </blockquote>
-<p>In <a href="https://docs.rs/juniper">Juniper</a>, the <a href="https://docs.rs/juniper/0.16.1/juniper/struct.RootNode.html"><code>RootNode</code></a> type represents a <a href="https://spec.graphql.org/October2021#sec-Schema">schema</a>. When the <a href="https://spec.graphql.org/October2021#sec-Schema">schema</a> is first created, <a href="https://docs.rs/juniper">Juniper</a> will traverse the entire object graph and register all types it can find. This means that if we <a href="schema/../types/objects/index.html">define a GraphQL object</a> somewhere but never use or reference it, it won't be exposed in a <a href="https://spec.graphql.org/October2021#sec-Schema">GraphQL schema</a>.</p>
+<p>In <a href="https://docs.rs/juniper">Juniper</a>, the <a href="https://docs.rs/juniper/0.16.2/juniper/struct.RootNode.html"><code>RootNode</code></a> type represents a <a href="https://spec.graphql.org/October2021#sec-Schema">schema</a>. When the <a href="https://spec.graphql.org/October2021#sec-Schema">schema</a> is first created, <a href="https://docs.rs/juniper">Juniper</a> will traverse the entire object graph and register all types it can find. This means that if we <a href="schema/../types/objects/index.html">define a GraphQL object</a> somewhere but never use or reference it, it won't be exposed in a <a href="https://spec.graphql.org/October2021#sec-Schema">GraphQL schema</a>.</p>
 <p>Both <a href="https://spec.graphql.org/October2021#sel-FAHTRFCAACChCtpG">query</a> and <a href="https://spec.graphql.org/October2021#sel-FAHTRHCAACCuE9yD">mutation</a> objects are regular <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL objects</a>, defined like <a href="schema/../types/objects/index.html">any other object in Juniper</a>. The <a href="https://spec.graphql.org/October2021#sel-FAHTRHCAACCuE9yD">mutation</a> and <a href="https://spec.graphql.org/October2021#sel-FAHTRJCAACC3EhsX">subscription</a> objects, however, are optional, since <a href="https://spec.graphql.org/October2021#sec-Schema">schemas</a> can be read-only and do not require <a href="https://spec.graphql.org/October2021#sel-FAHTRJCAACC3EhsX">subscriptions</a>.</p>
 <blockquote>
-<p><strong>TIP</strong>: If <a href="https://spec.graphql.org/October2021#sel-FAHTRHCAACCuE9yD">mutation</a>/<a href="https://spec.graphql.org/October2021#sel-FAHTRJCAACC3EhsX">subscription</a> functionality is not needed, consider using the predefined <a href="https://docs.rs/juniper/0.16.1/juniper/struct.EmptyMutation.html"><code>EmptyMutation</code></a>/<a href="https://docs.rs/juniper/0.16.1/juniper/struct.EmptySubscription.html"><code>EmptySubscription</code></a> types for stubbing them in a <a href="https://docs.rs/juniper/0.16.1/juniper/struct.RootNode.html"><code>RootNode</code></a>.</p>
+<p><strong>TIP</strong>: If <a href="https://spec.graphql.org/October2021#sel-FAHTRHCAACCuE9yD">mutation</a>/<a href="https://spec.graphql.org/October2021#sel-FAHTRJCAACC3EhsX">subscription</a> functionality is not needed, consider using the predefined <a href="https://docs.rs/juniper/0.16.2/juniper/struct.EmptyMutation.html"><code>EmptyMutation</code></a>/<a href="https://docs.rs/juniper/0.16.2/juniper/struct.EmptySubscription.html"><code>EmptySubscription</code></a> types for stubbing them in a <a href="https://docs.rs/juniper/0.16.2/juniper/struct.RootNode.html"><code>RootNode</code></a>.</p>
 </blockquote>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
@@ -2553,7 +2553,7 @@ type Schema = RootNode&lt;Query, Mutation, EmptySubscription&gt;;
 <h2 id="export"><a class="header" href="#export">Export</a></h2>
 <p>Many tools in <a href="https://graphql.org">GraphQL</a> ecosystem require a <a href="https://graphql.org/learn/schema">schema</a> definition to operate on. With <a href="https://docs.rs/juniper">Juniper</a> we can export our <a href="https://spec.graphql.org/October2021#sec-Schema">GraphQL schema</a> defined in <a href="https://www.rust-lang.org">Rust</a> code either represented in the <a href="https://graphql.org/learn/schema#type-language">GraphQL schema language</a> or in <a href="https://www.json.org">JSON</a>.</p>
 <h3 id="sdl-schema-definition-language"><a class="header" href="#sdl-schema-definition-language">SDL (schema definition language)</a></h3>
-<p>To generate an <a href="https://graphql.org/learn/schema#type-language">SDL (schema definition language)</a> representation of a <a href="https://spec.graphql.org/October2021#sec-Schema">GraphQL schema</a> defined in <a href="https://www.rust-lang.org">Rust</a> code, the <a href="https://docs.rs/juniper/0.16.1/juniper/struct.RootNode.html#method.as_sdl"><code>as_sdl()</code> method</a> should be used for the direct extraction (requires enabling the <code>schema-language</code> <a href="https://docs.rs/juniper">Juniper</a> feature):</p>
+<p>To generate an <a href="https://graphql.org/learn/schema#type-language">SDL (schema definition language)</a> representation of a <a href="https://spec.graphql.org/October2021#sec-Schema">GraphQL schema</a> defined in <a href="https://www.rust-lang.org">Rust</a> code, the <a href="https://docs.rs/juniper/0.16.2/juniper/struct.RootNode.html#method.as_sdl"><code>as_sdl()</code> method</a> should be used for the direct extraction (requires enabling the <code>schema-language</code> <a href="https://docs.rs/juniper">Juniper</a> feature):</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
 </span><span class="boring">    graphql_object, EmptyMutation, EmptySubscription, FieldResult, RootNode,
@@ -2592,7 +2592,7 @@ type Query {
 </span>    assert_eq!(result, expected);
 }</code></pre></pre>
 <h3 id="json"><a class="header" href="#json">JSON</a></h3>
-<p>To export a <a href="https://spec.graphql.org/October2021#sec-Schema">GraphQL schema</a> defined in <a href="https://www.rust-lang.org">Rust</a> code as <a href="https://www.json.org">JSON</a> (often referred to as <code>schema.json</code>), the specially crafted <a href="https://docs.rs/crate/juniper/latest/source/src/introspection/query.graphql">introspection query</a> should be issued. <a href="https://docs.rs/juniper">Juniper</a> provides a <a href="https://docs.rs/juniper/0.16.1/juniper/fn.introspect.html">convenience <code>introspect()</code> function</a> to <a href="schema/introspection.html">introspect</a> the entire <a href="https://spec.graphql.org/October2021#sec-Schema">schema</a>, which result can be serialized into <a href="https://www.json.org">JSON</a>:</p>
+<p>To export a <a href="https://spec.graphql.org/October2021#sec-Schema">GraphQL schema</a> defined in <a href="https://www.rust-lang.org">Rust</a> code as <a href="https://www.json.org">JSON</a> (often referred to as <code>schema.json</code>), the specially crafted <a href="https://docs.rs/crate/juniper/latest/source/src/introspection/query.graphql">introspection query</a> should be issued. <a href="https://docs.rs/juniper">Juniper</a> provides a <a href="https://docs.rs/juniper/0.16.2/juniper/fn.introspect.html">convenience <code>introspect()</code> function</a> to <a href="schema/introspection.html">introspect</a> the entire <a href="https://spec.graphql.org/October2021#sec-Schema">schema</a>, which result can be serialized into <a href="https://www.json.org">JSON</a>:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">extern crate serde_json;
 </span><span class="boring">use juniper::{
@@ -2676,9 +2676,9 @@ impl Subscription {
 <span class="boring">
 </span><span class="boring">fn main () {}</span></code></pre></pre>
 <h2 id="coordinator"><a class="header" href="#coordinator">Coordinator</a></h2>
-<p><a href="https://spec.graphql.org/October2021#sec-Subscription">GraphQL subscriptions</a> require a bit more resources than regular <a href="https://spec.graphql.org/October2021#sec-Query">queries</a> and provide a great vector for <a href="https://en.wikipedia.org/wiki/Denial-of-service_attack">DoS attacks</a>. This can can bring down a server easily if not handled correctly. The <a href="https://docs.rs/juniper/0.16.1/juniper/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code> trait</a> provides coordination logic to enable functionality like <a href="https://en.wikipedia.org/wiki/Denial-of-service_attack">DoS attacks</a> mitigation and resource limits.</p>
-<p>The <a href="https://docs.rs/juniper/0.16.1/juniper/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> contains the <a href="https://spec.graphql.org/October2021#sec-Schema">schema</a> and can keep track of opened connections, handle <a href="https://spec.graphql.org/October2021#sec-Subscription">subscription</a> start and end, and maintain a global ID for each <a href="https://spec.graphql.org/October2021#sec-Subscription">subscription</a>. Each time a connection is established, the <a href="https://docs.rs/juniper/0.16.1/juniper/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> spawns a [32], which handles a single connection, providing resolver logic for a client stream as well as reconnection and shutdown logic.</p>
-<p>While we can implement <a href="https://docs.rs/juniper/0.16.1/juniper/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> ourselves, <a href="https://docs.rs/juniper">Juniper</a> contains a simple and generic implementation called <a href="https://docs.rs/juniper_subscriptions/0.17.0/juniper_subscriptions/struct.Coordinator.html"><code>Coordinator</code></a>. The <code>subscribe</code> method returns a <a href="https://doc.rust-lang.org/stable/std/future/trait.Future.html"><code>Future</code></a> resolving into a <code>Result&lt;Connection, GraphQLError&gt;</code>, where <a href="https://docs.rs/juniper_subscriptions/0.17.0/juniper_subscriptions/struct.Connection.html"><code>Connection</code></a> is a <a href="https://docs.rs/futures/latest/futures/stream/trait.Stream.html"><code>Stream</code></a> of <a href="https://spec.graphql.org/October2021#sec-Values">values</a> returned by the operation, and a <a href="https://docs.rs/juniper/0.16.1/juniper/enum.GraphQLError.html"><code>GraphQLError</code></a> is the error when the <a href="https://spec.graphql.org/October2021#sec-Subscription">subscription operation</a> fails.</p>
+<p><a href="https://spec.graphql.org/October2021#sec-Subscription">GraphQL subscriptions</a> require a bit more resources than regular <a href="https://spec.graphql.org/October2021#sec-Query">queries</a> and provide a great vector for <a href="https://en.wikipedia.org/wiki/Denial-of-service_attack">DoS attacks</a>. This can can bring down a server easily if not handled correctly. The <a href="https://docs.rs/juniper/0.16.2/juniper/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code> trait</a> provides coordination logic to enable functionality like <a href="https://en.wikipedia.org/wiki/Denial-of-service_attack">DoS attacks</a> mitigation and resource limits.</p>
+<p>The <a href="https://docs.rs/juniper/0.16.2/juniper/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> contains the <a href="https://spec.graphql.org/October2021#sec-Schema">schema</a> and can keep track of opened connections, handle <a href="https://spec.graphql.org/October2021#sec-Subscription">subscription</a> start and end, and maintain a global ID for each <a href="https://spec.graphql.org/October2021#sec-Subscription">subscription</a>. Each time a connection is established, the <a href="https://docs.rs/juniper/0.16.2/juniper/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> spawns a [32], which handles a single connection, providing resolver logic for a client stream as well as reconnection and shutdown logic.</p>
+<p>While we can implement <a href="https://docs.rs/juniper/0.16.2/juniper/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> ourselves, <a href="https://docs.rs/juniper">Juniper</a> contains a simple and generic implementation called <a href="https://docs.rs/juniper_subscriptions/0.17.0/juniper_subscriptions/struct.Coordinator.html"><code>Coordinator</code></a>. The <code>subscribe</code> method returns a <a href="https://doc.rust-lang.org/stable/std/future/trait.Future.html"><code>Future</code></a> resolving into a <code>Result&lt;Connection, GraphQLError&gt;</code>, where <a href="https://docs.rs/juniper_subscriptions/0.17.0/juniper_subscriptions/struct.Connection.html"><code>Connection</code></a> is a <a href="https://docs.rs/futures/latest/futures/stream/trait.Stream.html"><code>Stream</code></a> of <a href="https://spec.graphql.org/October2021#sec-Values">values</a> returned by the operation, and a <a href="https://docs.rs/juniper/0.16.2/juniper/enum.GraphQLError.html"><code>GraphQLError</code></a> is the error when the <a href="https://spec.graphql.org/October2021#sec-Subscription">subscription operation</a> fails.</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate futures;
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">extern crate juniper_subscriptions;
@@ -2778,7 +2778,7 @@ __type(name: String!): __Type
 <blockquote>
 <p>Disabling introspection in production is a widely debated topic, but we believe it’s one of the first things you can do to harden your GraphQL API in production.</p>
 </blockquote>
-<p><a href="https://www.apollographql.com/blog/why-you-should-disable-graphql-introspection-in-production">Some security requirements and considerations</a> may mandate to disable <a href="https://spec.graphql.org/October2021#sec-Schema-Introspection">GraphQL schema introspection</a> in production environments. In <a href="https://docs.rs/juniper">Juniper</a> this can be achieved by using the <a href="https://docs.rs/juniper/0.16.1/juniper/struct.RootNode.html#method.disable_introspection"><code>RootNode::disable_introspection()</code></a> method:</p>
+<p><a href="https://www.apollographql.com/blog/why-you-should-disable-graphql-introspection-in-production">Some security requirements and considerations</a> may mandate to disable <a href="https://spec.graphql.org/October2021#sec-Schema-Introspection">GraphQL schema introspection</a> in production environments. In <a href="https://docs.rs/juniper">Juniper</a> this can be achieved by using the <a href="https://docs.rs/juniper/0.16.2/juniper/struct.RootNode.html#method.disable_introspection"><code>RootNode::disable_introspection()</code></a> method:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
 </span><span class="boring">    EmptyMutation, EmptySubscription, GraphQLError, RootNode,
@@ -2958,7 +2958,7 @@ struct UserPatch {
 <pre><code class="language-graphql">mutation { patchUser(patch: {}) }
 </code></pre>
 <p>The last two cases rely on being able to distinguish between <a href="https://spec.graphql.org/October2021#sel-EAFdRDHAAEJDAoBxzT">explicit and implicit <code>null</code></a>.</p>
-<p>Unfortunately, plain <code>Option</code> is not capable to distinguish them. That's why in <a href="https://docs.rs/juniper">Juniper</a>, this can be done using the <a href="https://docs.rs/juniper/0.16.1/juniper/enum.Nullable.html"><code>Nullable</code></a> type:</p>
+<p>Unfortunately, plain <code>Option</code> is not capable to distinguish them. That's why in <a href="https://docs.rs/juniper">Juniper</a>, this can be done using the <a href="https://docs.rs/juniper/0.16.2/juniper/enum.Nullable.html"><code>Nullable</code></a> type:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span>use juniper::{FieldResult, GraphQLInputObject, Nullable, graphql_object};
 
@@ -3271,7 +3271,7 @@ SELECT id, name FROM cults WHERE id IN (1, 2, 3, 4);
 <p>In backtracking algorithms, <strong>look ahead</strong> is the generic term for a subprocedure that attempts to foresee the effects of choosing a branching variable to evaluate one of its values. The two main aims of look-ahead are to choose a variable to evaluate next and to choose the order of values to assign to it.</p>
 </blockquote>
 <p>In <a href="https://graphql.org">GraphQL</a>, look-ahead machinery allows us to introspect the currently <a href="https://spec.graphql.org/October2021#sec-Execution">executed</a> <a href="https://spec.graphql.org/October2021#sec-Language.Operations%5C">GraphQL operation</a> to see which <a href="https://spec.graphql.org/October2021#sec-Language.Fields">fields</a> has been actually selected by it.</p>
-<p>In <a href="https://docs.rs/juniper">Juniper</a>, it's represented by the <a href="https://docs.rs/juniper/0.16.1/juniper/executor/struct.Executor.html#method.look_ahead"><code>Executor::look_ahead()</code></a> method.</p>
+<p>In <a href="https://docs.rs/juniper">Juniper</a>, it's represented by the <a href="https://docs.rs/juniper/0.16.2/juniper/executor/struct.Executor.html#method.look_ahead"><code>Executor::look_ahead()</code></a> method.</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate juniper;
@@ -3303,7 +3303,7 @@ impl Query {
 }
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
-<p><strong>TIP</strong>: <code>S: ScalarValue</code> type parameter on the method is required here to keep the <a href="https://docs.rs/juniper/0.16.1/juniper/executor/struct.Executor.html"><code>Executor</code></a> being generic over <a href="https://docs.rs/juniper/0.16.1/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> types. We, instead, could have used the <a href="https://docs.rs/juniper/0.16.1/juniper/enum.DefaultScalarValue.html"><code>DefaultScalarValue</code></a>, which is the default <a href="https://docs.rs/juniper/0.16.1/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type for the <a href="https://docs.rs/juniper/0.16.1/juniper/executor/struct.Executor.html"><code>Executor</code></a>, and make our code more ergonomic, but less flexible and generic.</p>
+<p><strong>TIP</strong>: <code>S: ScalarValue</code> type parameter on the method is required here to keep the <a href="https://docs.rs/juniper/0.16.2/juniper/executor/struct.Executor.html"><code>Executor</code></a> being generic over <a href="https://docs.rs/juniper/0.16.2/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> types. We, instead, could have used the <a href="https://docs.rs/juniper/0.16.2/juniper/enum.DefaultScalarValue.html"><code>DefaultScalarValue</code></a>, which is the default <a href="https://docs.rs/juniper/0.16.2/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> type for the <a href="https://docs.rs/juniper/0.16.2/juniper/executor/struct.Executor.html"><code>Executor</code></a>, and make our code more ergonomic, but less flexible and generic.</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate juniper;
@@ -3467,7 +3467,7 @@ impl Query {
 SELECT id, name FROM cults WHERE id IN (1, 2, 3, 4);
 </code></pre>
 <h2 id="more-features"><a class="header" href="#more-features">More features</a></h2>
-<p>See more available look-ahead features in the API docs of the <a href="https://docs.rs/juniper/0.16.1/juniper/executor/struct.LookAheadSelection.html"><code>LookAheadSelection</code></a> and the <a href="https://docs.rs/juniper/0.16.1/juniper/executor/struct.LookAheadChildren.html"><code>LookAheadChildren</code></a>.</p>
+<p>See more available look-ahead features in the API docs of the <a href="https://docs.rs/juniper/0.16.2/juniper/executor/struct.LookAheadSelection.html"><code>LookAheadSelection</code></a> and the <a href="https://docs.rs/juniper/0.16.2/juniper/executor/struct.LookAheadChildren.html"><code>LookAheadChildren</code></a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="eager-loading"><a class="header" href="#eager-loading">Eager loading</a></h1>
 <p>As a further evolution of the <a href="advanced/lookahead.html#n1-problem">dealing with the N+1 problem via look-ahead</a>, we may systematically remodel <a href="https://www.rust-lang.org">Rust</a> types mapping to <a href="https://graphql.org">GraphQL</a> ones in the way to encourage doing eager preloading of data for its <a href="https://spec.graphql.org/October2021#sec-Language.Fields">fields</a> and using the already preloaded data when resolving a particular <a href="https://spec.graphql.org/October2021#sec-Language.Fields">field</a>.</p>
 <p>At the moment, this approach is represented with the <a href="https://docs.rs/juniper-eager-loading"><code>juniper-eager-loading</code></a> crate for <a href="https://docs.rs/juniper">Juniper</a>.</p>

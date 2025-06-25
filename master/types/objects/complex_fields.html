@@ -174,7 +174,7 @@
 <li>Defining a circular <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a>, where one of its <a href="https://spec.graphql.org/October2021#sec-Language.Fields">fields</a> returns the type itself.</li>
 <li>Using some other (non-<a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a>) <a href="https://www.rust-lang.org">Rust</a> type to represent a <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a>.</li>
 </ul>
-<p>To support these more complicated use cases, we need a way to define a <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL field</a> as a function. In <a href="https://docs.rs/juniper">Juniper</a> this is achievable by placing the <a href="https://docs.rs/juniper/0.16.1/juniper/attr.graphql_object.html"><code>#[graphql_object]</code> attribute</a> on an <a href="https://doc.rust-lang.org/reference/items/implementations.html#inherent-implementations"><code>impl</code> block</a>, which turns its methods into <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL fields</a>:</p>
+<p>To support these more complicated use cases, we need a way to define a <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL field</a> as a function. In <a href="https://docs.rs/juniper">Juniper</a> this is achievable by placing the <a href="https://docs.rs/juniper/0.16.2/juniper/attr.graphql_object.html"><code>#[graphql_object]</code> attribute</a> on an <a href="https://doc.rust-lang.org/reference/items/implementations.html#inherent-implementations"><code>impl</code> block</a>, which turns its methods into <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL fields</a>:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{GraphQLObject, graphql_object};
 </span><span class="boring">
@@ -352,7 +352,7 @@ impl Person {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
-<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.1/juniper/attr.graphql_object.html"><code>#[graphql_object]</code></a> attribute.</p>
+<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.2/juniper/attr.graphql_object.html"><code>#[graphql_object]</code></a> attribute.</p>
 </blockquote>
 
                     </main>
