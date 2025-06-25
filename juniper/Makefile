@@ -46,13 +46,15 @@ graphiql:
 		        | grep -m1 '"@graphiql/toolkit": "' | cut -d '"' -f4 | cut -d '^' -f2)))
 	curl -fsL -o src/http/graphiql.html \
 		https://raw.githubusercontent.com/graphql/graphiql/graphiql%40$(GRAPHIQL_VER)/examples/graphiql-cdn/index.html
-	$(sed-i) 's|esm.sh/graphiql@4.0.0|esm.sh/graphiql@$(GRAPHIQL_VER)|g' \
+	$(sed-i) 's|esm.sh/graphiql@5.0.0-rc.1|esm.sh/graphiql@$(GRAPHIQL_VER)|g' \
 		src/http/graphiql.html
-	$(sed-i) 's|esm.sh/@graphiql/plugin-explorer@4.0.0|esm.sh/@graphiql/plugin-explorer@$(graphiql-plugin-explorer-ver)|g' \
+	$(sed-i) 's|esm.sh/graphiql@6.0.0-canary-b26dcda1.0|esm.sh/graphiql@$(GRAPHIQL_VER)|g' \
 		src/http/graphiql.html
-	$(sed-i) 's|esm.sh/@graphiql/react@0.30.0|esm.sh/@graphiql/react@$(graphiql-react-ver)|g' \
+	$(sed-i) 's|esm.sh/@graphiql/plugin-explorer@5.0.0-rc.1|esm.sh/@graphiql/plugin-explorer@$(graphiql-plugin-explorer-ver)|g' \
 		src/http/graphiql.html
-	$(sed-i) 's|esm.sh/@graphiql/toolkit@0.11.2|esm.sh/@graphiql/toolkit@$(graphiql-toolkit-ver)|g' \
+	$(sed-i) 's|esm.sh/@graphiql/react@0.36.0-canary-b26dcda1.0|esm.sh/@graphiql/react@$(graphiql-react-ver)|g' \
+		src/http/graphiql.html
+	$(sed-i) 's|esm.sh/@graphiql/toolkit|esm.sh/@graphiql/toolkit@$(graphiql-toolkit-ver)|g' \
 		src/http/graphiql.html
 	$(sed-i) "s|'https://countries.trevorblades.com'|JUNIPER_URL|g" \
 		src/http/graphiql.html
@@ -60,7 +62,7 @@ graphiql:
 		src/http/graphiql.html
 	$(sed-i) 's|<script type="module">|<script type="module">\n<!-- inject -->|' \
 		src/http/graphiql.html
-	$(sed-i) 's|GraphiQL 4 with React 19 and GraphiQL Explorer|GraphiQL|' \
+	$(sed-i) 's|GraphiQL 5 with React 19 and GraphiQL Explorer|GraphiQL|' \
 		src/http/graphiql.html
 
 

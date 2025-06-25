@@ -8,7 +8,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 ## master
 
-[Diff](/../../compare/juniper-v0.16.1...master) | [Milestone](/../../milestone/7)
+[Diff](/../../compare/juniper-v0.16.2...master) | [Milestone](/../../milestone/7)
 
 ### BC Breaks
 
@@ -123,7 +123,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 ### Changed
 
-- Upgraded [GraphiQL] to [4.1.2 version](https://github.com/graphql/graphiql/blob/graphiql%404.1.2/packages/graphiql/CHANGELOG.md#412). ([#1326])
+- Upgraded [GraphiQL] to [5.0.0 version](https://github.com/graphql/graphiql/blob/graphiql%405.0.0/packages/graphiql/CHANGELOG.md#500). ([#1331])
 
 ### Fixed
 
@@ -145,12 +145,27 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1311]: /../../pull/1311
 [#1318]: /../../pull/1318
 [#1324]: /../../pull/1324
-[#1326]: /../../pull/1326
 [#1327]: /../../pull/1327
 [#1329]: /../../pull/1329
+[#1331]: /../../pull/1331
 [1b1fc618]: /../../commit/1b1fc61879ffdd640d741e187dc20678bf7ab295
 [20609366]: /../../commit/2060936635609b0186d46d8fbd06eb30fce660e3
 [4b14c015]: /../../commit/4b14c015018d31cb6df848efdee24d96416b76d9
+
+
+
+
+## [0.16.2] · 2025-06-25
+[0.16.2]: /../../tree/juniper-v0.16.2/juniper
+
+[Diff](/../../compare/juniper-v0.16.1...juniper-v0.16.2) | [Milestone](/../../milestone/8)
+
+### Fixed
+
+- Non-pinned versions of [GraphiQL]-related libraries in HTML page returned by `graphiql_source()`. ([ed2ef133], [#1332])
+
+[#1332]: /../../issues/1332
+[ed2ef133]: /../../commit/ed2ef13358a84bf9cc43835d4495b2b3395e7392
 
 
 
