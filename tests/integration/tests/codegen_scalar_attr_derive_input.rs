@@ -8,8 +8,8 @@ use std::fmt;
 
 use chrono::{DateTime, TimeZone, Utc};
 use juniper::{
-    ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue, Value, execute,
-    graphql_object, graphql_scalar, graphql_value, graphql_vars,
+    ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue, execute, graphql_object,
+    graphql_scalar, graphql_value, graphql_vars,
 };
 
 use self::common::{
@@ -27,8 +27,8 @@ mod trivial {
     struct Counter(i32);
 
     impl Counter {
-        fn to_output<S: ScalarValue>(&self) -> Value<S> {
-            Value::scalar(self.0)
+        fn to_output(&self) -> i32 {
+            self.0
         }
 
         fn from_input(i: i32) -> Self {
@@ -166,8 +166,8 @@ mod transparent_with_resolver {
     struct Counter(i32);
 
     impl Counter {
-        fn to_output<S: ScalarValue>(&self) -> Value<S> {
-            Value::scalar(self.0 + 1)
+        fn to_output(&self) -> i32 {
+            self.0 + 1
         }
     }
 
@@ -236,8 +236,8 @@ mod all_custom_resolvers {
     #[graphql(parse_token_with = parse_token)]
     struct Counter(i32);
 
-    fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
-        Value::scalar(v.0)
+    fn to_output(v: &Counter) -> i32 {
+        v.0
     }
 
     fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -306,8 +306,8 @@ mod explicit_name {
     struct CustomCounter(i32);
 
     impl CustomCounter {
-        fn to_output<S: ScalarValue>(&self) -> Value<S> {
-            Value::scalar(self.0)
+        fn to_output(&self) -> i32 {
+            self.0
         }
 
         fn from_input(i: i32) -> Self {
@@ -381,8 +381,8 @@ mod delegated_parse_token {
     struct Counter(i32);
 
     impl Counter {
-        fn to_output<S: ScalarValue>(&self) -> Value<S> {
-            Value::scalar(self.0)
+        fn to_output(&self) -> i32 {
+            self.0
         }
 
         fn from_input(i: i32) -> Self {
@@ -455,10 +455,10 @@ mod multiple_delegated_parse_token {
     }
 
     impl StringOrInt {
-        fn to_output<S: ScalarValue>(&self) -> Value<S> {
+        fn to_output<S: ScalarValue>(&self) -> S {
             match self {
-                Self::String(s) => Value::scalar(s.to_owned()),
-                Self::Int(i) => Value::scalar(*i),
+                Self::String(s) => S::from_displayable(s),
+                Self::Int(i) => (*i).into(),
             }
         }
 
@@ -517,13 +517,12 @@ mod where_attribute {
     )]
     struct CustomDateTime<Tz: TimeZone>(DateTime<Tz>);
 
-    fn to_output<S, Tz>(v: &CustomDateTime<Tz>) -> Value<S>
+    fn to_output<Tz>(v: &CustomDateTime<Tz>) -> prelude::String
     where
-        S: ScalarValue,
         Tz: From<Utc> + TimeZone,
         Tz::Offset: fmt::Display,
     {
-        Value::scalar(v.0.to_rfc3339())
+        v.0.to_rfc3339()
     }
 
     fn from_input<Tz>(s: &str) -> prelude::Result<CustomDateTime<Tz>, prelude::Box<str>>
@@ -588,8 +587,8 @@ mod with_self {
     struct Counter(i32);
 
     impl Counter {
-        fn to_output<S: ScalarValue>(&self) -> Value<S> {
-            Value::scalar(self.0)
+        fn to_output(&self) -> i32 {
+            self.0
         }
 
         fn from_input(i: i32) -> Self {
@@ -670,13 +669,12 @@ mod with_module {
     mod custom_date_time {
         use super::*;
 
-        pub(super) fn to_output<S, Tz>(v: &CustomDateTime<Tz>) -> Value<S>
+        pub(super) fn to_output<Tz>(v: &CustomDateTime<Tz>) -> prelude::String
         where
-            S: ScalarValue,
             Tz: From<Utc> + TimeZone,
             Tz::Offset: fmt::Display,
         {
-            Value::scalar(v.0.to_rfc3339())
+            v.0.to_rfc3339()
         }
 
         pub(super) fn from_input<Tz>(
@@ -745,8 +743,8 @@ mod description_from_doc_comment {
     struct Counter(i32);
 
     impl Counter {
-        fn to_output<S: ScalarValue>(&self) -> Value<S> {
-            Value::scalar(self.0)
+        fn to_output(&self) -> i32 {
+            self.0
         }
 
         fn from_input(i: i32) -> Self {
@@ -820,8 +818,8 @@ mod description_from_attribute {
     struct Counter(i32);
 
     impl Counter {
-        fn to_output<S: ScalarValue>(&self) -> Value<S> {
-            Value::scalar(self.0)
+        fn to_output(&self) -> i32 {
+            self.0
         }
 
         fn from_input(i: i32) -> Self {
@@ -895,8 +893,8 @@ mod custom_scalar {
     struct Counter(i32);
 
     impl Counter {
-        fn to_output<S: ScalarValue>(&self) -> Value<S> {
-            Value::scalar(self.0)
+        fn to_output(&self) -> i32 {
+            self.0
         }
 
         fn from_input(i: i32) -> Self {
@@ -970,8 +968,8 @@ mod generic_scalar {
     struct Counter(i32);
 
     impl Counter {
-        fn to_output<S: ScalarValue>(&self) -> Value<S> {
-            Value::scalar(self.0)
+        fn to_output(&self) -> i32 {
+            self.0
         }
 
         fn from_input(i: i32) -> Self {
@@ -1044,8 +1042,8 @@ mod bounded_generic_scalar {
     struct Counter(i32);
 
     impl Counter {
-        fn to_output<S: ScalarValue>(&self) -> Value<S> {
-            Value::scalar(self.0)
+        fn to_output(&self) -> i32 {
+            self.0
         }
 
         fn from_input(i: i32) -> Self {

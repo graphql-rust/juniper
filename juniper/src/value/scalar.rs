@@ -522,7 +522,7 @@ pub trait ScalarValue:
     ///     Boolean(bool),
     /// }
     ///
-    /// // Custom implementation of `ScalarValue::from_displayable()` method for specializing 
+    /// // Custom implementation of `ScalarValue::from_displayable()` method for specializing
     /// // an efficient conversions from `ArcStr` into `MyScalarValue`.
     /// fn from_arcstr<Str: Display + Any + ?Sized>(s: &Str) -> MyScalarValue {
     ///     use juniper::AnyExt as _; // allows downcasting directly on types without `dyn`
@@ -531,7 +531,7 @@ pub trait ScalarValue:
     ///         MyScalarValue::String(s.clone()) // `Clone`ing `ArcStr` is cheap
     ///     } else {
     ///         // We do not override `ScalarValue::from_displayable_non_static()` here,
-    ///         // since `arcstr` crate doesn't provide API for efficient conversion into 
+    ///         // since `arcstr` crate doesn't provide API for efficient conversion into
     ///         // an `ArcStr` for any `Display`able type, unfortunately.
     ///         // The closest possible way is to use `arcstr::format!("{s}")` expression.
     ///         // However, it actually expands to `ArcStr::from(fmt::format(format_args!("{s}")))`,
