@@ -75,16 +75,6 @@ pub trait ToResultCall {
     fn __to_result_call(&self, input: Self::Input) -> Result<Self::Output, Self::Error>;
 }
 
-impl<I, O> ToResultCall for fn(I) -> O {
-    type Input = I;
-    type Output = O;
-    type Error = Infallible;
-
-    fn __to_result_call(&self, input: Self::Input) -> Result<Self::Output, Self::Error> {
-        Ok(self(input))
-    }
-}
-
 impl<I, O, E> ToResultCall for &fn(I) -> Result<O, E> {
     type Input = I;
     type Output = O;
@@ -92,6 +82,16 @@ impl<I, O, E> ToResultCall for &fn(I) -> Result<O, E> {
 
     fn __to_result_call(&self, input: Self::Input) -> Result<Self::Output, Self::Error> {
         self(input)
+    }
+}
+
+impl<I, O> ToResultCall for fn(I) -> O {
+    type Input = I;
+    type Output = O;
+    type Error = Infallible;
+
+    fn __to_result_call(&self, input: Self::Input) -> Result<Self::Output, Self::Error> {
+        Ok(self(input))
     }
 }
 
@@ -149,6 +149,6 @@ where
     type Input = I;
 
     fn __to_scalar_value_call(&self, input: Self::Input) -> S {
-        S::from_display(&self(input))
+        S::from_displayable_non_static(&self(input))
     }
 }

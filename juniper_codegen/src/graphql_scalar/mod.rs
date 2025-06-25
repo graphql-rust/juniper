@@ -732,20 +732,39 @@ impl Definition {
     fn impl_parse_scalar_value_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
 
-        let from_str = self.methods.expand_parse_scalar_value(scalar);
+        let (ty, mut generics) = self.impl_self_and_generics(false);
 
-        let (ty, generics) = self.impl_self_and_generics(false);
+        let body = match &self.methods {
+            Methods::Custom { parse_token, .. }
+            | Methods::Delegated {
+                parse_token: Some(parse_token),
+                ..
+            } => {
+                let parse_token = parse_token.expand_from_str(scalar);
+                quote! { #parse_token }
+            }
+            Methods::Delegated { field, .. } => {
+                let field_ty = field.ty();
+
+                generics.make_where_clause().predicates.push(parse_quote! {
+                    #field_ty: ::juniper::ParseScalarValue<#scalar>
+                });
+
+                quote! {
+                    <#field_ty as ::juniper::ParseScalarValue<#scalar>>::from_str(token)
+                }
+            }
+        };
+
         let (impl_gens, _, where_clause) = generics.split_for_impl();
 
         quote! {
             #[automatically_derived]
-            impl #impl_gens ::juniper::ParseScalarValue<#scalar> for #ty
-                #where_clause
-            {
+            impl #impl_gens ::juniper::ParseScalarValue<#scalar> for #ty #where_clause {
                 fn from_str(
                     token: ::juniper::parser::ScalarToken<'_>,
                 ) -> ::juniper::ParseScalarResult<#scalar> {
-                    #from_str
+                    #body
                 }
             }
         }
@@ -916,30 +935,6 @@ enum Methods {
         /// [`Field`] to resolve not provided methods.
         field: Box<Field>,
     },
-}
-
-impl Methods {
-    /// Expands [`ParseScalarValue::from_str`] method.
-    ///
-    /// [`ParseScalarValue::from_str`]: juniper::ParseScalarValue::from_str
-    fn expand_parse_scalar_value(&self, scalar: &scalar::Type) -> TokenStream {
-        match self {
-            Self::Custom { parse_token, .. }
-            | Self::Delegated {
-                parse_token: Some(parse_token),
-                ..
-            } => {
-                let parse_token = parse_token.expand_from_str(scalar);
-                quote! { #parse_token }
-            }
-            Self::Delegated { field, .. } => {
-                let field_ty = field.ty();
-                quote! {
-                    <#field_ty as ::juniper::ParseScalarValue<#scalar>>::from_str(token)
-                }
-            }
-        }
-    }
 }
 
 /// Representation of [`ParseScalarValue::from_str`] method.

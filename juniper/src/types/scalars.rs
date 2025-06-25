@@ -312,7 +312,7 @@ impl<S: ScalarValue> ToScalarValue<S> for str {
 
 impl<S> ToInputValue<S> for str
 where
-    str: ToScalarValue<S>,
+    Self: ToScalarValue<S>,
 {
     fn to_input_value(&self) -> InputValue<S> {
         InputValue::Scalar(self.to_scalar_value())

@@ -327,7 +327,7 @@ mod time_zone_or_utc_offset {
                     .to_string()
             },
             ToOwned::to_owned,
-        ) // TODO: Optimize via `Display`?
+        )
     }
 
     pub(super) fn from_input(s: &str) -> Result<TimeZoneOrUtcOffset, Box<str>> {
@@ -445,7 +445,7 @@ mod utc_offset {
             &jiff::Zoned::now().with_time_zone(jiff::tz::TimeZone::fixed(*v)),
         );
         tm.format(FORMAT, &mut buf).unwrap();
-        buf // TODO: Optimize via `Display`?
+        buf
     }
 
     pub(super) fn from_input(s: &str) -> Result<UtcOffset, Box<str>> {

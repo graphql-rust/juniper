@@ -184,7 +184,7 @@ mod local_date_time {
 pub type DateTime<Tz> = chrono::DateTime<Tz>;
 
 mod date_time {
-    use std::fmt;
+    use std::fmt::Display;
 
     use chrono::{FixedOffset, SecondsFormat, TimeZone, Utc};
 
@@ -193,7 +193,7 @@ mod date_time {
     pub(super) fn to_output<Tz>(v: &DateTime<Tz>) -> String
     where
         Tz: TimeZone,
-        Tz::Offset: fmt::Display,
+        Tz::Offset: Display,
     {
         v.with_timezone(&Utc)
             .to_rfc3339_opts(SecondsFormat::AutoSi, true)
