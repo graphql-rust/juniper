@@ -162,7 +162,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                             // We already have an operation with this id. We must close the connection.
                             Output::Close {
                                 code: 4409,
-                                message: format!("Subscriber for {} already exists", id),
+                                message: format!("Subscriber for {id} already exists"),
                             }
                             .into_stream()
                         } else {
