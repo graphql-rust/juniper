@@ -62,6 +62,12 @@ pub struct NotScalarError<'a, S: ScalarValue>(pub &'a InputValue<S>);
 /// [Autoref-based specialized][0] coercion into a [`Result`] for a function call for providing a
 /// return-type polymorphism in macros.
 ///
+/// # Priority
+///
+/// 1. Functions returning [`Result`] are propagated "as is".
+///
+/// 2. Any other function's output is wrapped into [`Result`] with an [`Infallible`] [`Err`].
+///
 /// [0]: https://lukaskalbertodt.github.io/2019/12/05/generalized-autoref-based-specialization.html
 pub trait ToResultCall {
     /// Input of this function.
@@ -97,6 +103,18 @@ impl<I, O> ToResultCall for fn(I) -> O {
 
 /// [Autoref-based specialized][0] coercion into a [`ScalarValue`] for a function call for providing
 /// a return-type polymorphism in macros.
+///
+/// # Priority
+///
+/// 1. Functions returning a [`ScalarValue`] are propagated "as is".
+///
+/// 2. Functions returning a [`String`] are followed by [`From<String>`] conversion.
+///
+/// 3. Functions returning anything implementing [`ToScalarValue`] conversion are followed by this
+///    conversion.
+///
+/// 4. Functions returning anything implementing [`Display`] are followed by the
+///    [`ScalarValue::from_displayable_non_static()`] method call.
 ///
 /// [0]: https://lukaskalbertodt.github.io/2019/12/05/generalized-autoref-based-specialization.html
 pub trait ToScalarValueCall<S: ScalarValue> {
