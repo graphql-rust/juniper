@@ -8,9 +8,7 @@
 //!
 //! [`Decimal`]: rust_decimal::Decimal
 
-use std::str::FromStr as _;
-
-use crate::{Scalar, ScalarValue, Value, graphql_scalar};
+use crate::{ScalarValue, graphql_scalar};
 
 /// 128 bit representation of a fixed-precision decimal number.
 ///
@@ -26,19 +24,18 @@ use crate::{Scalar, ScalarValue, Value, graphql_scalar};
 /// See also [`rust_decimal`] crate for details.
 ///
 /// [`rust_decimal`]: https://docs.rs/rust_decimal
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = rust_decimal_scalar,
+    to_output_with = ScalarValue::from_displayable,
     parse_token(i32, f64, String),
     specified_by_url = "https://docs.rs/rust_decimal",
 )]
 type Decimal = rust_decimal::Decimal;
 
 mod rust_decimal_scalar {
-    use super::*;
-
-    pub(super) fn to_output<S: ScalarValue>(v: &Decimal) -> Value<S> {
-        Value::scalar(v.to_string())
-    }
+    use super::Decimal;
+    use crate::{Scalar, ScalarValue};
 
     pub(super) fn from_input(v: &Scalar<impl ScalarValue>) -> Result<Decimal, Box<str>> {
         if let Some(i) = v.try_to_int() {
@@ -50,7 +47,7 @@ mod rust_decimal_scalar {
             v.try_to::<&str>()
                 .map_err(|e| e.to_string().into())
                 .and_then(|s| {
-                    Decimal::from_str(s)
+                    s.parse::<Decimal>()
                         .map_err(|e| format!("Failed to parse `Decimal` from `String`: {e}").into())
                 })
         }
@@ -59,8 +56,6 @@ mod rust_decimal_scalar {
 
 #[cfg(test)]
 mod test {
-    use std::str::FromStr as _;
-
     use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
 
     use super::Decimal;
@@ -78,7 +73,7 @@ mod test {
         ] {
             let input: InputValue = input;
             let parsed = Decimal::from_input_value(&input);
-            let expected = Decimal::from_str(expected).unwrap();
+            let expected = expected.parse::<Decimal>().unwrap();
 
             assert!(
                 parsed.is_ok(),
@@ -112,7 +107,7 @@ mod test {
     #[test]
     fn formats_correctly() {
         for raw in ["4.20", "0", "999.999999999", "875533788", "123", "43.44"] {
-            let actual: InputValue = Decimal::from_str(raw).unwrap().to_input_value();
+            let actual: InputValue = raw.parse::<Decimal>().unwrap().to_input_value();
 
             assert_eq!(actual, graphql_input_value!((raw)), "on value: {raw}");
         }

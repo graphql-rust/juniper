@@ -21,20 +21,25 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
     - `From` and `Display` implementations are not derived anymore.
 - `#[derive(GraphQLScalar)]` and `#[graphql_scalar]` macros:
     - Made provided `from_input()` function to accept `ScalarValue` directly instead of `InputValue`. ([#1327])
+    - Made provided `to_output()` function to return `ScalarValue` directly instead of `Value`. ([#1330])
 
 ### Added
 
 - `#[derive(ScalarValue)]` macro:
     - Support of top-level `#[value(from_displayable_with = ...)]` attribute. ([#1324])
+    - Support of top-level `#[value(from_displayable_non_static_with = ...)]` attribute. ([#1330])
 - `#[derive(GraphQLScalar)]` and `#[graphql_scalar]` macros:
     - Support for specifying concrete types as input argument in provided `from_input()` function. ([#1327])
     - Support for non-`Result` return type in provided `from_input()` function. ([#1327])
-    - Generating of `FromScalarValue` implementation. ([#1329]) 
+    - Generating of `FromScalarValue` implementation. ([#1329])
+    - Support for concrete and `impl Display` return types in provided `to_output()` function. ([#1330])
+    - Generating of `ToScalarValue` implementation. ([#1330]) 
 
 [#1272]: /../../pull/1272
 [#1324]: /../../pull/1324
 [#1327]: /../../pull/1327
 [#1329]: /../../pull/1329
+[#1330]: /../../pull/1330
 [1b1fc618]: /../../commit/1b1fc61879ffdd640d741e187dc20678bf7ab295
 
 

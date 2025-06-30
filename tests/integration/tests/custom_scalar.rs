@@ -18,8 +18,8 @@ type Long = i64;
 mod long {
     use super::*;
 
-    pub(super) fn to_output(v: &Long) -> Value<MyScalarValue> {
-        Value::scalar(*v)
+    pub(super) fn to_output(v: &Long) -> MyScalarValue {
+        (*v).into()
     }
 
     pub(super) fn from_input(s: &MyScalarValue) -> Result<Long, Box<str>> {
