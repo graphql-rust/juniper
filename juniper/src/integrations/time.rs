@@ -22,6 +22,10 @@
 //! [s4]: https://graphql-scalars.dev/docs/scalars/date-time
 //! [s5]: https://graphql-scalars.dev/docs/scalars/utc-offset
 
+use std::{
+    fmt::{self, Display},
+    io, str,
+};
 use time::{
     format_description::{BorrowedFormatItem, well_known::Rfc3339},
     macros::format_description,
@@ -56,9 +60,17 @@ mod local_date {
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-date
     const FORMAT: &[BorrowedFormatItem<'_>] = format_description!("[year]-[month]-[day]");
 
-    pub(super) fn to_output(v: &LocalDate) -> String {
-        v.format(FORMAT)
-            .unwrap_or_else(|e| panic!("failed to format `LocalDate`: {e}"))
+    impl Display for LazyFmt<&LocalDate> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            self.0
+                .format_into(&mut IoAdapter(f), FORMAT)
+                .map_err(|_| fmt::Error)
+                .map(drop)
+        }
+    }
+
+    pub(super) fn to_output(v: &LocalDate) -> impl Display {
+        LazyFmt(v)
     }
 
     pub(super) fn from_input(s: &str) -> Result<LocalDate, Box<str>> {
@@ -106,13 +118,24 @@ mod local_time {
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
     const FORMAT_NO_SECS: &[BorrowedFormatItem<'_>] = format_description!("[hour]:[minute]");
 
-    pub(super) fn to_output(v: &LocalTime) -> String {
-        if v.millisecond() == 0 {
-            v.format(FORMAT_NO_MILLIS)
-        } else {
-            v.format(FORMAT)
+    impl Display for LazyFmt<&LocalTime> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            self.0
+                .format_into(
+                    &mut IoAdapter(f),
+                    if self.0.millisecond() == 0 {
+                        FORMAT_NO_MILLIS
+                    } else {
+                        FORMAT
+                    },
+                )
+                .map_err(|_| fmt::Error)
+                .map(drop)
         }
-        .unwrap_or_else(|e| panic!("failed to format `LocalTime`: {e}"))
+    }
+
+    pub(super) fn to_output(v: &LocalTime) -> impl Display {
+        LazyFmt(v)
     }
 
     pub(super) fn from_input(s: &str) -> Result<LocalTime, Box<str>> {
@@ -150,9 +173,17 @@ mod local_date_time {
     const FORMAT: &[BorrowedFormatItem<'_>] =
         format_description!("[year]-[month]-[day]T[hour]:[minute]:[second]");
 
-    pub(super) fn to_output(v: &LocalDateTime) -> String {
-        v.format(FORMAT)
-            .unwrap_or_else(|e| panic!("failed to format `LocalDateTime`: {e}"))
+    impl Display for LazyFmt<&LocalDateTime> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            self.0
+                .format_into(&mut IoAdapter(f), FORMAT)
+                .map_err(|_| fmt::Error)
+                .map(drop)
+        }
+    }
+
+    pub(super) fn to_output(v: &LocalDateTime) -> impl Display {
+        LazyFmt(v)
     }
 
     pub(super) fn from_input(s: &str) -> Result<LocalDateTime, Box<str>> {
@@ -183,10 +214,18 @@ pub type DateTime = time::OffsetDateTime;
 mod date_time {
     use super::*;
 
-    pub(super) fn to_output(v: &DateTime) -> String {
-        v.to_offset(UtcOffset::UTC)
-            .format(&Rfc3339)
-            .unwrap_or_else(|e| panic!("failed to format `DateTime`: {e}"))
+    impl Display for LazyFmt<&DateTime> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            self.0
+                .to_offset(UtcOffset::UTC)
+                .format_into(&mut IoAdapter(f), &Rfc3339)
+                .map_err(|_| fmt::Error)
+                .map(drop)
+        }
+    }
+
+    pub(super) fn to_output(v: &DateTime) -> impl Display {
+        LazyFmt(v)
     }
 
     pub(super) fn from_input(s: &str) -> Result<DateTime, Box<str>> {
@@ -222,9 +261,17 @@ pub type UtcOffset = time::UtcOffset;
 mod utc_offset {
     use super::*;
 
-    pub(super) fn to_output(v: &UtcOffset) -> String {
-        v.format(UTC_OFFSET_FORMAT)
-            .unwrap_or_else(|e| panic!("failed to format `UtcOffset`: {e}"))
+    impl Display for LazyFmt<&UtcOffset> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            self.0
+                .format_into(&mut IoAdapter(f), UTC_OFFSET_FORMAT)
+                .map_err(|_| fmt::Error)
+                .map(drop)
+        }
+    }
+
+    pub(super) fn to_output(v: &UtcOffset) -> impl Display {
+        LazyFmt(v)
     }
 
     pub(super) fn from_input(s: &str) -> Result<UtcOffset, Box<str>> {
@@ -232,6 +279,30 @@ mod utc_offset {
             .map_err(|e| format!("Invalid `UtcOffset`: {e}").into())
     }
 }
+
+// TODO: Remove once time-rs/time#375 is resolved:
+//       https://github.com/time-rs/time/issues/375
+/// [`io::Write`] adapter for [`fmt::Formatter`].
+///
+/// Required because [`time`] crate cannot write to [`fmt::Write`], only to [`io::Write`].
+struct IoAdapter<'a, 'b>(&'a mut fmt::Formatter<'b>);
+
+impl io::Write for IoAdapter<'_, '_> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        let s = str::from_utf8(buf).map_err(io::Error::other)?;
+        match self.0.write_str(s) {
+            Ok(_) => Ok(s.len()),
+            Err(e) => Err(io::Error::other(e)),
+        }
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+/// Wrapper over [`time`] crate types to [`Display`] their format lazily.
+struct LazyFmt<T>(T);
 
 #[cfg(test)]
 mod local_date_test {

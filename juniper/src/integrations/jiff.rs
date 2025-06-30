@@ -77,7 +77,9 @@ use crate::{ScalarValue, graphql_scalar};
 pub type LocalDate = jiff::civil::Date;
 
 mod local_date {
-    use super::*;
+    use std::fmt::Display;
+
+    use super::LocalDate;
 
     /// Format of a [`LocalDate` scalar][1].
     ///
@@ -114,7 +116,9 @@ mod local_date {
 pub type LocalTime = jiff::civil::Time;
 
 mod local_time {
-    use super::*;
+    use std::fmt::Display;
+
+    use super::LocalTime;
 
     /// Full format of a [`LocalTime` scalar][1].
     ///
@@ -172,7 +176,9 @@ mod local_time {
 pub type LocalDateTime = jiff::civil::DateTime;
 
 mod local_date_time {
-    use super::*;
+    use std::fmt::Display;
+
+    use super::LocalDateTime;
 
     /// Format of a [`LocalDateTime` scalar][1].
     ///
@@ -208,7 +214,9 @@ mod local_date_time {
 pub type DateTime = jiff::Timestamp;
 
 mod date_time {
-    use super::*;
+    use std::fmt::Display;
+
+    use super::DateTime;
 
     /// Format of a [`DateTime` scalar][1].
     ///
@@ -310,24 +318,27 @@ mod duration {
 pub type TimeZoneOrUtcOffset = jiff::tz::TimeZone;
 
 mod time_zone_or_utc_offset {
-    use super::*;
+    use std::fmt::Display;
+
+    use super::{TimeZoneOrUtcOffset, TimeZoneParsingError, utc_offset};
+    use crate::util::Either;
 
     /// Format of a [`TimeZoneOrUtcOffset`] scalar.
     const FORMAT: &str = "%:Q";
 
-    pub(super) fn to_output(v: &TimeZoneOrUtcOffset) -> String {
-        v.iana_name().map_or_else(
-            || {
-                // If no IANA time zone identifier is available, fall back to displaying the time
-                // offset directly (using format `[+-]HH:MM[:SS]` from RFC 9557, e.g. `+05:30`).
-                // See: https://github.com/graphql-rust/juniper/pull/1278#discussion_r1719161686
+    pub(super) fn to_output(v: &TimeZoneOrUtcOffset) -> impl Display {
+        if let Some(name) = v.iana_name() {
+            Either::Left(name)
+        } else {
+            // If no IANA time zone identifier is available, fall back to displaying the time
+            // offset directly (using format `[+-]HH:MM[:SS]` from RFC 9557, e.g. `+05:30`).
+            // See: https://github.com/graphql-rust/juniper/pull/1278#discussion_r1719161686
+            Either::Right(
                 jiff::Zoned::now()
                     .with_time_zone(v.clone())
-                    .strftime(FORMAT)
-                    .to_string()
-            },
-            ToOwned::to_owned,
-        )
+                    .strftime(FORMAT),
+            )
+        }
     }
 
     pub(super) fn from_input(s: &str) -> Result<TimeZoneOrUtcOffset, Box<str>> {
@@ -424,7 +435,11 @@ mod time_zone {
 pub type UtcOffset = jiff::tz::Offset;
 
 mod utc_offset {
-    use super::*;
+    use std::fmt::{self, Display};
+
+    use jiff::fmt::{StdFmtWrite, strtime::BrokenDownTime};
+
+    use super::UtcOffset;
 
     /// Format of a [`UtcOffset` scalar][1].
     ///
@@ -432,20 +447,27 @@ mod utc_offset {
     const FORMAT: &str = "%:z";
 
     pub(super) fn utc_offset_from_str(value: &str) -> Result<jiff::tz::Offset, jiff::Error> {
-        let tm = jiff::fmt::strtime::BrokenDownTime::parse(FORMAT, value)?;
+        let tm = BrokenDownTime::parse(FORMAT, value)?;
         let offset = tm
             .offset()
             .expect("successful %:z parsing guarantees offset");
         Ok(offset)
     }
 
-    pub(super) fn to_output(v: &UtcOffset) -> String {
-        let mut buf = String::new();
-        let tm = jiff::fmt::strtime::BrokenDownTime::from(
+    pub(super) fn to_output(v: &UtcOffset) -> impl Display {
+        struct LazyFmt(BrokenDownTime);
+
+        impl Display for LazyFmt {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                self.0
+                    .format(FORMAT, StdFmtWrite(f))
+                    .map_err(|_| fmt::Error)
+            }
+        }
+
+        LazyFmt(BrokenDownTime::from(
             &jiff::Zoned::now().with_time_zone(jiff::tz::TimeZone::fixed(*v)),
-        );
-        tm.format(FORMAT, &mut buf).unwrap();
-        buf
+        ))
     }
 
     pub(super) fn from_input(s: &str) -> Result<UtcOffset, Box<str>> {

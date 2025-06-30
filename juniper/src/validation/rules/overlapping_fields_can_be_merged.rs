@@ -8,6 +8,7 @@ use crate::{
     ast::{Arguments, Definition, Document, Field, Fragment, FragmentSpread, Selection, Type},
     parser::{SourcePosition, Spanning},
     schema::meta::{Field as FieldType, MetaType},
+    util::Either,
     validation::{ValidatorContext, Visitor},
     value::ScalarValue,
 };
@@ -748,15 +749,9 @@ fn error_message(reason_name: &str, reason: &ConflictReasonMessage) -> String {
 }
 
 fn format_reason(reason: &ConflictReasonMessage) -> impl Display {
-    #[derive(Display)]
-    enum Either<A, B> {
-        A(A),
-        B(B),
-    }
-
     match reason {
-        ConflictReasonMessage::Message(name) => Either::A(name),
-        ConflictReasonMessage::Nested(nested) => Either::B(nested.iter().format_with(
+        ConflictReasonMessage::Message(name) => Either::Left(name),
+        ConflictReasonMessage::Nested(nested) => Either::Right(nested.iter().format_with(
             " and ",
             |ConflictReason(name, subreason), f| {
                 f(&format_args!(
