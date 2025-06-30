@@ -1,4 +1,4 @@
-use juniper::{graphql_scalar, Value};
+use juniper::graphql_scalar;
 
 struct Scalar;
 
@@ -7,8 +7,8 @@ struct Scalar;
 type CustomScalar = Scalar;
 
 impl Scalar {
-    fn to_output(&self) -> Value {
-        Value::scalar(0)
+    fn to_output(&self) -> i32 {
+        0
     }
 }
 

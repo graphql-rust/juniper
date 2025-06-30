@@ -17,7 +17,7 @@ use crate::{
         subscriptions::GraphQLSubscriptionValue,
     },
     value::{
-        FromScalarValue, ParseScalarResult, ScalarValue, TryToPrimitive, Value,
+        FromScalarValue, ParseScalarResult, ScalarValue, ToScalarValue, TryToPrimitive, Value,
         WrongInputScalarTypeError,
     },
 };
@@ -35,8 +35,8 @@ use crate::{
 pub struct ID(Box<str>);
 
 impl ID {
-    fn to_output<S: ScalarValue>(&self) -> Value<S> {
-        Value::scalar(self.0.clone().into_string())
+    fn to_output(&self) -> &str {
+        &self.0
     }
 
     fn from_input<S: ScalarValue>(v: &Scalar<S>) -> Result<Self, WrongInputScalarTypeError<'_, S>> {
@@ -59,7 +59,11 @@ impl ID {
 }
 
 #[graphql_scalar]
-#[graphql(with = impl_string_scalar, from_input_with = __builtin)]
+#[graphql(
+    with = impl_string_scalar,
+    to_output_with = String::as_str
+    from_input_with = __builtin,
+)]
 type String = std::string::String;
 
 mod impl_string_scalar {
@@ -74,10 +78,6 @@ mod impl_string_scalar {
         fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
             v.try_to_primitive()
         }
-    }
-
-    pub(super) fn to_output<S: ScalarValue>(v: &str) -> Value<S> {
-        Value::scalar(v.to_owned())
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -185,16 +185,17 @@ where
 }
 
 #[graphql_scalar]
-#[graphql(name = "String", with = impl_arcstr_scalar, parse_token(String))]
+#[graphql(
+    name = "String", 
+    with = impl_arcstr_scalar,
+    to_output_with = ScalarValue::from_displayable,
+    parse_token(String)
+)]
 type ArcStr = arcstr::ArcStr;
 
 mod impl_arcstr_scalar {
     use super::ArcStr;
-    use crate::{FromScalarValue, IntoValue as _, Scalar, ScalarValue, Value};
-
-    pub(super) fn to_output<S: ScalarValue>(v: &ArcStr) -> Value<S> {
-        v.into_value()
-    }
+    use crate::{FromScalarValue, Scalar, ScalarValue};
 
     pub(super) fn from_input<S: ScalarValue>(
         v: &Scalar<S>,
@@ -208,16 +209,17 @@ mod impl_arcstr_scalar {
 }
 
 #[graphql_scalar]
-#[graphql(name = "String", with = impl_compactstring_scalar, parse_token(String))]
+#[graphql(
+    name = "String", 
+    with = impl_compactstring_scalar,
+    to_output_with = ScalarValue::from_displayable,
+    parse_token(String),
+)]
 type CompactString = compact_str::CompactString;
 
 mod impl_compactstring_scalar {
     use super::CompactString;
-    use crate::{FromScalarValue, IntoValue as _, Scalar, ScalarValue, Value};
-
-    pub(super) fn to_output<S: ScalarValue>(v: &CompactString) -> Value<S> {
-        v.into_value()
-    }
+    use crate::{FromScalarValue, Scalar, ScalarValue};
 
     pub(super) fn from_input<S: ScalarValue>(
         v: &Scalar<S>,
@@ -291,15 +293,6 @@ where
     }
 }
 
-impl<S> ToInputValue<S> for &str
-where
-    S: ScalarValue,
-{
-    fn to_input_value(&self) -> InputValue<S> {
-        InputValue::scalar(String::from(*self))
-    }
-}
-
 impl<'s, S> FromScalarValue<'s, S> for &'s str
 where
     S: TryToPrimitive<'s, Self, Error: IntoFieldError<S>> + 's,
@@ -308,6 +301,21 @@ where
 
     fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
         v.try_to_primitive()
+    }
+}
+
+impl<S: ScalarValue> ToScalarValue<S> for str {
+    fn to_scalar_value(&self) -> S {
+        S::from_displayable(self)
+    }
+}
+
+impl<S> ToInputValue<S> for str
+where
+    Self: ToScalarValue<S>,
+{
+    fn to_input_value(&self) -> InputValue<S> {
+        InputValue::Scalar(self.to_scalar_value())
     }
 }
 
@@ -329,8 +337,8 @@ mod impl_boolean_scalar {
         }
     }
 
-    pub(super) fn to_output<S: ScalarValue>(v: &Boolean) -> Value<S> {
-        Value::scalar(*v)
+    pub(super) fn to_output<S: ScalarValue>(v: &Boolean) -> S {
+        (*v).into()
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -357,8 +365,8 @@ mod impl_int_scalar {
         }
     }
 
-    pub(super) fn to_output<S: ScalarValue>(v: &Int) -> Value<S> {
-        Value::scalar(*v)
+    pub(super) fn to_output<S: ScalarValue>(v: &Int) -> S {
+        (*v).into()
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -390,8 +398,8 @@ mod impl_float_scalar {
         }
     }
 
-    pub(super) fn to_output<S: ScalarValue>(v: &Float) -> Value<S> {
-        Value::scalar(*v)
+    pub(super) fn to_output<S: ScalarValue>(v: &Float) -> S {
+        (*v).into()
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {

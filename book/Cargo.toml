@@ -9,7 +9,8 @@ publish = false
 anyhow = "1.0"
 dataloader = "0.18"
 derive_more = { version = "2.0", features = ["display", "from", "try_into"] }
-juniper = { path = "../juniper", features = ["anyhow", "schema-language"] }
+jiff = { version = "0.2", features = ["std"], default-features = false }
+juniper = { path = "../juniper", features = ["anyhow", "jiff", "schema-language"] }
 juniper_subscriptions = { path = "../juniper_subscriptions" }
 serde_json = "1.0"
 tokio = { version = "1.0", features = ["sync"] }

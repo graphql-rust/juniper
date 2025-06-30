@@ -93,6 +93,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - `From` and `Display` implementations are not derived anymore (recommended way is to use [`derive_more` crate] for this).
 - `#[derive(GraphQLScalar)]` and `#[graphql_scalar]` macros:
     - Made provided `from_input()` function to accept `ScalarValue` (or anything `FromScalarValue`-convertible) directly instead of `InputValue`. ([#1327])
+    - Made provided `to_output()` function to return `ScalarValue` directly instead of `Value`. ([#1330])
 - Removed `LocalBoxFuture` usage from `http::tests::WsIntegration` trait. ([4b14c015])
 
 ### Added
@@ -112,18 +113,25 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - `IntoValue` and `IntoInputValue` conversion traits allowing to work around orphan rules with custom `ScalarValue`. ([#1324])
 - `FromScalarValue` conversion trait. ([#1329])
 - `TryToPrimitive` conversion trait aiding `ScalarValue` trait. ([#1327], [#1329])
+- `ToScalarValue` conversion trait. ([#1330])
 - `ScalarValue` trait:
-    - `from_displayable()` method allowing to specialize `ScalarValue` conversion from custom string types. ([#1324], [#819])
+    - `from_displayable()` and `from_displayable_non_static()` methods allowing to specialize `ScalarValue` conversion from/for custom string types. ([#1324], [#1330], [#819])
     - `try_to::<T>()` method defined by default as `FromScalarValue<T>` alias. ([#1327], [#1329])
+- `#[derive(ScalarValue)]` macro:
+    - Support of top-level `#[value(from_displayable_with = ...)]` attribute. ([#1324])
+    - Support of top-level `#[value(from_displayable_non_static_with = ...)]` attribute. ([#1330])
 - `#[derive(GraphQLScalar)]` and `#[graphql_scalar]` macros:
     - Support for specifying concrete types as input argument in provided `from_input()` function. ([#1327])
     - Support for non-`Result` return type in provided `from_input()` function. ([#1327])
     - `Scalar` transparent wrapper for aiding type inference in `from_input()` function when input argument is generic `ScalarValue`. ([#1327])
     - Generating of `FromScalarValue` implementation. ([#1329])
+    - Support for concrete and `impl Display` return types in provided `to_output()` function. ([#1330])
+    - Generating of `ToScalarValue` implementation. ([#1330])
 
 ### Changed
 
 - Upgraded [GraphiQL] to [5.0.0 version](https://github.com/graphql/graphiql/blob/graphiql%405.0.0/packages/graphiql/CHANGELOG.md#500). ([#1331])
+- Lifted `Sized` requirement from `ToInputValue` conversion trait. ([#1330]) 
 
 ### Fixed
 
@@ -147,6 +155,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1324]: /../../pull/1324
 [#1327]: /../../pull/1327
 [#1329]: /../../pull/1329
+[#1330]: /../../pull/1330
 [#1331]: /../../pull/1331
 [1b1fc618]: /../../commit/1b1fc61879ffdd640d741e187dc20678bf7ab295
 [20609366]: /../../commit/2060936635609b0186d46d8fbd06eb30fce660e3

@@ -1,4 +1,4 @@
-use juniper::{graphql_scalar, Scalar, ScalarValue, Value};
+use juniper::{graphql_scalar, Scalar, ScalarValue};
 
 struct ScalarSpecifiedByUrl;
 
@@ -13,8 +13,8 @@ type MyScalar = ScalarSpecifiedByUrl;
 mod scalar {
     use super::*;
 
-    pub(super) fn to_output<S: ScalarValue>(_: &ScalarSpecifiedByUrl) -> Value<S> {
-        Value::scalar(0)
+    pub(super) fn to_output(_: &ScalarSpecifiedByUrl) -> i32 {
+        0
     }
 
     pub(super) fn from_input(_: &Scalar<impl ScalarValue>) -> ScalarSpecifiedByUrl {

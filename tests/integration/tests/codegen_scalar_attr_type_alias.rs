@@ -6,8 +6,8 @@ use std::fmt;
 
 use chrono::{DateTime, TimeZone, Utc};
 use juniper::{
-    ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue, Value, execute,
-    graphql_object, graphql_scalar, graphql_value, graphql_vars,
+    ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue, execute, graphql_object,
+    graphql_scalar, graphql_value, graphql_vars,
 };
 
 use self::common::{
@@ -33,8 +33,8 @@ mod all_custom_resolvers {
     )]
     type Counter = CustomCounter;
 
-    fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
-        Value::scalar(v.0)
+    fn to_output(v: &Counter) -> i32 {
+        v.0
     }
 
     fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -109,8 +109,8 @@ mod explicit_name {
     )]
     type CounterScalar = CustomCounter;
 
-    fn to_output<S: ScalarValue>(v: &CounterScalar) -> Value<S> {
-        Value::scalar(v.0)
+    fn to_output(v: &CounterScalar) -> i32 {
+        v.0
     }
 
     fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -204,8 +204,8 @@ mod delegated_parse_token {
     )]
     type Counter = CustomCounter;
 
-    fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
-        Value::scalar(v.0)
+    fn to_output(v: &Counter) -> i32 {
+        v.0
     }
 
     struct QueryRoot;
@@ -278,10 +278,10 @@ mod multiple_delegated_parse_token {
     )]
     type StringOrInt = StringOrIntScalar;
 
-    fn to_output<S: ScalarValue>(v: &StringOrInt) -> Value<S> {
+    fn to_output<S: ScalarValue>(v: &StringOrInt) -> S {
         match v {
-            StringOrInt::String(s) => Value::scalar(s.to_owned()),
-            StringOrInt::Int(i) => Value::scalar(*i),
+            StringOrInt::String(s) => S::from_displayable(s),
+            StringOrInt::Int(i) => (*i).into(),
         }
     }
 
@@ -341,13 +341,12 @@ mod where_attribute {
     )]
     type CustomDateTime<Tz> = CustomDateTimeScalar<Tz>;
 
-    fn to_output<S, Tz>(v: &CustomDateTime<Tz>) -> Value<S>
+    fn to_output<Tz>(v: &CustomDateTime<Tz>) -> prelude::String
     where
-        S: ScalarValue,
         Tz: From<Utc> + TimeZone,
         Tz::Offset: fmt::Display,
     {
-        Value::scalar(v.0.to_rfc3339())
+        v.0.to_rfc3339()
     }
 
     fn from_input<Tz>(s: &str) -> prelude::Result<CustomDateTime<Tz>, prelude::Box<str>>
@@ -414,8 +413,8 @@ mod with_self {
     type Counter = CustomCounter;
 
     impl Counter {
-        fn to_output<S: ScalarValue>(&self) -> Value<S> {
-            Value::scalar(self.0)
+        fn to_output(&self) -> i32 {
+            self.0
         }
 
         fn from_input(i: i32) -> Self {
@@ -498,13 +497,12 @@ mod with_module {
     mod custom_date_time {
         use super::*;
 
-        pub(super) fn to_output<S, Tz>(v: &CustomDateTime<Tz>) -> Value<S>
+        pub(super) fn to_output<Tz>(v: &CustomDateTime<Tz>) -> prelude::String
         where
-            S: ScalarValue,
             Tz: From<Utc> + TimeZone,
             Tz::Offset: fmt::Display,
         {
-            Value::scalar(v.0.to_rfc3339())
+            v.0.to_rfc3339()
         }
 
         pub(super) fn from_input<Tz>(
@@ -577,8 +575,8 @@ mod description_from_doc_comment {
     mod counter {
         use super::*;
 
-        pub(super) fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
-            Value::scalar(v.0)
+        pub(super) fn to_output(v: &Counter) -> i32 {
+            v.0
         }
 
         pub(super) fn from_input(i: i32) -> Counter {
@@ -660,8 +658,8 @@ mod description_from_attribute {
     mod counter {
         use super::*;
 
-        pub(super) fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
-            Value::scalar(v.0)
+        pub(super) fn to_output(v: &Counter) -> i32 {
+            v.0
         }
 
         pub(super) fn from_input(i: i32) -> Counter {
@@ -743,8 +741,8 @@ mod custom_scalar {
     mod counter {
         use super::*;
 
-        pub(super) fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
-            Value::scalar(v.0)
+        pub(super) fn to_output(v: &Counter) -> i32 {
+            v.0
         }
 
         pub(super) fn from_input(i: i32) -> Counter {
@@ -826,8 +824,8 @@ mod generic_scalar {
     mod counter {
         use super::*;
 
-        pub(super) fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
-            Value::scalar(v.0)
+        pub(super) fn to_output(v: &Counter) -> i32 {
+            v.0
         }
 
         pub(super) fn from_input(i: i32) -> Counter {
@@ -909,8 +907,8 @@ mod bounded_generic_scalar {
     mod counter {
         use super::*;
 
-        pub(super) fn to_output<S: ScalarValue>(v: &Counter) -> Value<S> {
-            Value::scalar(v.0)
+        pub(super) fn to_output(v: &Counter) -> i32 {
+            v.0
         }
 
         pub(super) fn from_input(i: i32) -> Counter {

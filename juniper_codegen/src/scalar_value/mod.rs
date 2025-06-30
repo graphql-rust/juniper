@@ -52,6 +52,9 @@ pub fn expand_derive(input: TokenStream) -> syn::Result<TokenStream> {
         variants: data_enum.variants.into_iter().collect(),
         methods,
         from_displayable: attr.from_displayable.map(SpanContainer::into_inner),
+        from_displayable_non_static: attr
+            .from_displayable_non_static
+            .map(SpanContainer::into_inner),
     }
     .into_token_stream())
 }
@@ -63,6 +66,10 @@ struct Attr {
     /// Explicitly specified function to be used as `ScalarValue::from_displayable()`
     /// implementation.
     from_displayable: Option<SpanContainer<syn::ExprPath>>,
+
+    /// Explicitly specified function to be used as `ScalarValue::from_displayable_non_static()`
+    /// implementation.
+    from_displayable_non_static: Option<SpanContainer<syn::ExprPath>>,
 }
 
 impl Parse for Attr {
@@ -75,6 +82,13 @@ impl Parse for Attr {
                     input.parse::<token::Eq>()?;
                     let scl = input.parse::<syn::ExprPath>()?;
                     out.from_displayable
+                        .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "from_displayable_non_static_with" => {
+                    input.parse::<token::Eq>()?;
+                    let scl = input.parse::<syn::ExprPath>()?;
+                    out.from_displayable_non_static
                         .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
@@ -94,6 +108,7 @@ impl Attr {
     fn try_merge(self, mut another: Self) -> syn::Result<Self> {
         Ok(Self {
             from_displayable: try_merge_opt!(from_displayable: self, another),
+            from_displayable_non_static: try_merge_opt!(from_displayable_non_static: self, another),
         })
     }
 
@@ -201,6 +216,11 @@ struct Definition {
     ///
     /// If [`None`] then `ScalarValue::from_displayable()` method is not generated.
     from_displayable: Option<syn::ExprPath>,
+
+    /// Custom definition to call in `ScalarValue::from_displayable_non_static()` method.
+    ///
+    /// If [`None`] then `ScalarValue::from_displayable_non_static()` method is not generated.
+    from_displayable_non_static: Option<syn::ExprPath>,
 }
 
 impl ToTokens for Definition {
@@ -247,6 +267,15 @@ impl Definition {
                 }
             }
         });
+        let from_displayable_non_static = self.from_displayable_non_static.as_ref().map(|expr| {
+            quote! {
+                fn from_displayable_non_static<
+                    __T: ::core::fmt::Display + ?::core::marker::Sized,
+                >(__v: &__T) -> Self {
+                    #expr(__v)
+                }
+            }
+        });
 
         quote! {
             #[automatically_derived]
@@ -264,6 +293,7 @@ impl Definition {
                 }
 
                 #from_displayable
+                #from_displayable_non_static
             }
         }
     }
