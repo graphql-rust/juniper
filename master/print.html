@@ -2188,15 +2188,46 @@ pub struct UserId(String);
 <h3 id="resolving"><a class="header" href="#resolving">Resolving</a></h3>
 <p>In case we need to customize <a href="https://spec.graphql.org/October2021#sec-Value-Resolution">resolving</a> of a <a href="https://spec.graphql.org/October2021#sec-Scalars.Custom-Scalars">custom GraphQL scalar</a> value (change the way it gets executed), the <code>#[graphql(to_output_with = &lt;fn path&gt;)]</code> attribute is the way to do so:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
-</span><span class="boring">use juniper::{GraphQLScalar, IntoValue as _, ScalarValue, Value};
+</span><span class="boring">use juniper::GraphQLScalar;
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
 #[graphql(to_output_with = to_output, transparent)]
 struct Incremented(i32);
 
-/// Increments [`Incremented`] before converting into a [`Value`].
-fn to_output&lt;S: ScalarValue&gt;(v: &amp;Incremented) -&gt; Value&lt;S&gt; {
-    (v.0 + 1).into_value()
+fn to_output(v: &amp;Incremented) -&gt; i32 {
+    //                           ^^^ any concrete type having `ToScalarValue` implementation
+    //                               could be used
+    v.0 + 1
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre></pre>
+<p>The provided function is polymorphic by its output type:</p>
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate jiff;
+</span><span class="boring">extern crate juniper;
+</span><span class="boring">use std::fmt::Display;
+</span><span class="boring">use juniper::{GraphQLScalar, ScalarValue};
+</span><span class="boring">
+</span>#[derive(GraphQLScalar)]
+#[graphql(to_output_with = Self::to_output, transparent)]
+struct Incremented(i32);
+
+impl Incremented {
+    fn to_output&lt;S: ScalarValue&gt;(v: &amp;Incremented) -&gt; S {
+        //       ^^^^^^^^^^^^^^ returning generic or concrete `ScalarValue` is also OK
+        (v.0 + 1).into()
+    }
+}
+
+#[derive(GraphQLScalar)]
+#[graphql(to_output_with = Self::to_output, transparent)]
+struct CustomDateTime(jiff::Timestamp);
+
+impl CustomDateTime {
+    fn to_output(&amp;self) -&gt; impl Display {
+        //                 ^^^^^^^^^^^^ in this case macro expansion uses the
+        //                              `ScalarValue::from_displayable_non_static()` conversion
+        self.0.strftime("%Y-%m-%d %H:%M:%S%.fZ")
+    }
 }
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
@@ -2215,7 +2246,7 @@ impl UserId {
         input: &amp;str,
         //     ^^^^ any concrete type having `FromScalarValue` implementation could be used
     ) -&gt; Result&lt;Self, Box&lt;str&gt;&gt; {
-    //                ^^^^^^^^ must implement `IntoFieldError`
+        //            ^^^^^^^^ must implement `IntoFieldError`
         input
             .strip_prefix("id: ")
             .ok_or_else(|| {
@@ -2226,7 +2257,7 @@ impl UserId {
 }
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
-<p>The provided function is polymorphic by input and output types:</p>
+<p>The provided function is polymorphic by its input and output types:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{GraphQLScalar, Scalar, ScalarValue};
 </span><span class="boring">
@@ -2259,7 +2290,7 @@ impl UserId {
 <p>Customization of which tokens a <a href="https://spec.graphql.org/October2021#sec-Scalars">custom GraphQL scalar</a> type should be parsed from, is possible via <code>#[graphql(parse_token_with = &lt;fn path&gt;)]</code> or <code>#[graphql(parse_token(&lt;types&gt;)]</code> attributes:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
-</span><span class="boring">    GraphQLScalar, ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue, Value,
+</span><span class="boring">    GraphQLScalar, ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue,
 </span><span class="boring">};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
@@ -2276,10 +2307,12 @@ enum StringOrInt {
     Int(i32),
 }
 
-fn to_output&lt;S: ScalarValue&gt;(v: &amp;StringOrInt) -&gt; Value&lt;S&gt; {
+fn to_output&lt;S: ScalarValue&gt;(v: &amp;StringOrInt) -&gt; S {
     match v {
-        StringOrInt::String(s) =&gt; Value::scalar(s.to_owned()),
-        StringOrInt::Int(i) =&gt; Value::scalar(*i),
+        StringOrInt::String(s) =&gt; S::from_displayable(s),
+        //                        ^^^^^^^^^^^^^^^^^^^ preferable conversion for types
+        //                                            represented by string token
+        StringOrInt::Int(i) =&gt; (*i).into(),
     }
 }
 
@@ -2303,7 +2336,7 @@ fn parse_token&lt;S: ScalarValue&gt;(value: ScalarToken&lt;'_&gt;) -&gt; ParseSc
 <p>Instead of providing all custom functions separately, it's possible to provide a module holding the appropriate <code>to_output()</code>, <code>from_input()</code> and <code>parse_token()</code> functions via <code>#[graphql(with = &lt;module path&gt;)]</code> attribute:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
-</span><span class="boring">    GraphQLScalar, ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue, Value,
+</span><span class="boring">    GraphQLScalar, ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue,
 </span><span class="boring">};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
@@ -2316,10 +2349,10 @@ enum StringOrInt {
 mod string_or_int {
     use super::*;
 
-    pub(super) fn to_output&lt;S: ScalarValue&gt;(v: &amp;StringOrInt) -&gt; Value&lt;S&gt; {
+    pub(super) fn to_output&lt;S: ScalarValue&gt;(v: &amp;StringOrInt) -&gt; S {
         match v {
-            StringOrInt::String(s) =&gt; Value::scalar(s.to_owned()),
-            StringOrInt::Int(i) =&gt; Value::scalar(*i),
+            StringOrInt::String(s) =&gt; S::from_displayable(s),
+            StringOrInt::Int(i) =&gt; (*i).into(),
         }
     }
 
@@ -2340,7 +2373,7 @@ mod string_or_int {
 <p>A regular <code>impl</code> block is also suitable for that:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
-</span><span class="boring">    GraphQLScalar, ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue, Value,
+</span><span class="boring">    GraphQLScalar, ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue,
 </span><span class="boring">};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
@@ -2351,10 +2384,10 @@ enum StringOrInt {
 }
 
 impl StringOrInt {
-    fn to_output&lt;S: ScalarValue&gt;(&amp;self) -&gt; Value&lt;S&gt; {
+    fn to_output&lt;S: ScalarValue&gt;(&amp;self) -&gt; S {
         match self {
-            Self::String(s) =&gt; Value::scalar(s.to_owned()),
-            Self::Int(i) =&gt; Value::scalar(*i),
+            Self::String(s) =&gt; S::from_displayable(s),
+            Self::Int(i) =&gt; (*i).into(),
         }
     }
 
@@ -2378,7 +2411,7 @@ impl StringOrInt {
 <p>At the same time, any custom function still may be specified separately, if required:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
-</span><span class="boring">    GraphQLScalar, ParseScalarResult, Scalar, ScalarToken, ScalarValue, Value,
+</span><span class="boring">    GraphQLScalar, ParseScalarResult, Scalar, ScalarToken, ScalarValue,
 </span><span class="boring">};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
@@ -2394,13 +2427,10 @@ enum StringOrInt {
 mod string_or_int {
     use super::*;
 
-    pub(super) fn to_output&lt;S&gt;(v: &amp;StringOrInt) -&gt; Value&lt;S&gt;
-    where
-        S: ScalarValue,
-    {
+    pub(super) fn to_output&lt;S: ScalarValue&gt;(v: &amp;StringOrInt) -&gt; S {
         match v {
-            StringOrInt::String(s) =&gt; Value::scalar(s.to_owned()),
-            StringOrInt::Int(i) =&gt; Value::scalar(*i),
+            StringOrInt::String(s) =&gt; S::from_displayable(s),
+            StringOrInt::Int(i) =&gt; (*i).into(),
         }
     }
 
@@ -2442,11 +2472,12 @@ mod string_or_int {
 </span><span class="boring">}
 </span><span class="boring">
 </span><span class="boring">use juniper::DefaultScalarValue as CustomScalarValue;
-</span>use juniper::{ScalarValue, Value, graphql_scalar};
+</span>use juniper::{ScalarValue, graphql_scalar};
 
 #[graphql_scalar]
 #[graphql(
     with = date_scalar, 
+    to_output_with = ScalarValue::from_displayable, // use `Display` representation
     parse_token(String),
     scalar = CustomScalarValue,
 )]
@@ -2456,10 +2487,6 @@ type Date = date::Date;
 
 mod date_scalar {
     use super::*;
-  
-    pub(super) fn to_output(v: &amp;Date) -&gt; Value&lt;CustomScalarValue&gt; {
-        Value::scalar(v.to_string())
-    }
 
     pub(super) fn from_input(s: &amp;str) -&gt; Result&lt;Date, Box&lt;str&gt;&gt; {
         s.parse().map_err(|e| format!("Failed to parse `Date`: {e}").into())
