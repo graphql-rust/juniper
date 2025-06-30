@@ -14,7 +14,6 @@ error[E0277]: the trait bound `ObjectA: IsInputType<__S>` is not satisfied
              `TypeKind` implements `IsInputType<__S>`
              `Vec<T>` implements `IsInputType<S>`
            and $N others
-
 error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
   --> fail/input-object/derive_incompatible_field_type.rs:10:12
    |
@@ -42,7 +41,6 @@ note: required by a bound in `Registry::<S>::arg`
    |     where
    |         T: GraphQLType<S> + FromInputValue<S>,
    |                             ^^^^^^^^^^^^^^^^^ required by this bound in `Registry::<S>::arg`
-
 error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
  --> fail/input-object/derive_incompatible_field_type.rs:8:10
   |
@@ -60,7 +58,6 @@ error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
             `[T; N]` implements `FromInputValue<S>`
           and $N others
   = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)
-
 error[E0277]: the trait bound `ObjectA: ToInputValue<_>` is not satisfied
  --> fail/input-object/derive_incompatible_field_type.rs:8:10
   |
@@ -69,12 +66,12 @@ error[E0277]: the trait bound `ObjectA: ToInputValue<_>` is not satisfied
   |
   = help: the following other types implement trait `ToInputValue<S>`:
             `&T` implements `ToInputValue<S>`
-            `&[T]` implements `ToInputValue<S>`
-            `&str` implements `ToInputValue<S>`
             `Arc<T>` implements `ToInputValue<S>`
             `ArcStr` implements `ToInputValue<__S>`
             `Box<T>` implements `ToInputValue<S>`
             `ID` implements `ToInputValue<__S>`
             `Object` implements `ToInputValue<__S>`
+            `TypeKind` implements `ToInputValue<__S>`
+            `Value<S>` implements `ToInputValue<S>`
           and $N others
   = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)
