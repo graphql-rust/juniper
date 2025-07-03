@@ -46,13 +46,11 @@ graphiql:
 		        | grep -m1 '"@graphiql/toolkit": "' | cut -d '"' -f4 | cut -d '^' -f2)))
 	curl -fsL -o src/http/graphiql.html \
 		https://raw.githubusercontent.com/graphql/graphiql/graphiql%40$(GRAPHIQL_VER)/examples/graphiql-cdn/index.html
-	$(sed-i) 's|esm.sh/graphiql@5.0.0-rc.1|esm.sh/graphiql@$(GRAPHIQL_VER)|g' \
+	$(sed-i) 's|esm.sh/graphiql|esm.sh/graphiql@$(GRAPHIQL_VER)|g' \
 		src/http/graphiql.html
-	$(sed-i) 's|esm.sh/graphiql@6.0.0-canary-b26dcda1.0|esm.sh/graphiql@$(GRAPHIQL_VER)|g' \
+	$(sed-i) 's|esm.sh/@graphiql/plugin-explorer|esm.sh/@graphiql/plugin-explorer@$(graphiql-plugin-explorer-ver)|g' \
 		src/http/graphiql.html
-	$(sed-i) 's|esm.sh/@graphiql/plugin-explorer@5.0.0-rc.1|esm.sh/@graphiql/plugin-explorer@$(graphiql-plugin-explorer-ver)|g' \
-		src/http/graphiql.html
-	$(sed-i) 's|esm.sh/@graphiql/react@0.36.0-canary-b26dcda1.0|esm.sh/@graphiql/react@$(graphiql-react-ver)|g' \
+	$(sed-i) 's|esm.sh/@graphiql/react|esm.sh/@graphiql/react@$(graphiql-react-ver)|g' \
 		src/http/graphiql.html
 	$(sed-i) 's|esm.sh/@graphiql/toolkit|esm.sh/@graphiql/toolkit@$(graphiql-toolkit-ver)|g' \
 		src/http/graphiql.html
