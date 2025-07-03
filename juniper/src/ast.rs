@@ -8,7 +8,7 @@ use indexmap::IndexMap;
 use crate::{
     executor::Variables,
     parser::Spanning,
-    value::{DefaultScalarValue, Scalar, ScalarValue},
+    value::{DefaultScalarValue, Scalar, ScalarValue, ToScalarValue},
 };
 
 /// Type literal in a syntax tree.
@@ -243,7 +243,7 @@ impl<S> InputValue<S> {
         Self::Null
     }
 
-    /// Construct a scalar value
+    /// Construct a scalar value.
     pub fn scalar<T: Into<S>>(v: T) -> Self {
         Self::Scalar(v.into())
     }
@@ -498,21 +498,12 @@ where
     }
 }
 
-impl<S> IntoInputValue<S> for &str
+impl<T, S> IntoInputValue<S> for &T
 where
-    String: Into<S>,
+    T: ToScalarValue<S> + ?Sized,
 {
     fn into_input_value(self) -> InputValue<S> {
-        InputValue::scalar(self.to_owned())
-    }
-}
-
-impl<S> IntoInputValue<S> for Cow<'_, str>
-where
-    String: Into<S>,
-{
-    fn into_input_value(self) -> InputValue<S> {
-        InputValue::scalar(self.into_owned())
+        InputValue::Scalar(self.to_scalar_value())
     }
 }
 
@@ -521,58 +512,65 @@ where
     String: Into<S>,
 {
     fn into_input_value(self) -> InputValue<S> {
-        InputValue::scalar(self)
+        InputValue::Scalar(self.into())
     }
 }
 
-impl<S: ScalarValue> IntoInputValue<S> for &ArcStr {
+impl<S> IntoInputValue<S> for Cow<'_, str>
+where
+    for<'a> &'a str: IntoInputValue<S>,
+    String: IntoInputValue<S>,
+{
     fn into_input_value(self) -> InputValue<S> {
-        InputValue::scalar(S::from_displayable(self))
+        match self {
+            Cow::Borrowed(s) => s.into_input_value(),
+            Cow::Owned(s) => s.into_input_value(),
+        }
     }
 }
 
-impl<S: ScalarValue> IntoInputValue<S> for ArcStr {
+impl<S: ScalarValue> IntoInputValue<S> for ArcStr
+where
+    ArcStr: ToScalarValue<S>,
+{
     fn into_input_value(self) -> InputValue<S> {
-        (&self).into_input_value()
+        InputValue::Scalar(self.to_scalar_value())
     }
 }
 
-impl<S: ScalarValue> IntoInputValue<S> for &CompactString {
+impl<S: ScalarValue> IntoInputValue<S> for CompactString
+where
+    CompactString: ToScalarValue<S>,
+{
     fn into_input_value(self) -> InputValue<S> {
-        InputValue::scalar(S::from_displayable(self))
-    }
-}
-
-impl<S: ScalarValue> IntoInputValue<S> for CompactString {
-    fn into_input_value(self) -> InputValue<S> {
-        (&self).into_input_value()
+        InputValue::Scalar(self.to_scalar_value())
     }
 }
 
 impl<S> IntoInputValue<S> for i32
 where
-    i32: Into<S>,
+    i32: ToScalarValue<S>,
 {
     fn into_input_value(self) -> InputValue<S> {
-        InputValue::scalar(self)
+        InputValue::Scalar(self.to_scalar_value())
     }
 }
 
 impl<S> IntoInputValue<S> for f64
 where
-    f64: Into<S>,
+    f64: ToScalarValue<S>,
 {
     fn into_input_value(self) -> InputValue<S> {
-        InputValue::scalar(self)
+        InputValue::Scalar(self.to_scalar_value())
     }
 }
 
 impl<S> IntoInputValue<S> for bool
 where
-    bool: Into<S>,
+    bool: ToScalarValue<S>,
 {
     fn into_input_value(self) -> InputValue<S> {
-        InputValue::scalar(self)
+        InputValue::Scalar(self.to_scalar_value())
     }
 }
 

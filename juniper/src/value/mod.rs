@@ -54,7 +54,7 @@ impl<S> Value<S> {
         Self::Object(o)
     }
 
-    /// Construct a scalar value
+    /// Construct a scalar value.
     pub fn scalar<T: Into<S>>(s: T) -> Self {
         Self::Scalar(s.into())
     }
@@ -230,21 +230,12 @@ where
     }
 }
 
-impl<S> IntoValue<S> for &str
+impl<T, S> IntoValue<S> for &T
 where
-    String: Into<S>,
+    T: ToScalarValue<S> + ?Sized,
 {
     fn into_value(self) -> Value<S> {
-        Value::scalar(self.to_owned())
-    }
-}
-
-impl<S> IntoValue<S> for Cow<'_, str>
-where
-    String: Into<S>,
-{
-    fn into_value(self) -> Value<S> {
-        Value::scalar(self.into_owned())
+        Value::Scalar(self.to_scalar_value())
     }
 }
 
@@ -253,58 +244,65 @@ where
     String: Into<S>,
 {
     fn into_value(self) -> Value<S> {
-        Value::scalar(self)
+        Value::Scalar(self.into())
     }
 }
 
-impl<S: ScalarValue> IntoValue<S> for &ArcStr {
+impl<S> IntoValue<S> for Cow<'_, str>
+where
+    for<'a> &'a str: IntoValue<S>,
+    String: IntoValue<S>,
+{
     fn into_value(self) -> Value<S> {
-        Value::scalar(S::from_displayable(self))
+        match self {
+            Cow::Borrowed(s) => s.into_value(),
+            Cow::Owned(s) => s.into_value(),
+        }
     }
 }
 
-impl<S: ScalarValue> IntoValue<S> for ArcStr {
+impl<S: ScalarValue> IntoValue<S> for ArcStr
+where
+    ArcStr: ToScalarValue<S>,
+{
     fn into_value(self) -> Value<S> {
-        (&self).into_value()
+        Value::Scalar(self.to_scalar_value())
     }
 }
 
-impl<S: ScalarValue> IntoValue<S> for &CompactString {
+impl<S: ScalarValue> IntoValue<S> for CompactString
+where
+    CompactString: ToScalarValue<S>,
+{
     fn into_value(self) -> Value<S> {
-        Value::scalar(S::from_displayable(self))
-    }
-}
-
-impl<S: ScalarValue> IntoValue<S> for CompactString {
-    fn into_value(self) -> Value<S> {
-        (&self).into_value()
+        Value::Scalar(self.to_scalar_value())
     }
 }
 
 impl<S> IntoValue<S> for i32
 where
-    i32: Into<S>,
+    i32: ToScalarValue<S>,
 {
     fn into_value(self) -> Value<S> {
-        Value::scalar(self)
+        Value::Scalar(self.to_scalar_value())
     }
 }
 
 impl<S> IntoValue<S> for f64
 where
-    f64: Into<S>,
+    f64: ToScalarValue<S>,
 {
     fn into_value(self) -> Value<S> {
-        Value::scalar(self)
+        Value::Scalar(self.to_scalar_value())
     }
 }
 
 impl<S> IntoValue<S> for bool
 where
-    bool: Into<S>,
+    bool: ToScalarValue<S>,
 {
     fn into_value(self) -> Value<S> {
-        Value::scalar(self)
+        Value::Scalar(self.to_scalar_value())
     }
 }
 

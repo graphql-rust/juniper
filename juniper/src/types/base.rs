@@ -444,7 +444,7 @@ where
                 if f.name.item == "__typename" {
                     result.add_field(
                         response_name,
-                        Value::scalar(instance.concrete_type_name(executor.context(), info)),
+                        Value::Scalar(instance.concrete_type_name(executor.context(), info).into()),
                     );
                     continue;
                 }

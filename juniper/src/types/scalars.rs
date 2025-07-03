@@ -274,7 +274,7 @@ where
         _: Option<&[Selection<S>]>,
         _: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
-        Ok(Value::scalar(String::from(self)))
+        Ok(Value::Scalar(self.to_scalar_value()))
     }
 }
 
@@ -287,7 +287,7 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, crate::ExecutionResult<S>> {
+    ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
         use futures::future;
         Box::pin(future::ready(self.resolve(info, selection_set, executor)))
     }
