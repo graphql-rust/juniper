@@ -130,7 +130,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 ### Changed
 
-- Upgraded [GraphiQL] to [5.0.4 version](https://github.com/graphql/graphiql/blob/graphiql%405.0.4/packages/graphiql/CHANGELOG.md#504). ([#1335])
+- Upgraded [GraphiQL] to [5.0.5 version](https://github.com/graphql/graphiql/blob/graphiql%405.0.5/packages/graphiql/CHANGELOG.md#505). ([#1336])
 - Lifted `Sized` requirement from `ToInputValue` conversion trait. ([#1330]) 
 
 ### Fixed
@@ -156,7 +156,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1327]: /../../pull/1327
 [#1329]: /../../pull/1329
 [#1330]: /../../pull/1330
-[#1335]: /../../pull/1335
+[#1336]: /../../pull/1336
 [1b1fc618]: /../../commit/1b1fc61879ffdd640d741e187dc20678bf7ab295
 [20609366]: /../../commit/2060936635609b0186d46d8fbd06eb30fce660e3
 [4b14c015]: /../../commit/4b14c015018d31cb6df848efdee24d96416b76d9
