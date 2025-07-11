@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, ptr};
 
 use arcstr::ArcStr;
 use derive_more::with_trait::Display;
@@ -473,7 +473,7 @@ impl<S> SchemaType<S> {
     ) -> bool {
         self.possible_types(abstract_type)
             .into_iter()
-            .any(|t| (std::ptr::eq(t, possible_type)))
+            .any(|t| ptr::eq(t, possible_type))
     }
 
     /// If the type is a subtype of another type.
