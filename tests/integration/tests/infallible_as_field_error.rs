@@ -1,3 +1,5 @@
+#![allow(dead_code, reason = "GraphQL schema testing")]
+
 use std::convert::Infallible;
 
 use juniper::graphql_object;
