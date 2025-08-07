@@ -10,10 +10,13 @@ All user visible changes to `juniper_warp` crate will be documented in this file
 
 ### BC Breaks
 
-- Bumped up [MSRV] to 1.85. ([#1272], [todo])
+- Bumped up [MSRV] to 1.85. ([#1272], [1b1fc618])
+- Switched to [0.4 version][warp-0.4] of [`warp` crate]. ([#1343])
 
 [#1272]: /../../pull/1272
-[todo]: /../../commit/todo
+[#1343]: /../../pull/1343
+[1b1fc618]: /../../commit/1b1fc61879ffdd640d741e187dc20678bf7ab295
+[warp-0.4]: https://github.com/seanmonstar/warp/blob/v0.4.0/CHANGELOG.md#v040-august-5-2025
 
 
 
@@ -58,6 +61,7 @@ See [old CHANGELOG](/../../blob/juniper_warp-v0.7.0/juniper_warp/CHANGELOG.md).
 
 
 [`juniper` crate]: https://docs.rs/juniper
+[`warp` crate]: https://docs.rs/warp
 [graphql-transport-ws]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
 [graphql-ws]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
 [MSRV]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field
