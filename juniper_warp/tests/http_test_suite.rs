@@ -2,7 +2,6 @@
 
 #![expect(unused_crate_dependencies, reason = "integration tests")]
 
-use futures::TryStreamExt as _;
 use http_body_util::BodyExt as _;
 use itertools::Itertools as _;
 use juniper::{
@@ -123,14 +122,8 @@ async fn into_test_response(resp: reply::Response) -> TestResponse {
         })
         .unwrap_or_default();
 
-    let body = String::from_utf8(
-        body.into_data_stream()
-            .map_ok(|bytes| bytes.to_vec())
-            .try_concat()
-            .await
-            .unwrap(),
-    )
-    .unwrap_or_else(|e| panic!("not UTF-8 body: {e}"));
+    let body = String::from_utf8(body.collect().await.unwrap().to_bytes().into())
+        .unwrap_or_else(|e| panic!("not UTF-8 body: {e}"));
 
     TestResponse {
         status_code,

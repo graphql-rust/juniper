@@ -47,7 +47,6 @@ http-body-util = "0.1.2"
 [dev-dependencies]
 async-stream = "0.3"
 env_logger = "0.11"
-futures = "0.3.22"
 http-body-util = "0.1.2"
 itertools = "0.14"
 juniper = { version = "0.16", path = "../juniper", features = ["expose-test-schema"] }

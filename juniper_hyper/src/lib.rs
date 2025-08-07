@@ -116,8 +116,8 @@ where
         .await
         .map_err(GraphQLRequestError::BodyHyper)?;
 
-    let input = String::from_utf8(chunk.to_bytes().iter().cloned().collect())
-        .map_err(GraphQLRequestError::BodyUtf8)?;
+    let input =
+        String::from_utf8(chunk.to_bytes().into()).map_err(GraphQLRequestError::BodyUtf8)?;
 
     serde_json::from_str::<GraphQLBatchRequest<S>>(&input)
         .map_err(GraphQLRequestError::BodyJSONError)
@@ -135,8 +135,8 @@ where
         .await
         .map_err(GraphQLRequestError::BodyHyper)?;
 
-    let query = String::from_utf8(chunk.to_bytes().iter().cloned().collect())
-        .map_err(GraphQLRequestError::BodyUtf8)?;
+    let query =
+        String::from_utf8(chunk.to_bytes().into()).map_err(GraphQLRequestError::BodyUtf8)?;
 
     Ok(GraphQLBatchRequest::Single(GraphQLRequest::new(
         query, None, None,
