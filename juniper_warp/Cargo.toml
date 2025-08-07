@@ -40,11 +40,15 @@ serde_json = "1.0.18"
 tokio = { version = "1.0", features = ["rt"] }
 warp = "0.4.1"
 
+# Fixes for `minimal-versions` check.
+# TODO: Try remove on upgrade of `warp` crate.
+http-body-util = "0.1.2"
+
 [dev-dependencies]
 async-stream = "0.3"
 env_logger = "0.11"
 futures = "0.3.22"
-http-body-util = "0.1"
+http-body-util = "0.1.2"
 itertools = "0.14"
 juniper = { version = "0.16", path = "../juniper", features = ["expose-test-schema"] }
 log = "0.4"
