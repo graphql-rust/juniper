@@ -1,7 +1,15 @@
-error[E0080]: evaluation of constant value failed
+error[E0080]: evaluation panicked: Failed to implement interface `Character` on `ObjA`: Field `id`: Argument `isPresent` of type `Boolean!` isn't present on the interface and so has to be nullable.
   --> fail/interface/struct/derive_additional_non_nullable_argument.rs:17:5
    |
 17 |     id: String,
-   |     ^^ evaluation panicked: Failed to implement interface `Character` on `ObjA`: Field `id`: Argument `isPresent` of type `Boolean!` isn't present on the interface and so has to be nullable.
+   |     ^^ evaluation of `<CharacterValueEnum<ObjA> as juniper::macros::reflect::Field<__S, id>>::call::_` failed here
+   |
+   = note: this error originates in the macro `$crate::panic::panic_2021` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0080]: evaluation panicked: Failed to implement interface `Character` on `ObjA`: Field `id`: Argument `isPresent` of type `Boolean!` isn't present on the interface and so has to be nullable.
+  --> fail/interface/struct/derive_additional_non_nullable_argument.rs:17:5
+   |
+17 |     id: String,
+   |     ^^ evaluation of `<CharacterValueEnum<ObjA> as juniper::macros::reflect::AsyncField<__S, id>>::call::_` failed here
    |
    = note: this error originates in the macro `$crate::panic::panic_2021` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
