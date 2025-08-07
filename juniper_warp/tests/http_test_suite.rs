@@ -3,6 +3,7 @@
 #![expect(unused_crate_dependencies, reason = "integration tests")]
 
 use futures::TryStreamExt as _;
+use http_body_util::BodyExt as _;
 use itertools::Itertools as _;
 use juniper::{
     EmptyMutation, EmptySubscription, RootNode,
@@ -123,7 +124,8 @@ async fn into_test_response(resp: reply::Response) -> TestResponse {
         .unwrap_or_default();
 
     let body = String::from_utf8(
-        body.map_ok(|bytes| bytes.to_vec())
+        body.into_data_stream()
+            .map_ok(|bytes| bytes.to_vec())
             .try_concat()
             .await
             .unwrap(),
