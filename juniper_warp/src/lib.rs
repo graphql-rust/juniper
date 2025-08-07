@@ -9,6 +9,8 @@
 // TODO: Try remove on upgrade of `warp` crate.
 mod for_minimal_versions_check_only {
     use http_body_util as _;
+    #[cfg(test)]
+    use hyper_util as _;
 }
 
 mod response;

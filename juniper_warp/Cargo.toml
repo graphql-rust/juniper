@@ -56,6 +56,11 @@ tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 url = "2.0"
 warp = { version = "0.4", features = ["test"] }
 
+# Fixes for `minimal-versions` check.
+# TODO: Try remove on upgrade of `warp` crate.
+hyper-util = "0.1.12"
+
+
 [lints.clippy]
 allow_attributes = "warn"
 allow_attributes_without_reason = "warn"
