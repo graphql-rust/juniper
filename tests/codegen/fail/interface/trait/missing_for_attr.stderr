@@ -1,7 +1,7 @@
-error[E0080]: evaluation of constant value failed
+error[E0080]: evaluation panicked: Failed to implement interface `Character` on `ObjA`: missing implementer reference in interface's `for` attribute.
  --> fail/interface/trait/missing_for_attr.rs:3:10
   |
 3 | #[derive(GraphQLObject)]
-  |          ^^^^^^^^^^^^^ evaluation panicked: Failed to implement interface `Character` on `ObjA`: missing implementer reference in interface's `for` attribute.
+  |          ^^^^^^^^^^^^^ evaluation of `<ObjA as juniper::GraphQLObject<__S>>::mark::_` failed here
   |
   = note: this error originates in the macro `$crate::panic::panic_2021` which comes from the expansion of the derive macro `GraphQLObject` (in Nightly builds, run with -Z macro-backtrace for more info)

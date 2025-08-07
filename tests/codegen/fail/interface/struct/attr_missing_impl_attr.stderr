@@ -1,7 +1,7 @@
-error[E0080]: evaluation of constant value failed
+error[E0080]: evaluation panicked: Failed to implement interface `Character` on `ObjA`: missing interface reference in implementer's `impl` attribute.
  --> fail/interface/struct/attr_missing_impl_attr.rs:8:1
   |
 8 | #[graphql_interface(for = ObjA)]
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ evaluation panicked: Failed to implement interface `Character` on `ObjA`: missing interface reference in implementer's `impl` attribute.
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ evaluation of `<CharacterValueEnum<ObjA> as juniper::marker::IsOutputType<__S>>::mark::_` failed here
   |
   = note: this error originates in the macro `$crate::panic::panic_2021` which comes from the expansion of the attribute macro `graphql_interface` (in Nightly builds, run with -Z macro-backtrace for more info)
