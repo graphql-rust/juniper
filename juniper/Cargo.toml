@@ -28,7 +28,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 anyhow = ["dep:anyhow"]
 backtrace = ["anyhow?/backtrace"]
 bigdecimal = ["dep:bigdecimal", "dep:num-bigint", "dep:ryu"]
-bson = ["dep:bson"]
+bson = ["dep:bson", "dep:tap"]
 chrono = ["dep:chrono"]
 chrono-clock = ["chrono", "chrono/clock"]
 chrono-tz = ["dep:chrono-tz", "dep:regex"]
@@ -74,6 +74,8 @@ uuid = { version = "1.3", default-features = false, optional = true }
 num-bigint = { version = "0.4.2", optional = true }
 # TODO: Try remove on upgrade of `chrono-tz` crate.
 regex = { version = "1.6", features = ["std"], default-features = false, optional = true }
+# TODO: Try remove on upgrade of `bson` crate.
+tap = { version = "1.0.1", optional = true }
 # TODO: Remove on upgrade to 0.4.1 version of `graphql-parser`.
 void = { version = "1.0.2", optional = true }
 
