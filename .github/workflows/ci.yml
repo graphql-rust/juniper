@@ -21,17 +21,7 @@ jobs:
   ################
 
   pr:
-    if: ${{ github.event_name == 'pull_request'
-         && needs.bench.result == 'success'
-         && needs.clippy.result == 'success'
-         && needs.codespell.result == 'success'
-         && needs.feature.result == 'success'
-         && needs.msrv.result == 'success'
-         && needs.release-check.result == 'success'
-         && needs.rustfmt.result == 'success'
-         && needs.test.result == 'success'
-         && needs.test-book.result == 'success'
-         && needs.wasm.result == 'success' }}
+    if: ${{ always() && github.event_name == 'pull_request' }}
     needs:
       - bench
       - clippy
@@ -45,7 +35,16 @@ jobs:
       - wasm
     runs-on: ubuntu-latest
     steps:
-      - run: true
+      - run: ${{ needs.bench.result == 'success'
+              && needs.clippy.result == 'success'
+              && needs.codespell.result == 'success'
+              && needs.feature.result == 'success'
+              && needs.msrv.result == 'success'
+              && needs.release-check.result == 'success'
+              && needs.rustfmt.result == 'success'
+              && needs.test.result == 'success'
+              && needs.test-book.result == 'success'
+              && needs.wasm.result == 'success' }}
 
 
 
