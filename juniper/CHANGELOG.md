@@ -13,6 +13,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 ### BC Breaks
 
 - Upgraded [`chrono-tz` crate] integration to [0.10 version](https://github.com/chronotope/chrono-tz/releases/tag/v0.10.0). ([#1252], [#1284])
+- Upgraded [`bson` crate] integration to [3.0 version](https://github.com/mongodb/bson-rust/releases/tag/v3.0.0). ([#1346])
 - Bumped up [MSRV] to 1.85. ([#1272], [1b1fc618])
 - Corrected compliance with newer [graphql-scalars.dev] specs: ([#1275], [#1277])
     - Switched `LocalDateTime` scalars to `yyyy-MM-ddTHH:mm:ss` format in types:
@@ -157,6 +158,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1329]: /../../pull/1329
 [#1330]: /../../pull/1330
 [#1339]: /../../pull/1339
+[#1346]: /../../pull/1346
 [1b1fc618]: /../../commit/1b1fc61879ffdd640d741e187dc20678bf7ab295
 [20609366]: /../../commit/2060936635609b0186d46d8fbd06eb30fce660e3
 [4b14c015]: /../../commit/4b14c015018d31cb6df848efdee24d96416b76d9
