@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html lang="en" class="light" dir="ltr">
+<html lang="en" class="light sidebar-visible" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
@@ -7,7 +7,7 @@
 
 
         <!-- Custom HTML head -->
-        
+
         <meta name="description" content="User guide for Juniper (GraphQL server library for Rust).">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
@@ -24,26 +24,41 @@
         <link rel="stylesheet" href="../fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" href="../highlight.css">
-        <link rel="stylesheet" href="../tomorrow-night.css">
-        <link rel="stylesheet" href="../ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
 
-    </head>
-    <body class="sidebar-visible no-js">
-    <div id="body-container">
-        <!-- Provide site root to javascript -->
-        <script>
-            var path_to_root = "../";
-            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
-        </script>
 
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script>
             try {
-                var theme = localStorage.getItem('mdbook-theme');
-                var sidebar = localStorage.getItem('mdbook-sidebar');
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
 
                 if (theme.startsWith('"') && theme.endsWith('"')) {
                     localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
@@ -57,70 +72,51 @@
 
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script>
-            var theme;
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
-            var html = document.querySelector('html');
+            const html = document.documentElement;
             html.classList.remove('light')
             html.classList.add(theme);
-            var body = document.querySelector('body');
-            body.classList.remove('no-js')
-            body.classList.add('js');
+            html.classList.add("js");
         </script>
 
         <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
-            var body = document.querySelector('body');
-            var sidebar = null;
-            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
             } else {
                 sidebar = 'hidden';
+                sidebar_toggle.checked = false;
             }
-            sidebar_toggle.checked = sidebar === 'visible';
-            body.classList.remove('sidebar-visible');
-            body.classList.add("sidebar-" + sidebar);
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../quickstart.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li class="chapter-item expanded "><a href="../types/index.html"><strong aria-hidden="true">3.</strong> Type system</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/index.html"><strong aria-hidden="true">3.1.</strong> Objects</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">3.1.1.</strong> Complex fields</a></li><li class="chapter-item expanded "><a href="../types/objects/context.html"><strong aria-hidden="true">3.1.2.</strong> Context</a></li><li class="chapter-item expanded "><a href="../types/objects/error/index.html"><strong aria-hidden="true">3.1.3.</strong> Error handling</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/error/field.html"><strong aria-hidden="true">3.1.3.1.</strong> Field errors</a></li><li class="chapter-item expanded "><a href="../types/objects/error/schema.html"><strong aria-hidden="true">3.1.3.2.</strong> Schema errors</a></li></ol></li><li class="chapter-item expanded "><a href="../types/objects/generics.html"><strong aria-hidden="true">3.1.4.</strong> Generics</a></li></ol></li><li class="chapter-item expanded "><a href="../types/interfaces.html"><strong aria-hidden="true">3.2.</strong> Interfaces</a></li><li class="chapter-item expanded "><a href="../types/unions.html"><strong aria-hidden="true">3.3.</strong> Unions</a></li><li class="chapter-item expanded "><a href="../types/enums.html"><strong aria-hidden="true">3.4.</strong> Enums</a></li><li class="chapter-item expanded "><a href="../types/input_objects.html"><strong aria-hidden="true">3.5.</strong> Input objects</a></li><li class="chapter-item expanded "><a href="../types/scalars.html" class="active"><strong aria-hidden="true">3.6.</strong> Scalars</a></li></ol></li><li class="chapter-item expanded "><a href="../schema/index.html"><strong aria-hidden="true">4.</strong> Schema</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../schema/subscriptions.html"><strong aria-hidden="true">4.1.</strong> Subscriptions</a></li><li class="chapter-item expanded "><a href="../schema/introspection.html"><strong aria-hidden="true">4.2.</strong> Introspection</a></li></ol></li><li class="chapter-item expanded "><a href="../serve/index.html"><strong aria-hidden="true">5.</strong> Serving</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../serve/batching.html"><strong aria-hidden="true">5.1.</strong> Batching</a></li></ol></li><li class="chapter-item expanded "><a href="../advanced/index.html"><strong aria-hidden="true">6.</strong> Advanced Topics</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/implicit_and_explicit_null.html"><strong aria-hidden="true">6.1.</strong> Implicit and explicit null</a></li><li class="chapter-item expanded "><a href="../advanced/n_plus_1.html"><strong aria-hidden="true">6.2.</strong> N+1 problem</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/dataloader.html"><strong aria-hidden="true">6.2.1.</strong> DataLoader</a></li><li class="chapter-item expanded "><a href="../advanced/lookahead.html"><strong aria-hidden="true">6.2.2.</strong> Look-ahead</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/eager_loading.html"><strong aria-hidden="true">6.2.2.1.</strong> Eager loading</a></li></ol></li></ol></li></ol></li></ol>
-            </div>
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
             </div>
         </nav>
 
-        <!-- Track and set sidebar scroll position -->
-        <script>
-            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
-            sidebarScrollbox.addEventListener('click', function(e) {
-                if (e.target.tagName === 'A') {
-                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
-                }
-            }, { passive: true });
-            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
-            sessionStorage.removeItem('sidebar-scroll');
-            if (sidebarScrollTop) {
-                // preserve sidebar scroll position when navigating via links within sidebar
-                sidebarScrollbox.scrollTop = sidebarScrollTop;
-            } else {
-                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
-                var activeSection = document.querySelector('#sidebar .active');
-                if (activeSection) {
-                    activeSection.scrollIntoView({ block: 'center' });
-                }
-            }
-        </script>
-
         <div id="page-wrapper" class="page-wrapper">
 
             <div class="page">
-                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar-hover-placeholder"></div>
                 <div id="menu-bar" class="menu-bar sticky">
                     <div class="left-buttons">
                         <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
@@ -130,13 +126,14 @@
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
                         </ul>
-                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
                             <i class="fa fa-search"></i>
                         </button>
                     </div>
@@ -153,7 +150,12 @@
 
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -193,11 +195,11 @@
 </blockquote>
 <h2 id="custom"><a class="header" href="#custom">Custom</a></h2>
 <p>We can create <a href="https://spec.graphql.org/October2021#sec-Scalars.Custom-Scalars">custom scalars</a> for other primitive values, but they are still <a href="https://spec.graphql.org/October2021#sel-FAHXJDCAACKB1qb">limited in the data types for representation</a>, and only introduce additional semantic meaning. This, also, often requires coordination with the client library, intended to consume the API we're building.</p>
-<p><a href="https://spec.graphql.org/October2021#sec-Scalars.Custom-Scalars">Custom scalars</a> can be defined in <a href="https://docs.rs/juniper">Juniper</a> by using either <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLScalar.html"><code>#[derive(GraphQLScalar)]</code></a> or <a href="https://docs.rs/juniper/0.16.1/juniper/attr.graphql_scalar.html"><code>#[graphql_scalar]</code></a> attributes, which do work pretty much the same way (except, <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLScalar.html"><code>#[derive(GraphQLScalar)]</code></a> cannot be used on <a href="https://doc.rust-lang.org/reference/items/type-aliases.html">type aliases</a>).</p>
+<p><a href="https://spec.graphql.org/October2021#sec-Scalars.Custom-Scalars">Custom scalars</a> can be defined in <a href="https://docs.rs/juniper">Juniper</a> by using either <a href="https://docs.rs/juniper/0.16.2/juniper/derive.GraphQLScalar.html"><code>#[derive(GraphQLScalar)]</code></a> or <a href="https://docs.rs/juniper/0.16.2/juniper/attr.graphql_scalar.html"><code>#[graphql_scalar]</code></a> attributes, which do work pretty much the same way (except, <a href="https://docs.rs/juniper/0.16.2/juniper/derive.GraphQLScalar.html"><code>#[derive(GraphQLScalar)]</code></a> cannot be used on <a href="https://doc.rust-lang.org/reference/items/type-aliases.html">type aliases</a>).</p>
 <h3 id="transparent-delegation"><a class="header" href="#transparent-delegation">Transparent delegation</a></h3>
 <p>Quite often, we want to create a <a href="https://spec.graphql.org/October2021#sec-Scalars.Custom-Scalars">custom GraphQL scalar</a> type by just wrapping an existing one, inheriting all its behavior. In <a href="https://www.rust-lang.org">Rust</a>, this is often called as <a href="https://rust-unofficial.github.io/patterns/patterns/behavioural/newtype.html">"newtype pattern"</a>. This may be achieved by providing a <code>#[graphql(transparent)]</code> attribute to the definition:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
-</span><span class="boring">use juniper::{graphql_scalar, GraphQLScalar};
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{GraphQLScalar, graphql_scalar};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
 #[graphql(transparent)]
@@ -215,7 +217,7 @@ pub struct MessageId {
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>That's it, now the <code>UserId</code> and <code>MessageId</code> <a href="https://spec.graphql.org/October2021#sec-Scalars">scalars</a> can be used in <a href="https://graphql.org/learn/schema">GraphQL schema</a>.</p>
 <p>We may also customize the definition, to provide more information about our <a href="https://spec.graphql.org/October2021#sec-Scalars.Custom-Scalars">custom scalar</a> in <a href="https://graphql.org/learn/schema">GraphQL schema</a>:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLScalar;
 </span><span class="boring">
 </span>/// You can use a Rust doc comment to specify a description in GraphQL schema.
@@ -236,58 +238,110 @@ pub struct UserId(String);
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="resolving"><a class="header" href="#resolving">Resolving</a></h3>
 <p>In case we need to customize <a href="https://spec.graphql.org/October2021#sec-Value-Resolution">resolving</a> of a <a href="https://spec.graphql.org/October2021#sec-Scalars.Custom-Scalars">custom GraphQL scalar</a> value (change the way it gets executed), the <code>#[graphql(to_output_with = &lt;fn path&gt;)]</code> attribute is the way to do so:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
-</span><span class="boring">use juniper::{GraphQLScalar, ScalarValue, Value};
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::GraphQLScalar;
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
 #[graphql(to_output_with = to_output, transparent)]
 struct Incremented(i32);
 
-/// Increments [`Incremented`] before converting into a [`Value`].
-fn to_output&lt;S: ScalarValue&gt;(v: &amp;Incremented) -&gt; Value&lt;S&gt; {
-    let inc = v.0 + 1;
-    Value::from(inc)
+fn to_output(v: &amp;Incremented) -&gt; i32 {
+    //                           ^^^ any concrete type having `ToScalarValue` implementation
+    //                               could be used
+    v.0 + 1
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre></pre>
+<p>The provided function is polymorphic by its output type:</p>
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate jiff;
+</span><span class="boring">extern crate juniper;
+</span><span class="boring">use std::fmt::Display;
+</span><span class="boring">use juniper::{GraphQLScalar, ScalarValue};
+</span><span class="boring">
+</span>#[derive(GraphQLScalar)]
+#[graphql(to_output_with = Self::to_output, transparent)]
+struct Incremented(i32);
+
+impl Incremented {
+    fn to_output&lt;S: ScalarValue&gt;(v: &amp;Incremented) -&gt; S {
+        //       ^^^^^^^^^^^^^^ returning generic or concrete `ScalarValue` is also OK
+        (v.0 + 1).into()
+    }
+}
+
+#[derive(GraphQLScalar)]
+#[graphql(to_output_with = Self::to_output, transparent)]
+struct CustomDateTime(jiff::Timestamp);
+
+impl CustomDateTime {
+    fn to_output(&amp;self) -&gt; impl Display {
+        //                 ^^^^^^^^^^^^ in this case macro expansion uses the
+        //                              `ScalarValue::from_displayable_non_static()` conversion
+        self.0.strftime("%Y-%m-%d %H:%M:%S%.fZ")
+    }
 }
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="input-value-parsing"><a class="header" href="#input-value-parsing">Input value parsing</a></h3>
 <p>Customization of a <a href="https://spec.graphql.org/October2021#sec-Scalars.Custom-Scalars">custom GraphQL scalar</a> value parsing is possible via <code>#[graphql(from_input_with = &lt;fn path&gt;)]</code> attribute:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
-</span><span class="boring">use juniper::{GraphQLScalar, InputValue, ScalarValue};
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{GraphQLScalar, ScalarValue};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
 #[graphql(from_input_with = Self::from_input, transparent)]
 struct UserId(String);
 
 impl UserId {
-    /// Checks whether the [`InputValue`] is a [`String`] beginning with `id: ` 
-    /// and strips it.
-    fn from_input&lt;S&gt;(input: &amp;InputValue&lt;S&gt;) -&gt; Result&lt;Self, String&gt; 
-    where
-        S: ScalarValue
-    {
-        input.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {input}"))
-            .and_then(|str| {
-                str.strip_prefix("id: ")
-                    .ok_or_else(|| {
-                        format!(
-                            "Expected `UserId` to begin with `id: `, \
-                             found: {input}",
-                        )
-                    })
+    /// Checks whether the [`InputValue`] is a [`String`] beginning with `id: ` and strips it.
+    fn from_input(
+        input: &amp;str,
+        //     ^^^^ any concrete type having `FromScalarValue` implementation could be used
+    ) -&gt; Result&lt;Self, Box&lt;str&gt;&gt; {
+        //            ^^^^^^^^ must implement `IntoFieldError`
+        input
+            .strip_prefix("id: ")
+            .ok_or_else(|| {
+                format!("Expected `UserId` to begin with `id: `, found: {input}").into()
             })
-            .map(|id| Self(id.to_owned()))
+            .map(|id| Self(id.into()))
+    }
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre></pre>
+<p>The provided function is polymorphic by its input and output types:</p>
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{GraphQLScalar, Scalar, ScalarValue};
+</span><span class="boring">
+</span>#[derive(GraphQLScalar)]
+#[graphql(from_input_with = Self::from_input, transparent)]
+struct UserId(String);
+
+impl UserId {
+    fn from_input(
+        input: &amp;Scalar&lt;impl ScalarValue&gt;,
+        //      ^^^^^^ for generic argument using `Scalar` transparent wrapper is required,
+        //             otherwise Rust won't be able to infer the required type
+    ) -&gt; Self {
+    //   ^^^^ if the result is infallible, it's OK to omit `Result`
+        Self(
+            input
+                .try_to_int().map(|i| i.to_string())
+                .or_else(|| input.try_to_bool().map(|f| f.to_string()))
+                .or_else(|| input.try_to_float().map(|b| b.to_string()))
+                .or_else(|| input.try_to_string())
+                .unwrap_or_else(|| {
+                    unreachable!("`ScalarValue` is at least one of primitive GraphQL types")
+                }),
+        )
     }
 }
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="token-parsing"><a class="header" href="#token-parsing">Token parsing</a></h3>
 <p>Customization of which tokens a <a href="https://spec.graphql.org/October2021#sec-Scalars">custom GraphQL scalar</a> type should be parsed from, is possible via <code>#[graphql(parse_token_with = &lt;fn path&gt;)]</code> or <code>#[graphql(parse_token(&lt;types&gt;)]</code> attributes:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
-</span><span class="boring">    GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
-</span><span class="boring">    ScalarValue, ScalarToken, Value,
+</span><span class="boring">    GraphQLScalar, ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue,
 </span><span class="boring">};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
@@ -304,18 +358,20 @@ enum StringOrInt {
     Int(i32),
 }
 
-fn to_output&lt;S: ScalarValue&gt;(v: &amp;StringOrInt) -&gt; Value&lt;S&gt; {
+fn to_output&lt;S: ScalarValue&gt;(v: &amp;StringOrInt) -&gt; S {
     match v {
-        StringOrInt::String(s) =&gt; Value::scalar(s.to_owned()),
-        StringOrInt::Int(i) =&gt; Value::scalar(*i),
+        StringOrInt::String(s) =&gt; S::from_displayable(s),
+        //                        ^^^^^^^^^^^^^^^^^^^ preferable conversion for types
+        //                                            represented by string token
+        StringOrInt::Int(i) =&gt; (*i).into(),
     }
 }
 
-fn from_input&lt;S: ScalarValue&gt;(v: &amp;InputValue&lt;S&gt;) -&gt; Result&lt;StringOrInt, String&gt; {
-    v.as_string_value()
-        .map(|s| StringOrInt::String(s.into()))
-        .or_else(|| v.as_int_value().map(StringOrInt::Int))
-        .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
+fn from_input(v: &amp;Scalar&lt;impl ScalarValue&gt;) -&gt; Result&lt;StringOrInt, Box&lt;str&gt;&gt; {
+    v.try_to_string()
+        .map(StringOrInt::String)
+        .or_else(|| v.try_to_int().map(StringOrInt::Int))
+        .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}").into())
 }
 
 fn parse_token&lt;S: ScalarValue&gt;(value: ScalarToken&lt;'_&gt;) -&gt; ParseScalarResult&lt;S&gt; {
@@ -329,10 +385,9 @@ fn parse_token&lt;S: ScalarValue&gt;(value: ScalarToken&lt;'_&gt;) -&gt; ParseSc
 </blockquote>
 <h3 id="full-behavior"><a class="header" href="#full-behavior">Full behavior</a></h3>
 <p>Instead of providing all custom functions separately, it's possible to provide a module holding the appropriate <code>to_output()</code>, <code>from_input()</code> and <code>parse_token()</code> functions via <code>#[graphql(with = &lt;module path&gt;)]</code> attribute:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
-</span><span class="boring">    GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
-</span><span class="boring">    ScalarValue, ScalarToken, Value,
+</span><span class="boring">    GraphQLScalar, ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue,
 </span><span class="boring">};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
@@ -345,18 +400,18 @@ enum StringOrInt {
 mod string_or_int {
     use super::*;
 
-    pub(super) fn to_output&lt;S: ScalarValue&gt;(v: &amp;StringOrInt) -&gt; Value&lt;S&gt; {
+    pub(super) fn to_output&lt;S: ScalarValue&gt;(v: &amp;StringOrInt) -&gt; S {
         match v {
-            StringOrInt::String(s) =&gt; Value::scalar(s.to_owned()),
-            StringOrInt::Int(i) =&gt; Value::scalar(*i),
+            StringOrInt::String(s) =&gt; S::from_displayable(s),
+            StringOrInt::Int(i) =&gt; (*i).into(),
         }
     }
 
-    pub(super) fn from_input&lt;S: ScalarValue&gt;(v: &amp;InputValue&lt;S&gt;) -&gt; Result&lt;StringOrInt, String&gt; {
-        v.as_string_value()
-            .map(|s| StringOrInt::String(s.into()))
-            .or_else(|| v.as_int_value().map(StringOrInt::Int))
-            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
+    pub(super) fn from_input(v: &amp;Scalar&lt;impl ScalarValue&gt;) -&gt; Result&lt;StringOrInt, Box&lt;str&gt;&gt; {
+        v.try_to_string()
+            .map(StringOrInt::String)
+            .or_else(|| v.try_to_int().map(StringOrInt::Int))
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}").into())
     }
 
     pub(super) fn parse_token&lt;S: ScalarValue&gt;(t: ScalarToken&lt;'_&gt;) -&gt; ParseScalarResult&lt;S&gt; {
@@ -367,10 +422,9 @@ mod string_or_int {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>A regular <code>impl</code> block is also suitable for that:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
-</span><span class="boring">    GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
-</span><span class="boring">    ScalarValue, ScalarToken, Value,
+</span><span class="boring">    GraphQLScalar, ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue,
 </span><span class="boring">};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
@@ -381,21 +435,18 @@ enum StringOrInt {
 }
 
 impl StringOrInt {
-    fn to_output&lt;S: ScalarValue&gt;(&amp;self) -&gt; Value&lt;S&gt; {
+    fn to_output&lt;S: ScalarValue&gt;(&amp;self) -&gt; S {
         match self {
-            Self::String(s) =&gt; Value::scalar(s.to_owned()),
-            Self::Int(i) =&gt; Value::scalar(*i),
+            Self::String(s) =&gt; S::from_displayable(s),
+            Self::Int(i) =&gt; (*i).into(),
         }
     }
 
-    fn from_input&lt;S&gt;(v: &amp;InputValue&lt;S&gt;) -&gt; Result&lt;Self, String&gt;
-    where
-        S: ScalarValue
-    {
-        v.as_string_value()
-            .map(|s| Self::String(s.into()))
-            .or_else(|| v.as_int_value().map(Self::Int))
-            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
+    fn from_input(v: &amp;Scalar&lt;impl ScalarValue&gt;) -&gt; Result&lt;Self, Box&lt;str&gt;&gt; {
+        v.try_to_string()
+            .map(Self::String)
+            .or_else(|| v.try_to_int().map(Self::Int))
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}").into())
     }
 
     fn parse_token&lt;S&gt;(value: ScalarToken&lt;'_&gt;) -&gt; ParseScalarResult&lt;S&gt;
@@ -409,10 +460,9 @@ impl StringOrInt {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>At the same time, any custom function still may be specified separately, if required:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
-</span><span class="boring">    GraphQLScalar, InputValue, ParseScalarResult, ScalarValue,
-</span><span class="boring">    ScalarToken, Value
+</span><span class="boring">    GraphQLScalar, ParseScalarResult, Scalar, ScalarToken, ScalarValue,
 </span><span class="boring">};
 </span><span class="boring">
 </span>#[derive(GraphQLScalar)]
@@ -428,24 +478,18 @@ enum StringOrInt {
 mod string_or_int {
     use super::*;
 
-    pub(super) fn to_output&lt;S&gt;(v: &amp;StringOrInt) -&gt; Value&lt;S&gt;
-    where
-        S: ScalarValue,
-    {
+    pub(super) fn to_output&lt;S: ScalarValue&gt;(v: &amp;StringOrInt) -&gt; S {
         match v {
-            StringOrInt::String(s) =&gt; Value::scalar(s.to_owned()),
-            StringOrInt::Int(i) =&gt; Value::scalar(*i),
+            StringOrInt::String(s) =&gt; S::from_displayable(s),
+            StringOrInt::Int(i) =&gt; (*i).into(),
         }
     }
 
-    pub(super) fn from_input&lt;S&gt;(v: &amp;InputValue&lt;S&gt;) -&gt; Result&lt;StringOrInt, String&gt;
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .map(|s| StringOrInt::String(s.into()))
-            .or_else(|| v.as_int_value().map(StringOrInt::Int))
-            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
+    pub(super) fn from_input(v: &amp;Scalar&lt;impl ScalarValue&gt;) -&gt; Result&lt;StringOrInt, Box&lt;str&gt;&gt; {
+        v.try_to_string()
+            .map(StringOrInt::String)
+            .or_else(|| v.try_to_int().map(StringOrInt::Int))
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}").into())
     }
 
     // No need in `parse_token()` function.
@@ -453,14 +497,14 @@ mod string_or_int {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
-<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLScalar.html"><code>#[derive(GraphQLScalar)]</code></a> and <a href="https://docs.rs/juniper/0.16.1/juniper/attr.graphql_scalar.html"><code>#[graphql_scalar]</code></a> attributes.</p>
+<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.2/juniper/derive.GraphQLScalar.html"><code>#[derive(GraphQLScalar)]</code></a> and <a href="https://docs.rs/juniper/0.16.2/juniper/attr.graphql_scalar.html"><code>#[graphql_scalar]</code></a> attributes.</p>
 </blockquote>
 <h2 id="foreign"><a class="header" href="#foreign">Foreign</a></h2>
-<p>For implementing <a href="https://spec.graphql.org/October2021#sec-Scalars.Custom-Scalars">custom scalars</a> on foreign types there is <a href="https://docs.rs/juniper/0.16.1/juniper/attr.graphql_scalar.html"><code>#[graphql_scalar]</code></a> attribute.</p>
+<p>For implementing <a href="https://spec.graphql.org/October2021#sec-Scalars.Custom-Scalars">custom scalars</a> on foreign types there is <a href="https://docs.rs/juniper/0.16.2/juniper/attr.graphql_scalar.html"><code>#[graphql_scalar]</code></a> attribute.</p>
 <blockquote>
-<p><strong>NOTE</strong>: To satisfy <a href="https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules">orphan rules</a>, we should provide a local <a href="https://docs.rs/juniper/0.16.1/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> implementation.</p>
+<p><strong>NOTE</strong>: To satisfy <a href="https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules">orphan rules</a>, we should provide a local <a href="https://docs.rs/juniper/0.16.2/juniper/trait.ScalarValue.html"><code>ScalarValue</code></a> implementation.</p>
 </blockquote>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate juniper;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">mod date {
 </span><span class="boring">   pub struct Date;
 </span><span class="boring">   impl std::str::FromStr for Date {
@@ -472,17 +516,19 @@ mod string_or_int {
 </span><span class="boring">   }
 </span><span class="boring">
 </span><span class="boring">   impl std::fmt::Display for Date {
-</span><span class="boring">       fn fmt(&amp;self, _f: &amp;mut std::fmt::Formatter) -&gt; std::fmt::Result {
+</span><span class="boring">       fn fmt(&amp;self, _f: &amp;mut std::fmt::Formatter&lt;'_&gt;) -&gt; std::fmt::Result {
 </span><span class="boring">           unimplemented!()
 </span><span class="boring">       }
 </span><span class="boring">   }
 </span><span class="boring">}
 </span><span class="boring">
 </span><span class="boring">use juniper::DefaultScalarValue as CustomScalarValue;
-</span>use juniper::{graphql_scalar, InputValue, ScalarValue, Value};
+</span>use juniper::{ScalarValue, graphql_scalar};
 
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = date_scalar, 
+    to_output_with = ScalarValue::from_displayable, // use `Display` representation
     parse_token(String),
     scalar = CustomScalarValue,
 )]
@@ -492,15 +538,9 @@ type Date = date::Date;
 
 mod date_scalar {
     use super::*;
-  
-    pub(super) fn to_output(v: &amp;Date) -&gt; Value&lt;CustomScalarValue&gt; {
-        Value::scalar(v.to_string())
-    }
 
-    pub(super) fn from_input(v: &amp;InputValue&lt;CustomScalarValue&gt;) -&gt; Result&lt;Date, String&gt; {
-      v.as_string_value()
-          .ok_or_else(|| format!("Expected `String`, found: {v}"))
-          .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {e}")))
+    pub(super) fn from_input(s: &amp;str) -&gt; Result&lt;Date, Box&lt;str&gt;&gt; {
+        s.parse().map_err(|e| format!("Failed to parse `Date`: {e}").into())
     }
 }
 <span class="boring">
@@ -508,22 +548,31 @@ mod date_scalar {
 <h3 id="supported-out-of-the-box"><a class="header" href="#supported-out-of-the-box">Supported out-of-the-box</a></h3>
 <p><a href="https://docs.rs/juniper">Juniper</a> provides out-of-the-box <a href="https://spec.graphql.org/October2021#sec-Scalars">GraphQL scalar</a> implementations for some very common <a href="https://www.rust-lang.org">Rust</a> crates. The types from these crates will be usable in your schemas automatically after enabling the correspondent self-titled <a href="https://doc.rust-lang.org/cargo/reference/features.html">Cargo feature</a>.</p>
 <div class="table-wrapper"><table><thead><tr><th><a href="https://www.rust-lang.org">Rust</a> type</th><th><a href="https://graphql.org">GraphQL</a> scalar</th><th><a href="https://doc.rust-lang.org/cargo/reference/features.html">Cargo feature</a></th></tr></thead><tbody>
-<tr><td><a href="https://docs.rs/bigdecimal"><code>BigDecimal</code></a></td><td><code>BigDecimal</code></td><td><a href="https://docs.rs/bigdecimal"><code>bigdecimal</code></a></td></tr>
-<tr><td><a href="https://docs.rs/bson/latest/bson/oid/struct.ObjectId.html"><code>bson::oid::ObjectId</code></a></td><td><code>ObjectId</code></td><td><a href="https://docs.rs/bson"><code>bson</code></a></td></tr>
-<tr><td><a href="https://docs.rs/bson/latest/bson/struct.DateTime.html"><code>bson::DateTime</code></a></td><td><code>UtcDateTime</code></td><td><a href="https://docs.rs/bson"><code>bson</code></a></td></tr>
-<tr><td><a href="https://docs.rs/chrono/latest/chrono/naive/struct.NaiveDate.html"><code>chrono::NaiveDate</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/date"><code>Date</code></a></td><td><a href="https://docs.rs/chrono"><code>chrono</code></a></td></tr>
+<tr><td><a href="https://docs.rs/bigdecimal/latest/bigdecimal/struct.BigDecimal.html"><code>bigdecimal::BigDecimal</code></a></td><td><code>BigDecimal</code></td><td><a href="https://docs.rs/bigdecimal"><code>bigdecimal</code></a></td></tr>
+<tr><td><a href="https://docs.rs/bson/latest/bson/oid/struct.ObjectId.html"><code>bson::oid::ObjectId</code></a></td><td><a href="https://the-guild.dev/graphql/scalars/docs/scalars/object-id"><code>ObjectID</code></a></td><td><a href="https://docs.rs/bson"><code>bson</code></a></td></tr>
+<tr><td><a href="https://docs.rs/bson/latest/bson/struct.DateTime.html"><code>bson::DateTime</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/date-time"><code>DateTime</code></a></td><td><a href="https://docs.rs/bson"><code>bson</code></a></td></tr>
+<tr><td><a href="https://docs.rs/chrono/latest/chrono/naive/struct.NaiveDate.html"><code>chrono::NaiveDate</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/local-date"><code>LocalDate</code></a></td><td><a href="https://docs.rs/chrono"><code>chrono</code></a></td></tr>
 <tr><td><a href="https://docs.rs/chrono/latest/chrono/naive/struct.NaiveTime.html"><code>chrono::NaiveTime</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/local-time"><code>LocalTime</code></a></td><td><a href="https://docs.rs/chrono"><code>chrono</code></a></td></tr>
-<tr><td><a href="https://docs.rs/chrono/latest/chrono/naive/struct.NaiveDateTime.html"><code>chrono::NaiveDateTime</code></a></td><td><code>LocalDateTime</code></td><td><a href="https://docs.rs/chrono"><code>chrono</code></a></td></tr>
+<tr><td><a href="https://docs.rs/chrono/latest/chrono/naive/struct.NaiveDateTime.html"><code>chrono::NaiveDateTime</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/local-date-time"><code>LocalDateTime</code></a></td><td><a href="https://docs.rs/chrono"><code>chrono</code></a></td></tr>
 <tr><td><a href="https://docs.rs/chrono/latest/chrono/struct.DateTime.html"><code>chrono::DateTime</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/date-time"><code>DateTime</code></a></td><td><a href="https://docs.rs/chrono"><code>chrono</code></a></td></tr>
-<tr><td><a href="https://docs.rs/chrono-tz/latest/chrono_tz/enum.Tz.html"><code>chrono_tz::Tz</code></a></td><td><code>TimeZone</code></td><td><a href="https://docs.rs/chrono-tz"><code>chrono-tz</code></a></td></tr>
-<tr><td><a href="https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html"><code>Decimal</code></a></td><td><code>Decimal</code></td><td><a href="https://docs.rs/rust_decimal"><code>rust_decimal</code></a></td></tr>
-<tr><td><a href="https://docs.rs/time/latest/time/struct.Date.html"><code>time::Date</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/date"><code>Date</code></a></td><td><a href="https://docs.rs/time"><code>time</code></a></td></tr>
+<tr><td><a href="https://docs.rs/chrono-tz/latest/chrono_tz/enum.Tz.html"><code>chrono_tz::Tz</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/time-zone"><code>TimeZone</code></a></td><td><a href="https://docs.rs/chrono-tz"><code>chrono-tz</code></a></td></tr>
+<tr><td><a href="https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html"><code>rust_decimal::Decimal</code></a></td><td><code>Decimal</code></td><td><a href="https://docs.rs/rust_decimal"><code>rust_decimal</code></a></td></tr>
+<tr><td><a href="https://docs.rs/jiff/latest/jiff/civil/struct.Date.html"><code>jiff::civil::Date</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/local-date"><code>LocalDate</code></a></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
+<tr><td><a href="https://docs.rs/jiff/latest/jiff/civil/struct.Time.html"><code>jiff::civil::Time</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/local-time"><code>LocalTime</code></a></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
+<tr><td><a href="https://docs.rs/jiff/latest/jiff/civil/struct.DateTime.html"><code>jiff::civil::DateTime</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/local-date-time"><code>LocalDateTime</code></a></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
+<tr><td><a href="https://docs.rs/jiff/latest/jiff/struct.Timestamp.html"><code>jiff::Timestamp</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/date-time"><code>DateTime</code></a></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
+<tr><td><a href="https://docs.rs/jiff/latest/jiff/struct.Zoned.html"><code>jiff::Zoned</code></a></td><td><code>ZonedDateTime</code></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
+<tr><td><a href="https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html"><code>jiff::tz::TimeZone</code></a></td><td><code>TimeZoneOrUtcOffset</code></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
+<tr><td><a href="https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html"><code>jiff::tz::TimeZone</code></a> via <a href="https://docs.rs/juniper/0.16.1/juniper/integrations/jiff/struct.TimeZone.html"><code>juniper::integrations::jiff::TimeZone</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/time-zone"><code>TimeZone</code></a></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
+<tr><td><a href="https://docs.rs/jiff/latest/jiff/tz/struct.Offset.html"><code>jiff::tz::Offset</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/utc-offset"><code>UtcOffset</code></a></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
+<tr><td><a href="https://docs.rs/jiff/latest/jiff/struct.Span.html"><code>jiff::Span</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/duration"><code>Duration</code></a></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
+<tr><td><a href="https://docs.rs/time/latest/time/struct.Date.html"><code>time::Date</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/local-date"><code>LocalDate</code></a></td><td><a href="https://docs.rs/time"><code>time</code></a></td></tr>
 <tr><td><a href="https://docs.rs/time/latest/time/struct.Time.html"><code>time::Time</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/local-time"><code>LocalTime</code></a></td><td><a href="https://docs.rs/time"><code>time</code></a></td></tr>
-<tr><td><a href="https://docs.rs/time/latest/time/struct.PrimitiveDateTime.html"><code>time::PrimitiveDateTime</code></a></td><td><code>LocalDateTime</code></td><td><a href="https://docs.rs/time"><code>time</code></a></td></tr>
+<tr><td><a href="https://docs.rs/time/latest/time/struct.PrimitiveDateTime.html"><code>time::PrimitiveDateTime</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/local-date-time"><code>LocalDateTime</code></a></td><td><a href="https://docs.rs/time"><code>time</code></a></td></tr>
 <tr><td><a href="https://docs.rs/time/latest/time/struct.OffsetDateTime.html"><code>time::OffsetDateTime</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/date-time"><code>DateTime</code></a></td><td><a href="https://docs.rs/time"><code>time</code></a></td></tr>
 <tr><td><a href="https://docs.rs/time/latest/time/struct.UtcOffset.html"><code>time::UtcOffset</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/utc-offset"><code>UtcOffset</code></a></td><td><a href="https://docs.rs/time"><code>time</code></a></td></tr>
-<tr><td><a href="https://docs.rs/url"><code>Url</code></a></td><td><code>Url</code></td><td><a href="https://docs.rs/url"><code>url</code></a></td></tr>
-<tr><td><a href="https://docs.rs/uuid"><code>Uuid</code></a></td><td><code>Uuid</code></td><td><a href="https://docs.rs/uuid"><code>uuid</code></a></td></tr>
+<tr><td><a href="https://docs.rs/url/latest/url/struct.Url.html"><code>url::Url</code></a></td><td><a href="https://docs.rs/url"><code>URL</code></a></td><td><a href="https://docs.rs/url"><code>url</code></a></td></tr>
+<tr><td><a href="https://docs.rs/uuid/latest/uuid/struct.Uuid.html"><code>uuid::Uuid</code></a></td><td><a href="https://docs.rs/uuid"><code>UUID</code></a></td><td><a href="https://docs.rs/uuid"><code>uuid</code></a></td></tr>
 </tbody></table>
 </div>
                     </main>
@@ -572,6 +621,7 @@ mod date_scalar {
         <script src="../book.js"></script>
 
         <!-- Custom JS scripts -->
+
 
 
     </div>

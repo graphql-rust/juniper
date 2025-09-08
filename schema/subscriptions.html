@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html lang="en" class="light" dir="ltr">
+<html lang="en" class="light sidebar-visible" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
@@ -7,7 +7,7 @@
 
 
         <!-- Custom HTML head -->
-        
+
         <meta name="description" content="User guide for Juniper (GraphQL server library for Rust).">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
@@ -24,26 +24,41 @@
         <link rel="stylesheet" href="../fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" href="../highlight.css">
-        <link rel="stylesheet" href="../tomorrow-night.css">
-        <link rel="stylesheet" href="../ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
 
-    </head>
-    <body class="sidebar-visible no-js">
-    <div id="body-container">
-        <!-- Provide site root to javascript -->
-        <script>
-            var path_to_root = "../";
-            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
-        </script>
 
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script>
             try {
-                var theme = localStorage.getItem('mdbook-theme');
-                var sidebar = localStorage.getItem('mdbook-sidebar');
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
 
                 if (theme.startsWith('"') && theme.endsWith('"')) {
                     localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
@@ -57,70 +72,51 @@
 
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script>
-            var theme;
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
-            var html = document.querySelector('html');
+            const html = document.documentElement;
             html.classList.remove('light')
             html.classList.add(theme);
-            var body = document.querySelector('body');
-            body.classList.remove('no-js')
-            body.classList.add('js');
+            html.classList.add("js");
         </script>
 
         <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
-            var body = document.querySelector('body');
-            var sidebar = null;
-            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
             } else {
                 sidebar = 'hidden';
+                sidebar_toggle.checked = false;
             }
-            sidebar_toggle.checked = sidebar === 'visible';
-            body.classList.remove('sidebar-visible');
-            body.classList.add("sidebar-" + sidebar);
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../quickstart.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li class="chapter-item expanded "><a href="../types/index.html"><strong aria-hidden="true">3.</strong> Type system</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/index.html"><strong aria-hidden="true">3.1.</strong> Objects</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/complex_fields.html"><strong aria-hidden="true">3.1.1.</strong> Complex fields</a></li><li class="chapter-item expanded "><a href="../types/objects/context.html"><strong aria-hidden="true">3.1.2.</strong> Context</a></li><li class="chapter-item expanded "><a href="../types/objects/error/index.html"><strong aria-hidden="true">3.1.3.</strong> Error handling</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../types/objects/error/field.html"><strong aria-hidden="true">3.1.3.1.</strong> Field errors</a></li><li class="chapter-item expanded "><a href="../types/objects/error/schema.html"><strong aria-hidden="true">3.1.3.2.</strong> Schema errors</a></li></ol></li><li class="chapter-item expanded "><a href="../types/objects/generics.html"><strong aria-hidden="true">3.1.4.</strong> Generics</a></li></ol></li><li class="chapter-item expanded "><a href="../types/interfaces.html"><strong aria-hidden="true">3.2.</strong> Interfaces</a></li><li class="chapter-item expanded "><a href="../types/unions.html"><strong aria-hidden="true">3.3.</strong> Unions</a></li><li class="chapter-item expanded "><a href="../types/enums.html"><strong aria-hidden="true">3.4.</strong> Enums</a></li><li class="chapter-item expanded "><a href="../types/input_objects.html"><strong aria-hidden="true">3.5.</strong> Input objects</a></li><li class="chapter-item expanded "><a href="../types/scalars.html"><strong aria-hidden="true">3.6.</strong> Scalars</a></li></ol></li><li class="chapter-item expanded "><a href="../schema/index.html"><strong aria-hidden="true">4.</strong> Schema</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../schema/subscriptions.html" class="active"><strong aria-hidden="true">4.1.</strong> Subscriptions</a></li><li class="chapter-item expanded "><a href="../schema/introspection.html"><strong aria-hidden="true">4.2.</strong> Introspection</a></li></ol></li><li class="chapter-item expanded "><a href="../serve/index.html"><strong aria-hidden="true">5.</strong> Serving</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../serve/batching.html"><strong aria-hidden="true">5.1.</strong> Batching</a></li></ol></li><li class="chapter-item expanded "><a href="../advanced/index.html"><strong aria-hidden="true">6.</strong> Advanced Topics</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/implicit_and_explicit_null.html"><strong aria-hidden="true">6.1.</strong> Implicit and explicit null</a></li><li class="chapter-item expanded "><a href="../advanced/n_plus_1.html"><strong aria-hidden="true">6.2.</strong> N+1 problem</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/dataloader.html"><strong aria-hidden="true">6.2.1.</strong> DataLoader</a></li><li class="chapter-item expanded "><a href="../advanced/lookahead.html"><strong aria-hidden="true">6.2.2.</strong> Look-ahead</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/eager_loading.html"><strong aria-hidden="true">6.2.2.1.</strong> Eager loading</a></li></ol></li></ol></li></ol></li></ol>
-            </div>
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
             </div>
         </nav>
 
-        <!-- Track and set sidebar scroll position -->
-        <script>
-            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
-            sidebarScrollbox.addEventListener('click', function(e) {
-                if (e.target.tagName === 'A') {
-                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
-                }
-            }, { passive: true });
-            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
-            sessionStorage.removeItem('sidebar-scroll');
-            if (sidebarScrollTop) {
-                // preserve sidebar scroll position when navigating via links within sidebar
-                sidebarScrollbox.scrollTop = sidebarScrollTop;
-            } else {
-                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
-                var activeSection = document.querySelector('#sidebar .active');
-                if (activeSection) {
-                    activeSection.scrollIntoView({ block: 'center' });
-                }
-            }
-        </script>
-
         <div id="page-wrapper" class="page-wrapper">
 
             <div class="page">
-                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar-hover-placeholder"></div>
                 <div id="menu-bar" class="menu-bar sticky">
                     <div class="left-buttons">
                         <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
@@ -130,13 +126,14 @@
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
                         </ul>
-                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
                             <i class="fa fa-search"></i>
                         </button>
                     </div>
@@ -153,7 +150,12 @@
 
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -177,11 +179,11 @@
 <p><a href="https://spec.graphql.org/October2021#sec-Subscription">GraphQL subscriptions</a> are a way to push data from a server to clients requesting real-time messages from a server. <a href="https://spec.graphql.org/October2021#sec-Subscription">Subscriptions</a> are similar to <a href="https://spec.graphql.org/October2021#sec-Query">queries</a> in that they specify a set of fields to be delivered to a client, but instead of immediately returning a single answer a result is sent every time a particular event happens on a server.</p>
 <p>In order to execute <a href="https://spec.graphql.org/October2021#sec-Subscription">subscriptions</a> in <a href="https://docs.rs/juniper">Juniper</a>, we need a coordinator (spawning long-lived connections) and a <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a> with <a href="https://spec.graphql.org/October2021#sec-Language.Fields">fields</a> resolving into a <a href="https://docs.rs/futures/latest/futures/stream/trait.Stream.html"><code>Stream</code></a> of elements which will then be returned to a client. The <a href="https://docs.rs/juniper_subscriptions"><code>juniper_subscriptions</code> crate</a> provides a default implementation of these abstractions.</p>
 <p>The <a href="https://spec.graphql.org/October2021#sel-FAHTRJCAACC3EhsX">subscription root</a> is just a <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a>, similar to the <a href="https://spec.graphql.org/October2021#sel-FAHTRFCAACChCtpG">query root</a> and <a href="https://spec.graphql.org/October2021#sel-FAHTRHCAACCuE9yD">mutations root</a> that we define for operations in our <a href="https://spec.graphql.org/October2021#sec-Schema">GraphQL schema</a>. For <a href="https://spec.graphql.org/October2021#sec-Subscription">subscriptions</a> all fields should be <code>async</code> and return a <a href="https://docs.rs/futures/latest/futures/stream/trait.Stream.html"><code>Stream</code></a> of some <a href="https://spec.graphql.org/October2021#sec-Types">GraphQL type</a> values, rather than direct values.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate futures;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate futures;
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">use std::pin::Pin;
 </span><span class="boring">use futures::Stream;
-</span><span class="boring">use juniper::{graphql_object, graphql_subscription, FieldError};
+</span><span class="boring">use juniper::{FieldError, graphql_object, graphql_subscription};
 </span><span class="boring">
 </span><span class="boring">#[derive(Clone)]
 </span><span class="boring">pub struct Database;
@@ -218,10 +220,10 @@ impl Subscription {
 <span class="boring">
 </span><span class="boring">fn main () {}</span></code></pre></pre>
 <h2 id="coordinator"><a class="header" href="#coordinator">Coordinator</a></h2>
-<p><a href="https://spec.graphql.org/October2021#sec-Subscription">GraphQL subscriptions</a> require a bit more resources than regular <a href="https://spec.graphql.org/October2021#sec-Query">queries</a> and provide a great vector for <a href="https://en.wikipedia.org/wiki/Denial-of-service_attack">DoS attacks</a>. This can can bring down a server easily if not handled correctly. The <a href="https://docs.rs/juniper/0.16.1/juniper/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code> trait</a> provides coordination logic to enable functionality like <a href="https://en.wikipedia.org/wiki/Denial-of-service_attack">DoS attacks</a> mitigation and resource limits.</p>
-<p>The <a href="https://docs.rs/juniper/0.16.1/juniper/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> contains the <a href="https://spec.graphql.org/October2021#sec-Schema">schema</a> and can keep track of opened connections, handle <a href="https://spec.graphql.org/October2021#sec-Subscription">subscription</a> start and end, and maintain a global ID for each <a href="https://spec.graphql.org/October2021#sec-Subscription">subscription</a>. Each time a connection is established, the <a href="https://docs.rs/juniper/0.16.1/juniper/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> spawns a [32], which handles a single connection, providing resolver logic for a client stream as well as reconnection and shutdown logic.</p>
-<p>While we can implement <a href="https://docs.rs/juniper/0.16.1/juniper/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> ourselves, <a href="https://docs.rs/juniper">Juniper</a> contains a simple and generic implementation called <a href="https://docs.rs/juniper_subscriptions/0.17.0/juniper_subscriptions/struct.Coordinator.html"><code>Coordinator</code></a>. The <code>subscribe</code> method returns a <a href="https://doc.rust-lang.org/stable/std/future/trait.Future.html"><code>Future</code></a> resolving into a <code>Result&lt;Connection, GraphQLError&gt;</code>, where <a href="https://docs.rs/juniper_subscriptions/0.17.0/juniper_subscriptions/struct.Connection.html"><code>Connection</code></a> is a <a href="https://docs.rs/futures/latest/futures/stream/trait.Stream.html"><code>Stream</code></a> of <a href="https://spec.graphql.org/October2021#sec-Values">values</a> returned by the operation, and a <a href="https://docs.rs/juniper/0.16.1/juniper/enum.GraphQLError.html"><code>GraphQLError</code></a> is the error when the <a href="https://spec.graphql.org/October2021#sec-Subscription">subscription operation</a> fails.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate futures;
+<p><a href="https://spec.graphql.org/October2021#sec-Subscription">GraphQL subscriptions</a> require a bit more resources than regular <a href="https://spec.graphql.org/October2021#sec-Query">queries</a> and provide a great vector for <a href="https://en.wikipedia.org/wiki/Denial-of-service_attack">DoS attacks</a>. This can can bring down a server easily if not handled correctly. The <a href="https://docs.rs/juniper/0.16.2/juniper/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code> trait</a> provides coordination logic to enable functionality like <a href="https://en.wikipedia.org/wiki/Denial-of-service_attack">DoS attacks</a> mitigation and resource limits.</p>
+<p>The <a href="https://docs.rs/juniper/0.16.2/juniper/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> contains the <a href="https://spec.graphql.org/October2021#sec-Schema">schema</a> and can keep track of opened connections, handle <a href="https://spec.graphql.org/October2021#sec-Subscription">subscription</a> start and end, and maintain a global ID for each <a href="https://spec.graphql.org/October2021#sec-Subscription">subscription</a>. Each time a connection is established, the <a href="https://docs.rs/juniper/0.16.2/juniper/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> spawns a [32], which handles a single connection, providing resolver logic for a client stream as well as reconnection and shutdown logic.</p>
+<p>While we can implement <a href="https://docs.rs/juniper/0.16.2/juniper/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> ourselves, <a href="https://docs.rs/juniper">Juniper</a> contains a simple and generic implementation called <a href="https://docs.rs/juniper_subscriptions/0.17.0/juniper_subscriptions/struct.Coordinator.html"><code>Coordinator</code></a>. The <code>subscribe</code> method returns a <a href="https://doc.rust-lang.org/stable/std/future/trait.Future.html"><code>Future</code></a> resolving into a <code>Result&lt;Connection, GraphQLError&gt;</code>, where <a href="https://docs.rs/juniper_subscriptions/0.17.0/juniper_subscriptions/struct.Connection.html"><code>Connection</code></a> is a <a href="https://docs.rs/futures/latest/futures/stream/trait.Stream.html"><code>Stream</code></a> of <a href="https://spec.graphql.org/October2021#sec-Values">values</a> returned by the operation, and a <a href="https://docs.rs/juniper/0.16.2/juniper/enum.GraphQLError.html"><code>GraphQLError</code></a> is the error when the <a href="https://spec.graphql.org/October2021#sec-Subscription">subscription operation</a> fails.</p>
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate futures;
 </span><span class="boring">extern crate juniper;
 </span><span class="boring">extern crate juniper_subscriptions;
 </span><span class="boring">extern crate serde_json;
@@ -272,7 +274,7 @@ impl Subscription {
 </span><span class="boring">    }
 </span><span class="boring">}
 </span><span class="boring">
-</span>type Schema = RootNode&lt;'static, Query, EmptyMutation&lt;Database&gt;, Subscription&gt;;
+</span>type Schema = RootNode&lt;Query, EmptyMutation&lt;Database&gt;, Subscription&gt;;
 
 fn schema() -&gt; Schema {
     Schema::new(Query, EmptyMutation::new(), Subscription)
@@ -345,6 +347,7 @@ async fn run_subscription() {
         <script src="../book.js"></script>
 
         <!-- Custom JS scripts -->
+
 
 
     </div>
