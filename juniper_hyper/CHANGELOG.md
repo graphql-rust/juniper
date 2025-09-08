@@ -6,16 +6,18 @@ All user visible changes to `juniper_hyper` crate will be documented in this fil
 
 
 
-## master
+## [0.10.0] · 2025-09-08
+[0.10.0]: /../../tree/juniper_hyper-v0.10.0/juniper_hyper
 
 ### BC Breaks
 
-- Bumped up [MSRV] to 1.85. ([#1263], [todo])
+- Switched to 0.17 version of [`juniper` crate].
+- Bumped up [MSRV] to 1.85. ([#1263], [1b1fc618])
 - Made `hyper::Request` in `graphql()` and `graphql_sync()` functions generic over `B: hyper::body::Body`. ([#1263], [#1102])
 
 [#1102]: /../../issues/1102
 [#1263]: /../../pull/1263
-[todo]: /../../commit/todo
+[1b1fc618]: /../../commit/1b1fc61879ffdd640d741e187dc20678bf7ab295
 
 
 
