@@ -1,6 +1,6 @@
 [package]
 name = "juniper_subscriptions"
-version = "0.17.0"
+version = "0.18.0"
 edition = "2024"
 rust-version = "1.85"
 description = "Juniper `SubscriptionCoordinator` and `SubscriptionConnection` implementations."

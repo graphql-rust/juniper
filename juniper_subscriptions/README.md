@@ -6,7 +6,7 @@
 [![CI](https://github.com/graphql-rust/juniper/actions/workflows/ci.yml/badge.svg?branch=master "CI")](https://github.com/graphql-rust/juniper/actions?query=workflow%3ACI+branch%3Amaster)
 [![Rust 1.85+](https://img.shields.io/badge/rustc-1.85+-lightgray.svg "Rust 1.85+")](https://blog.rust-lang.org/2025/02/20/Rust-1.85.0.html)
 
-- [Changelog](https://github.com/graphql-rust/juniper/blob/juniper_subscriptions-v0.17.0/juniper_subscriptions/CHANGELOG.md)
+- [Changelog](https://github.com/graphql-rust/juniper/blob/juniper_subscriptions-v0.18.0/juniper_subscriptions/CHANGELOG.md)
 
 This repository contains `SubscriptionCoordinator` and `SubscriptionConnection` implementations for 
 [`juniper`], a [GraphQL] library for Rust.
@@ -34,7 +34,7 @@ Check [`juniper_warp/examples/subscription.rs`][1] for example code of a working
 
 ## License
 
-This project is licensed under [BSD 2-Clause License](https://github.com/graphql-rust/juniper/blob/juniper_subscriptions-v0.17.0/juniper_subscriptions/LICENSE).
+This project is licensed under [BSD 2-Clause License](https://github.com/graphql-rust/juniper/blob/juniper_subscriptions-v0.18.0/juniper_subscriptions/LICENSE).
 
 
 
@@ -43,4 +43,4 @@ This project is licensed under [BSD 2-Clause License](https://github.com/graphql
 [`warp`]: https://docs.rs/warp
 [GraphQL]: http://graphql.org
 
-[1]: https://github.com/graphql-rust/juniper/blob/juniper_subscriptions-v0.17.0/juniper_warp/examples/subscription.rs
+[1]: https://github.com/graphql-rust/juniper/blob/juniper_subscriptions-v0.18.0/juniper_warp/examples/subscription.rs
