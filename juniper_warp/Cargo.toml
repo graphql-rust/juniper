@@ -34,7 +34,7 @@ subscriptions = [
 derive_more = { version = "2.0", features = ["display", "error"] }
 futures = { version = "0.3.22", optional = true }
 juniper = { version = "0.17", path = "../juniper", default-features = false }
-juniper_graphql_ws = { version = "0.4.0", path = "../juniper_graphql_ws", features = ["graphql-transport-ws", "graphql-ws"], optional = true }
+juniper_graphql_ws = { version = "0.5", path = "../juniper_graphql_ws", features = ["graphql-transport-ws", "graphql-ws"], optional = true }
 log = { version = "0.4", optional = true }
 serde_json = "1.0.18"
 tokio = { version = "1.0", features = ["rt"] }
