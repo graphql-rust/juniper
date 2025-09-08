@@ -5,9 +5,11 @@ use std::{
 
 use crate::{
     Span,
-    ast::{Document, Fragment, FragmentSpread, Operation, Type, VariableDefinition},
+    ast::{
+        BorrowedType, Document, Fragment, FragmentSpread, Operation, TypeModifier,
+        VariableDefinition,
+    },
     parser::Spanning,
-    schema::model::{AsDynType, DynType},
     validation::{ValidatorContext, Visitor},
     value::ScalarValue,
 };
@@ -29,7 +31,7 @@ pub fn factory<'a, S: fmt::Debug>() -> VariableInAllowedPosition<'a, S> {
 
 pub struct VariableInAllowedPosition<'a, S: fmt::Debug + 'a> {
     spreads: HashMap<Scope<'a>, HashSet<&'a str>>,
-    variable_usages: HashMap<Scope<'a>, Vec<(SpannedInput<'a, String>, DynType<'a>)>>,
+    variable_usages: HashMap<Scope<'a>, Vec<(SpannedInput<'a, String>, BorrowedType<'a>)>>,
     #[expect(clippy::type_complexity, reason = "readable enough")]
     variable_defs: HashMap<Scope<'a>, Vec<&'a (Spanning<&'a str>, VariableDefinition<'a, S>)>>,
     current_scope: Option<Scope<'a>>,
@@ -84,18 +86,15 @@ impl<'a, S: fmt::Debug> VariableInAllowedPosition<'a, S> {
                 if let Some(&(var_def_name, var_def)) =
                     var_defs.iter().find(|&&(n, _)| n.item == var_name.item)
                 {
-                    let expected_type = match (&var_def.default_value, &var_def.var_type.item) {
-                        (&Some(_), Type::List(inner, expected_size)) => {
-                            Type::NonNullList(inner.clone(), *expected_size)
-                        }
-                        (&Some(_), Type::Named(inner)) => Type::NonNullNamed(*inner),
-                        (_, ty) => ty.clone(),
-                    };
+                    let expected_type =
+                        match (&var_def.default_value, var_def.var_type.item.modifier()) {
+                            (&Some(_), Some(TypeModifier::List(..)) | None) => {
+                                var_def.var_type.item.clone().wrap_non_null()
+                            }
+                            _ => var_def.var_type.item.clone(),
+                        };
 
-                    if !ctx
-                        .schema
-                        .is_subtype(&expected_type.as_dyn_type(), var_type)
-                    {
+                    if !ctx.schema.is_subtype(&expected_type, var_type) {
                         ctx.report_error(
                             &error_message(var_name.item, expected_type, var_type),
                             &[var_def_name.span.start, var_name.span.start],

@@ -1,79 +1,290 @@
-use std::{borrow::Cow, fmt, hash::Hash, slice, vec};
+use std::{borrow::Cow, fmt, hash::Hash, mem, slice, vec};
 
 use arcstr::ArcStr;
 use compact_str::CompactString;
-
 use indexmap::IndexMap;
 
+#[cfg(doc)]
+use self::TypeModifier::{List, NonNull};
 use crate::{
     executor::Variables,
     parser::Spanning,
     value::{DefaultScalarValue, Scalar, ScalarValue, ToScalarValue},
 };
 
-/// Type literal in a syntax tree.
-///
-/// This enum carries no semantic information and might refer to types that do not exist.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Type<N = ArcStr> {
-    /// `null`able named type, e.g. `String`.
-    Named(N),
+/// Possible modifiers in a [`Type`] literal.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum TypeModifier {
+    /// Non-`null` type (e.g. `<type>!`).
+    NonNull,
 
-    /// `null`able list type, e.g. `[String]`.
-    ///
-    /// The list itself is `null`able, the containing [`Type`] might be non-`null`.
-    List(Box<Type<N>>, Option<usize>),
-
-    /// Non-`null` named type, e.g. `String!`.
-    NonNullNamed(N),
-
-    /// Non-`null` list type, e.g. `[String]!`.
-    ///
-    /// The list itself is non-`null`, the containing [`Type`] might be `null`able.
-    NonNullList(Box<Type<N>>, Option<usize>),
+    /// List of types (e.g. `[<type>]`).
+    List(Option<usize>),
 }
 
-impl<N: fmt::Display> fmt::Display for Type<N> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+/// Owned slice of [`TypeModifier`]s.
+#[derive(Clone, Debug)]
+pub enum TypeModifiers {
+    /// [`TypeModifier`]s known statically.
+    Static(&'static [TypeModifier]),
+
+    /// [`TypeModifier`]s built dynamically.
+    Dynamic(Box<[TypeModifier]>),
+}
+
+impl Default for TypeModifiers {
+    fn default() -> Self {
+        Self::Static(&[])
+    }
+}
+
+impl AsRef<[TypeModifier]> for TypeModifiers {
+    fn as_ref(&self) -> &[TypeModifier] {
         match self {
-            Self::Named(n) => write!(f, "{n}"),
-            Self::NonNullNamed(n) => write!(f, "{n}!"),
-            Self::List(t, _) => write!(f, "[{t}]"),
-            Self::NonNullList(t, _) => write!(f, "[{t}]!"),
+            Self::Static(s) => s,
+            Self::Dynamic(bs) => bs,
         }
+    }
+}
+
+impl Extend<TypeModifier> for TypeModifiers {
+    fn extend<T: IntoIterator<Item = TypeModifier>>(&mut self, iter: T) {
+        for modifier in iter {
+            self.wrap(modifier);
+        }
+    }
+}
+
+impl TypeModifiers {
+    /// Wraps these [`TypeModifiers`] into the provided [`TypeModifier`].
+    fn wrap(&mut self, modifier: TypeModifier) {
+        *self = match (mem::take(self), modifier) {
+            (Self::Static(&[]), TypeModifier::NonNull) => Self::Static(&[TypeModifier::NonNull]),
+            (Self::Static(&[]), TypeModifier::List(None)) => {
+                Self::Static(&[TypeModifier::List(None)])
+            }
+            (Self::Static(&[TypeModifier::NonNull]), TypeModifier::List(None)) => {
+                Self::Static(&[TypeModifier::NonNull, TypeModifier::List(None)])
+            }
+            (Self::Static(s), modifier) => {
+                let mut vec: Vec<_> = s.to_vec();
+                vec.push(modifier);
+                Self::Dynamic(vec.into_boxed_slice())
+            }
+            (Self::Dynamic(s), modifier) => {
+                let mut vec = s.into_vec();
+                vec.push(modifier);
+                Self::Dynamic(vec.into_boxed_slice())
+            }
+        };
+    }
+
+    /// Removes the last [`TypeModifier`] from these [`TypeModifiers`], if there is any.
+    fn pop(&mut self) {
+        *self = match mem::take(self) {
+            Self::Static(s) => Self::Static(&s[..s.len() - 1]),
+            Self::Dynamic(s) if s.len() == 1 => Self::Static(&[]),
+            Self::Dynamic(s) => {
+                let mut vec = s.into_vec();
+                vec.pop();
+                Self::Dynamic(vec.into_boxed_slice())
+            }
+        }
+    }
+}
+
+/// Type literal in a syntax tree.
+///
+/// Carries no semantic information and might refer to types that don't exist.
+#[derive(Clone, Copy, Debug)]
+pub struct Type<N = ArcStr, M = TypeModifiers> {
+    /// Name of this [`Type`].
+    name: N,
+
+    /// Modifiers of this [`Type`].
+    ///
+    /// The first one is the innermost one.
+    modifiers: M,
+}
+
+impl<N, M> Eq for Type<N, M> where Self: PartialEq {}
+
+impl<N1, N2, M1, M2> PartialEq<Type<N2, M2>> for Type<N1, M1>
+where
+    N1: AsRef<str>,
+    N2: AsRef<str>,
+    M1: AsRef<[TypeModifier]>,
+    M2: AsRef<[TypeModifier]>,
+{
+    fn eq(&self, other: &Type<N2, M2>) -> bool {
+        self.name.as_ref() == other.name.as_ref()
+            && self.modifiers.as_ref() == other.modifiers.as_ref()
+    }
+}
+
+impl<N, M> fmt::Display for Type<N, M>
+where
+    N: AsRef<str>,
+    M: AsRef<[TypeModifier]>,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.modifier() {
+            Some(TypeModifier::NonNull) => write!(f, "{}!", self.borrow_inner()),
+            Some(TypeModifier::List(..)) => write!(f, "[{}]", self.borrow_inner()),
+            None => write!(f, "{}", self.name.as_ref()),
+        }
+    }
+}
+
+impl<'a, N, M> From<&'a Type<N, M>> for BorrowedType<'a>
+where
+    N: AsRef<str>,
+    M: AsRef<[TypeModifier]>,
+{
+    fn from(value: &'a Type<N, M>) -> Self {
+        Self {
+            name: value.name.as_ref(),
+            modifiers: value.modifiers.as_ref(),
+        }
+    }
+}
+
+impl<N: AsRef<str>, M: AsRef<[TypeModifier]>> Type<N, M> {
+    /// Borrows the inner [`Type`] of this modified [`Type`], removing its topmost [`TypeModifier`].
+    ///
+    /// # Panics
+    ///
+    /// If this [`Type`] has no [`TypeModifier`]s.
+    pub(crate) fn borrow_inner(&self) -> BorrowedType<'_> {
+        let modifiers = self.modifiers.as_ref();
+        match modifiers.len() {
+            0 => panic!("no inner `Type` available"),
+            n => Type {
+                name: self.name.as_ref(),
+                modifiers: &modifiers[..n - 1],
+            },
+        }
+    }
+
+    /// Returns the name of this [`Type`].
+    ///
+    /// [`List`]s will return [`None`].
+    #[must_use]
+    pub fn name(&self) -> Option<&str> {
+        (!self.is_list()).then(|| self.name.as_ref())
+    }
+
+    /// Returns the innermost name of this [`Type`] by unpacking [`List`]s.
+    ///
+    /// All [`Type`] literals contain exactly one name.
+    #[must_use]
+    pub fn innermost_name(&self) -> &str {
+        self.name.as_ref()
+    }
+
+    /// Returns the topmost [`TypeModifier`] of this [`Type`], if any.
+    #[must_use]
+    pub fn modifier(&self) -> Option<&TypeModifier> {
+        self.modifiers().last()
+    }
+
+    /// Returns [`TypeModifier`]s of this [`Type`], if any.
+    ///
+    /// The first one is the innermost one.
+    #[must_use]
+    pub fn modifiers(&self) -> &[TypeModifier] {
+        self.modifiers.as_ref()
+    }
+
+    /// Indicates whether this [`Type`] is [`NonNull`].
+    #[must_use]
+    pub fn is_non_null(&self) -> bool {
+        match self.modifiers.as_ref().last() {
+            Some(TypeModifier::NonNull) => true,
+            Some(TypeModifier::List(..)) | None => false,
+        }
+    }
+
+    /// Indicates whether this [`Type`] represents a [`List`] (either `null`able or [`NonNull`]).
+    #[must_use]
+    pub fn is_list(&self) -> bool {
+        match self.modifiers.as_ref().last() {
+            Some(TypeModifier::NonNull) => self.borrow_inner().is_non_null(),
+            Some(TypeModifier::List(..)) => true,
+            None => false,
+        }
+    }
+}
+
+impl<N, M: Default> Type<N, M> {
+    /// Creates a new `null`able [`Type`] literal from the provided `name`.
+    #[must_use]
+    pub fn nullable(name: impl Into<N>) -> Self {
+        Self {
+            name: name.into(),
+            modifiers: M::default(),
+        }
+    }
+}
+
+impl<N, M: Extend<TypeModifier>> Type<N, M> {
+    /// Wraps this [`Type`] into the provided [`TypeModifier`].
+    fn wrap(mut self, modifier: TypeModifier) -> Self {
+        self.modifiers.extend([modifier]);
+        self
+    }
+
+    /// Wraps this [`Type`] into a [`List`] with the provided `expected_size`, if any.
+    #[must_use]
+    pub fn wrap_list(self, expected_size: Option<usize>) -> Self {
+        self.wrap(TypeModifier::List(expected_size))
+    }
+
+    /// Wraps this [`Type`] as a [`NonNull`] one.
+    #[must_use]
+    pub fn wrap_non_null(self) -> Self {
+        self.wrap(TypeModifier::NonNull)
     }
 }
 
 impl<N: AsRef<str>> Type<N> {
-    /// Returns the name of this named [`Type`].
-    ///
-    /// Only applies to named [`Type`]s. Lists will return [`None`].
-    #[must_use]
-    pub fn name(&self) -> Option<&str> {
-        match self {
-            Self::Named(n) | Self::NonNullNamed(n) => Some(n.as_ref()),
-            Self::List(..) | Self::NonNullList(..) => None,
+    /// Strips this [`Type`] from [`NonNull`], returning it as a `null`able one.
+    pub(crate) fn into_nullable(mut self) -> Self {
+        if self.is_non_null() {
+            self.modifiers.pop();
+        }
+        self
+    }
+}
+
+/// Borrowed variant of a [`Type`] literal.
+pub(crate) type BorrowedType<'a> = Type<&'a str, &'a [TypeModifier]>;
+
+impl<'a> BorrowedType<'a> {
+    /// Creates a [`NonNull`] [`BorrowedType`] literal from the provided `name`.
+    pub(crate) fn non_null(name: &'a str) -> Self {
+        Self {
+            name,
+            modifiers: &[TypeModifier::NonNull],
         }
     }
 
-    /// Returns the innermost name of this [`Type`] by unpacking lists.
-    ///
-    /// All [`Type`] literals contain exactly one named type.
-    #[must_use]
-    pub fn innermost_name(&self) -> &str {
-        match self {
-            Self::Named(n) | Self::NonNullNamed(n) => n.as_ref(),
-            Self::List(l, ..) | Self::NonNullList(l, ..) => l.innermost_name(),
+    /// Borrows the inner [`Type`] of this [`List`] [`Type`], if it represents one.
+    pub(crate) fn borrow_list_inner(&self) -> Option<Self> {
+        let mut out = None;
+        for (n, m) in self.modifiers.iter().enumerate().rev() {
+            match m {
+                TypeModifier::NonNull => {}
+                TypeModifier::List(..) => {
+                    out = Some(Self {
+                        name: self.name,
+                        modifiers: &self.modifiers[..n],
+                    });
+                    break;
+                }
+            }
         }
-    }
-
-    /// Indicates whether this [`Type`] can only represent non-`null` values.
-    #[must_use]
-    pub fn is_non_null(&self) -> bool {
-        match self {
-            Self::NonNullList(..) | Self::NonNullNamed(..) => true,
-            Self::List(..) | Self::Named(..) => false,
-        }
+        out
     }
 }
 

@@ -688,18 +688,12 @@ impl<S> MetaType<S> {
             | Self::Interface(InterfaceMeta { name, .. })
             | Self::Object(ObjectMeta { name, .. })
             | Self::Scalar(ScalarMeta { name, .. })
-            | Self::Union(UnionMeta { name, .. }) => Type::NonNullNamed(name.clone()),
+            | Self::Union(UnionMeta { name, .. }) => Type::nullable(name.clone()).wrap_non_null(),
             Self::List(ListMeta {
                 of_type,
                 expected_size,
-            }) => Type::NonNullList(Box::new(of_type.clone()), *expected_size),
-            Self::Nullable(NullableMeta { of_type }) => match of_type {
-                Type::NonNullNamed(inner) => Type::Named(inner.clone()),
-                Type::NonNullList(inner, expected_size) => {
-                    Type::List(inner.clone(), *expected_size)
-                }
-                ty @ (Type::List(..) | Type::Named(..)) => ty.clone(),
-            },
+            }) => of_type.clone().wrap_list(*expected_size).wrap_non_null(),
+            Self::Nullable(NullableMeta { of_type }) => of_type.clone().into_nullable(),
             Self::Placeholder(PlaceholderMeta { of_type }) => of_type.clone(),
         }
     }

@@ -514,13 +514,9 @@ pub fn parse_type<'a>(parser: &mut Parser<'a>) -> ParseResult<Type<&'a str>> {
     {
         let inner_type = parse_type(parser)?;
         let end_pos = parser.expect(&Token::BracketClose)?.span.end;
-        Spanning::start_end(
-            &start_span.start,
-            &end_pos,
-            Type::List(Box::new(inner_type.item), None),
-        )
+        Spanning::start_end(&start_span.start, &end_pos, inner_type.item.wrap_list(None))
     } else {
-        parser.expect_name()?.map(Type::Named)
+        parser.expect_name()?.map(Type::nullable)
     };
 
     Ok(match *parser.peek() {
@@ -534,15 +530,13 @@ pub fn parse_type<'a>(parser: &mut Parser<'a>) -> ParseResult<Type<&'a str>> {
 
 fn wrap_non_null<'a>(
     parser: &mut Parser<'a>,
-    inner: Spanning<Type<&'a str>>,
+    mut inner: Spanning<Type<&'a str>>,
 ) -> ParseResult<Type<&'a str>> {
     let end_pos = &parser.expect(&Token::ExclamationMark)?.span.end;
 
-    let wrapped = match inner.item {
-        Type::Named(name) => Type::NonNullNamed(name),
-        Type::List(l, expected_size) => Type::NonNullList(l, expected_size),
-        ty @ (Type::NonNullList(..) | Type::NonNullNamed(..)) => ty,
-    };
+    if !inner.item.is_non_null() {
+        inner.item = inner.item.wrap_non_null();
+    }
 
-    Ok(Spanning::start_end(&inner.span.start, end_pos, wrapped))
+    Ok(Spanning::start_end(&inner.span.start, end_pos, inner.item))
 }
