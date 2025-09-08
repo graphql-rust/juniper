@@ -1,6 +1,6 @@
 [package]
 name = "juniper_rocket"
-version = "0.9.0"
+version = "0.10.0"
 edition = "2024"
 rust-version = "1.85"
 description = "`juniper` GraphQL integration with `rocket`."
