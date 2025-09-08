@@ -186,7 +186,7 @@
 <li>Either a <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a>, or a <a href="https://doc.rust-lang.org/reference/items/traits.html#traits">trait</a> (in case <a href="https://spec.graphql.org/October2021#sec-Language.Fields">fields</a> have <a href="https://spec.graphql.org/October2021#sec-Language.Arguments">arguments</a>), which acts only as a blueprint describing the required list of <a href="https://spec.graphql.org/October2021#sec-Language.Fields">fields</a>, and is not used in runtime at all.</li>
 <li>An auto-generated <a href="https://doc.rust-lang.org/reference/items/enumerations.html#enumerations">enum</a>, representing a dispatchable value-type for the <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interfaces</a>, which may be referred and returned by other <a href="https://spec.graphql.org/October2021#sec-Language.Fields">fields</a>.</li>
 </ol>
-<p>This may be done by using either the <a href="https://docs.rs/juniper/0.16.2/juniper/attr.graphql_interface.html"><code>#[graphql_interface]</code> attribute</a> or the <a href="https://docs.rs/juniper/0.16.2/juniper/derive.GraphQLInterface.html"><code>#[derive(GraphQLInterface)]</code></a>:</p>
+<p>This may be done by using either the <a href="https://docs.rs/juniper/0.17.0/juniper/attr.graphql_interface.html"><code>#[graphql_interface]</code> attribute</a> or the <a href="https://docs.rs/juniper/0.17.0/juniper/derive.GraphQLInterface.html"><code>#[derive(GraphQLInterface)]</code></a>:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{GraphQLInterface, GraphQLObject, graphql_interface};
 </span><span class="boring">
@@ -528,7 +528,7 @@ trait Person {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
-<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.16.2/juniper/attr.graphql_interface.html"><code>#[graphql_interface]</code></a> attribute.</p>
+<p><strong>TIP</strong>: See more available features in the API docs of the <a href="https://docs.rs/juniper/0.17.0/juniper/attr.graphql_interface.html"><code>#[graphql_interface]</code></a> attribute.</p>
 </blockquote>
 
                     </main>

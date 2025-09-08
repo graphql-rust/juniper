@@ -197,7 +197,7 @@ __type(name: String!): __Type
 <blockquote>
 <p>Disabling introspection in production is a widely debated topic, but we believe it’s one of the first things you can do to harden your GraphQL API in production.</p>
 </blockquote>
-<p><a href="https://www.apollographql.com/blog/why-you-should-disable-graphql-introspection-in-production">Some security requirements and considerations</a> may mandate to disable <a href="https://spec.graphql.org/October2021#sec-Schema-Introspection">GraphQL schema introspection</a> in production environments. In <a href="https://docs.rs/juniper">Juniper</a> this can be achieved by using the <a href="https://docs.rs/juniper/0.16.2/juniper/struct.RootNode.html#method.disable_introspection"><code>RootNode::disable_introspection()</code></a> method:</p>
+<p><a href="https://www.apollographql.com/blog/why-you-should-disable-graphql-introspection-in-production">Some security requirements and considerations</a> may mandate to disable <a href="https://spec.graphql.org/October2021#sec-Schema-Introspection">GraphQL schema introspection</a> in production environments. In <a href="https://docs.rs/juniper">Juniper</a> this can be achieved by using the <a href="https://docs.rs/juniper/0.17.0/juniper/struct.RootNode.html#method.disable_introspection"><code>RootNode::disable_introspection()</code></a> method:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
 </span><span class="boring">    EmptyMutation, EmptySubscription, GraphQLError, RootNode,
