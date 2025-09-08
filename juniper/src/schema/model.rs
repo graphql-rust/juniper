@@ -1,4 +1,4 @@
-use std::{fmt, ptr};
+use std::ptr;
 
 use arcstr::ArcStr;
 use derive_more::with_trait::Display;
