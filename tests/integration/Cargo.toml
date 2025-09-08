@@ -2,10 +2,12 @@
 name = "juniper_integration_tests"
 version = "0.0.0"
 edition = "2024"
+rust-version = "1.88"
 publish = false
 
 [dev-dependencies]
 chrono = { version = "0.4", default-features = false }
+derive_more = { version = "2.0", features = ["display", "from", "try_into"] }
 futures = "0.3"
 itertools = "0.14"
 juniper = { path = "../../juniper", features = ["chrono"] }
@@ -13,6 +15,7 @@ juniper_subscriptions = { path = "../../juniper_subscriptions" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1.0", features = ["rt", "macros", "time"] }
+smartstring = "1.0"
 
 [lints.clippy]
 allow_attributes = "warn"

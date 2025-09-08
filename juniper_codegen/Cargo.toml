@@ -22,15 +22,17 @@ exclude = ["/release.toml"]
 proc-macro = true
 
 [dependencies]
+derive_more = { version = "2.0", features = ["as_ref", "deref", "display"] }
 proc-macro2 = "1.0.4"
 quote = "1.0.9"
 syn = { version = "2.0", features = ["extra-traits", "full", "visit", "visit-mut"] }
 url = "2.0"
 
 [dev-dependencies]
-derive_more = { version = "2.0", features = ["from"] }
+derive_more = { version = "2.0", features = ["from", "try_into"] }
 futures = "0.3.22"
-juniper = { path = "../juniper" }
+jiff = { version = "0.2", features = ["std"], default-features = false }
+juniper = { path = "../juniper", features = ["jiff"] }
 serde = "1.0.122"
 
 [lints.clippy]

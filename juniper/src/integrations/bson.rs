@@ -13,7 +13,7 @@
 //! [s1]: https://graphql-scalars.dev/docs/scalars/object-id
 //! [s4]: https://graphql-scalars.dev/docs/scalars/date-time
 
-use crate::{InputValue, ScalarValue, Value, graphql_scalar};
+use crate::graphql_scalar;
 
 // TODO: Try remove on upgrade of `bson` crate.
 mod for_minimal_versions_check_only {
@@ -29,7 +29,8 @@ mod for_minimal_versions_check_only {
 /// [0]: https://www.mongodb.com/docs/manual/reference/bson-types#objectid
 /// [1]: https://graphql-scalars.dev/docs/scalars/object-id
 /// [2]: https://docs.rs/bson/*/bson/oid/struct.ObjectId.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     name = "ObjectID",
     with = object_id,
     parse_token(String),
@@ -38,18 +39,14 @@ mod for_minimal_versions_check_only {
 type ObjectId = bson::oid::ObjectId;
 
 mod object_id {
-    use super::*;
+    use super::ObjectId;
 
-    pub(super) fn to_output<S: ScalarValue>(v: &ObjectId) -> Value<S> {
-        Value::scalar(v.to_hex())
+    pub(super) fn to_output(v: &ObjectId) -> String {
+        v.to_hex()
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<ObjectId, String> {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| {
-                ObjectId::parse_str(s).map_err(|e| format!("Failed to parse `ObjectID`: {e}"))
-            })
+    pub(super) fn from_input(s: &str) -> Result<ObjectId, Box<str>> {
+        ObjectId::parse_str(s).map_err(|e| format!("Failed to parse `ObjectID`: {e}").into())
     }
 }
 
@@ -66,7 +63,8 @@ mod object_id {
 /// [1]: https://graphql-scalars.dev/docs/scalars/date-time
 /// [2]: https://docs.rs/bson/*/bson/struct.DateTime.html
 /// [3]: https://www.mongodb.com/docs/manual/reference/bson-types#date
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = date_time,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/date-time",
@@ -74,22 +72,16 @@ mod object_id {
 type DateTime = bson::DateTime;
 
 mod date_time {
-    use super::*;
+    use super::DateTime;
 
-    pub(super) fn to_output<S: ScalarValue>(v: &DateTime) -> Value<S> {
-        Value::scalar(
-            (*v).try_to_rfc3339_string()
-                .unwrap_or_else(|e| panic!("failed to format `DateTime` as RFC 3339: {e}")),
-        )
+    pub(super) fn to_output(v: &DateTime) -> String {
+        (*v).try_to_rfc3339_string()
+            .unwrap_or_else(|e| panic!("failed to format `DateTime` as RFC 3339: {e}"))
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<DateTime, String> {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| {
-                DateTime::parse_rfc3339_str(s)
-                    .map_err(|e| format!("Failed to parse `DateTime`: {e}"))
-            })
+    pub(super) fn from_input(s: &str) -> Result<DateTime, Box<str>> {
+        DateTime::parse_rfc3339_str(s)
+            .map_err(|e| format!("Failed to parse `DateTime`: {e}").into())
     }
 }
 

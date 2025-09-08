@@ -3,14 +3,19 @@ mod scalar;
 
 use std::{any::TypeId, borrow::Cow, fmt, mem};
 
-use crate::{
-    ast::{InputValue, ToInputValue},
-    parser::Spanning,
-};
+use arcstr::ArcStr;
+use compact_str::CompactString;
 
 pub use self::{
     object::Object,
-    scalar::{DefaultScalarValue, ParseScalarResult, ParseScalarValue, ScalarValue},
+    scalar::{
+        AnyExt, DefaultScalarValue, FromScalarValue, ParseScalarResult, ParseScalarValue, Scalar,
+        ScalarValue, ToScalarValue, TryToPrimitive, WrongInputScalarTypeError,
+    },
+};
+use crate::{
+    ast::{InputValue, ToInputValue},
+    parser::Spanning,
 };
 
 /// Serializable value returned from query and field execution.
@@ -49,11 +54,8 @@ impl<S> Value<S> {
         Self::Object(o)
     }
 
-    /// Construct a scalar value
-    pub fn scalar<T>(s: T) -> Self
-    where
-        S: From<T>,
-    {
+    /// Construct a scalar value.
+    pub fn scalar<T: Into<S>>(s: T) -> Self {
         Self::Scalar(s.into())
     }
 
@@ -62,28 +64,6 @@ impl<S> Value<S> {
     /// Does this value represent null?
     pub fn is_null(&self) -> bool {
         matches!(*self, Self::Null)
-    }
-
-    /// View the underlying scalar value if present
-    pub fn as_scalar_value<'a, T>(&'a self) -> Option<&'a T>
-    where
-        Option<&'a T>: From<&'a S>,
-    {
-        match self {
-            Self::Scalar(s) => s.into(),
-            _ => None,
-        }
-    }
-
-    /// View the underlying float value, if present.
-    pub fn as_float_value(&self) -> Option<f64>
-    where
-        S: ScalarValue,
-    {
-        match self {
-            Self::Scalar(s) => s.as_float(),
-            _ => None,
-        }
     }
 
     /// View the underlying object value, if present.
@@ -128,27 +108,17 @@ impl<S> Value<S> {
         }
     }
 
-    /// View the underlying string value, if present.
-    pub fn as_string_value<'a>(&'a self) -> Option<&'a str>
-    where
-        Option<&'a String>: From<&'a S>,
-    {
-        self.as_scalar_value::<String>().map(String::as_str)
-    }
-
     /// Maps the [`ScalarValue`] type of this [`Value`] into the specified one.
-    pub fn map_scalar_value<Into>(self) -> Value<Into>
+    pub fn map_scalar_value<T>(self) -> Value<T>
     where
         S: ScalarValue,
-        Into: ScalarValue,
+        T: ScalarValue,
     {
-        if TypeId::of::<Into>() == TypeId::of::<S>() {
-            // SAFETY: This is safe, because we're transmuting the value into
-            //         itself, so no invariants may change and we're just
-            //         satisfying the type checker.
-            //         As `mem::transmute_copy` creates a copy of data, we need
-            //         `mem::ManuallyDrop` here to omit double-free when
-            //         `S: Drop`.
+        if TypeId::of::<T>() == TypeId::of::<S>() {
+            // SAFETY: This is safe, because we're transmuting the value into itself, so no
+            //         invariants may change, and we're just satisfying the type checker.
+            //         As `mem::transmute_copy` creates a copy of the data, we need the
+            //         `mem::ManuallyDrop` here to omit double-free when `S: Drop`.
             let val = mem::ManuallyDrop::new(self);
             unsafe { mem::transmute_copy(&*val) }
         } else {
@@ -194,13 +164,7 @@ impl<S: ScalarValue> fmt::Display for Value<S> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Null => write!(f, "null"),
-            Self::Scalar(s) => {
-                if let Some(string) = s.as_string() {
-                    write!(f, "\"{string}\"")
-                } else {
-                    write!(f, "{s}")
-                }
-            }
+            Self::Scalar(s) => fmt::Display::fmt(<&Scalar<_>>::from(s), f),
             Self::List(list) => {
                 write!(f, "[")?;
                 for (idx, item) in list.iter().enumerate() {
@@ -230,51 +194,115 @@ impl<S: ScalarValue> fmt::Display for Value<S> {
     }
 }
 
-impl<S, T> From<Option<T>> for Value<S>
+/// Conversion into a [`Value`].
+///
+/// This trait exists to work around [orphan rules] and allow to specify custom efficient
+/// conversions whenever some custom [`ScalarValue`] is involved
+/// (`impl IntoValue<CustomScalarValue> for ForeignType` would work, while
+/// `impl From<ForeignType> for Value<CustomScalarValue>` wound not).
+///
+/// This trait is used inside [`graphql_value!`] macro expansion and implementing it allows to
+/// put values of the implementor type there.
+///
+/// [`graphql_value!`]: crate::graphql_value
+/// [orphan rules]: https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules
+pub trait IntoValue<S> {
+    /// Converts this value into a [`Value`].
+    #[must_use]
+    fn into_value(self) -> Value<S>;
+}
+
+impl<S> IntoValue<S> for Value<S> {
+    fn into_value(self) -> Self {
+        self
+    }
+}
+
+impl<T, S> IntoValue<S> for Option<T>
 where
-    Self: From<T>,
+    T: IntoValue<S>,
 {
-    fn from(v: Option<T>) -> Self {
-        match v {
-            Some(v) => v.into(),
-            None => Self::Null,
+    fn into_value(self) -> Value<S> {
+        match self {
+            Some(v) => v.into_value(),
+            None => Value::Null,
         }
     }
 }
 
-impl<'a, S: From<String>> From<&'a str> for Value<S> {
-    fn from(s: &'a str) -> Self {
-        Self::scalar(s.to_owned())
+impl<T, S> IntoValue<S> for &T
+where
+    T: ToScalarValue<S> + ?Sized,
+{
+    fn into_value(self) -> Value<S> {
+        Value::Scalar(self.to_scalar_value())
     }
 }
 
-impl<'a, S: From<String>> From<Cow<'a, str>> for Value<S> {
-    fn from(s: Cow<'a, str>) -> Self {
-        Self::scalar(s.into_owned())
+impl<S> IntoValue<S> for String
+where
+    String: Into<S>,
+{
+    fn into_value(self) -> Value<S> {
+        Value::Scalar(self.into())
     }
 }
 
-impl<S: From<String>> From<String> for Value<S> {
-    fn from(s: String) -> Self {
-        Self::scalar(s)
+impl<S> IntoValue<S> for Cow<'_, str>
+where
+    for<'a> &'a str: IntoValue<S>,
+    String: IntoValue<S>,
+{
+    fn into_value(self) -> Value<S> {
+        match self {
+            Cow::Borrowed(s) => s.into_value(),
+            Cow::Owned(s) => s.into_value(),
+        }
     }
 }
 
-impl<S: From<i32>> From<i32> for Value<S> {
-    fn from(i: i32) -> Self {
-        Self::scalar(i)
+impl<S: ScalarValue> IntoValue<S> for ArcStr
+where
+    ArcStr: ToScalarValue<S>,
+{
+    fn into_value(self) -> Value<S> {
+        Value::Scalar(self.to_scalar_value())
     }
 }
 
-impl<S: From<f64>> From<f64> for Value<S> {
-    fn from(f: f64) -> Self {
-        Self::scalar(f)
+impl<S: ScalarValue> IntoValue<S> for CompactString
+where
+    CompactString: ToScalarValue<S>,
+{
+    fn into_value(self) -> Value<S> {
+        Value::Scalar(self.to_scalar_value())
     }
 }
 
-impl<S: From<bool>> From<bool> for Value<S> {
-    fn from(b: bool) -> Self {
-        Self::scalar(b)
+impl<S> IntoValue<S> for i32
+where
+    i32: ToScalarValue<S>,
+{
+    fn into_value(self) -> Value<S> {
+        Value::Scalar(self.to_scalar_value())
+    }
+}
+
+impl<S> IntoValue<S> for f64
+where
+    f64: ToScalarValue<S>,
+{
+    fn into_value(self) -> Value<S> {
+        Value::Scalar(self.to_scalar_value())
+    }
+}
+
+impl<S> IntoValue<S> for bool
+where
+    bool: ToScalarValue<S>,
+{
+    fn into_value(self) -> Value<S> {
+        Value::Scalar(self.to_scalar_value())
     }
 }
 

@@ -3,6 +3,8 @@
 //! [`Handler`]: axum::handler::Handler
 //! [`starwars::schema`]: juniper::tests::fixtures::starwars::schema
 
+#![expect(unused_crate_dependencies, reason = "example")]
+
 use std::{net::SocketAddr, sync::Arc};
 
 use axum::{
@@ -31,7 +33,7 @@ async fn homepage() -> Html<&'static str> {
         .into()
 }
 
-pub async fn custom_subscriptions(
+async fn custom_subscriptions(
     Extension(schema): Extension<Arc<Schema>>,
     Extension(database): Extension<Database>,
     ws: WebSocketUpgrade,

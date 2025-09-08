@@ -352,12 +352,7 @@ impl<'de> Deserialize<'de> for DefaultScalarValue {
 mod tests {
     use serde_json::{from_str, to_string};
 
-    use crate::{
-        FieldError, Value,
-        ast::InputValue,
-        graphql_input_value,
-        value::{DefaultScalarValue, Object},
-    };
+    use crate::{DefaultScalarValue, FieldError, InputValue, graphql_input_value, graphql_value};
 
     use super::{ExecutionError, GraphQLError};
 
@@ -392,13 +387,10 @@ mod tests {
 
     #[test]
     fn error_extensions() {
-        let mut obj: Object<DefaultScalarValue> = Object::with_capacity(1);
-        obj.add_field("foo", Value::scalar("bar"));
         assert_eq!(
-            to_string(&ExecutionError::at_origin(FieldError::new(
-                "foo error",
-                Value::Object(obj),
-            )))
+            to_string(&ExecutionError::at_origin(
+                FieldError::<DefaultScalarValue>::new("foo error", graphql_value!({"foo": "bar"})),
+            ))
             .unwrap(),
             r#"{"message":"foo error","locations":[{"line":1,"column":1}],"path":[],"extensions":{"foo":"bar"}}"#,
         );

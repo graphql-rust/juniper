@@ -21,11 +21,11 @@ jobs:
   ################
 
   pr:
-    if: ${{ github.event_name == 'pull_request' }}
+    if: ${{ always() && github.event_name == 'pull_request' }}
     needs:
       - bench
-      - codespell
       - clippy
+      - codespell
       - feature
       - msrv
       - release-check
@@ -35,7 +35,16 @@ jobs:
       - wasm
     runs-on: ubuntu-latest
     steps:
-      - run: true
+      - run: ${{ needs.bench.result == 'success'
+              && needs.clippy.result == 'success'
+              && needs.codespell.result == 'success'
+              && needs.feature.result == 'success'
+              && needs.msrv.result == 'success'
+              && needs.release-check.result == 'success'
+              && needs.rustfmt.result == 'success'
+              && needs.test.result == 'success'
+              && needs.test-book.result == 'success'
+              && needs.wasm.result == 'success' }}
 
 
 
@@ -47,7 +56,7 @@ jobs:
   clippy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
@@ -59,7 +68,7 @@ jobs:
     name: codespell (Book)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: codespell-project/actions-codespell@v2
         with:
           path: book/
@@ -67,7 +76,7 @@ jobs:
   rustfmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: nightly
@@ -85,7 +94,7 @@ jobs:
   bench:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
@@ -123,7 +132,7 @@ jobs:
           - { feature: subscriptions, crate: juniper_warp }
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: nightly
@@ -162,7 +171,7 @@ jobs:
           - windows
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: nightly
@@ -179,7 +188,7 @@ jobs:
     if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
@@ -228,7 +237,7 @@ jobs:
             os: windows
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ matrix.toolchain }}
@@ -240,6 +249,8 @@ jobs:
       - run: make test.cargo crate=${{ matrix.crate }}
                   careful=${{ (matrix.toolchain == 'nightly' && 'yes')
                            ||                                   'no' }}
+        env:
+          RUSTFLAGS: -D warnings
 
   test-book:
     name: test (Book)
@@ -256,7 +267,7 @@ jobs:
           - nightly
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ matrix.toolchain }}
@@ -280,14 +291,14 @@ jobs:
           - nightly
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ matrix.toolchain }}
           target: ${{ matrix.target }}
 
-      - name: Switch Cargo workspace to `resolver = "2"`
-        run: sed -i 's/resolver = "1"/resolver = "2"/' Cargo.toml
+      - name: Switch Cargo workspace to `resolver = "3"`
+        run: sed -i 's/resolver = "1"/resolver = "3"/' Cargo.toml
 
       - run: cargo check --target ${{ matrix.target }} -p ${{ matrix.crate }}
                    ${{ (matrix.crate == 'juniper' && matrix.target == 'wasm32-unknown-unknown')
@@ -307,7 +318,7 @@ jobs:
     needs: ["release-github"]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
@@ -341,7 +352,7 @@ jobs:
           - juniper_warp
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
@@ -367,7 +378,7 @@ jobs:
       - wasm
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Parse crate name and version from Git tag
         id: tag
@@ -382,6 +393,15 @@ jobs:
                        ${{ steps.tag.outputs.group2 }}/Cargo.toml \
                   | cut -d '"' -f2)"
 
+      - name: Ensure CHANGELOG date is today
+        run: |
+          today="$(date '+%Y-%m-%d')"
+          changelog="$(grep -E '^## \[${{ steps.tag.outputs.group3 }}\] ·' \
+                            ${{ steps.tag.outputs.group2 }}/CHANGELOG.md \
+                       | cut -d' ' -f4 | tr -d ' ')"
+          echo "Changelog: $changelog"
+          echo "Today: $today"
+          [ "$changelog" = "$today" ]
       - name: Parse CHANGELOG link
         id: changelog
         run: echo "link=${{ github.server_url }}/${{ github.repository }}/blob/${{ steps.tag.outputs.group1 }}/${{ steps.tag.outputs.group2 }}/CHANGELOG.md#$(sed -n '/^## \[${{ steps.tag.outputs.group3 }}\]/{s/^## \[\(.*\)\][^0-9]*\([0-9].*\)/\1--\2/;s/[^0-9a-z-]*//g;p;}' ${{ steps.tag.outputs.group2 }}/CHANGELOG.md)"
@@ -410,7 +430,7 @@ jobs:
     needs: ["codespell", "test", "test-book"]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: peaceiris/actions-mdbook@v2
 
       - run: make book.build out=gh-pages${{ (github.ref == 'refs/heads/master'

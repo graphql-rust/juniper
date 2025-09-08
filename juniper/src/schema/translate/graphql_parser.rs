@@ -107,13 +107,13 @@ impl GraphQLParserTranslator {
         match input {
             InputValue::Null => ExternalValue::Null,
             InputValue::Scalar(x) => {
-                if let Some(v) = x.as_string() {
+                if let Some(v) = x.try_to_string() {
                     ExternalValue::String(v)
-                } else if let Some(v) = x.as_int() {
+                } else if let Some(v) = x.try_to_int() {
                     ExternalValue::Int(ExternalNumber::from(v))
-                } else if let Some(v) = x.as_float() {
+                } else if let Some(v) = x.try_to_float() {
                     ExternalValue::Float(v)
-                } else if let Some(v) = x.as_bool() {
+                } else if let Some(v) = x.try_to_bool() {
                     ExternalValue::Boolean(v)
                 } else {
                     panic!("unknown argument type")

@@ -1,3 +1,5 @@
+#![allow(dead_code, reason = "GraphQL schema testing")]
+
 use std::sync::Arc;
 
 use juniper::{GraphQLInputObject, graphql_object};

@@ -156,9 +156,10 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                                 stream::iter(vec![
                                     Reaction::ServerMessage(ServerMessage::Error {
                                         id: id.clone(),
-                                        payload: GraphQLError::ValidationError(vec![
-                                            RuleError::new("Too many in-flight operations.", &[]),
-                                        ])
+                                        payload: GraphQLError::from(RuleError::new(
+                                            "Too many in-flight operations.",
+                                            &[],
+                                        ))
                                         .into(),
                                     }),
                                     Reaction::ServerMessage(ServerMessage::Complete { id }),
@@ -720,7 +721,7 @@ mod test {
 
     #[tokio::test]
     async fn test_init_params_ok() {
-        let mut conn = Connection::new(new_test_schema(), |params: Variables| async move {
+        let mut conn = Connection::new(new_test_schema(), async |params: Variables| {
             assert_eq!(params.get("foo"), Some(&graphql_input_value!("bar")));
             Ok(ConnectionConfig::new(Context(1))) as Result<_, Infallible>
         });
@@ -736,7 +737,7 @@ mod test {
 
     #[tokio::test]
     async fn test_init_params_error() {
-        let mut conn = Connection::new(new_test_schema(), |params: Variables| async move {
+        let mut conn = Connection::new(new_test_schema(), async |params: Variables| {
             assert_eq!(params.get("foo"), Some(&graphql_input_value!("bar")));
             Err(io::Error::new(io::ErrorKind::Other, "init error"))
         });

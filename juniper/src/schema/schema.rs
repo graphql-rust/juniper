@@ -142,7 +142,7 @@ impl<S: ScalarValue> SchemaType<S> {
         self.description.as_ref()
     }
 
-    fn types(&self) -> Vec<TypeType<S>> {
+    fn types(&self) -> Vec<TypeType<'_, S>> {
         self.type_list()
             .into_iter()
             .filter(|t| {
@@ -157,17 +157,17 @@ impl<S: ScalarValue> SchemaType<S> {
     }
 
     #[graphql(name = "queryType")]
-    fn query_type_(&self) -> TypeType<S> {
+    fn query_type_(&self) -> TypeType<'_, S> {
         self.query_type()
     }
 
     #[graphql(name = "mutationType")]
-    fn mutation_type_(&self) -> Option<TypeType<S>> {
+    fn mutation_type_(&self) -> Option<TypeType<'_, S>> {
         self.mutation_type()
     }
 
     #[graphql(name = "subscriptionType")]
-    fn subscription_type_(&self) -> Option<TypeType<S>> {
+    fn subscription_type_(&self) -> Option<TypeType<'_, S>> {
         self.subscription_type()
     }
 

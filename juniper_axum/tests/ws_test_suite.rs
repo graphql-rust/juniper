@@ -1,4 +1,7 @@
-#![cfg(not(windows))]
+//! [`WsIntegration`] testing for [`axum`].
+
+#![expect(unused_crate_dependencies, reason = "integration tests")]
+#![cfg_attr(windows, expect(dead_code, unused_imports, reason = "disabled"))]
 
 use std::{net::SocketAddr, sync::Arc};
 
@@ -6,7 +9,7 @@ use anyhow::anyhow;
 use axum::{Extension, Router, routing::get};
 use futures::{SinkExt, StreamExt};
 use juniper::{
-    EmptyMutation, LocalBoxFuture, RootNode,
+    EmptyMutation, RootNode,
     http::tests::{WsIntegration, WsIntegrationMessage, graphql_transport_ws, graphql_ws},
     tests::fixtures::starwars::schema::{Database, Query, Subscription},
 };
@@ -20,7 +23,6 @@ use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async, tungsten
 
 type Schema = RootNode<Query, EmptyMutation<Database>, Subscription>;
 
-#[derive(Clone)]
 struct TestApp(Router);
 
 impl TestApp {
@@ -46,27 +48,6 @@ impl TestApp {
         router = router.layer(Extension(Arc::new(schema)));
 
         Self(router)
-    }
-
-    async fn run(self, messages: Vec<WsIntegrationMessage>) -> Result<(), anyhow::Error> {
-        let listener = TcpListener::bind("0.0.0.0:0".parse::<SocketAddr>().unwrap())
-            .await
-            .unwrap();
-        let addr = listener.local_addr().unwrap();
-
-        tokio::spawn(async move {
-            axum::serve(listener, self.0).await.unwrap();
-        });
-
-        let (mut websocket, _) = connect_async(format!("ws://{}/subscriptions", addr))
-            .await
-            .unwrap();
-
-        for msg in messages {
-            Self::process_message(&mut websocket, msg).await?;
-        }
-
-        Ok(())
     }
 
     async fn process_message(
@@ -119,20 +100,37 @@ impl TestApp {
 }
 
 impl WsIntegration for TestApp {
-    fn run(
-        &self,
-        messages: Vec<WsIntegrationMessage>,
-    ) -> LocalBoxFuture<Result<(), anyhow::Error>> {
-        Box::pin(self.clone().run(messages))
+    async fn run(&self, messages: Vec<WsIntegrationMessage>) -> Result<(), anyhow::Error> {
+        let listener = TcpListener::bind("0.0.0.0:0".parse::<SocketAddr>().unwrap())
+            .await
+            .unwrap();
+        let addr = listener.local_addr().unwrap();
+
+        let router = self.0.clone();
+        tokio::spawn(async move {
+            axum::serve(listener, router).await.unwrap();
+        });
+
+        let (mut websocket, _) = connect_async(format!("ws://{}/subscriptions", addr))
+            .await
+            .unwrap();
+
+        for msg in messages {
+            Self::process_message(&mut websocket, msg).await?;
+        }
+
+        Ok(())
     }
 }
 
+#[cfg(not(windows))]
 #[tokio::test]
 async fn test_graphql_ws_integration() {
     let app = TestApp::new("graphql-ws");
     graphql_ws::run_test_suite(&app).await;
 }
 
+#[cfg(not(windows))]
 #[tokio::test]
 async fn test_graphql_transport_integration() {
     let app = TestApp::new("graphql-transport-ws");

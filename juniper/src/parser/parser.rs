@@ -1,47 +1,28 @@
-use std::{error::Error, fmt};
+use std::fmt;
 
 use compact_str::{CompactString, format_compact};
+use derive_more::with_trait::{Display, Error};
 
 use crate::parser::{Lexer, LexerError, Spanning, Token};
 
 /// Error while parsing a GraphQL query
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Display, Eq, Error, PartialEq)]
 pub enum ParseError {
     /// An unexpected token occurred in the source
     // TODO: Previously was `Token<'a>`.
     //       Revisit on `graphql-parser` integration.
-    UnexpectedToken(CompactString),
+    #[display("Unexpected \"{_0}\"")]
+    UnexpectedToken(#[error(not(source))] CompactString),
 
     /// The input source abruptly ended
+    #[display("Unexpected end of input")]
     UnexpectedEndOfFile,
 
     /// An error during tokenization occurred
     LexerError(LexerError),
 
     /// A scalar of unexpected type occurred in the source
-    ExpectedScalarError(&'static str),
-}
-
-impl fmt::Display for ParseError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::UnexpectedToken(token) => write!(f, "Unexpected \"{token}\""),
-            Self::UnexpectedEndOfFile => write!(f, "Unexpected end of input"),
-            Self::LexerError(e) => e.fmt(f),
-            Self::ExpectedScalarError(e) => e.fmt(f),
-        }
-    }
-}
-
-impl Error for ParseError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            Self::LexerError(e) => Some(e),
-            Self::ExpectedScalarError(_) | Self::UnexpectedToken(_) | Self::UnexpectedEndOfFile => {
-                None
-            }
-        }
-    }
+    ExpectedScalarError(#[error(not(source))] &'static str),
 }
 
 impl ParseError {

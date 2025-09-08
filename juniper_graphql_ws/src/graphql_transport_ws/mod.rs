@@ -18,6 +18,7 @@ use std::{
     sync::Arc, time::Duration,
 };
 
+use derive_more::with_trait::From;
 use juniper::{
     GraphQLError, RuleError, ScalarValue,
     futures::{
@@ -43,19 +44,13 @@ struct ExecutionParams<S: Schema> {
 }
 
 /// Possible inputs received from a client.
-#[derive(Debug)]
+#[derive(Debug, From)]
 pub enum Input<S> {
     /// Deserialized [`ClientMessage`].
     Message(ClientMessage<S>),
 
     /// Client initiated normal closing of a [`Connection`].
     Close,
-}
-
-impl<S> From<ClientMessage<S>> for Input<S> {
-    fn from(val: ClientMessage<S>) -> Self {
-        Self::Message(val)
-    }
 }
 
 /// Output provides the responses that should be sent to the client.
@@ -167,7 +162,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                             // We already have an operation with this id. We must close the connection.
                             Output::Close {
                                 code: 4409,
-                                message: format!("Subscriber for {} already exists", id),
+                                message: format!("Subscriber for {id} already exists"),
                             }
                             .into_stream()
                         } else {
@@ -181,9 +176,10 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                                 stream::iter(vec![
                                     Output::Message(ServerMessage::Error {
                                         id: id.clone(),
-                                        payload: GraphQLError::ValidationError(vec![
-                                            RuleError::new("Too many in-flight operations.", &[]),
-                                        ])
+                                        payload: GraphQLError::from(RuleError::new(
+                                            "Too many in-flight operations.",
+                                            &[],
+                                        ))
                                         .into(),
                                     }),
                                     Output::Message(ServerMessage::Complete { id }),
@@ -823,7 +819,7 @@ mod test {
 
     #[tokio::test]
     async fn test_init_params_ok() {
-        let mut conn = Connection::new(new_test_schema(), |params: Variables| async move {
+        let mut conn = Connection::new(new_test_schema(), async |params: Variables| {
             assert_eq!(params.get("foo"), Some(&graphql_input_value!("bar")));
             Ok(ConnectionConfig::new(Context(1))) as Result<_, Infallible>
         });
@@ -842,7 +838,7 @@ mod test {
 
     #[tokio::test]
     async fn test_init_params_error() {
-        let mut conn = Connection::new(new_test_schema(), |params: Variables| async move {
+        let mut conn = Connection::new(new_test_schema(), async |params: Variables| {
             assert_eq!(params.get("foo"), Some(&graphql_input_value!("bar")));
             Err(io::Error::new(io::ErrorKind::Other, "init error"))
         });

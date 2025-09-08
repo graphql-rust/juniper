@@ -18,14 +18,16 @@ type Long = i64;
 mod long {
     use super::*;
 
-    pub(super) fn to_output(v: &Long) -> Value<MyScalarValue> {
-        Value::scalar(*v)
+    pub(super) fn to_output(v: &Long) -> MyScalarValue {
+        (*v).into()
     }
 
-    pub(super) fn from_input(v: &InputValue<MyScalarValue>) -> Result<Long, String> {
-        v.as_scalar_value::<i64>()
-            .copied()
-            .ok_or_else(|| format!("Expected `MyScalarValue::Long`, found: {v}"))
+    pub(super) fn from_input(s: &MyScalarValue) -> Result<Long, Box<str>> {
+        if let MyScalarValue::Long(i) = s {
+            Ok(*i)
+        } else {
+            Err(format!("Expected `MyScalarValue::Long`, found: {s}").into())
+        }
     }
 
     pub(super) fn parse_token(value: ScalarToken<'_>) -> ParseScalarResult<MyScalarValue> {

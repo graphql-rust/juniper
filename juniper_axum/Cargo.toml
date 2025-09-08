@@ -22,10 +22,16 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-subscriptions = ["axum/ws", "juniper_graphql_ws/graphql-ws", "dep:futures"]
+subscriptions = [
+    "axum/ws", 
+    "juniper_graphql_ws/graphql-ws", 
+    "dep:derive_more", 
+    "dep:futures",
+]
 
 [dependencies]
 axum = { version = "0.8", features = ["json", "query"], default-features = false }
+derive_more = { version = "2.0", features = ["display", "error"], optional = true }
 futures = { version = "0.3.22", optional = true }
 juniper = { version = "0.16", path = "../juniper", default-features = false }
 juniper_graphql_ws = { version = "0.4.0", path = "../juniper_graphql_ws", features = ["graphql-transport-ws"] }
@@ -43,7 +49,7 @@ futures = "0.3.22"
 juniper = { version = "0.16", path = "../juniper", features = ["expose-test-schema"] }
 tokio = { version = "1.20", features = ["macros", "net", "rt-multi-thread", "time"] }
 tokio-stream = "0.1"
-tokio-tungstenite = "0.26"
+tokio-tungstenite = "0.27"
 tower-service = "0.3"
 tracing = "0.1"
 tracing-subscriber = "0.3"

@@ -85,16 +85,49 @@ pub struct UserId(String);
 In case we need to customize [resolving][7] of a [custom GraphQL scalar][2] value (change the way it gets executed), the `#[graphql(to_output_with = <fn path>)]` attribute is the way to do so:
 ```rust
 # extern crate juniper;
-# use juniper::{GraphQLScalar, ScalarValue, Value};
+# use juniper::GraphQLScalar;
 #
 #[derive(GraphQLScalar)]
 #[graphql(to_output_with = to_output, transparent)]
 struct Incremented(i32);
 
-/// Increments [`Incremented`] before converting into a [`Value`].
-fn to_output<S: ScalarValue>(v: &Incremented) -> Value<S> {
-    let inc = v.0 + 1;
-    Value::from(inc)
+fn to_output(v: &Incremented) -> i32 {
+    //                           ^^^ any concrete type having `ToScalarValue` implementation
+    //                               could be used
+    v.0 + 1
+}
+#
+# fn main() {}
+```
+
+The provided function is polymorphic by its output type:
+```rust
+# extern crate jiff;
+# extern crate juniper;
+# use std::fmt::Display;
+# use juniper::{GraphQLScalar, ScalarValue};
+#
+#[derive(GraphQLScalar)]
+#[graphql(to_output_with = Self::to_output, transparent)]
+struct Incremented(i32);
+
+impl Incremented {
+    fn to_output<S: ScalarValue>(v: &Incremented) -> S {
+        //       ^^^^^^^^^^^^^^ returning generic or concrete `ScalarValue` is also OK
+        (v.0 + 1).into()
+    }
+}
+
+#[derive(GraphQLScalar)]
+#[graphql(to_output_with = Self::to_output, transparent)]
+struct CustomDateTime(jiff::Timestamp);
+
+impl CustomDateTime {
+    fn to_output(&self) -> impl Display {
+        //                 ^^^^^^^^^^^^ in this case macro expansion uses the
+        //                              `ScalarValue::from_displayable_non_static()` conversion
+        self.0.strftime("%Y-%m-%d %H:%M:%S%.fZ")
+    }
 }
 #
 # fn main() {}
@@ -106,31 +139,57 @@ fn to_output<S: ScalarValue>(v: &Incremented) -> Value<S> {
 Customization of a [custom GraphQL scalar][2] value parsing is possible via `#[graphql(from_input_with = <fn path>)]` attribute:
 ```rust
 # extern crate juniper;
-# use juniper::{GraphQLScalar, InputValue, ScalarValue};
+# use juniper::{GraphQLScalar, ScalarValue};
 #
 #[derive(GraphQLScalar)]
 #[graphql(from_input_with = Self::from_input, transparent)]
 struct UserId(String);
 
 impl UserId {
-    /// Checks whether the [`InputValue`] is a [`String`] beginning with `id: ` 
-    /// and strips it.
-    fn from_input<S>(input: &InputValue<S>) -> Result<Self, String> 
-    where
-        S: ScalarValue
-    {
-        input.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {input}"))
-            .and_then(|str| {
-                str.strip_prefix("id: ")
-                    .ok_or_else(|| {
-                        format!(
-                            "Expected `UserId` to begin with `id: `, \
-                             found: {input}",
-                        )
-                    })
+    /// Checks whether the [`InputValue`] is a [`String`] beginning with `id: ` and strips it.
+    fn from_input(
+        input: &str,
+        //     ^^^^ any concrete type having `FromScalarValue` implementation could be used
+    ) -> Result<Self, Box<str>> {
+        //            ^^^^^^^^ must implement `IntoFieldError`
+        input
+            .strip_prefix("id: ")
+            .ok_or_else(|| {
+                format!("Expected `UserId` to begin with `id: `, found: {input}").into()
             })
-            .map(|id| Self(id.to_owned()))
+            .map(|id| Self(id.into()))
+    }
+}
+#
+# fn main() {}
+```
+
+The provided function is polymorphic by its input and output types:
+```rust
+# extern crate juniper;
+# use juniper::{GraphQLScalar, Scalar, ScalarValue};
+#
+#[derive(GraphQLScalar)]
+#[graphql(from_input_with = Self::from_input, transparent)]
+struct UserId(String);
+
+impl UserId {
+    fn from_input(
+        input: &Scalar<impl ScalarValue>,
+        //      ^^^^^^ for generic argument using `Scalar` transparent wrapper is required,
+        //             otherwise Rust won't be able to infer the required type
+    ) -> Self {
+    //   ^^^^ if the result is infallible, it's OK to omit `Result`
+        Self(
+            input
+                .try_to_int().map(|i| i.to_string())
+                .or_else(|| input.try_to_bool().map(|f| f.to_string()))
+                .or_else(|| input.try_to_float().map(|b| b.to_string()))
+                .or_else(|| input.try_to_string())
+                .unwrap_or_else(|| {
+                    unreachable!("`ScalarValue` is at least one of primitive GraphQL types")
+                }),
+        )
     }
 }
 #
@@ -144,8 +203,7 @@ Customization of which tokens a [custom GraphQL scalar][0] type should be parsed
 ```rust
 # extern crate juniper;
 # use juniper::{
-#     GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
-#     ScalarValue, ScalarToken, Value,
+#     GraphQLScalar, ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue,
 # };
 #
 #[derive(GraphQLScalar)]
@@ -162,18 +220,20 @@ enum StringOrInt {
     Int(i32),
 }
 
-fn to_output<S: ScalarValue>(v: &StringOrInt) -> Value<S> {
+fn to_output<S: ScalarValue>(v: &StringOrInt) -> S {
     match v {
-        StringOrInt::String(s) => Value::scalar(s.to_owned()),
-        StringOrInt::Int(i) => Value::scalar(*i),
+        StringOrInt::String(s) => S::from_displayable(s),
+        //                        ^^^^^^^^^^^^^^^^^^^ preferable conversion for types
+        //                                            represented by string token
+        StringOrInt::Int(i) => (*i).into(),
     }
 }
 
-fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<StringOrInt, String> {
-    v.as_string_value()
-        .map(|s| StringOrInt::String(s.into()))
-        .or_else(|| v.as_int_value().map(StringOrInt::Int))
-        .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
+fn from_input(v: &Scalar<impl ScalarValue>) -> Result<StringOrInt, Box<str>> {
+    v.try_to_string()
+        .map(StringOrInt::String)
+        .or_else(|| v.try_to_int().map(StringOrInt::Int))
+        .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}").into())
 }
 
 fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -192,8 +252,7 @@ Instead of providing all custom functions separately, it's possible to provide a
 ```rust
 # extern crate juniper;
 # use juniper::{
-#     GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
-#     ScalarValue, ScalarToken, Value,
+#     GraphQLScalar, ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue,
 # };
 #
 #[derive(GraphQLScalar)]
@@ -206,18 +265,18 @@ enum StringOrInt {
 mod string_or_int {
     use super::*;
 
-    pub(super) fn to_output<S: ScalarValue>(v: &StringOrInt) -> Value<S> {
+    pub(super) fn to_output<S: ScalarValue>(v: &StringOrInt) -> S {
         match v {
-            StringOrInt::String(s) => Value::scalar(s.to_owned()),
-            StringOrInt::Int(i) => Value::scalar(*i),
+            StringOrInt::String(s) => S::from_displayable(s),
+            StringOrInt::Int(i) => (*i).into(),
         }
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<StringOrInt, String> {
-        v.as_string_value()
-            .map(|s| StringOrInt::String(s.into()))
-            .or_else(|| v.as_int_value().map(StringOrInt::Int))
-            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
+    pub(super) fn from_input(v: &Scalar<impl ScalarValue>) -> Result<StringOrInt, Box<str>> {
+        v.try_to_string()
+            .map(StringOrInt::String)
+            .or_else(|| v.try_to_int().map(StringOrInt::Int))
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}").into())
     }
 
     pub(super) fn parse_token<S: ScalarValue>(t: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -233,8 +292,7 @@ A regular `impl` block is also suitable for that:
 ```rust
 # extern crate juniper;
 # use juniper::{
-#     GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
-#     ScalarValue, ScalarToken, Value,
+#     GraphQLScalar, ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue,
 # };
 #
 #[derive(GraphQLScalar)]
@@ -245,21 +303,18 @@ enum StringOrInt {
 }
 
 impl StringOrInt {
-    fn to_output<S: ScalarValue>(&self) -> Value<S> {
+    fn to_output<S: ScalarValue>(&self) -> S {
         match self {
-            Self::String(s) => Value::scalar(s.to_owned()),
-            Self::Int(i) => Value::scalar(*i),
+            Self::String(s) => S::from_displayable(s),
+            Self::Int(i) => (*i).into(),
         }
     }
 
-    fn from_input<S>(v: &InputValue<S>) -> Result<Self, String>
-    where
-        S: ScalarValue
-    {
-        v.as_string_value()
-            .map(|s| Self::String(s.into()))
-            .or_else(|| v.as_int_value().map(Self::Int))
-            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
+    fn from_input(v: &Scalar<impl ScalarValue>) -> Result<Self, Box<str>> {
+        v.try_to_string()
+            .map(Self::String)
+            .or_else(|| v.try_to_int().map(Self::Int))
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}").into())
     }
 
     fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<S>
@@ -278,8 +333,7 @@ At the same time, any custom function still may be specified separately, if requ
 ```rust
 # extern crate juniper;
 # use juniper::{
-#     GraphQLScalar, InputValue, ParseScalarResult, ScalarValue,
-#     ScalarToken, Value
+#     GraphQLScalar, ParseScalarResult, Scalar, ScalarToken, ScalarValue,
 # };
 #
 #[derive(GraphQLScalar)]
@@ -295,24 +349,18 @@ enum StringOrInt {
 mod string_or_int {
     use super::*;
 
-    pub(super) fn to_output<S>(v: &StringOrInt) -> Value<S>
-    where
-        S: ScalarValue,
-    {
+    pub(super) fn to_output<S: ScalarValue>(v: &StringOrInt) -> S {
         match v {
-            StringOrInt::String(s) => Value::scalar(s.to_owned()),
-            StringOrInt::Int(i) => Value::scalar(*i),
+            StringOrInt::String(s) => S::from_displayable(s),
+            StringOrInt::Int(i) => (*i).into(),
         }
     }
 
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<StringOrInt, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .map(|s| StringOrInt::String(s.into()))
-            .or_else(|| v.as_int_value().map(StringOrInt::Int))
-            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
+    pub(super) fn from_input(v: &Scalar<impl ScalarValue>) -> Result<StringOrInt, Box<str>> {
+        v.try_to_string()
+            .map(StringOrInt::String)
+            .or_else(|| v.try_to_int().map(StringOrInt::Int))
+            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}").into())
     }
 
     // No need in `parse_token()` function.
@@ -345,17 +393,19 @@ For implementing [custom scalars][2] on foreign types there is [`#[graphql_scala
 #    }
 #
 #    impl std::fmt::Display for Date {
-#        fn fmt(&self, _f: &mut std::fmt::Formatter) -> std::fmt::Result {
+#        fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 #            unimplemented!()
 #        }
 #    }
 # }
 #
 # use juniper::DefaultScalarValue as CustomScalarValue;
-use juniper::{InputValue, ScalarValue, Value, graphql_scalar};
+use juniper::{ScalarValue, graphql_scalar};
 
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = date_scalar, 
+    to_output_with = ScalarValue::from_displayable, // use `Display` representation
     parse_token(String),
     scalar = CustomScalarValue,
 )]
@@ -365,15 +415,9 @@ type Date = date::Date;
 
 mod date_scalar {
     use super::*;
-  
-    pub(super) fn to_output(v: &Date) -> Value<CustomScalarValue> {
-        Value::scalar(v.to_string())
-    }
 
-    pub(super) fn from_input(v: &InputValue<CustomScalarValue>) -> Result<Date, String> {
-      v.as_string_value()
-          .ok_or_else(|| format!("Expected `String`, found: {v}"))
-          .and_then(|s| s.parse().map_err(|e| format!("Failed to parse `Date`: {e}")))
+    pub(super) fn from_input(s: &str) -> Result<Date, Box<str>> {
+        s.parse().map_err(|e| format!("Failed to parse `Date`: {e}").into())
     }
 }
 #
@@ -447,7 +491,7 @@ mod date_scalar {
 [`ObjectID`]: https://the-guild.dev/graphql/scalars/docs/scalars/object-id
 [`rust_decimal`]: https://docs.rs/rust_decimal
 [`rust_decimal::Decimal`]: https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html
-[`ScalarValue`]: https://docs.rs/juniper/0.16.1/juniper/trait.ScalarValue.html
+[`ScalarValue`]: https://docs.rs/juniper/0.16.2/juniper/trait.ScalarValue.html
 [`serde`]: https://docs.rs/serde
 [`time`]: https://docs.rs/time
 [`time::Date`]: https://docs.rs/time/latest/time/struct.Date.html
@@ -478,5 +522,5 @@ mod date_scalar {
 [5]: https://spec.graphql.org/October2021/#sec-Scalars.Built-in-Scalars
 [6]: https://serde.rs/container-attrs.html#transparent
 [7]: https://spec.graphql.org/October2021#sec-Value-Resolution
-[8]: https://docs.rs/juniper/0.16.1/juniper/derive.GraphQLScalar.html
-[9]: https://docs.rs/juniper/0.16.1/juniper/attr.graphql_scalar.html
+[8]: https://docs.rs/juniper/0.16.2/juniper/derive.GraphQLScalar.html
+[9]: https://docs.rs/juniper/0.16.2/juniper/attr.graphql_scalar.html

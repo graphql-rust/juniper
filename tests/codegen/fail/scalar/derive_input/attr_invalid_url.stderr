@@ -1,5 +1,11 @@
 error: Invalid URL: relative URL without a base
- --> fail/scalar/derive_input/attr_invalid_url.rs:3:37
+ --> fail/scalar/derive_input/attr_invalid_url.rs:4:30
   |
-3 | #[graphql_scalar(specified_by_url = "not an url", transparent)]
-  |                                     ^^^^^^^^^^^^
+4 | #[graphql(specified_by_url = "not an url", transparent)]
+  |                              ^^^^^^^^^^^^
+
+error: cannot find attribute `graphql` in this scope
+ --> fail/scalar/derive_input/attr_invalid_url.rs:4:3
+  |
+4 | #[graphql(specified_by_url = "not an url", transparent)]
+  |   ^^^^^^^

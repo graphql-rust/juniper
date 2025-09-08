@@ -1,7 +1,8 @@
 //! GraphQL subscriptions handler implementation.
 
-use std::{convert::Infallible, fmt, sync::Arc};
+use std::{convert::Infallible, sync::Arc};
 
+use derive_more::with_trait::{Display, Error as StdError, From};
 use futures::{
     future::{self, Either},
     sink::SinkExt as _,
@@ -38,35 +39,20 @@ impl<S: ScalarValue> TryFrom<Message> for graphql_transport_ws::Input<S> {
 }
 
 /// Errors that can happen while serving a connection.
-#[derive(Debug)]
+#[derive(Debug, Display, From, StdError)]
 pub enum Error {
     /// Errors that can happen in Warp while serving a connection.
+    #[display("`warp` error: {_0}")]
     Warp(warp::Error),
 
     /// Errors that can happen while serializing outgoing messages. Note that errors that occur
     /// while deserializing incoming messages are handled internally by the protocol.
+    #[display("`serde` error: {_0}")]
     Serde(serde_json::Error),
 }
 
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Warp(e) => write!(f, "`warp` error: {e}"),
-            Self::Serde(e) => write!(f, "`serde` error: {e}"),
-        }
-    }
-}
-
-impl std::error::Error for Error {}
-
-impl From<warp::Error> for Error {
-    fn from(err: warp::Error) -> Self {
-        Self::Warp(err)
-    }
-}
-
 impl From<Infallible> for Error {
-    fn from(_err: Infallible) -> Self {
+    fn from(_: Infallible) -> Self {
         unreachable!()
     }
 }
@@ -261,7 +247,7 @@ where
     let s_rx = s_rx.map(|msg| {
         serde_json::to_string(&msg)
             .map(warp::ws::Message::text)
-            .map_err(Error::Serde)
+            .map_err(Into::into)
     });
 
     match future::select(
@@ -309,7 +295,7 @@ where
     let s_rx = s_rx.map(|output| match output {
         graphql_transport_ws::Output::Message(msg) => serde_json::to_string(&msg)
             .map(warp::ws::Message::text)
-            .map_err(Error::Serde),
+            .map_err(Into::into),
         graphql_transport_ws::Output::Close { code, message } => {
             Ok(warp::ws::Message::close_with(code, message))
         }

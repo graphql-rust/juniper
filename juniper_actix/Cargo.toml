@@ -22,11 +22,17 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-subscriptions = ["dep:actix-ws", "dep:futures", "dep:juniper_graphql_ws"]
+subscriptions = [
+    "dep:actix-ws", 
+    "dep:derive_more", 
+    "dep:futures", 
+    "dep:juniper_graphql_ws",
+]
 
 [dependencies]
 actix-web = "4.4"
 actix-ws = { version = "0.3", optional = true }
+derive_more = { version = "2.0", features = ["display", "error"], optional = true }
 futures = { version = "0.3.22", optional = true }
 juniper = { version = "0.16", path = "../juniper", default-features = false }
 juniper_graphql_ws = { version = "0.4.0", path = "../juniper_graphql_ws", features = ["graphql-transport-ws", "graphql-ws"], optional = true }

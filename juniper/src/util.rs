@@ -1,5 +1,7 @@
 use std::borrow::Cow;
 
+use derive_more::with_trait::Display;
+
 /// Convert string to camel case.
 ///
 /// Note: needs to be public because several macros use it.
@@ -50,4 +52,14 @@ fn test_to_camel_case() {
     assert_eq!(&to_camel_case("a_b")[..], "aB");
     assert_eq!(&to_camel_case("a")[..], "a");
     assert_eq!(&to_camel_case("")[..], "");
+}
+
+/// Combination of two [`Display`]able types into a single one.
+#[derive(Display)]
+pub(crate) enum Either<L, R> {
+    /// Left value of the first type.
+    Left(L),
+
+    /// Right value of the second type.
+    Right(R),
 }

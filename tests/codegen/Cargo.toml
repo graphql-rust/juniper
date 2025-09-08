@@ -8,8 +8,10 @@ publish = false
 rustversion = "1.0"
 
 [dev-dependencies]
+derive_more = { version = "2.0", features = ["display", "from", "try_into"] }
 futures = "0.3"
 juniper = { path = "../../juniper" }
+serde = { version = "1.0", features = ["derive"] }
 trybuild = "1.0.63"
 
 [lints.clippy]

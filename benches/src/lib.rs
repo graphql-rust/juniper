@@ -1,8 +1,4 @@
-#[cfg(test)]
-mod for_benches_only {
-    use criterion as _;
-    use tokio as _;
-}
+#![cfg_attr(test, expect(unused_crate_dependencies, reason = "benches"))]
 
 use juniper::{
     DefaultScalarValue, EmptyMutation, EmptySubscription, ExecutionError, FieldError, GraphQLEnum,

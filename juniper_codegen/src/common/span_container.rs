@@ -1,15 +1,15 @@
-use std::{
-    hash::{Hash, Hasher},
-    ops,
-};
+use std::hash::{Hash, Hasher};
 
+use derive_more::with_trait::{AsRef, Deref};
 use proc_macro2::{Span, TokenStream};
 use quote::ToTokens;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(AsRef, Clone, Copy, Debug, Deref)]
 pub(crate) struct SpanContainer<T> {
     expr: Option<Span>,
     ident: Span,
+    #[as_ref]
+    #[deref]
     val: T,
 }
 
@@ -43,20 +43,6 @@ impl<T> SpanContainer<T> {
 
     pub(crate) fn into_inner(self) -> T {
         self.val
-    }
-}
-
-impl<T> AsRef<T> for SpanContainer<T> {
-    fn as_ref(&self) -> &T {
-        &self.val
-    }
-}
-
-impl<T> ops::Deref for SpanContainer<T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        &self.val
     }
 }
 

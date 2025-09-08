@@ -1,8 +1,10 @@
 #![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
 #![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
+#![cfg_attr(test, expect(unused_crate_dependencies, reason = "examples"))]
 
-use std::{error::Error, fmt, string::FromUtf8Error, sync::Arc};
+use std::{string::FromUtf8Error, sync::Arc};
 
+use derive_more::with_trait::{Debug, Display, Error};
 use http_body_util::BodyExt as _;
 use hyper::{
     Method, Request, Response, StatusCode,
@@ -32,7 +34,7 @@ where
     SubscriptionT::TypeInfo: Sync,
     CtxT: Sync,
     S: ScalarValue + Send + Sync,
-    B: Body<Error: fmt::Display>,
+    B: Body<Error: Display>,
 {
     match parse_req(req).await {
         Ok(req) => execute_request_sync(schema, context, req).await,
@@ -56,7 +58,7 @@ where
     SubscriptionT::TypeInfo: Sync,
     CtxT: Sync,
     S: ScalarValue + Send + Sync,
-    B: Body<Error: fmt::Display>,
+    B: Body<Error: Display>,
 {
     match parse_req(req).await {
         Ok(req) => execute_request(schema, context, req).await,
@@ -67,7 +69,7 @@ where
 async fn parse_req<S, B>(req: Request<B>) -> Result<GraphQLBatchRequest<S>, Response<String>>
 where
     S: ScalarValue,
-    B: Body<Error: fmt::Display>,
+    B: Body<Error: Display>,
 {
     match *req.method() {
         Method::GET => parse_get_req(req),
@@ -114,8 +116,8 @@ where
         .await
         .map_err(GraphQLRequestError::BodyHyper)?;
 
-    let input = String::from_utf8(chunk.to_bytes().iter().cloned().collect())
-        .map_err(GraphQLRequestError::BodyUtf8)?;
+    let input =
+        String::from_utf8(chunk.to_bytes().into()).map_err(GraphQLRequestError::BodyUtf8)?;
 
     serde_json::from_str::<GraphQLBatchRequest<S>>(&input)
         .map_err(GraphQLRequestError::BodyJSONError)
@@ -133,8 +135,8 @@ where
         .await
         .map_err(GraphQLRequestError::BodyHyper)?;
 
-    let query = String::from_utf8(chunk.to_bytes().iter().cloned().collect())
-        .map_err(GraphQLRequestError::BodyUtf8)?;
+    let query =
+        String::from_utf8(chunk.to_bytes().into()).map_err(GraphQLRequestError::BodyUtf8)?;
 
     Ok(GraphQLBatchRequest::Single(GraphQLRequest::new(
         query, None, None,
@@ -174,7 +176,7 @@ pub async fn playground(
 
 fn render_error<B>(err: GraphQLRequestError<B>) -> Response<String>
 where
-    B: Body<Error: fmt::Display>,
+    B: Body<Error: Display>,
 {
     let mut resp = new_response(StatusCode::BAD_REQUEST);
     *resp.body_mut() = err.to_string();
@@ -310,59 +312,19 @@ fn new_html_response(code: StatusCode) -> Response<String> {
     resp
 }
 
+// TODO: Use `#[debug(forward)]` once `derive_more::Debug` is capable of it.
+#[derive(Debug, Display, Error)]
 enum GraphQLRequestError<B: Body> {
+    #[debug("{_0:?}")]
     BodyHyper(B::Error),
+    #[debug("{_0:?}")]
     BodyUtf8(FromUtf8Error),
+    #[debug("{_0:?}")]
     BodyJSONError(SerdeError),
+    #[debug("{_0:?}")]
     Variables(SerdeError),
-    Invalid(String),
-}
-
-// NOTE: Manual implementation instead of `#[derive(Debug)]` is used to omit imposing unnecessary
-//       `B: Debug` bound on the implementation.
-impl<B> fmt::Debug for GraphQLRequestError<B>
-where
-    B: Body<Error: fmt::Debug>,
-{
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::BodyHyper(e) => fmt::Debug::fmt(e, f),
-            Self::BodyUtf8(e) => fmt::Debug::fmt(e, f),
-            Self::BodyJSONError(e) => fmt::Debug::fmt(e, f),
-            Self::Variables(e) => fmt::Debug::fmt(e, f),
-            Self::Invalid(e) => fmt::Debug::fmt(e, f),
-        }
-    }
-}
-
-impl<B> fmt::Display for GraphQLRequestError<B>
-where
-    B: Body<Error: fmt::Display>,
-{
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::BodyHyper(e) => fmt::Display::fmt(e, f),
-            Self::BodyUtf8(e) => fmt::Display::fmt(e, f),
-            Self::BodyJSONError(e) => fmt::Display::fmt(e, f),
-            Self::Variables(e) => fmt::Display::fmt(e, f),
-            Self::Invalid(e) => fmt::Display::fmt(e, f),
-        }
-    }
-}
-
-impl<B> Error for GraphQLRequestError<B>
-where
-    B: Body<Error: Error + 'static>,
-{
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            Self::BodyHyper(e) => Some(e),
-            Self::BodyUtf8(e) => Some(e),
-            Self::BodyJSONError(e) => Some(e),
-            Self::Variables(e) => Some(e),
-            Self::Invalid(_) => None,
-        }
-    }
+    #[debug("{_0:?}")]
+    Invalid(#[error(not(source))] String),
 }
 
 #[cfg(test)]

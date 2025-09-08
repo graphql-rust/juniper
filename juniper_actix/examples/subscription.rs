@@ -1,5 +1,7 @@
 //! This example demonstrates asynchronous subscriptions with [`actix_web`].
 
+#![expect(unused_crate_dependencies, reason = "example")]
+
 use std::{pin::Pin, time::Duration};
 
 use actix_cors::Cors;

@@ -1,6 +1,7 @@
-use std::fmt;
+use std::{fmt, ptr};
 
 use arcstr::ArcStr;
+use derive_more::with_trait::Display;
 use fnv::FnvHashMap;
 #[cfg(feature = "schema-language")]
 use graphql_parser::schema::Document;
@@ -309,7 +310,7 @@ impl<S> SchemaType<S> {
     }
 
     /// Get a type by name.
-    pub fn type_by_name(&self, name: impl AsRef<str>) -> Option<TypeType<S>> {
+    pub fn type_by_name(&self, name: impl AsRef<str>) -> Option<TypeType<'_, S>> {
         self.types.get(name.as_ref()).map(|t| TypeType::Concrete(t))
     }
 
@@ -330,7 +331,7 @@ impl<S> SchemaType<S> {
     }
 
     /// Get the query type from the schema.
-    pub fn query_type(&self) -> TypeType<S> {
+    pub fn query_type(&self) -> TypeType<'_, S> {
         TypeType::Concrete(
             self.types
                 .get(self.query_type_name.as_str())
@@ -346,7 +347,7 @@ impl<S> SchemaType<S> {
     }
 
     /// Get the mutation type from the schema.
-    pub fn mutation_type(&self) -> Option<TypeType<S>> {
+    pub fn mutation_type(&self) -> Option<TypeType<'_, S>> {
         self.mutation_type_name.as_ref().map(|name| {
             self.type_by_name(name)
                 .expect("Mutation type does not exist in schema")
@@ -362,7 +363,7 @@ impl<S> SchemaType<S> {
     }
 
     /// Get the subscription type.
-    pub fn subscription_type(&self) -> Option<TypeType<S>> {
+    pub fn subscription_type(&self) -> Option<TypeType<'_, S>> {
         self.subscription_type_name.as_ref().map(|name| {
             self.type_by_name(name)
                 .expect("Subscription type does not exist in schema")
@@ -378,7 +379,7 @@ impl<S> SchemaType<S> {
     }
 
     /// Get a list of types.
-    pub fn type_list(&self) -> Vec<TypeType<S>> {
+    pub fn type_list(&self) -> Vec<TypeType<'_, S>> {
         let mut types = self
             .types
             .values()
@@ -394,7 +395,10 @@ impl<S> SchemaType<S> {
     }
 
     /// Make a type.
-    pub fn make_type(&self, ty: &Type<impl AsRef<str>, impl AsRef<[TypeModifier]>>) -> TypeType<S> {
+    pub fn make_type(
+        &self,
+        ty: &Type<impl AsRef<str>, impl AsRef<[TypeModifier]>>,
+    ) -> TypeType<'_, S> {
         let mut out = self
             .type_by_name(ty.innermost_name())
             .expect("Type not found in schema");
@@ -468,7 +472,7 @@ impl<S> SchemaType<S> {
     ) -> bool {
         self.possible_types(abstract_type)
             .into_iter()
-            .any(|t| (std::ptr::eq(t, possible_type)))
+            .any(|t| ptr::eq(t, possible_type))
     }
 
     /// If the type is a subtype of another type.
@@ -515,21 +519,14 @@ impl<S> SchemaType<S> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Display)]
 pub enum TypeType<'a, S: 'a> {
+    #[display("{}", _0.name().unwrap())]
     Concrete(&'a MetaType<S>),
+    #[display("{}!", **_0)]
     NonNull(Box<TypeType<'a, S>>),
+    #[display("[{}]", **_0)]
     List(Box<TypeType<'a, S>>, Option<usize>),
-}
-
-impl<S> fmt::Display for TypeType<'_, S> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Concrete(t) => f.write_str(t.name().unwrap()),
-            Self::List(i, _) => write!(f, "[{i}]"),
-            Self::NonNull(i) => write!(f, "{i}!"),
-        }
-    }
 }
 
 impl<'a, S> TypeType<'a, S> {
@@ -653,38 +650,31 @@ impl<S> DirectiveType<S> {
     }
 }
 
-#[derive(Clone, Debug, Eq, GraphQLEnum, PartialEq)]
+#[derive(Clone, Debug, Display, Eq, GraphQLEnum, PartialEq)]
 #[graphql(name = "__DirectiveLocation", internal)]
 pub enum DirectiveLocation {
+    #[display("query")]
     Query,
+    #[display("mutation")]
     Mutation,
+    #[display("subscription")]
     Subscription,
+    #[display("field")]
     Field,
+    #[display("scalar")]
     Scalar,
+    #[display("fragment definition")]
     FragmentDefinition,
+    #[display("field definition")]
     FieldDefinition,
+    #[display("variable definition")]
     VariableDefinition,
+    #[display("fragment spread")]
     FragmentSpread,
+    #[display("inline fragment")]
     InlineFragment,
+    #[display("enum value")]
     EnumValue,
-}
-
-impl fmt::Display for DirectiveLocation {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(match self {
-            Self::Query => "query",
-            Self::Mutation => "mutation",
-            Self::Subscription => "subscription",
-            Self::Field => "field",
-            Self::FieldDefinition => "field definition",
-            Self::FragmentDefinition => "fragment definition",
-            Self::FragmentSpread => "fragment spread",
-            Self::InlineFragment => "inline fragment",
-            Self::VariableDefinition => "variable definition",
-            Self::Scalar => "scalar",
-            Self::EnumValue => "enum value",
-        })
-    }
 }
 
 /// Sorts the provided [`TypeType`]s in the "type-then-name" manner.

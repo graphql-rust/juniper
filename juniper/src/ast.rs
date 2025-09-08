@@ -1,6 +1,7 @@
 use std::{borrow::Cow, fmt, hash::Hash, slice, vec};
 
 use arcstr::ArcStr;
+use compact_str::CompactString;
 use indexmap::IndexMap;
 use smallvec::SmallVec;
 
@@ -9,7 +10,7 @@ use self::TypeModifier::{List, NonNull};
 use crate::{
     executor::Variables,
     parser::Spanning,
-    value::{DefaultScalarValue, ScalarValue},
+    value::{DefaultScalarValue, Scalar, ScalarValue, ToScalarValue},
 };
 
 /// Possible modifiers in a [`Type`] literal.
@@ -340,24 +341,18 @@ pub type Document<'a, S> = [Definition<'a, S>];
 #[doc(hidden)]
 pub type OwnedDocument<'a, S> = Vec<Definition<'a, S>>;
 
-/// Parsing of an unstructured input value into a Rust data type.
+/// Parsing of an unstructured [`InputValue`] into a Rust data type.
 ///
-/// The conversion _can_ fail, and must in that case return [`Err`]. Thus not
-/// restricted in the definition of this trait, the returned [`Err`] should be
-/// convertible with [`IntoFieldError`] to fit well into the library machinery.
+/// The conversion _can_ fail, and must in that case return an [`Err`]. Thus, not restricted in the
+/// definition of this trait, the returned [`Err`] should be convertible with the [`IntoFieldError`]
+/// trait to fit well into the library machinery.
 ///
-/// Implemented automatically by the convenience proc macro [`graphql_scalar!`]
-/// or by deriving `GraphQLEnum`.
-///
-/// Must be implemented manually when manually exposing new enums or scalars.
-///
-/// [`graphql_scalar!`]: macro@crate::graphql_scalar
 /// [`IntoFieldError`]: crate::IntoFieldError
 pub trait FromInputValue<S = DefaultScalarValue>: Sized {
     /// Type of this conversion error.
     ///
-    /// Thus not restricted, it should be convertible with [`IntoFieldError`] to
-    /// fit well into the library machinery.
+    /// Thus, not restricted, it should be convertible with the [`IntoFieldError`] trait to fit well
+    /// into the library machinery.
     ///
     /// [`IntoFieldError`]: crate::IntoFieldError
     type Error;
@@ -377,8 +372,8 @@ pub trait FromInputValue<S = DefaultScalarValue>: Sized {
     }
 }
 
-/// Losslessly clones a Rust data type into an InputValue.
-pub trait ToInputValue<S = DefaultScalarValue>: Sized {
+/// Losslessly clones a Rust data type into an [`InputValue`].
+pub trait ToInputValue<S = DefaultScalarValue> {
     /// Performs the conversion.
     fn to_input_value(&self) -> InputValue<S>;
 }
@@ -389,11 +384,8 @@ impl<S> InputValue<S> {
         Self::Null
     }
 
-    /// Construct a scalar value
-    pub fn scalar<T>(v: T) -> Self
-    where
-        S: From<T>,
-    {
+    /// Construct a scalar value.
+    pub fn scalar<T: Into<S>>(v: T) -> Self {
         Self::Scalar(v.into())
     }
 
@@ -502,45 +494,12 @@ impl<S> InputValue<S> {
         }
     }
 
-    /// View the underlying int value, if present.
-    pub fn as_int_value(&self) -> Option<i32>
-    where
-        S: ScalarValue,
-    {
-        self.as_scalar_value().and_then(|s| s.as_int())
-    }
-
-    /// View the underlying float value, if present.
-    pub fn as_float_value(&self) -> Option<f64>
-    where
-        S: ScalarValue,
-    {
-        self.as_scalar_value().and_then(|s| s.as_float())
-    }
-
-    /// View the underlying string value, if present.
-    pub fn as_string_value(&self) -> Option<&str>
-    where
-        S: ScalarValue,
-    {
-        self.as_scalar_value().and_then(|s| s.as_str())
-    }
-
     /// View the underlying scalar value, if present.
     pub fn as_scalar(&self) -> Option<&S> {
         match self {
             Self::Scalar(s) => Some(s),
             _ => None,
         }
-    }
-
-    /// View the underlying scalar value, if present.
-    pub fn as_scalar_value<'a, T>(&'a self) -> Option<&'a T>
-    where
-        T: 'a,
-        Option<&'a T>: From<&'a S>,
-    {
-        self.as_scalar().and_then(Into::into)
     }
 
     /// Converts this [`InputValue`] to a [`Spanning::unlocated`] object value.
@@ -616,13 +575,7 @@ impl<S: ScalarValue> fmt::Display for InputValue<S> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Null => write!(f, "null"),
-            Self::Scalar(s) => {
-                if let Some(s) = s.as_str() {
-                    write!(f, "\"{s}\"")
-                } else {
-                    write!(f, "{s}")
-                }
-            }
+            Self::Scalar(s) => fmt::Display::fmt(<&Scalar<_>>::from(s), f),
             Self::Enum(v) => write!(f, "{v}"),
             Self::Variable(v) => write!(f, "${v}"),
             Self::List(v) => {
@@ -650,51 +603,115 @@ impl<S: ScalarValue> fmt::Display for InputValue<S> {
     }
 }
 
-impl<S, T> From<Option<T>> for InputValue<S>
+/// Conversion into an [`InputValue`].
+///
+/// This trait exists to work around [orphan rules] and allow to specify custom efficient
+/// conversions whenever some custom [`ScalarValue`] is involved
+/// (`impl IntoInputValue<CustomScalarValue> for ForeignType` would work, while
+/// `impl From<ForeignType> for InputValue<CustomScalarValue>` wound not).
+///
+/// This trait is used inside [`graphql_input_value!`] macro expansion and implementing it allows to
+/// put values of the implementor type there.
+///
+/// [`graphql_input_value!`]: crate::graphql_input_value
+/// [orphan rules]: https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules
+pub trait IntoInputValue<S> {
+    /// Converts this value into an [`InputValue`].
+    #[must_use]
+    fn into_input_value(self) -> InputValue<S>;
+}
+
+impl<S> IntoInputValue<S> for InputValue<S> {
+    fn into_input_value(self) -> Self {
+        self
+    }
+}
+
+impl<T, S> IntoInputValue<S> for Option<T>
 where
-    Self: From<T>,
+    T: IntoInputValue<S>,
 {
-    fn from(v: Option<T>) -> Self {
-        match v {
-            Some(v) => v.into(),
-            None => Self::Null,
+    fn into_input_value(self) -> InputValue<S> {
+        match self {
+            Some(v) => v.into_input_value(),
+            None => InputValue::Null,
         }
     }
 }
 
-impl<'a, S: From<String>> From<&'a str> for InputValue<S> {
-    fn from(s: &'a str) -> Self {
-        Self::scalar(s.to_owned())
+impl<T, S> IntoInputValue<S> for &T
+where
+    T: ToScalarValue<S> + ?Sized,
+{
+    fn into_input_value(self) -> InputValue<S> {
+        InputValue::Scalar(self.to_scalar_value())
     }
 }
 
-impl<'a, S: From<String>> From<Cow<'a, str>> for InputValue<S> {
-    fn from(s: Cow<'a, str>) -> Self {
-        Self::scalar(s.into_owned())
+impl<S> IntoInputValue<S> for String
+where
+    String: Into<S>,
+{
+    fn into_input_value(self) -> InputValue<S> {
+        InputValue::Scalar(self.into())
     }
 }
 
-impl<S: From<String>> From<String> for InputValue<S> {
-    fn from(s: String) -> Self {
-        Self::scalar(s)
+impl<S> IntoInputValue<S> for Cow<'_, str>
+where
+    for<'a> &'a str: IntoInputValue<S>,
+    String: IntoInputValue<S>,
+{
+    fn into_input_value(self) -> InputValue<S> {
+        match self {
+            Cow::Borrowed(s) => s.into_input_value(),
+            Cow::Owned(s) => s.into_input_value(),
+        }
     }
 }
 
-impl<S: From<i32>> From<i32> for InputValue<S> {
-    fn from(i: i32) -> Self {
-        Self::scalar(i)
+impl<S: ScalarValue> IntoInputValue<S> for ArcStr
+where
+    ArcStr: ToScalarValue<S>,
+{
+    fn into_input_value(self) -> InputValue<S> {
+        InputValue::Scalar(self.to_scalar_value())
     }
 }
 
-impl<S: From<f64>> From<f64> for InputValue<S> {
-    fn from(f: f64) -> Self {
-        Self::scalar(f)
+impl<S: ScalarValue> IntoInputValue<S> for CompactString
+where
+    CompactString: ToScalarValue<S>,
+{
+    fn into_input_value(self) -> InputValue<S> {
+        InputValue::Scalar(self.to_scalar_value())
     }
 }
 
-impl<S: From<bool>> From<bool> for InputValue<S> {
-    fn from(b: bool) -> Self {
-        Self::scalar(b)
+impl<S> IntoInputValue<S> for i32
+where
+    i32: ToScalarValue<S>,
+{
+    fn into_input_value(self) -> InputValue<S> {
+        InputValue::Scalar(self.to_scalar_value())
+    }
+}
+
+impl<S> IntoInputValue<S> for f64
+where
+    f64: ToScalarValue<S>,
+{
+    fn into_input_value(self) -> InputValue<S> {
+        InputValue::Scalar(self.to_scalar_value())
+    }
+}
+
+impl<S> IntoInputValue<S> for bool
+where
+    bool: ToScalarValue<S>,
+{
+    fn into_input_value(self) -> InputValue<S> {
+        InputValue::Scalar(self.to_scalar_value())
     }
 }
 
@@ -703,11 +720,11 @@ impl<'a, S> Arguments<'a, S> {
         self.items.into_iter()
     }
 
-    pub fn iter(&self) -> slice::Iter<(Spanning<&'a str>, Spanning<InputValue<S>>)> {
+    pub fn iter(&self) -> slice::Iter<'_, (Spanning<&'a str>, Spanning<InputValue<S>>)> {
         self.items.iter()
     }
 
-    pub fn iter_mut(&mut self) -> slice::IterMut<(Spanning<&'a str>, Spanning<InputValue<S>>)> {
+    pub fn iter_mut(&mut self) -> slice::IterMut<'_, (Spanning<&'a str>, Spanning<InputValue<S>>)> {
         self.items.iter_mut()
     }
 
@@ -725,19 +742,19 @@ impl<'a, S> Arguments<'a, S> {
 }
 
 impl<'a, S> VariableDefinitions<'a, S> {
-    pub fn iter(&self) -> slice::Iter<(Spanning<&'a str>, VariableDefinition<'a, S>)> {
+    pub fn iter(&self) -> slice::Iter<'_, (Spanning<&'a str>, VariableDefinition<'a, S>)> {
         self.items.iter()
     }
 }
 
 #[cfg(test)]
-mod tests {
+mod spec_input_value_fmt {
     use crate::graphql_input_value;
 
     use super::InputValue;
 
     #[test]
-    fn test_input_value_fmt() {
+    fn correct() {
         let value: InputValue = graphql_input_value!(null);
         assert_eq!(value.to_string(), "null");
 

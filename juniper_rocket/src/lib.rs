@@ -15,6 +15,12 @@ mod for_tests_only {
 
 use std::{borrow::Cow, io::Cursor};
 
+use derive_more::with_trait::{AsMut, AsRef};
+use juniper::{
+    DefaultScalarValue, FieldError, GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync,
+    InputValue, RootNode, ScalarValue,
+    http::{self, GraphQLBatchRequest},
+};
 use rocket::{
     Data, Request,
     data::{self, FromData, ToByteUnit},
@@ -22,12 +28,6 @@ use rocket::{
     http::{ContentType, Status},
     outcome::Outcome,
     response::{self, Responder, Response, content::RawHtml},
-};
-
-use juniper::{
-    DefaultScalarValue, FieldError, GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync,
-    InputValue, RootNode, ScalarValue,
-    http::{self, GraphQLBatchRequest},
 };
 
 /// Simple wrapper around an incoming GraphQL request.
@@ -74,22 +74,10 @@ use juniper::{
 ///     .manage(Schema::new(Query, EmptyMutation::new(), EmptySubscription::new()))
 ///     .mount("/", routes![get_graphql_handler, post_graphql_handler]);
 /// ```
-#[derive(Debug, PartialEq)]
+#[derive(AsRef, AsMut, Debug, PartialEq)]
 pub struct GraphQLRequest<S = DefaultScalarValue>(GraphQLBatchRequest<S>)
 where
     S: ScalarValue;
-
-impl<S: ScalarValue> AsRef<GraphQLBatchRequest<S>> for GraphQLRequest<S> {
-    fn as_ref(&self) -> &GraphQLBatchRequest<S> {
-        &self.0
-    }
-}
-
-impl<S: ScalarValue> AsMut<GraphQLBatchRequest<S>> for GraphQLRequest<S> {
-    fn as_mut(&mut self) -> &mut GraphQLBatchRequest<S> {
-        &mut self.0
-    }
-}
 
 /// Simple wrapper around the result of executing a GraphQL query
 pub struct GraphQLResponse(pub Status, pub String);

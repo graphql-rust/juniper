@@ -9,7 +9,7 @@
 //! [`Uuid`]: uuid::Uuid
 //! [s1]: https://graphql-scalars.dev/docs/scalars/uuid
 
-use crate::{InputValue, ScalarValue, Value, graphql_scalar};
+use crate::{ScalarValue, graphql_scalar};
 
 /// [Universally Unique Identifier][0] (UUID).
 ///
@@ -20,25 +20,21 @@ use crate::{InputValue, ScalarValue, Value, graphql_scalar};
 /// [0]: https://en.wikipedia.org/wiki/Universally_unique_identifier
 /// [1]: https://graphql-scalars.dev/docs/scalars/uuid
 /// [2]: https://docs.rs/uuid/*/uuid/struct.Uuid.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     name = "UUID",
     with = uuid_scalar,
+    to_output_with = ScalarValue::from_displayable,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/uuid",
 )]
 type Uuid = uuid::Uuid;
 
 mod uuid_scalar {
-    use super::*;
+    use super::Uuid;
 
-    pub(super) fn to_output<S: ScalarValue>(v: &Uuid) -> Value<S> {
-        Value::scalar(v.to_string())
-    }
-
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Uuid, String> {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| Uuid::parse_str(s).map_err(|e| format!("Failed to parse `UUID`: {e}")))
+    pub(super) fn from_input(s: &str) -> Result<Uuid, Box<str>> {
+        Uuid::parse_str(s).map_err(|e| format!("Failed to parse `UUID`: {e}").into())
     }
 }
 

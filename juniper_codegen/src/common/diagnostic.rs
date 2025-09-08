@@ -1,5 +1,4 @@
-use std::fmt;
-
+use derive_more::with_trait::Display;
 use proc_macro2::Span;
 
 pub(crate) use self::polyfill::{
@@ -9,17 +8,30 @@ pub(crate) use self::polyfill::{
 /// URL of the GraphQL specification (October 2021 Edition).
 pub(crate) const SPEC_URL: &str = "https://spec.graphql.org/October2021";
 
+#[derive(Display)]
+#[display("GraphQL {_variant}")]
 pub(crate) enum Scope {
+    #[display("enum")]
     EnumDerive,
+    #[display("input object")]
     InputObjectDerive,
+    #[display("interface")]
     InterfaceAttr,
+    #[display("interface")]
     InterfaceDerive,
+    #[display("object")]
     ObjectAttr,
+    #[display("object")]
     ObjectDerive,
+    #[display("scalar")]
     ScalarAttr,
+    #[display("scalar")]
     ScalarDerive,
+    #[display("built-in scalars")]
     ScalarValueDerive,
+    #[display("union")]
     UnionAttr,
+    #[display("union")]
     UnionDerive,
 }
 
@@ -34,21 +46,6 @@ impl Scope {
             Self::ScalarValueDerive => "#sec-Scalars.Built-in-Scalars",
             Self::UnionAttr | Self::UnionDerive => "#sec-Unions",
         }
-    }
-}
-
-impl fmt::Display for Scope {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let name = match self {
-            Self::EnumDerive => "enum",
-            Self::InputObjectDerive => "input object",
-            Self::InterfaceAttr | Self::InterfaceDerive => "interface",
-            Self::ObjectAttr | Self::ObjectDerive => "object",
-            Self::ScalarAttr | Self::ScalarDerive => "scalar",
-            Self::ScalarValueDerive => "built-in scalars",
-            Self::UnionAttr | Self::UnionDerive => "union",
-        };
-        write!(f, "GraphQL {name}")
     }
 }
 

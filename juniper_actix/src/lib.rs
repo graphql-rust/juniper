@@ -1,6 +1,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
 #![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
+#![cfg_attr(test, expect(unused_crate_dependencies, reason = "examples"))]
 
 use actix_web::{
     Error, FromRequest, HttpMessage, HttpRequest, HttpResponse, error::JsonPayloadError,
@@ -166,13 +167,14 @@ pub async fn playground_handler(
 #[cfg(feature = "subscriptions")]
 /// `juniper_actix` subscriptions handler implementation.
 pub mod subscriptions {
-    use std::{fmt, pin::pin, sync::Arc};
+    use std::{pin::pin, sync::Arc};
 
     use actix_web::{
         HttpRequest, HttpResponse,
         http::header::{HeaderName, HeaderValue},
         web,
     };
+    use derive_more::with_trait::{Display, Error as StdError};
     use futures::{SinkExt as _, StreamExt as _, future};
     use juniper::{GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue};
     use juniper_graphql_ws::{ArcSchema, Init, graphql_transport_ws, graphql_ws};
@@ -416,27 +418,16 @@ pub mod subscriptions {
     }
 
     /// Possible errors of serving an [`actix_ws`] connection.
-    #[derive(Debug)]
+    #[derive(Debug, Display, StdError)]
     enum Error {
         /// Deserializing of a client [`actix_ws::Message`] failed.
+        #[display("`serde` error: {_0}")]
         Serde(serde_json::Error),
 
         /// Unexpected client [`actix_ws::Message`].
-        UnexpectedClientMessage(actix_ws::Message),
+        #[display("unexpected message received from client: {_0:?}")]
+        UnexpectedClientMessage(#[error(not(source))] actix_ws::Message),
     }
-
-    impl fmt::Display for Error {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            match self {
-                Self::Serde(e) => write!(f, "`serde` error: {e}"),
-                Self::UnexpectedClientMessage(m) => {
-                    write!(f, "unexpected message received from client: {m:?}")
-                }
-            }
-        }
-    }
-
-    impl std::error::Error for Error {}
 }
 
 #[cfg(test)]
@@ -767,7 +758,7 @@ mod subscription_tests {
     use actix_test::start;
     use actix_web::{App, Error, HttpRequest, HttpResponse, web};
     use juniper::{
-        EmptyMutation, LocalBoxFuture,
+        EmptyMutation,
         futures::{SinkExt, StreamExt},
         http::tests::{WsIntegration, WsIntegrationMessage, graphql_transport_ws, graphql_ws},
         tests::fixtures::starwars::schema::{Database, Query, Subscription},
@@ -779,11 +770,8 @@ mod subscription_tests {
 
     struct TestWsIntegration(&'static str);
 
-    impl TestWsIntegration {
-        async fn run_async(
-            &self,
-            messages: Vec<WsIntegrationMessage>,
-        ) -> Result<(), anyhow::Error> {
+    impl WsIntegration for TestWsIntegration {
+        async fn run(&self, messages: Vec<WsIntegrationMessage>) -> Result<(), anyhow::Error> {
             let proto = self.0;
 
             let mut server = start(|| {
@@ -846,15 +834,6 @@ mod subscription_tests {
         }
     }
 
-    impl WsIntegration for TestWsIntegration {
-        fn run(
-            &self,
-            messages: Vec<WsIntegrationMessage>,
-        ) -> LocalBoxFuture<Result<(), anyhow::Error>> {
-            Box::pin(self.run_async(messages))
-        }
-    }
-
     type Schema = juniper::RootNode<Query, EmptyMutation<Database>, Subscription>;
 
     fn subscription(
@@ -863,6 +842,7 @@ mod subscription_tests {
         (HttpRequest, web::Payload, web::Data<Schema>),
         Output = Result<HttpResponse, Error>,
     > {
+        #[expect(closure_returning_async_block, reason = "not possible")]
         move |req: HttpRequest, stream: web::Payload, schema: web::Data<Schema>| async move {
             let context = Database::new();
             let schema = schema.into_inner();

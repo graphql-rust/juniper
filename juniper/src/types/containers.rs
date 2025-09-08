@@ -90,7 +90,10 @@ impl<S, T: FromInputValue<S>> FromInputValue<S> for Option<T> {
     }
 }
 
-impl<S, T: ToInputValue<S>> ToInputValue<S> for Option<T> {
+impl<S, T> ToInputValue<S> for Option<T>
+where
+    T: ToInputValue<S>,
+{
     fn to_input_value(&self) -> InputValue<S> {
         match self {
             Some(v) => v.to_input_value(),
@@ -176,7 +179,6 @@ impl<S: ScalarValue, T: FromInputValue<S>> FromInputValue<S> for Vec<T> {
 impl<T, S> ToInputValue<S> for Vec<T>
 where
     T: ToInputValue<S>,
-    S: ScalarValue,
 {
     fn to_input_value(&self) -> InputValue<S> {
         InputValue::list(self.iter().map(T::to_input_value).collect())
@@ -270,10 +272,9 @@ where
     }
 }
 
-impl<T, S> ToInputValue<S> for &[T]
+impl<T, S> ToInputValue<S> for [T]
 where
     T: ToInputValue<S>,
-    S: ScalarValue,
 {
     fn to_input_value(&self) -> InputValue<S> {
         InputValue::list(self.iter().map(T::to_input_value).collect())
@@ -462,7 +463,6 @@ where
 impl<T, S, const N: usize> ToInputValue<S> for [T; N]
 where
     T: ToInputValue<S>,
-    S: ScalarValue,
 {
     fn to_input_value(&self) -> InputValue<S> {
         InputValue::list(self.iter().map(T::to_input_value).collect())
@@ -668,13 +668,13 @@ mod coercion {
         assert_eq!(
             <Vec<i32>>::from_input_value(&v),
             Err(FromInputValueVecError::Item(
-                "Expected `Int`, found: null".into_field_error(),
+                "Expected GraphQL scalar, found: null".into_field_error(),
             )),
         );
         assert_eq!(
             <Option<Vec<i32>>>::from_input_value(&v),
             Err(FromInputValueVecError::Item(
-                "Expected `Int`, found: null".into_field_error(),
+                "Expected GraphQL scalar, found: null".into_field_error(),
             )),
         );
         assert_eq!(
@@ -778,13 +778,13 @@ mod coercion {
         assert_eq!(
             <[i32; 3]>::from_input_value(&v),
             Err(FromInputValueArrayError::Item(
-                "Expected `Int`, found: null".into_field_error(),
+                "Expected GraphQL scalar, found: null".into_field_error(),
             )),
         );
         assert_eq!(
             <Option<[i32; 3]>>::from_input_value(&v),
             Err(FromInputValueArrayError::Item(
-                "Expected `Int`, found: null".into_field_error(),
+                "Expected GraphQL scalar, found: null".into_field_error(),
             )),
         );
         assert_eq!(

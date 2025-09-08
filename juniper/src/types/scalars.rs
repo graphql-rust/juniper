@@ -1,9 +1,10 @@
-use std::{char, fmt, marker::PhantomData, ops::Deref, rc::Rc, thread::JoinHandle};
+use std::{char, marker::PhantomData, rc::Rc, thread::JoinHandle};
 
+use derive_more::with_trait::{Deref, Display, From, Into};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    GraphQLScalar,
+    GraphQLScalar, IntoFieldError, Scalar,
     ast::{InputValue, Selection, ToInputValue},
     executor::{ExecutionResult, Executor, Registry},
     graphql_scalar,
@@ -15,72 +16,68 @@ use crate::{
         base::{GraphQLType, GraphQLValue},
         subscriptions::GraphQLSubscriptionValue,
     },
-    value::{ParseScalarResult, ScalarValue, Value},
+    value::{
+        FromScalarValue, ParseScalarResult, ScalarValue, ToScalarValue, TryToPrimitive, Value,
+        WrongInputScalarTypeError,
+    },
 };
 
 /// An ID as defined by the GraphQL specification
 ///
 /// Represented as a string, but can be converted _to_ from an integer as well.
-#[derive(Clone, Debug, Deserialize, Eq, GraphQLScalar, PartialEq, Serialize)]
+#[derive(
+    Clone, Debug, Deref, Deserialize, Display, Eq, From, GraphQLScalar, Into, PartialEq, Serialize,
+)]
+#[deref(forward)]
+#[from(Box<str>, String)]
+#[into(Box<str>, String)]
 #[graphql(parse_token(String, i32))]
-pub struct ID(String);
+pub struct ID(Box<str>);
 
 impl ID {
-    fn to_output<S: ScalarValue>(&self) -> Value<S> {
-        Value::scalar(self.0.clone())
-    }
-
-    fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
-        v.as_string_value()
-            .map(str::to_owned)
-            .or_else(|| v.as_int_value().as_ref().map(ToString::to_string))
-            .map(Self)
-            .ok_or_else(|| format!("Expected `String` or `Int`, found: {v}"))
-    }
-}
-
-impl From<String> for ID {
-    fn from(s: String) -> ID {
-        ID(s)
-    }
-}
-
-impl ID {
-    /// Construct a new ID from anything implementing `Into<String>`
-    pub fn new<S: Into<String>>(value: S) -> Self {
-        ID(value.into())
-    }
-}
-
-impl Deref for ID {
-    type Target = str;
-
-    fn deref(&self) -> &str {
+    fn to_output(&self) -> &str {
         &self.0
     }
+
+    fn from_input<S: ScalarValue>(v: &Scalar<S>) -> Result<Self, WrongInputScalarTypeError<'_, S>> {
+        v.try_to_string()
+            .or_else(|| v.try_to_int().as_ref().map(ToString::to_string))
+            .map(|s| Self(s.into()))
+            .ok_or_else(|| WrongInputScalarTypeError {
+                type_name: arcstr::literal!("String` or `Int"),
+                input: &**v,
+            })
+    }
 }
 
-impl fmt::Display for ID {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
+impl ID {
+    /// Construct a new [`ID`] from anything implementing [`Into`]`<`[`String`]`>`.
+    #[must_use]
+    pub fn new<S: Into<String>>(value: S) -> Self {
+        ID(value.into().into())
     }
 }
 
 #[graphql_scalar]
-#[graphql(with = impl_string_scalar)]
+#[graphql(
+    with = impl_string_scalar,
+    to_output_with = String::as_str
+    from_input_with = __builtin,
+)]
 type String = std::string::String;
 
 mod impl_string_scalar {
     use super::*;
 
-    pub(super) fn to_output<S: ScalarValue>(v: &str) -> Value<S> {
-        Value::scalar(v.to_owned())
-    }
+    impl<'s, S> FromScalarValue<'s, S> for String
+    where
+        S: TryToPrimitive<'s, Self, Error: IntoFieldError<S>> + 's,
+    {
+        type Error = S::Error;
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<String, String> {
-        v.as_string_value()
-            .map(str::to_owned)
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+        fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
+            v.try_to_primitive()
+        }
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -188,42 +185,50 @@ where
 }
 
 #[graphql_scalar]
-#[graphql(name = "String", with = impl_arcstr_scalar, parse_token(String))]
+#[graphql(
+    name = "String", 
+    with = impl_arcstr_scalar,
+    to_output_with = ScalarValue::from_displayable,
+    parse_token(String)
+)]
 type ArcStr = arcstr::ArcStr;
 
 mod impl_arcstr_scalar {
-    use crate::{InputValue, ScalarValue, Value};
-
     use super::ArcStr;
+    use crate::{FromScalarValue, Scalar, ScalarValue};
 
-    pub(super) fn to_output<S: ScalarValue>(v: &ArcStr) -> Value<S> {
-        Value::scalar(v.to_string())
-    }
-
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<ArcStr, String> {
-        v.as_string_value()
-            .map(Into::into)
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+    pub(super) fn from_input<S: ScalarValue>(
+        v: &Scalar<S>,
+    ) -> Result<ArcStr, <&str as FromScalarValue<'_, S>>::Error> {
+        if let Some(s) = v.downcast_type::<ArcStr>() {
+            Ok(s.clone())
+        } else {
+            v.try_to::<&str>().map(ArcStr::from)
+        }
     }
 }
 
 #[graphql_scalar]
-#[graphql(name = "String", with = impl_compactstring_scalar, parse_token(String))]
+#[graphql(
+    name = "String", 
+    with = impl_compactstring_scalar,
+    to_output_with = ScalarValue::from_displayable,
+    parse_token(String),
+)]
 type CompactString = compact_str::CompactString;
 
 mod impl_compactstring_scalar {
-    use crate::{InputValue, ScalarValue, Value};
-
     use super::CompactString;
+    use crate::{FromScalarValue, Scalar, ScalarValue};
 
-    pub(super) fn to_output<S: ScalarValue>(v: &CompactString) -> Value<S> {
-        Value::scalar(v.to_string())
-    }
-
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<CompactString, String> {
-        v.as_string_value()
-            .map(Into::into)
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
+    pub(super) fn from_input<S: ScalarValue>(
+        v: &Scalar<S>,
+    ) -> Result<CompactString, <&str as FromScalarValue<'_, S>>::Error> {
+        if let Some(s) = v.downcast_type::<CompactString>() {
+            Ok(s.clone())
+        } else {
+            v.try_to::<&str>().map(CompactString::from)
+        }
     }
 }
 
@@ -269,7 +274,7 @@ where
         _: Option<&[Selection<S>]>,
         _: &Executor<Self::Context, S>,
     ) -> ExecutionResult<S> {
-        Ok(Value::scalar(String::from(self)))
+        Ok(Value::Scalar(self.to_scalar_value()))
     }
 }
 
@@ -282,36 +287,58 @@ where
         info: &'a Self::TypeInfo,
         selection_set: Option<&'a [Selection<S>]>,
         executor: &'a Executor<Self::Context, S>,
-    ) -> crate::BoxFuture<'a, crate::ExecutionResult<S>> {
+    ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
         use futures::future;
         Box::pin(future::ready(self.resolve(info, selection_set, executor)))
     }
 }
 
-impl<S> ToInputValue<S> for &str
+impl<'s, S> FromScalarValue<'s, S> for &'s str
 where
-    S: ScalarValue,
+    S: TryToPrimitive<'s, Self, Error: IntoFieldError<S>> + 's,
+{
+    type Error = S::Error;
+
+    fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
+        v.try_to_primitive()
+    }
+}
+
+impl<S: ScalarValue> ToScalarValue<S> for str {
+    fn to_scalar_value(&self) -> S {
+        S::from_displayable(self)
+    }
+}
+
+impl<S> ToInputValue<S> for str
+where
+    Self: ToScalarValue<S>,
 {
     fn to_input_value(&self) -> InputValue<S> {
-        InputValue::scalar(String::from(*self))
+        InputValue::Scalar(self.to_scalar_value())
     }
 }
 
 #[graphql_scalar]
-#[graphql(with = impl_boolean_scalar)]
+#[graphql(with = impl_boolean_scalar, from_input_with = __builtin)]
 type Boolean = bool;
 
 mod impl_boolean_scalar {
     use super::*;
 
-    pub(super) fn to_output<S: ScalarValue>(v: &Boolean) -> Value<S> {
-        Value::scalar(*v)
+    impl<'s, S> FromScalarValue<'s, S> for Boolean
+    where
+        S: TryToPrimitive<'s, Self, Error: IntoFieldError<S>> + 's,
+    {
+        type Error = S::Error;
+
+        fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
+            v.try_to_primitive()
+        }
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Boolean, String> {
-        v.as_scalar_value()
-            .and_then(ScalarValue::as_bool)
-            .ok_or_else(|| format!("Expected `Boolean`, found: {v}"))
+    pub(super) fn to_output<S: ScalarValue>(v: &Boolean) -> S {
+        (*v).into()
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -321,19 +348,25 @@ mod impl_boolean_scalar {
 }
 
 #[graphql_scalar]
-#[graphql(with = impl_int_scalar)]
+#[graphql(with = impl_int_scalar, from_input_with = __builtin)]
 type Int = i32;
 
 mod impl_int_scalar {
     use super::*;
 
-    pub(super) fn to_output<S: ScalarValue>(v: &Int) -> Value<S> {
-        Value::scalar(*v)
+    impl<'s, S> FromScalarValue<'s, S> for Int
+    where
+        S: TryToPrimitive<'s, Self, Error: IntoFieldError<S>> + 's,
+    {
+        type Error = S::Error;
+
+        fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
+            v.try_to_primitive()
+        }
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Int, String> {
-        v.as_int_value()
-            .ok_or_else(|| format!("Expected `Int`, found: {v}"))
+    pub(super) fn to_output<S: ScalarValue>(v: &Int) -> S {
+        (*v).into()
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -348,19 +381,25 @@ mod impl_int_scalar {
 }
 
 #[graphql_scalar]
-#[graphql(with = impl_float_scalar)]
+#[graphql(with = impl_float_scalar, from_input_with = __builtin)]
 type Float = f64;
 
 mod impl_float_scalar {
     use super::*;
 
-    pub(super) fn to_output<S: ScalarValue>(v: &Float) -> Value<S> {
-        Value::scalar(*v)
+    impl<'s, S> FromScalarValue<'s, S> for Float
+    where
+        S: TryToPrimitive<'s, Self, Error: IntoFieldError<S>> + 's,
+    {
+        type Error = S::Error;
+
+        fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
+            v.try_to_primitive()
+        }
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Float, String> {
-        v.as_float_value()
-            .ok_or_else(|| format!("Expected `Float`, found: {v}"))
+    pub(super) fn to_output<S: ScalarValue>(v: &Float) -> S {
+        (*v).into()
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -499,7 +538,7 @@ impl<T> Default for EmptySubscription<T> {
 mod tests {
     use crate::{
         parser::ScalarToken,
-        value::{DefaultScalarValue, ParseScalarValue},
+        value::{DefaultScalarValue, ParseScalarValue, ScalarValue as _},
     };
 
     use super::{EmptyMutation, EmptySubscription, ID};
@@ -507,20 +546,20 @@ mod tests {
     #[test]
     fn test_id_from_string() {
         let actual = ID::from(String::from("foo"));
-        let expected = ID(String::from("foo"));
+        let expected = ID("foo".into());
         assert_eq!(actual, expected);
     }
 
     #[test]
     fn test_id_new() {
         let actual = ID::new("foo");
-        let expected = ID(String::from("foo"));
+        let expected = ID("foo".into());
         assert_eq!(actual, expected);
     }
 
     #[test]
     fn test_id_deref() {
-        let id = ID(String::from("foo"));
+        let id = ID("foo".into());
         assert_eq!(id.len(), 3);
     }
 
@@ -536,7 +575,7 @@ mod tests {
             let s =
                 <String as ParseScalarValue<DefaultScalarValue>>::from_str(ScalarToken::String(s));
             assert!(s.is_ok(), "A parsing error occurred: {s:?}");
-            let s: Option<String> = s.unwrap().into();
+            let s: Option<String> = s.unwrap().try_to().ok();
             assert!(s.is_some(), "No string returned");
             assert_eq!(s.unwrap(), expected);
         }
@@ -564,7 +603,7 @@ mod tests {
             let n = <f64 as ParseScalarValue<DefaultScalarValue>>::from_str(ScalarToken::Int(v));
             assert!(n.is_ok(), "A parsing error occurred: {:?}", n.unwrap_err());
 
-            let n: Option<f64> = n.unwrap().into();
+            let n: Option<f64> = n.unwrap().try_to().ok();
             assert!(n.is_some(), "No `f64` returned");
             assert_eq!(n.unwrap(), f64::from(expected));
         }
@@ -582,7 +621,7 @@ mod tests {
             let n = <f64 as ParseScalarValue<DefaultScalarValue>>::from_str(ScalarToken::Float(v));
             assert!(n.is_ok(), "A parsing error occurred: {:?}", n.unwrap_err());
 
-            let n: Option<f64> = n.unwrap().into();
+            let n: Option<f64> = n.unwrap().try_to().ok();
             assert!(n.is_some(), "No `f64` returned");
             assert_eq!(n.unwrap(), expected);
         }

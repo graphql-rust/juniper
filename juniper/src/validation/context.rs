@@ -1,7 +1,7 @@
-use std::{
-    collections::HashSet,
-    fmt::{self, Debug},
-};
+use std::{collections::HashSet, fmt::Debug};
+
+use derive_more::with_trait::{Display, Error};
+use itertools::Itertools as _;
 
 use crate::{
     ast::{BorrowedType, Definition, Document},
@@ -10,7 +10,8 @@ use crate::{
 };
 
 /// Query validation error
-#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Display, Eq, Error, Ord, PartialEq, PartialOrd)]
+#[display("{message}. At {}", locations.iter().format(", "))]
 pub struct RuleError {
     locations: Vec<SourcePosition>,
     message: String,
@@ -50,22 +51,6 @@ impl RuleError {
         &self.locations
     }
 }
-
-impl fmt::Display for RuleError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // This is fine since all `RuleError`s should have at least one source
-        // position.
-        let locations = self
-            .locations
-            .iter()
-            .map(ToString::to_string)
-            .collect::<Vec<_>>()
-            .join(", ");
-        write!(f, "{}. At {locations}", self.message)
-    }
-}
-
-impl std::error::Error for RuleError {}
 
 impl<'a, S: Debug> ValidatorContext<'a, S> {
     #[doc(hidden)]

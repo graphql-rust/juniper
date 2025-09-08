@@ -22,12 +22,16 @@
 //! [s4]: https://graphql-scalars.dev/docs/scalars/date-time
 //! [s5]: https://graphql-scalars.dev/docs/scalars/utc-offset
 
+use std::{
+    fmt::{self, Display},
+    io, str,
+};
 use time::{
     format_description::{BorrowedFormatItem, well_known::Rfc3339},
     macros::format_description,
 };
 
-use crate::{InputValue, ScalarValue, Value, graphql_scalar};
+use crate::graphql_scalar;
 
 /// Date in the proleptic Gregorian calendar (without time zone).
 ///
@@ -40,7 +44,8 @@ use crate::{InputValue, ScalarValue, Value, graphql_scalar};
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-date
 /// [2]: https://docs.rs/time/*/time/struct.Date.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = local_date,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-date",
@@ -55,19 +60,21 @@ mod local_date {
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-date
     const FORMAT: &[BorrowedFormatItem<'_>] = format_description!("[year]-[month]-[day]");
 
-    pub(super) fn to_output<S: ScalarValue>(v: &LocalDate) -> Value<S> {
-        Value::scalar(
-            v.format(FORMAT)
-                .unwrap_or_else(|e| panic!("failed to format `LocalDate`: {e}")),
-        )
+    impl Display for LazyFmt<&LocalDate> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            self.0
+                .format_into(&mut IoAdapter(f), FORMAT)
+                .map_err(|_| fmt::Error)
+                .map(drop)
+        }
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<LocalDate, String> {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| {
-                LocalDate::parse(s, FORMAT).map_err(|e| format!("Invalid `LocalDate`: {e}"))
-            })
+    pub(super) fn to_output(v: &LocalDate) -> impl Display {
+        LazyFmt(v)
+    }
+
+    pub(super) fn from_input(s: &str) -> Result<LocalDate, Box<str>> {
+        LocalDate::parse(s, FORMAT).map_err(|e| format!("Invalid `LocalDate`: {e}").into())
     }
 }
 
@@ -83,7 +90,8 @@ mod local_date {
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
 /// [2]: https://docs.rs/time/*/time/struct.Time.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = local_time,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-time",
@@ -110,29 +118,33 @@ mod local_time {
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
     const FORMAT_NO_SECS: &[BorrowedFormatItem<'_>] = format_description!("[hour]:[minute]");
 
-    pub(super) fn to_output<S: ScalarValue>(v: &LocalTime) -> Value<S> {
-        Value::scalar(
-            if v.millisecond() == 0 {
-                v.format(FORMAT_NO_MILLIS)
-            } else {
-                v.format(FORMAT)
-            }
-            .unwrap_or_else(|e| panic!("failed to format `LocalTime`: {e}")),
-        )
+    impl Display for LazyFmt<&LocalTime> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            self.0
+                .format_into(
+                    &mut IoAdapter(f),
+                    if self.0.millisecond() == 0 {
+                        FORMAT_NO_MILLIS
+                    } else {
+                        FORMAT
+                    },
+                )
+                .map_err(|_| fmt::Error)
+                .map(drop)
+        }
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<LocalTime, String> {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| {
-                // First, try to parse the most used format.
-                // At the end, try to parse the full format for the parsing
-                // error to be most informative.
-                LocalTime::parse(s, FORMAT_NO_MILLIS)
-                    .or_else(|_| LocalTime::parse(s, FORMAT_NO_SECS))
-                    .or_else(|_| LocalTime::parse(s, FORMAT))
-                    .map_err(|e| format!("Invalid `LocalTime`: {e}"))
-            })
+    pub(super) fn to_output(v: &LocalTime) -> impl Display {
+        LazyFmt(v)
+    }
+
+    pub(super) fn from_input(s: &str) -> Result<LocalTime, Box<str>> {
+        // First, try to parse the most used format.
+        // At the end, try to parse the full format for the parsing error to be most informative.
+        LocalTime::parse(s, FORMAT_NO_MILLIS)
+            .or_else(|_| LocalTime::parse(s, FORMAT_NO_SECS))
+            .or_else(|_| LocalTime::parse(s, FORMAT))
+            .map_err(|e| format!("Invalid `LocalTime`: {e}").into())
     }
 }
 
@@ -144,7 +156,8 @@ mod local_time {
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-date-time
 /// [2]: https://docs.rs/time/*/time/struct.PrimitiveDateTime.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = local_date_time,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-date-time",
@@ -160,19 +173,21 @@ mod local_date_time {
     const FORMAT: &[BorrowedFormatItem<'_>] =
         format_description!("[year]-[month]-[day]T[hour]:[minute]:[second]");
 
-    pub(super) fn to_output<S: ScalarValue>(v: &LocalDateTime) -> Value<S> {
-        Value::scalar(
-            v.format(FORMAT)
-                .unwrap_or_else(|e| panic!("failed to format `LocalDateTime`: {e}")),
-        )
+    impl Display for LazyFmt<&LocalDateTime> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            self.0
+                .format_into(&mut IoAdapter(f), FORMAT)
+                .map_err(|_| fmt::Error)
+                .map(drop)
+        }
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<LocalDateTime, String> {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| {
-                LocalDateTime::parse(s, FORMAT).map_err(|e| format!("Invalid `LocalDateTime`: {e}"))
-            })
+    pub(super) fn to_output(v: &LocalDateTime) -> impl Display {
+        LazyFmt(v)
+    }
+
+    pub(super) fn from_input(s: &str) -> Result<LocalDateTime, Box<str>> {
+        LocalDateTime::parse(s, FORMAT).map_err(|e| format!("Invalid `LocalDateTime`: {e}").into())
     }
 }
 
@@ -188,7 +203,8 @@ mod local_date_time {
 /// [0]: https://datatracker.ietf.org/doc/html/rfc3339#section-5.6
 /// [1]: https://graphql-scalars.dev/docs/scalars/date-time
 /// [2]: https://docs.rs/time/*/time/struct.OffsetDateTime.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = date_time,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/date-time",
@@ -198,21 +214,24 @@ pub type DateTime = time::OffsetDateTime;
 mod date_time {
     use super::*;
 
-    pub(super) fn to_output<S: ScalarValue>(v: &DateTime) -> Value<S> {
-        Value::scalar(
-            v.to_offset(UtcOffset::UTC)
-                .format(&Rfc3339)
-                .unwrap_or_else(|e| panic!("failed to format `DateTime`: {e}")),
-        )
+    impl Display for LazyFmt<&DateTime> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            self.0
+                .to_offset(UtcOffset::UTC)
+                .format_into(&mut IoAdapter(f), &Rfc3339)
+                .map_err(|_| fmt::Error)
+                .map(drop)
+        }
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<DateTime, String> {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| {
-                DateTime::parse(s, &Rfc3339).map_err(|e| format!("Invalid `DateTime`: {e}"))
-            })
+    pub(super) fn to_output(v: &DateTime) -> impl Display {
+        LazyFmt(v)
+    }
+
+    pub(super) fn from_input(s: &str) -> Result<DateTime, Box<str>> {
+        DateTime::parse(s, &Rfc3339)
             .map(|dt| dt.to_offset(UtcOffset::UTC))
+            .map_err(|e| format!("Invalid `DateTime`: {e}").into())
     }
 }
 
@@ -231,7 +250,8 @@ const UTC_OFFSET_FORMAT: &[BorrowedFormatItem<'_>] =
 /// [0]: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 /// [1]: https://graphql-scalars.dev/docs/scalars/utc-offset
 /// [2]: https://docs.rs/time/*/time/struct.UtcOffset.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = utc_offset,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/utc-offset",
@@ -241,22 +261,48 @@ pub type UtcOffset = time::UtcOffset;
 mod utc_offset {
     use super::*;
 
-    pub(super) fn to_output<S: ScalarValue>(v: &UtcOffset) -> Value<S> {
-        Value::scalar(
-            v.format(UTC_OFFSET_FORMAT)
-                .unwrap_or_else(|e| panic!("failed to format `UtcOffset`: {e}")),
-        )
+    impl Display for LazyFmt<&UtcOffset> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            self.0
+                .format_into(&mut IoAdapter(f), UTC_OFFSET_FORMAT)
+                .map_err(|_| fmt::Error)
+                .map(drop)
+        }
     }
 
-    pub(super) fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<UtcOffset, String> {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| {
-                UtcOffset::parse(s, UTC_OFFSET_FORMAT)
-                    .map_err(|e| format!("Invalid `UtcOffset`: {e}"))
-            })
+    pub(super) fn to_output(v: &UtcOffset) -> impl Display {
+        LazyFmt(v)
+    }
+
+    pub(super) fn from_input(s: &str) -> Result<UtcOffset, Box<str>> {
+        UtcOffset::parse(s, UTC_OFFSET_FORMAT)
+            .map_err(|e| format!("Invalid `UtcOffset`: {e}").into())
     }
 }
+
+// TODO: Remove once time-rs/time#375 is resolved:
+//       https://github.com/time-rs/time/issues/375
+/// [`io::Write`] adapter for [`fmt::Formatter`].
+///
+/// Required because [`time`] crate cannot write to [`fmt::Write`], only to [`io::Write`].
+struct IoAdapter<'a, 'b>(&'a mut fmt::Formatter<'b>);
+
+impl io::Write for IoAdapter<'_, '_> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        let s = str::from_utf8(buf).map_err(io::Error::other)?;
+        match self.0.write_str(s) {
+            Ok(_) => Ok(s.len()),
+            Err(e) => Err(io::Error::other(e)),
+        }
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+/// Wrapper over [`time`] crate types to [`Display`] their format lazily.
+struct LazyFmt<T>(T);
 
 #[cfg(test)]
 mod local_date_test {

@@ -8,11 +8,12 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 ## master
 
-[Diff](/../../compare/juniper-v0.16.1...master) | [Milestone](/../../milestone/7)
+[Diff](/../../compare/juniper-v0.16.2...master) | [Milestone](/../../milestone/7)
 
 ### BC Breaks
 
 - Upgraded [`chrono-tz` crate] integration to [0.10 version](https://github.com/chronotope/chrono-tz/releases/tag/v0.10.0). ([#1252], [#1284])
+- Upgraded [`bson` crate] integration to [3.0 version](https://github.com/mongodb/bson-rust/releases/tag/v3.0.0). ([#1346])
 - Bumped up [MSRV] to 1.85. ([#1272], [1b1fc618])
 - Corrected compliance with newer [graphql-scalars.dev] specs: ([#1275], [#1277])
     - Switched `LocalDateTime` scalars to `yyyy-MM-ddTHH:mm:ss` format in types:
@@ -69,7 +70,37 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
         - Made `name()` method returning `ArcStr`.
     - `GraphQLValue`:
         - Made `type_name()` method returning `ArcStr`.
-- Switched `ParseError::UnexpectedToken` to `compact_str::CompactString` instead of `smartstring::SmartString`. ([todo])
+- Switched `ParseError::UnexpectedToken` to `compact_str::CompactString` instead of `smartstring::SmartString`. ([20609366])
+- Replaced `Value`'s `From` implementations with `IntoValue` ones. ([#1324])
+- Replaced `InputValue`'s `From` implementations with `IntoInputValue` ones. ([#1324])
+- `Value` enum: ([#1327])
+    - Removed `as_float_value()`, `as_string_value()` and `as_scalar_value()` methods (use `as_scalar()` method and then `ScalarValue` methods instead).
+- `InputValue` enum: ([#1327])
+    - Removed `as_float_value()`, `as_int_value()`, `as_string_value()` and `as_scalar_value()` methods (use `as_scalar()` method and then `ScalarValue` methods instead).
+- `ScalarValue` trait:
+    - Switched from `From` conversions to `TryToPrimitive` and `FromScalarValue` conversions. ([#1327], [#1329])
+    - Made to require `TryToPrimitive` conversions for `bool`, `f64`, `i32`, `String` and `&str` types (could be derived with `#[value(<conversion>)]` attributes of `#[derive(ScalarValue)]` macro). ([#1327], [#1329])
+    - Made to require `TryInto<String>` conversion (could be derived with `derive_more::TryInto`). ([#1327])
+    - Made `is_type()` method required and to accept `Any` type. ([#1327])
+    - Renamed `as_bool()` method as `try_to_bool()` and made it defined by default as `TryToPrimitive<bool>` alias. ([#1327])
+    - Renamed `as_float()` method as `try_to_float()` and made it defined by default as `TryToPrimitive<f64>` alias. ([#1327])
+    - Renamed `as_int()` method as `try_to_int()` and made it defined by default as `TryToPrimitive<i32>` alias. ([#1327])
+    - Renamed `as_string()` method as `try_to_string()` and made it defined by default as `TryToPrimitive<String>` alias. ([#1327])
+    - Renamed `as_str()` method as `try_as_str()` and made it defined by default as `TryToPrimitive<&str>` alias. ([#1327])
+    - Renamed `into_string()` method as `try_into_string()` and made it defined by default as `TryInto<String>` alias. ([#1327])
+    - Required new `downcast_type::<T>()` method (could be derived with `#[derive(ScalarValue)]` macro). ([#1329])
+- `#[derive(ScalarValue)]` macro: ([#1327])
+    - Renamed `#[value(as_bool)]` attribute as `#[value(to_bool)]`.
+    - Renamed `#[value(as_float)]` attribute as `#[value(to_float)]`.
+    - Renamed `#[value(as_int)]` attribute as `#[value(to_int)]`.
+    - Renamed `#[value(as_string)]` attribute as `#[value(to_string)]`.
+    - Removed `#[value(into_string)]` attribute.
+    - Removed `#[value(allow_missing_attributes)]` attribute (now attributes can always be omitted).
+    - `From` and `Display` implementations are not derived anymore (recommended way is to use [`derive_more` crate] for this).
+- `#[derive(GraphQLScalar)]` and `#[graphql_scalar]` macros:
+    - Made provided `from_input()` function to accept `ScalarValue` (or anything `FromScalarValue`-convertible) directly instead of `InputValue`. ([#1327])
+    - Made provided `to_output()` function to return `ScalarValue` directly instead of `Value`. ([#1330])
+- Removed `LocalBoxFuture` usage from `http::tests::WsIntegration` trait. ([4b14c015])
 
 ### Added
 
@@ -83,11 +114,30 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - `jiff::tz::Offset` as `UtcOffset` scalar.
     - `jiff::Span` as `Duration` scalar.
 - `http::GraphQLResponse::into_result()` method. ([#1293])
+- `String` scalar implementation for `arcstr::ArcStr`. ([#1247])
 - `String` scalar implementation for `compact_str::CompactString`. ([20609366])
+- `IntoValue` and `IntoInputValue` conversion traits allowing to work around orphan rules with custom `ScalarValue`. ([#1324])
+- `FromScalarValue` conversion trait. ([#1329])
+- `TryToPrimitive` conversion trait aiding `ScalarValue` trait. ([#1327], [#1329])
+- `ToScalarValue` conversion trait. ([#1330])
+- `ScalarValue` trait:
+    - `from_displayable()` and `from_displayable_non_static()` methods allowing to specialize `ScalarValue` conversion from/for custom string types. ([#1324], [#1330], [#819])
+    - `try_to::<T>()` method defined by default as `FromScalarValue<T>` alias. ([#1327], [#1329])
+- `#[derive(ScalarValue)]` macro:
+    - Support of top-level `#[value(from_displayable_with = ...)]` attribute. ([#1324])
+    - Support of top-level `#[value(from_displayable_non_static_with = ...)]` attribute. ([#1330])
+- `#[derive(GraphQLScalar)]` and `#[graphql_scalar]` macros:
+    - Support for specifying concrete types as input argument in provided `from_input()` function. ([#1327])
+    - Support for non-`Result` return type in provided `from_input()` function. ([#1327])
+    - `Scalar` transparent wrapper for aiding type inference in `from_input()` function when input argument is generic `ScalarValue`. ([#1327])
+    - Generating of `FromScalarValue` implementation. ([#1329])
+    - Support for concrete and `impl Display` return types in provided `to_output()` function. ([#1330])
+    - Generating of `ToScalarValue` implementation. ([#1330])
 
 ### Changed
 
-- Upgraded [GraphiQL] to [4.1.0 version](https://github.com/graphql/graphiql/blob/graphiql%404.1.0/packages/graphiql/CHANGELOG.md#410). ([#1323])
+- Upgraded [GraphiQL] to [5.2.0 version](https://github.com/graphql/graphiql/blob/graphiql%405.2.0/packages/graphiql/CHANGELOG.md#520). ([#1339])
+- Lifted `Sized` requirement from `ToInputValue` conversion trait. ([#1330]) 
 
 ### Fixed
 
@@ -110,8 +160,30 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1318]: /../../pull/1318
 [#1322]: /../../pull/1322
 [#1323]: /../../pull/1323
+[#1324]: /../../pull/1324
+[#1327]: /../../pull/1327
+[#1329]: /../../pull/1329
+[#1330]: /../../pull/1330
+[#1339]: /../../pull/1339
+[#1346]: /../../pull/1346
 [1b1fc618]: /../../commit/1b1fc61879ffdd640d741e187dc20678bf7ab295
 [20609366]: /../../commit/2060936635609b0186d46d8fbd06eb30fce660e3
+[4b14c015]: /../../commit/4b14c015018d31cb6df848efdee24d96416b76d9
+
+
+
+
+## [0.16.2] · 2025-06-25
+[0.16.2]: /../../tree/juniper-v0.16.2/juniper
+
+[Diff](/../../compare/juniper-v0.16.1...juniper-v0.16.2) | [Milestone](/../../milestone/8)
+
+### Fixed
+
+- Non-pinned versions of [GraphiQL]-related libraries in HTML page returned by `graphiql_source()`. ([ed2ef133], [#1332])
+
+[#1332]: /../../issues/1332
+[ed2ef133]: /../../commit/ed2ef13358a84bf9cc43835d4495b2b3395e7392
 
 
 
@@ -313,6 +385,7 @@ See [old CHANGELOG](/../../blob/juniper-v0.15.12/juniper/CHANGELOG.md).
 [`bson` crate]: https://docs.rs/bson
 [`chrono` crate]: https://docs.rs/chrono
 [`chrono-tz` crate]: https://docs.rs/chrono-tz
+[`derive_more` crate]: https://docs.rs/derive_more
 [`jiff` crate]: https://docs.rs/jiff
 [`time` crate]: https://docs.rs/time
 [Cargo feature]: https://doc.rust-lang.org/cargo/reference/features.html

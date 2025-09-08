@@ -1,3 +1,5 @@
+//! This example demonstrates how to use a [`Coordinator`] for executing a GraphQL subscription.
+
 use std::pin::Pin;
 
 use futures::{Stream, StreamExt};
@@ -8,7 +10,7 @@ use juniper::{
 use juniper_subscriptions::Coordinator;
 
 #[derive(Clone)]
-pub struct Database;
+struct Database;
 
 impl juniper::Context for Database {}
 
@@ -18,7 +20,7 @@ impl Database {
     }
 }
 
-pub struct Query;
+struct Query;
 
 #[graphql_object(context = Database)]
 impl Query {
@@ -27,7 +29,7 @@ impl Query {
     }
 }
 
-pub struct Subscription;
+struct Subscription;
 
 type StringStream = Pin<Box<dyn Stream<Item = Result<String, FieldError>> + Send>>;
 

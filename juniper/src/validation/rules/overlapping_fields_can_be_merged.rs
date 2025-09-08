@@ -1,6 +1,8 @@
 use std::{borrow::Borrow, cell::RefCell, collections::HashMap, fmt::Debug, hash::Hash};
 
 use arcstr::ArcStr;
+use derive_more::with_trait::Display;
+use itertools::Itertools as _;
 
 use crate::{
     ast::{
@@ -9,6 +11,7 @@ use crate::{
     },
     parser::{SourcePosition, Spanning},
     schema::meta::{Field as FieldType, MetaType},
+    util::Either,
     validation::{ValidatorContext, Visitor},
     value::ScalarValue,
 };
@@ -57,7 +60,7 @@ impl<K: Eq + Hash + Clone, V> OrderedMap<K, V> {
         }
     }
 
-    fn iter(&self) -> OrderedMapIter<K, V> {
+    fn iter(&self) -> OrderedMapIter<'_, K, V> {
         OrderedMapIter {
             map: &self.data,
             inner: self.insert_order.iter(),
@@ -753,19 +756,18 @@ fn error_message(reason_name: &str, reason: &ConflictReasonMessage) -> String {
     )
 }
 
-fn format_reason(reason: &ConflictReasonMessage) -> String {
+fn format_reason(reason: &ConflictReasonMessage) -> impl Display {
     match reason {
-        ConflictReasonMessage::Message(name) => name.clone(),
-        ConflictReasonMessage::Nested(nested) => nested
-            .iter()
-            .map(|ConflictReason(name, subreason)| {
-                format!(
+        ConflictReasonMessage::Message(name) => Either::Left(name),
+        ConflictReasonMessage::Nested(nested) => Either::Right(nested.iter().format_with(
+            " and ",
+            |ConflictReason(name, subreason), f| {
+                f(&format_args!(
                     r#"subfields "{name}" conflict because {}"#,
                     format_reason(subreason),
-                )
-            })
-            .collect::<Vec<_>>()
-            .join(" and "),
+                ))
+            },
+        )),
     }
 }
 

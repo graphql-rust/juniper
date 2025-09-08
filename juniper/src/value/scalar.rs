@@ -1,8 +1,21 @@
-use std::{borrow::Cow, fmt};
+use std::convert::Infallible;
 
+use arcstr::ArcStr;
+use derive_more::with_trait::{Deref, Display, Error, From, TryInto};
+use ref_cast::RefCast;
 use serde::{Serialize, de::DeserializeOwned};
+use std::{
+    any::{Any, TypeId},
+    borrow::Cow,
+    fmt, ptr,
+};
 
-use crate::parser::{ParseError, ScalarToken};
+use crate::{
+    FieldError, IntoFieldError,
+    parser::{ParseError, ScalarToken},
+};
+#[cfg(doc)]
+use crate::{GraphQLScalar, GraphQLValue, Value};
 
 pub use juniper_codegen::ScalarValue;
 
@@ -15,41 +28,49 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
     fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<S>;
 }
 
-/// A trait marking a type that could be used as internal representation of
-/// scalar values in juniper
+/// Type that could be used as internal representation of scalar values (e.g. inside [`Value`] and
+/// [`InputValue`]).
 ///
-/// The main objective of this abstraction is to allow other libraries to
-/// replace the default representation with something that better fits their
-/// needs.
-/// There is a custom derive (`#[derive(`[`ScalarValue`]`)]`) available that
-/// implements most of the required traits automatically for a enum representing
-/// a scalar value. However, [`Serialize`] and [`Deserialize`] implementations
-/// are expected to be provided.
+/// This abstraction allows other libraries and user code to replace the default representation with
+/// something that better fits their needs than [`DefaultScalarValue`].
 ///
-/// # Implementing a new scalar value representation
-/// The preferred way to define a new scalar value representation is
-/// defining a enum containing a variant for each type that needs to be
-/// represented at the lowest level.
-/// The following example introduces an new variant that is able to store 64 bit
-/// integers.
+/// # Deriving
+///
+/// There is a custom derive (`#[derive(`[`ScalarValue`](macro@crate::ScalarValue)`)]`) available,
+/// that implements most of the required [`juniper`] traits automatically for an enum representing a
+/// [`ScalarValue`]. However, [`Serialize`] and [`Deserialize`] implementations are expected to be
+/// provided, as we as [`Display`], [`From`] and [`TryInto`] ones (for which it's convenient to use
+/// [`derive_more`]).
+///
+/// # Example
+///
+/// The preferred way to define a new [`ScalarValue`] representation is defining an enum containing
+/// a variant for each type that needs to be represented at the lowest level.
+///
+/// The following example introduces a new variant that is able to store 64-bit integers.
 ///
 /// ```rust
-/// # use std::fmt;
+/// # use std::{any::Any, fmt};
 /// #
-/// # use serde::{de, Deserialize, Deserializer, Serialize};
-/// # use juniper::ScalarValue;
-/// #
-/// #[derive(Clone, Debug, PartialEq, ScalarValue, Serialize)]
+/// use derive_more::with_trait::{Display, From, TryInto};
+/// use juniper::ScalarValue;
+/// use serde::{de, Deserialize, Deserializer, Serialize};
+///
+/// #[derive(Clone, Debug, Display, From, PartialEq, ScalarValue, Serialize, TryInto)]
 /// #[serde(untagged)]
 /// enum MyScalarValue {
-///     #[value(as_float, as_int)]
+///     #[value(to_float, to_int)]
 ///     Int(i32),
+///
 ///     Long(i64),
-///     #[value(as_float)]
+///
+///     #[value(to_float)]
 ///     Float(f64),
-///     #[value(as_str, as_string, into_string)]
+///
+///     #[value(as_str, to_string)]
 ///     String(String),
-///     #[value(as_bool)]
+///
+///     #[value(to_bool)]
 ///     Boolean(bool),
 /// }
 ///
@@ -119,11 +140,13 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// }
 /// ```
 ///
+/// [`juniper`]: crate
+/// [`CompactString`]: compact_str::CompactString
 /// [`Deserialize`]: trait@serde::Deserialize
 /// [`Serialize`]: trait@serde::Serialize
 pub trait ScalarValue:
     fmt::Debug
-    + fmt::Display
+    + Display
     + PartialEq
     + Clone
     + DeserializeOwned
@@ -132,13 +155,26 @@ pub trait ScalarValue:
     + From<bool>
     + From<i32>
     + From<f64>
+    + for<'a> TryToPrimitive<'a, bool, Error: Display + IntoFieldError<Self>>
+    + for<'a> TryToPrimitive<'a, i32, Error: Display + IntoFieldError<Self>>
+    + for<'a> TryToPrimitive<'a, f64, Error: Display + IntoFieldError<Self>>
+    + for<'a> TryToPrimitive<'a, String, Error: Display + IntoFieldError<Self>>
+    + for<'a> TryToPrimitive<'a, &'a str, Error: Display + IntoFieldError<Self>>
+    + TryInto<String>
     + 'static
 {
-    /// Checks whether this [`ScalarValue`] contains the value of the given
-    /// type.
+    /// Checks whether this [`ScalarValue`] contains the value of the provided type `T`.
     ///
-    /// ```
-    /// # use juniper::{ScalarValue, DefaultScalarValue};
+    /// # Implementation
+    ///
+    /// Implementations should implement this method.
+    ///
+    /// This is usually an enum dispatch with calling [`AnyExt::is::<T>()`] method on each variant.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use juniper::{ScalarValue as _, DefaultScalarValue};
     /// #
     /// let value = DefaultScalarValue::Int(42);
     ///
@@ -146,96 +182,580 @@ pub trait ScalarValue:
     /// assert_eq!(value.is_type::<f64>(), false);
     /// ```
     #[must_use]
-    fn is_type<'a, T>(&'a self) -> bool
+    fn is_type<T: Any + ?Sized>(&self) -> bool;
+
+    /// Downcasts this [`ScalarValue`] as the value of the provided type `T`, if this
+    /// [`ScalarValue`] represents the one.
+    ///
+    /// # Implementation
+    ///
+    /// Implementations should implement this method.
+    ///
+    /// This is usually an enum dispatch with calling [`AnyExt::downcast_ref::<T>()`] method on each
+    /// variant.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use juniper::{ScalarValue as _, DefaultScalarValue};
+    /// #
+    /// let value = DefaultScalarValue::Int(42);
+    ///
+    /// assert_eq!(value.downcast_type::<i32>(), Some(&42));
+    /// assert_eq!(value.downcast_type::<f64>(), None);
+    /// ```
+    ///
+    /// # [`GraphQLScalar`] implementation
+    ///
+    /// This method is especially useful for performance, when a [`GraphQLScalar`] is implemented
+    /// generically over a [`ScalarValue`], but based on the type that is very likely could be used
+    /// in an optimized [`ScalarValue`] implementation.
+    ///
+    /// ```rust
+    /// # use arcstr::ArcStr;
+    /// # use juniper::{FieldResult, GraphQLScalar, Scalar, ScalarValue, Value};
+    /// #
+    /// #[derive(GraphQLScalar)]
+    /// #[graphql(from_input_with = Self::from_input, transparent)]
+    /// struct Name(ArcStr);
+    ///
+    /// impl Name {
+    ///     fn from_input<S: ScalarValue>(v: &Scalar<S>) -> FieldResult<Self, S> {
+    ///         // Check if our `ScalarValue` is represented by an `ArcStr` already, and if so,
+    ///         // do the cheap `Clone` instead of allocating a new `ArcStr` in its `From<&str>`
+    ///         // implementation.
+    ///         let s = if let Some(s) = v.downcast_type::<ArcStr>() {
+    ///             s.clone()
+    ///         } else {
+    ///             v.try_to::<&str>().map(ArcStr::from)?
+    ///         };
+    ///         if s.chars().next().is_some_and(char::is_uppercase) {
+    ///             Ok(Self(s))
+    ///         } else {
+    ///             Err("`Name` should start with a capital letter".into())
+    ///         }
+    ///     }
+    /// }
+    /// ```
+    ///
+    /// However, this method is needed only when the type doesn't implement a [`GraphQLScalar`]
+    /// itself, or does it in non-optimal way. In reality, the [`ArcStr`] already implements a
+    /// [`GraphQLScalar`] and does the [`ScalarValue::downcast_type()`] check in its implementation,
+    /// which can be naturally reused by calling the [`ScalarValue::try_to()`] method.
+    ///
+    /// ```rust
+    /// # use arcstr::ArcStr;
+    /// # use juniper::{FieldResult, GraphQLScalar, Scalar, ScalarValue, Value};
+    /// #
+    /// #[derive(GraphQLScalar)]
+    /// #[graphql(from_input_with = Self::from_input, transparent)]
+    /// struct Name(ArcStr);
+    ///
+    /// impl Name {
+    ///     fn from_input(s: ArcStr) -> Result<Self, &'static str> {
+    ///         //           ^^^^^^ macro expansion will call the `ScalarValue::try_to()` method
+    ///         //                  to extract this type from the `ScalarValue` to this function
+    ///         if s.chars().next().is_some_and(char::is_uppercase) {
+    ///             Ok(Self(s))
+    ///         } else {
+    ///             Err("`Name` should start with a capital letter")
+    ///         }
+    ///     }
+    /// }
+    /// ```
+    #[must_use]
+    fn downcast_type<T: Any>(&self) -> Option<&T>;
+
+    /// Tries to represent this [`ScalarValue`] as the specified type `T`.
+    ///
+    /// This method is the recommended way to parse a defined [`GraphQLScalar`] type `T` from a
+    /// [`ScalarValue`].
+    ///
+    /// This method could be used instead of other `try_*` helpers in case the
+    /// [`FromScalarValue::Error`] is needed.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use juniper::{DefaultScalarValue, GraphQLScalar, ScalarValue as _};
+    ///
+    /// let v = DefaultScalarValue::Boolean(false);
+    /// assert_eq!(v.try_to::<bool>().unwrap(), false);
+    /// assert!(v.try_to::<f64>().is_err());
+    ///
+    /// #[derive(Debug, GraphQLScalar, PartialEq)]
+    /// #[graphql(transparent)]
+    /// struct Name(String);
+    ///
+    /// let v = DefaultScalarValue::String("John".into());
+    /// assert_eq!(v.try_to::<String>().unwrap(), "John");
+    /// assert_eq!(v.try_to::<&str>().unwrap(), "John");
+    /// assert_eq!(v.try_to::<Name>().unwrap(), Name("John".into()));
+    /// assert!(v.try_to::<i32>().is_err());
+    /// ```
+    ///
+    /// # Implementation
+    ///
+    /// This method is an ergonomic alias for the [`FromScalarValue<T>`] conversion.
+    ///
+    /// Implementations should not implement this method, but rather implement only the
+    /// [`TryToPrimitive<T>`] conversion directly in case `T` is a primitive built-in GraphQL
+    /// scalar type ([`bool`], [`f64`], [`i32`], [`&str`], or [`String`]), otherwise the
+    /// [`FromScalarValue<T>`] conversion is provided when a [`GraphQLScalar`] is implemented.
+    fn try_to<'a, T>(&'a self) -> Result<T, T::Error>
     where
-        T: 'a,
-        Option<&'a T>: From<&'a Self>,
+        T: FromScalarValue<'a, Self> + 'a,
     {
-        <Option<&'a T>>::from(self).is_some()
+        T::from_scalar_value(self)
     }
 
-    /// Represents this [`ScalarValue`] as an integer value.
+    /// Tries to represent this [`ScalarValue`] as a [`bool`] value.
     ///
-    /// This function is used for implementing [`GraphQLValue`] for [`i32`] for
-    /// all possible [`ScalarValue`]s. Implementations should convert all the
-    /// supported integer types with 32 bit or less to an integer, if requested.
+    /// Use the [`ScalarValue::try_to::<bool>()`] method in case the [`TryToPrimitive::Error`] is
+    /// needed.
     ///
-    /// [`GraphQLValue`]: crate::GraphQLValue
+    /// # Implementation
+    ///
+    /// This method is an ergonomic alias for the [`TryToPrimitive<bool>`] conversion, which is used
+    /// for implementing [`GraphQLValue`] for [`bool`] for all possible [`ScalarValue`]s.
+    ///
+    /// Implementations should not implement this method, but rather implement the
+    /// [`TryToPrimitive<bool>`] conversions for all the supported boolean types.
     #[must_use]
-    fn as_int(&self) -> Option<i32>;
+    fn try_to_bool(&self) -> Option<bool> {
+        self.try_to().ok()
+    }
 
-    /// Represents this [`ScalarValue`] as a [`String`] value.
+    /// Tries to represent this [`ScalarValue`] as an [`i32`] value.
     ///
-    /// This function is used for implementing [`GraphQLValue`] for [`String`]
-    /// for all possible [`ScalarValue`]s.
+    /// Use the [`ScalarValue::try_to::<i32>()`] method in case the [`TryToPrimitive::Error`] is
+    /// needed.
     ///
-    /// [`GraphQLValue`]: crate::GraphQLValue
+    /// # Implementation
+    ///
+    /// This method is an ergonomic alias for the [`TryToPrimitive<i32>`] conversion, which is used
+    /// for implementing [`GraphQLValue`] for [`i32`] for all possible [`ScalarValue`]s.
+    ///
+    /// Implementations should not implement this method, but rather implement the
+    /// [`TryToPrimitive<i32>`] conversions for all the supported integer types with 32 bit or
+    /// less to an integer, if requested.
     #[must_use]
-    fn as_string(&self) -> Option<String>;
+    fn try_to_int(&self) -> Option<i32> {
+        self.try_to().ok()
+    }
 
-    /// Converts this [`ScalarValue`] into a [`String`] value.
+    /// Tries to represent this [`ScalarValue`] as a [`f64`] value.
     ///
-    /// Same as [`ScalarValue::as_string()`], but takes ownership, so allows to
-    /// omit redundant cloning.
+    /// Use the [`ScalarValue::try_to::<f64>()`] method in case the [`TryToPrimitive::Error`] is
+    /// needed.
+    ///
+    /// # Implementation
+    ///
+    /// This method is an ergonomic alias for the [`TryToPrimitive<f64>`] conversion, which is used
+    /// for implementing [`GraphQLValue`] for [`f64`] for all possible [`ScalarValue`]s.
+    ///
+    /// Implementations should not implement this method, but rather implement the
+    /// [`TryToPrimitive<f64>`] conversions for all the supported integer types with 64 bit and
+    /// all floating point values with 64 bit or less to a float, if requested.
     #[must_use]
-    fn into_string(self) -> Option<String>;
+    fn try_to_float(&self) -> Option<f64> {
+        self.try_to().ok()
+    }
 
-    /// Represents this [`ScalarValue`] as a [`str`] value.
+    /// Tries to represent this [`ScalarValue`] as a [`String`] value.
     ///
-    /// This function is used for implementing [`GraphQLValue`] for [`str`] for
-    /// all possible [`ScalarValue`]s.
+    /// Allocates every time is called. For read-only and non-owning use of the underlying
+    /// [`String`] value, consider using the [`ScalarValue::try_as_str()`] method.
     ///
-    /// [`GraphQLValue`]: crate::GraphQLValue
+    /// Use the [`ScalarValue::try_to::<String>()`] method in case the [`TryToPrimitive::Error`]
+    /// is needed.
+    ///
+    /// # Implementation
+    ///
+    /// This method is an ergonomic alias for the [`TryToPrimitive<String>`] conversion, which is
+    /// used for implementing [`GraphQLValue`] for [`String`] for all possible [`ScalarValue`]s.
+    ///
+    /// Implementations should not implement this method, but rather implement the
+    /// [`TryToPrimitive<String>`] conversions for all the supported string types, if requested.
     #[must_use]
-    fn as_str(&self) -> Option<&str>;
+    fn try_to_string(&self) -> Option<String> {
+        self.try_to().ok()
+    }
 
-    /// Represents this [`ScalarValue`] as a float value.
+    /// Tries to convert this [`ScalarValue`] into a [`String`] value.
     ///
-    /// This function is used for implementing [`GraphQLValue`] for [`f64`] for
-    /// all possible [`ScalarValue`]s. Implementations should convert all
-    /// supported integer types with 64 bit or less and all floating point
-    /// values with 64 bit or less to a float, if requested.
+    /// Similar to the [`ScalarValue::try_to_string()`] method, but takes ownership, so allows to
+    /// omit redundant [`Clone`]ing.
     ///
-    /// [`GraphQLValue`]: crate::GraphQLValue
+    /// Use the [`TryInto<String>`] conversion in case the [`TryInto::Error`] is needed.
+    ///
+    /// # Implementation
+    ///
+    /// This method is an ergonomic alias for the [`TryInto<String>`] conversion.
+    ///
+    /// Implementations should not implement this method, but rather implement the
+    /// [`TryInto<String>`] conversion for all the supported string types, if requested.
     #[must_use]
-    fn as_float(&self) -> Option<f64>;
+    fn try_into_string(self) -> Option<String> {
+        self.try_into().ok()
+    }
 
-    /// Represents this [`ScalarValue`] as a boolean value
+    /// Tries to represent this [`ScalarValue`] as a [`str`] value.
     ///
-    /// This function is used for implementing [`GraphQLValue`] for [`bool`] for
-    /// all possible [`ScalarValue`]s.
+    /// Use the [`ScalarValue::try_to::<&str>()`] method in case the [`TryToPrimitive::Error`]
+    /// is needed.
     ///
-    /// [`GraphQLValue`]: crate::GraphQLValue
-    fn as_bool(&self) -> Option<bool>;
+    /// # Implementation
+    ///
+    /// This method is an ergonomic alias for the [`TryToPrimitive`]`<&`[`str`]`>` conversion, which
+    /// is used for implementing [`GraphQLValue`] for [`String`] for all possible [`ScalarValue`]s.
+    ///
+    /// Implementations should not implement this method, but rather implement the
+    /// [`TryToPrimitive`]`<&`[`str`]`>` conversions for all the supported string types, if
+    /// requested.
+    #[must_use]
+    fn try_as_str(&self) -> Option<&str> {
+        self.try_to().ok()
+    }
 
-    /// Converts this [`ScalarValue`] into another one.
+    /// Converts this [`ScalarValue`] into another one via [`i32`], [`f64`], [`bool`] or [`String`]
+    /// conversion.
+    ///
+    /// # Panics
+    ///
+    /// If this [`ScalarValue`] doesn't represent at least one of [`i32`], [`f64`], [`bool`] or
+    /// [`String`].
+    #[must_use]
     fn into_another<S: ScalarValue>(self) -> S {
-        if let Some(i) = self.as_int() {
+        if let Some(i) = self.try_to_int() {
             S::from(i)
-        } else if let Some(f) = self.as_float() {
+        } else if let Some(f) = self.try_to_float() {
             S::from(f)
-        } else if let Some(b) = self.as_bool() {
+        } else if let Some(b) = self.try_to_bool() {
             S::from(b)
-        } else if let Some(s) = self.into_string() {
+        } else if let Some(s) = self.try_into_string() {
             S::from(s)
         } else {
             unreachable!("`ScalarValue` must represent at least one of the GraphQL spec types")
         }
     }
+
+    /// Creates this [`ScalarValue`] from the provided [`Display`]able type.
+    ///
+    /// # Usage
+    ///
+    /// This method cannot work with non-`'static` types due to [`Any`] `'static` restriction. For
+    /// non-`'static` types the [`ScalarValue::from_displayable_non_static()`] method should be used
+    /// instead. However, the [`Any`] here allows implementors to specialize some conversions to be
+    /// cheaper for their [`ScalarValue`] implementation, and so, using this method is preferred
+    /// whenever is possible.
+    ///
+    /// # Implementation
+    ///
+    /// Default implementation allocates by converting [`ToString`] and [`From<String>`].
+    ///
+    /// This method should be implemented if [`ScalarValue`] implementation uses some custom string
+    /// type inside to enable efficient conversion from values of this type.
+    ///
+    /// ```rust
+    /// # use std::any::Any;
+    /// #
+    /// use arcstr::ArcStr;
+    /// use derive_more::with_trait::{Display, From, TryInto};
+    /// use juniper::ScalarValue;
+    /// use serde::{Deserialize, Serialize};
+    ///
+    /// #[derive(
+    ///     Clone, Debug, Deserialize, Display, From, PartialEq, ScalarValue, Serialize, TryInto,
+    /// )]
+    /// #[serde(untagged)]
+    /// #[value(from_displayable_with = from_arcstr)]
+    /// enum MyScalarValue {
+    ///     #[from]
+    ///     #[value(to_float, to_int)]
+    ///     Int(i32),
+    ///     
+    ///     #[from]
+    ///     #[value(to_float)]
+    ///     Float(f64),
+    ///
+    ///     #[from(&str, String, ArcStr)]
+    ///     #[value(as_str, to_string)]
+    ///     String(ArcStr),
+    ///     
+    ///     #[from]
+    ///     #[value(to_bool)]
+    ///     Boolean(bool),
+    /// }
+    ///
+    /// // Custom implementation of `ScalarValue::from_displayable()` method for specializing
+    /// // an efficient conversions from `ArcStr` into `MyScalarValue`.
+    /// fn from_arcstr<Str: Display + Any + ?Sized>(s: &Str) -> MyScalarValue {
+    ///     use juniper::AnyExt as _; // allows downcasting directly on types without `dyn`
+    ///
+    ///     if let Some(s) = s.downcast_ref::<ArcStr>() {
+    ///         MyScalarValue::String(s.clone()) // `Clone`ing `ArcStr` is cheap
+    ///     } else {
+    ///         // We do not override `ScalarValue::from_displayable_non_static()` here,
+    ///         // since `arcstr` crate doesn't provide API for efficient conversion into
+    ///         // an `ArcStr` for any `Display`able type, unfortunately.
+    ///         // The closest possible way is to use `arcstr::format!("{s}")` expression.
+    ///         // However, it actually expands to `ArcStr::from(fmt::format(format_args!("{s}")))`,
+    ///         // where `fmt::format()` allocates a `String`, and thus, is fully equivalent to the
+    ///         // default implementation, which does `.to_string().into()` conversion.
+    ///         MyScalarValue::from_displayable_non_static(s)
+    ///     }
+    /// }
+    /// #
+    /// # // `derive_more::TryInto` is not capable for transitive conversions yet,
+    /// # // so this impl is manual as a custom string type is used instead of `String`.
+    /// # impl TryFrom<MyScalarValue> for String {
+    /// #     type Error = MyScalarValue;
+    /// #
+    /// #     fn try_from(value: MyScalarValue) -> Result<Self, Self::Error> {
+    /// #         if let MyScalarValue::String(s) = value {
+    /// #             Ok(s.to_string())
+    /// #         } else {
+    /// #             Err(value)
+    /// #         }
+    /// #     }
+    /// # }
+    /// ```
+    #[must_use]
+    fn from_displayable<T: Display + Any + ?Sized>(value: &T) -> Self {
+        Self::from_displayable_non_static(value)
+    }
+
+    /// Creates this [`ScalarValue`] from the provided non-`'static` [`Display`]able type.
+    ///
+    /// # Usage
+    ///
+    /// This method exists solely because [`Any`] requires `'static`, and so the
+    /// [`ScalarValue::from_displayable()`] method cannot cover non-`'static` types. Always prefer
+    /// to use the [`ScalarValue::from_displayable()`] method instead of this one, whenever it's
+    /// possible, to allow possible cheap conversion specialization.
+    ///
+    /// # Implementation
+    ///
+    /// Default implementation allocates by converting [`ToString`] and [`From<String>`].
+    ///
+    /// This method should be implemented if [`ScalarValue`] implementation uses some custom string
+    /// type inside to create its values efficiently without intermediate [`String`]-conversion.
+    ///
+    /// ```rust
+    /// use compact_str::{CompactString, ToCompactString as _};
+    /// use derive_more::with_trait::{Display, From, TryInto};
+    /// use juniper::ScalarValue;
+    /// use serde::{Deserialize, Serialize};
+    ///
+    /// #[derive(
+    ///     Clone, Debug, Deserialize, Display, From, PartialEq, ScalarValue, Serialize, TryInto,
+    /// )]
+    /// #[serde(untagged)]
+    /// #[value(from_displayable_non_static_with = to_compact_string)]
+    /// enum MyScalarValue {
+    ///     #[from]
+    ///     #[value(to_float, to_int)]
+    ///     Int(i32),
+    ///     
+    ///     #[from]
+    ///     #[value(to_float)]
+    ///     Float(f64),
+    ///
+    ///     #[from(&str, String, CompactString)]
+    ///     #[value(as_str, to_string)]
+    ///     String(CompactString),
+    ///     
+    ///     #[from]
+    ///     #[value(to_bool)]
+    ///     Boolean(bool),
+    /// }
+    ///
+    /// // Custom implementation of `ScalarValue::from_displayable_non_static()` method
+    /// // for efficient writing into a `CompactString` as a `MyScalarValue::String`.
+    /// fn to_compact_string<T: Display + ?Sized>(v: &T) -> MyScalarValue {
+    ///     v.to_compact_string().into()
+    /// }
+    /// #
+    /// # // `derive_more::TryInto` is not capable for transitive conversions yet,
+    /// # // so this impl is manual as a custom string type is used instead of `String`.
+    /// # impl TryFrom<MyScalarValue> for String {
+    /// #     type Error = MyScalarValue;
+    /// #
+    /// #     fn try_from(value: MyScalarValue) -> Result<Self, Self::Error> {
+    /// #         if let MyScalarValue::String(s) = value {
+    /// #             Ok(s.into())
+    /// #         } else {
+    /// #             Err(value)
+    /// #         }
+    /// #     }
+    /// # }
+    /// ```
+    #[must_use]
+    fn from_displayable_non_static<T: Display + ?Sized>(value: &T) -> Self {
+        value.to_string().into()
+    }
 }
+
+/// Fallible representation of a [`ScalarValue`] as one of the types it consists of, or derived ones
+/// from them.
+///
+/// # Implementation
+///
+/// Implementing this trait for a type allows to specify this type directly in the `from_input()`
+/// function when implementing a [`GraphQLScalar`] via [derive macro](macro@GraphQLScalar).
+///
+/// `#[derive(`[`ScalarValue`](macro@crate::ScalarValue)`)]` automatically implements this trait for
+/// all the required primitive types if `#[to_<type>]` and `#[as_<type>]` attributes are specified.
+pub trait TryToPrimitive<'me, T: 'me> {
+    /// Error if this [`ScalarValue`] doesn't represent the expected type.
+    type Error: 'me;
+
+    /// Tries to represent this [`ScalarValue`] as the expected type.
+    ///
+    /// # Errors
+    ///
+    /// If this [`ScalarValue`] doesn't represent the expected type.
+    fn try_to_primitive(&'me self) -> Result<T, Self::Error>;
+}
+
+/// Parsing of a [`ScalarValue`] into a Rust data type.
+///
+/// The conversion _can_ fail, and must in that case return an [`Err`].
+///
+/// Use the [`ScalarValue::try_to()`] method as a shortcut for this conversion.
+///
+/// # Implementation
+///
+/// Implementing this trait for a type allows to specify this type directly in the `from_input()`
+/// function when implementing a [`GraphQLScalar`] via [derive macro](macro@GraphQLScalar).
+///
+/// Also, `#[derive(`[`GraphQLScalar`](macro@GraphQLScalar)`)]` automatically implements this trait
+/// for a type.
+pub trait FromScalarValue<'s, S: 's = DefaultScalarValue>: Sized {
+    /// Parsing error of a [`ScalarValue`].
+    type Error: IntoFieldError<S> + 's;
+
+    /// Parses the provided [`ScalarValue`].
+    ///
+    /// # Errors
+    ///
+    /// If this type cannot be parsed from the provided [`ScalarValue`].
+    fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error>;
+}
+
+impl<'s, S> FromScalarValue<'s, S> for &'s S {
+    type Error = Infallible;
+
+    fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
+        Ok(v)
+    }
+}
+
+impl<'s, S: ScalarValue> FromScalarValue<'s, S> for &'s Scalar<S> {
+    type Error = Infallible;
+
+    fn from_scalar_value(v: &'s S) -> Result<Self, Self::Error> {
+        Ok(v.into())
+    }
+}
+
+/// Error of a [`ScalarValue`] not matching the expected type.
+#[derive(Clone, Debug, Display, Error)]
+#[display("Expected `{type_name}`, found: {}", <&Scalar<_>>::from(*input))]
+pub struct WrongInputScalarTypeError<'a, S: ScalarValue> {
+    /// Type name of the expected GraphQL scalar.
+    pub type_name: ArcStr,
+
+    /// Input [`ScalarValue`] not matching the expected type.
+    pub input: &'a S,
+}
+
+impl<'a, S: ScalarValue> IntoFieldError<S> for WrongInputScalarTypeError<'a, S> {
+    fn into_field_error(self) -> FieldError<S> {
+        FieldError::<S>::from(self)
+    }
+}
+
+/// Conversion of a Rust data type into a [`ScalarValue`].
+///
+/// # Implementation
+///
+/// Implementing this trait for a type allows to specify this type directly in the `to_output()`
+/// function when implementing a [`GraphQLScalar`] via [derive macro](macro@GraphQLScalar).
+///
+/// Also, `#[derive(`[`GraphQLScalar`](macro@GraphQLScalar)`)]` automatically implements this trait
+/// for a type.
+pub trait ToScalarValue<S = DefaultScalarValue> {
+    /// Converts this value into a [`ScalarValue`].
+    #[must_use]
+    fn to_scalar_value(&self) -> S;
+}
+
+/// Transparent wrapper over a value, indicating it being a [`ScalarValue`].
+///
+/// Used in [`GraphQLScalar`] definitions to distinguish a concrete type for a generic
+/// [`ScalarValue`], since Rust type inference fail do so for a generic value directly in macro
+/// expansions.
+#[derive(Debug, Deref, RefCast)]
+#[repr(transparent)]
+pub struct Scalar<T: ScalarValue>(T);
+
+impl<'a, T: ScalarValue> From<&'a T> for &'a Scalar<T> {
+    fn from(value: &'a T) -> Self {
+        Scalar::ref_cast(value)
+    }
+}
+
+impl<S: ScalarValue> Display for Scalar<S> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(s) = self.0.try_as_str() {
+            write!(f, "\"{s}\"")
+        } else {
+            Display::fmt(&self.0, f)
+        }
+    }
+}
+
+/// Extension of [`Any`] for using its methods directly on the value without `dyn`.
+pub trait AnyExt: Any {
+    /// Returns `true` if the this type is the same as `T`.
+    #[must_use]
+    fn is<T: Any + ?Sized>(&self) -> bool {
+        TypeId::of::<T>() == self.type_id()
+    }
+
+    /// Returns [`Some`] reference to this value if it's of type `T`, or [`None`] otherwise.
+    #[must_use]
+    fn downcast_ref<T: Any>(&self) -> Option<&T> {
+        self.is::<T>()
+            .then(|| unsafe { &*(ptr::from_ref(self) as *const T) })
+    }
+
+    /// Returns [`Some`] mutable reference to this value if it's of type `T`, or [`None`] otherwise.
+    #[must_use]
+    fn downcast_mut<T: Any>(&mut self) -> Option<&mut T> {
+        // `self.is::<T>()` produces a false positive here: borrowed data escapes outside of method
+        (TypeId::of::<Self>() == TypeId::of::<T>())
+            .then(|| unsafe { &mut *(ptr::from_mut(self) as *mut T) })
+    }
+}
+
+impl<T: Any + ?Sized> AnyExt for T {}
 
 /// The default [`ScalarValue`] representation in [`juniper`].
 ///
 /// These types closely follow the [GraphQL specification][0].
 ///
 /// [0]: https://spec.graphql.org/October2021
-#[derive(Clone, Debug, PartialEq, ScalarValue, Serialize)]
+#[derive(Clone, Debug, Display, From, PartialEq, ScalarValue, Serialize, TryInto)]
 #[serde(untagged)]
 pub enum DefaultScalarValue {
     /// [`Int` scalar][0] as a signed 32‐bit numeric non‐fractional value.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Int
-    #[value(as_float, as_int)]
+    #[from]
+    #[value(to_float, to_int)]
     Int(i32),
 
     /// [`Float` scalar][0] as a signed double‐precision fractional values as
@@ -243,31 +763,22 @@ pub enum DefaultScalarValue {
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Float
     /// [IEEE 754]: https://en.wikipedia.org/wiki/IEEE_floating_point
-    #[value(as_float)]
+    #[from]
+    #[value(to_float)]
     Float(f64),
 
     /// [`String` scalar][0] as a textual data, represented as UTF‐8 character
     /// sequences.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-String
-    #[value(as_str, as_string, into_string)]
+    #[from(&str, Cow<'_, str>, String)]
+    #[value(as_str, to_string)]
     String(String),
 
     /// [`Boolean` scalar][0] as a `true` or `false` value.
     ///
     /// [0]: https://spec.graphql.org/October2021#sec-Boolean
-    #[value(as_bool)]
+    #[from]
+    #[value(to_bool)]
     Boolean(bool),
-}
-
-impl<'a> From<&'a str> for DefaultScalarValue {
-    fn from(s: &'a str) -> Self {
-        Self::String(s.into())
-    }
-}
-
-impl<'a> From<Cow<'a, str>> for DefaultScalarValue {
-    fn from(s: Cow<'a, str>) -> Self {
-        Self::String(s.into())
-    }
 }

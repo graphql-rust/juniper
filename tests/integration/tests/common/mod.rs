@@ -1,7 +1,9 @@
 use std::fmt;
 
-use juniper::ScalarValue;
+use derive_more::with_trait::{Display, From, TryInto};
+use juniper::{InputValue, IntoInputValue, IntoValue, ScalarValue, Value};
 use serde::{Deserialize, Deserializer, Serialize, de};
+use smartstring::alias::CompactString;
 
 /// Common utilities used across tests.
 pub mod util {
@@ -74,17 +76,17 @@ pub mod util {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, ScalarValue, Serialize)]
+#[derive(Clone, Debug, Display, From, PartialEq, ScalarValue, Serialize, TryInto)]
 #[serde(untagged)]
 pub enum MyScalarValue {
-    #[value(as_float, as_int)]
+    #[value(to_float, to_int)]
     Int(i32),
     Long(i64),
-    #[value(as_float)]
+    #[value(to_float)]
     Float(f64),
-    #[value(as_str, as_string, into_string)]
+    #[value(as_str, to_string)]
     String(String),
-    #[value(as_bool)]
+    #[value(to_bool)]
     Boolean(bool),
 }
 
@@ -152,6 +154,22 @@ impl<'de> Deserialize<'de> for MyScalarValue {
         }
 
         de.deserialize_any(Visitor)
+    }
+}
+
+/// Assert that [`IntoValue`] could be implemented for a foreign type when local [`MyScalarValue`]
+/// is involved.
+impl IntoValue<MyScalarValue> for CompactString {
+    fn into_value(self) -> Value<MyScalarValue> {
+        Value::Scalar(MyScalarValue::from_displayable(&self))
+    }
+}
+
+/// Assert that [`IntoInputValue`] could be implemented for a foreign type when local
+/// [`MyScalarValue`] is involved.
+impl IntoInputValue<MyScalarValue> for CompactString {
+    fn into_input_value(self) -> InputValue<MyScalarValue> {
+        InputValue::Scalar(MyScalarValue::from_displayable(&self))
     }
 }
 

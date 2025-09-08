@@ -368,17 +368,17 @@ macro_rules! graphql_input_value {
 
     (None$(,)?) => ($crate::InputValue::null());
 
-    (true$(,)?) => ($crate::InputValue::from(true));
+    (true$(,)?) => ($crate::IntoInputValue::into_input_value(true));
 
-    (false$(,)?) => ($crate::InputValue::from(false));
+    (false$(,)?) => ($crate::IntoInputValue::into_input_value(false));
 
     (@$var:ident$(,)?) => ($crate::InputValue::variable(stringify!($var)));
 
     ($enum:ident$(,)?) => ($crate::InputValue::enum_value(stringify!($enum)));
 
-    (($e:expr)$(,)?) => ($crate::InputValue::from($e));
+    (($e:expr)$(,)?) => ($crate::IntoInputValue::into_input_value($e));
 
-    ($e:expr$(,)?) => ($crate::InputValue::from($e));
+    ($e:expr$(,)?) => ($crate::IntoInputValue::into_input_value($e));
 }
 
 #[cfg(test)]

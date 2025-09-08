@@ -2,7 +2,8 @@
 
 pub mod common;
 
-use juniper::{DefaultScalarValue, ScalarValue};
+use derive_more::with_trait::{Display, From, TryInto};
+use juniper::{DefaultScalarValue, ScalarValue, TryToPrimitive};
 use serde::{Deserialize, Serialize};
 
 // Override `std::prelude` items to check whether macros expand hygienically.
@@ -11,16 +12,18 @@ use self::common::hygiene::*;
 mod trivial {
     use super::*;
 
-    #[derive(Clone, Debug, Deserialize, PartialEq, ScalarValue, Serialize)]
+    #[derive(
+        Clone, Debug, Deserialize, Display, From, PartialEq, ScalarValue, Serialize, TryInto,
+    )]
     #[serde(untagged)]
     pub enum CustomScalarValue {
-        #[value(as_float, as_int)]
+        #[value(to_float, to_int)]
         Int(i32),
-        #[value(as_float)]
+        #[value(to_float)]
         Float(f64),
-        #[value(as_str, as_string, into_string)]
+        #[value(as_str, to_string)]
         String(prelude::String),
-        #[value(as_bool)]
+        #[value(to_bool)]
         Boolean(bool),
     }
 
@@ -52,16 +55,18 @@ mod trivial {
 mod named_fields {
     use super::*;
 
-    #[derive(Clone, Debug, Deserialize, PartialEq, ScalarValue, Serialize)]
+    #[derive(
+        Clone, Debug, Deserialize, Display, From, PartialEq, ScalarValue, Serialize, TryInto,
+    )]
     #[serde(untagged)]
     pub enum CustomScalarValue {
-        #[value(as_float, as_int)]
+        #[value(to_float, to_int)]
         Int { int: i32 },
-        #[value(as_float)]
+        #[value(to_float)]
         Float(f64),
-        #[value(as_str, as_string, into_string)]
+        #[value(as_str, to_string)]
         String(prelude::String),
-        #[value(as_bool)]
+        #[value(to_bool)]
         Boolean { v: bool },
     }
 
@@ -93,20 +98,21 @@ mod named_fields {
 mod custom_fn {
     use super::*;
 
-    #[derive(Clone, Debug, Deserialize, PartialEq, ScalarValue, Serialize)]
+    #[derive(
+        Clone, Debug, Deserialize, Display, From, PartialEq, ScalarValue, Serialize, TryInto,
+    )]
     #[serde(untagged)]
     pub enum CustomScalarValue {
-        #[value(as_float, as_int)]
+        #[value(to_float, to_int)]
         Int(i32),
-        #[value(as_float)]
+        #[value(to_float)]
         Float(f64),
         #[value(
             as_str,
-            as_string = str::to_owned,
-            into_string = std::convert::identity,
+            to_string = str::to_owned,
         )]
         String(prelude::String),
-        #[value(as_bool)]
+        #[value(to_bool)]
         Boolean(bool),
     }
 
@@ -135,25 +141,34 @@ mod custom_fn {
     }
 }
 
-mod allow_missing_attributes {
+mod missing_conv_attr {
     use super::*;
 
-    #[derive(Clone, Debug, Deserialize, PartialEq, ScalarValue, Serialize)]
+    #[derive(
+        Clone, Debug, Deserialize, Display, From, PartialEq, ScalarValue, Serialize, TryInto,
+    )]
     #[serde(untagged)]
-    #[value(allow_missing_attributes)]
     pub enum CustomScalarValue {
         Int(i32),
-        #[value(as_float)]
+        #[value(to_float)]
         Float(f64),
-        #[value(as_str, as_string, into_string)]
+        #[value(as_str, to_string)]
         String(prelude::String),
-        #[value(as_bool)]
+        #[value(to_bool)]
         Boolean(bool),
+    }
+
+    impl<'me> TryToPrimitive<'me, i32> for CustomScalarValue {
+        type Error = &'static str;
+
+        fn try_to_primitive(&'me self) -> prelude::Result<i32, Self::Error> {
+            Err("Not `Int` definitely")
+        }
     }
 
     #[test]
     fn into_another() {
-        assert!(CustomScalarValue::Int(5).as_int().is_none());
+        assert!(CustomScalarValue::Int(5).try_to_int().is_none());
         assert!(
             CustomScalarValue::from(0.5_f64)
                 .into_another::<DefaultScalarValue>()

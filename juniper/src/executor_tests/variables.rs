@@ -1,6 +1,5 @@
 use crate::{
-    GraphQLError::ValidationError,
-    GraphQLInputObject, GraphQLScalar, InputValue, ScalarValue, Value,
+    GraphQLInputObject, GraphQLScalar,
     executor::Variables,
     graphql_object, graphql_value, graphql_vars,
     parser::SourcePosition,
@@ -15,15 +14,16 @@ use crate::{
 struct TestComplexScalar;
 
 impl TestComplexScalar {
-    fn to_output<S: ScalarValue>(&self) -> Value<S> {
-        graphql_value!("SerializedValue")
+    fn to_output(&self) -> &'static str {
+        "SerializedValue"
     }
 
-    fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
-        v.as_string_value()
-            .filter(|s| *s == "SerializedValue")
-            .map(|_| Self)
-            .ok_or_else(|| format!(r#"Expected "SerializedValue" string, found: {v}"#))
+    fn from_input(s: &str) -> Result<Self, Box<str>> {
+        if s == "SerializedValue" {
+            Ok(Self)
+        } else {
+            Err(format!(r#"Expected "SerializedValue" string, found: "{s}""#).into())
+        }
     }
 }
 
@@ -281,10 +281,11 @@ async fn variable_error_on_nested_non_null() {
 
     assert_eq!(
         error,
-        ValidationError(vec![RuleError::new(
+        RuleError::new(
             r#"Variable "$input" got invalid value. In field "c": Expected "String!", found null."#,
             &[SourcePosition::new(8, 0, 8)],
-        )]),
+        )
+        .into(),
     );
 }
 
@@ -305,10 +306,10 @@ async fn variable_error_on_incorrect_type() {
 
     assert_eq!(
         error,
-        ValidationError(vec![RuleError::new(
+        RuleError::new(
             r#"Variable "$input" got invalid value. Expected "TestInputObject", found not an object."#,
             &[SourcePosition::new(8, 0, 8)],
-        )]),
+        ).into(),
     );
 }
 
@@ -334,10 +335,11 @@ async fn variable_error_on_omit_non_null() {
 
     assert_eq!(
         error,
-        ValidationError(vec![RuleError::new(
+        RuleError::new(
             r#"Variable "$input" got invalid value. In field "c": Expected "String!", found null."#,
             &[SourcePosition::new(8, 0, 8)],
-        )]),
+        )
+        .into(),
     );
 }
 
@@ -363,7 +365,7 @@ async fn variable_multiple_errors_with_nesting() {
 
     assert_eq!(
         error,
-        ValidationError(vec![
+        vec![
             RuleError::new(
                 r#"Variable "$input" got invalid value. In field "na": In field "c": Expected "String!", found null."#,
                 &[SourcePosition::new(8, 0, 8)],
@@ -372,7 +374,7 @@ async fn variable_multiple_errors_with_nesting() {
                 r#"Variable "$input" got invalid value. In field "nb": Expected "String!", found null."#,
                 &[SourcePosition::new(8, 0, 8)],
             ),
-        ]),
+        ].into(),
     );
 }
 
@@ -400,10 +402,11 @@ async fn variable_error_on_additional_field() {
 
     assert_eq!(
         error,
-        ValidationError(vec![RuleError::new(
+        RuleError::new(
             r#"Variable "$input" got invalid value. In field "extra": Unknown field."#,
             &[SourcePosition::new(8, 0, 8)],
-        )]),
+        )
+        .into(),
     );
 }
 
@@ -510,10 +513,11 @@ async fn does_not_allow_non_nullable_input_to_be_omitted_in_variable() {
 
     assert_eq!(
         error,
-        ValidationError(vec![RuleError::new(
+        RuleError::new(
             r#"Variable "$value" of required type "String!" was not provided."#,
             &[SourcePosition::new(8, 0, 8)],
-        )]),
+        )
+        .into(),
     );
 }
 
@@ -534,10 +538,11 @@ async fn does_not_allow_non_nullable_input_to_be_set_to_null_in_variable() {
 
     assert_eq!(
         error,
-        ValidationError(vec![RuleError::new(
+        RuleError::new(
             r#"Variable "$value" of required type "String!" was not provided."#,
             &[SourcePosition::new(8, 0, 8)],
-        )]),
+        )
+        .into(),
     );
 }
 
@@ -632,10 +637,11 @@ async fn does_not_allow_non_null_lists_to_be_null() {
 
     assert_eq!(
         error,
-        ValidationError(vec![RuleError::new(
+        RuleError::new(
             r#"Variable "$input" of required type "[String]!" was not provided."#,
             &[SourcePosition::new(8, 0, 8)],
-        )]),
+        )
+        .into(),
     );
 }
 
@@ -715,10 +721,10 @@ async fn does_not_allow_lists_of_non_null_to_contain_null() {
 
     assert_eq!(
         error,
-        ValidationError(vec![RuleError::new(
+        RuleError::new(
             r#"Variable "$input" got invalid value. In element #1: Expected "String!", found null."#,
             &[SourcePosition::new(8, 0, 8)],
-        )]),
+        ).into(),
     );
 }
 
@@ -739,10 +745,10 @@ async fn does_not_allow_non_null_lists_of_non_null_to_contain_null() {
 
     assert_eq!(
         error,
-        ValidationError(vec![RuleError::new(
+        RuleError::new(
             r#"Variable "$input" got invalid value. In element #1: Expected "String!", found null."#,
             &[SourcePosition::new(8, 0, 8)],
-        )]),
+        ).into(),
     );
 }
 
@@ -763,10 +769,11 @@ async fn does_not_allow_non_null_lists_of_non_null_to_be_null() {
 
     assert_eq!(
         error,
-        ValidationError(vec![RuleError::new(
+        RuleError::new(
             r#"Variable "$input" of required type "[String!]!" was not provided."#,
             &[SourcePosition::new(8, 0, 8)],
-        )]),
+        )
+        .into(),
     );
 }
 
@@ -915,11 +922,12 @@ async fn does_not_allow_missing_required_field() {
 
     assert_eq!(
         error,
-        ValidationError(vec![RuleError::new(
+        RuleError::new(
             "Invalid value for argument \"arg\", \
              reason: \"ExampleInputObject\" is missing fields: \"b\"",
             &[SourcePosition::new(20, 0, 20)],
-        )]),
+        )
+        .into(),
     );
 }
 
@@ -940,12 +948,13 @@ async fn does_not_allow_null_in_required_field() {
 
     assert_eq!(
         error,
-        ValidationError(vec![RuleError::new(
+        RuleError::new(
             "Invalid value for argument \"arg\", \
              reason: Error on \"ExampleInputObject\" field \"b\": \
              \"null\" specified for not nullable type \"Int!\"",
             &[SourcePosition::new(20, 0, 20)],
-        )]),
+        )
+        .into(),
     );
 }
 
@@ -966,10 +975,11 @@ async fn does_not_allow_missing_variable_for_required_field() {
 
     assert_eq!(
         error,
-        ValidationError(vec![RuleError::new(
+        RuleError::new(
             r#"Variable "$var" of required type "Int!" was not provided."#,
             &[SourcePosition::new(8, 0, 8)],
-        )]),
+        )
+        .into(),
     );
 }
 
@@ -990,10 +1000,11 @@ async fn does_not_allow_null_variable_for_required_field() {
 
     assert_eq!(
         error,
-        ValidationError(vec![RuleError::new(
+        RuleError::new(
             r#"Variable "$var" of required type "Int!" was not provided."#,
             &[SourcePosition::new(8, 0, 8)],
-        )]),
+        )
+        .into(),
     );
 }
 
@@ -1091,11 +1102,12 @@ mod integers {
 
         assert_eq!(
             error,
-            ValidationError(vec![RuleError::new(
+            RuleError::new(
                 "Variable \"$var\" got invalid value. Expected input scalar `Int`. \
                  Got: `10`. Details: Expected `Int`, found: 10.",
                 &[SourcePosition::new(8, 0, 8)],
-            )]),
+            )
+            .into(),
         );
     }
 
@@ -1116,12 +1128,13 @@ mod integers {
 
         assert_eq!(
             error,
-            ValidationError(vec![RuleError::new(
+            RuleError::new(
                 "Variable \"$var\" got invalid value. \
                  Expected input scalar `Int`. Got: `\"10\"`. \
                  Details: Expected `Int`, found: \"10\".",
                 &[SourcePosition::new(8, 0, 8)],
-            )]),
+            )
+            .into(),
         );
     }
 }
@@ -1176,12 +1189,13 @@ mod floats {
 
         assert_eq!(
             error,
-            ValidationError(vec![RuleError::new(
+            RuleError::new(
                 "Variable \"$var\" got invalid value. \
                  Expected input scalar `Float`. Got: `\"10\"`. \
                  Details: Expected `Float`, found: \"10\".",
                 &[SourcePosition::new(8, 0, 8)],
-            )]),
+            )
+            .into(),
         );
     }
 }

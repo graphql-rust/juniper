@@ -69,12 +69,12 @@ error[E0277]: the trait bound `ObjectA: ToInputValue<_>` is not satisfied
   |
   = help: the following other types implement trait `ToInputValue<S>`:
             `&T` implements `ToInputValue<S>`
-            `&[T]` implements `ToInputValue<S>`
-            `&str` implements `ToInputValue<S>`
             `Arc<T>` implements `ToInputValue<S>`
             `ArcStr` implements `ToInputValue<__S>`
             `Box<T>` implements `ToInputValue<S>`
             `ID` implements `ToInputValue<__S>`
             `Object` implements `ToInputValue<__S>`
+            `TypeKind` implements `ToInputValue<__S>`
+            `Value<S>` implements `ToInputValue<S>`
           and $N others
   = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)

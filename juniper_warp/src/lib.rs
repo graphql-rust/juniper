@@ -1,19 +1,25 @@
 #![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
 #![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![deny(missing_docs)]
+#![cfg_attr(
+    test,
+    expect(unused_crate_dependencies, reason = "examples and integration tests")
+)]
 
 // TODO: Try remove on upgrade of `warp` crate.
 mod for_minimal_versions_check_only {
-    use headers as _;
+    use http_body_util as _;
+    #[cfg(test)]
+    use hyper_util as _;
 }
 
 mod response;
 #[cfg(feature = "subscriptions")]
 pub mod subscriptions;
 
-use std::{collections::HashMap, fmt, str, sync::Arc};
+use std::{collections::HashMap, str, sync::Arc};
 
+use derive_more::with_trait::Display;
 use juniper::{
     ScalarValue,
     http::{GraphQLBatchRequest, GraphQLRequest},
@@ -345,33 +351,22 @@ async fn handle_rejects(rej: Rejection) -> Result<reply::Response, Rejection> {
 }
 
 /// Possible errors happening in [`Filter`]s during [`GraphQLBatchRequest`] extraction.
-#[derive(Debug)]
+#[derive(Debug, Display)]
 enum FilterError {
     /// GET HTTP request misses query parameters.
+    #[display("Missing GraphQL `query` string in query parameters")]
     MissingPathQuery,
 
     /// GET HTTP request contains ivalid `path` query parameter.
+    #[display("Failed to deserialize GraphQL `variables` from JSON: {_0}")]
     InvalidPathVariables(serde_json::Error),
 
     /// POST HTTP request contains non-UTF-8 body.
+    #[display("Request body is not a valid UTF-8 string: {_0}")]
     NonUtf8Body(str::Utf8Error),
 }
-impl Reject for FilterError {}
 
-impl fmt::Display for FilterError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::MissingPathQuery => {
-                write!(f, "Missing GraphQL `query` string in query parameters")
-            }
-            Self::InvalidPathVariables(e) => write!(
-                f,
-                "Failed to deserialize GraphQL `variables` from JSON: {e}",
-            ),
-            Self::NonUtf8Body(e) => write!(f, "Request body is not a valid UTF-8 string: {e}"),
-        }
-    }
-}
+impl Reject for FilterError {}
 
 /// Error raised by [`tokio::task::spawn_blocking()`] if the thread pool has been shutdown.
 #[derive(Debug)]
@@ -542,7 +537,7 @@ mod tests {
 
             let filter = warp::path("graphql")
                 .and(make_graphql_filter(schema, context_extractor))
-                .recover(|rejection: warp::reject::Rejection| async move {
+                .recover(async |rejection: warp::reject::Rejection| {
                     rejection
                         .find::<ExtractionError>()
                         .map(|e| e.into_response())

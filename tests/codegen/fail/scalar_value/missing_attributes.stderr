@@ -1,5 +1,11 @@
-error: GraphQL built-in scalars missing `#[value(as_int, as_float)]` attributes. In case you are sure that it's ok, use `#[value(allow_missing_attributes)]` to suppress this error.
- --> fail/scalar_value/missing_attributes.rs:4:1
+error[E0277]: the trait bound `for<'a> DefaultScalarValue: TryToPrimitive<'a, i32>` is not satisfied
+ --> fail/scalar_value/missing_attributes.rs:6:10
   |
-4 | pub enum DefaultScalarValue {
-  | ^^^
+6 | pub enum DefaultScalarValue {
+  |          ^^^^^^^^^^^^^^^^^^ the trait `for<'a> TryToPrimitive<'a, i32>` is not implemented for `DefaultScalarValue`
+  |
+  = help: the following other types implement trait `TryToPrimitive<'me, T>`:
+            `DefaultScalarValue` implements `TryToPrimitive<'_, &str>`
+            `DefaultScalarValue` implements `TryToPrimitive<'_, bool>`
+            `DefaultScalarValue` implements `TryToPrimitive<'_, f64>`
+            `DefaultScalarValue` implements `TryToPrimitive<'_, std::string::String>`

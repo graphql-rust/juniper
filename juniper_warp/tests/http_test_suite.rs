@@ -1,4 +1,9 @@
-use futures::TryStreamExt as _;
+//! [`HttpIntegration`] testing for [`warp`].
+
+#![expect(unused_crate_dependencies, reason = "integration tests")]
+
+use http_body_util::BodyExt as _;
+use itertools::Itertools as _;
 use juniper::{
     EmptyMutation, EmptySubscription, RootNode,
     http::tests::{HttpIntegration, TestResponse, run_http_test_suite},
@@ -69,9 +74,9 @@ impl HttpIntegration for TestWarpIntegration {
 
         let url = Url::parse(&format!("http://localhost:3000{url}")).expect("url to parse");
 
-        let url: String = utf8_percent_encode(url.query().unwrap_or(""), QUERY_ENCODE_SET)
-            .collect::<Vec<_>>()
-            .join("");
+        let url = utf8_percent_encode(url.query().unwrap_or(""), QUERY_ENCODE_SET)
+            .format("")
+            .to_string();
 
         self.make_request(
             warp::test::request()
@@ -117,13 +122,8 @@ async fn into_test_response(resp: reply::Response) -> TestResponse {
         })
         .unwrap_or_default();
 
-    let body = String::from_utf8(
-        body.map_ok(|bytes| bytes.to_vec())
-            .try_concat()
-            .await
-            .unwrap(),
-    )
-    .unwrap_or_else(|e| panic!("not UTF-8 body: {e}"));
+    let body = String::from_utf8(body.collect().await.unwrap().to_bytes().into())
+        .unwrap_or_else(|e| panic!("not UTF-8 body: {e}"));
 
     TestResponse {
         status_code,

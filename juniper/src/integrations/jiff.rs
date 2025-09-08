@@ -50,9 +50,11 @@
 //! [s7]: https://graphql-scalars.dev/docs/scalars/duration
 //! [1]: https://docs.rs/jiff/latest/jiff/index.html#time-zone-features
 
-use std::{error::Error, fmt, str};
+use std::str;
 
-use crate::{InputValue, ScalarValue, Value, graphql_scalar};
+use derive_more::with_trait::{Debug, Display, Error, Into};
+
+use crate::{ScalarValue, graphql_scalar};
 
 /// Representation of a civil date in the Gregorian calendar.
 ///
@@ -66,7 +68,8 @@ use crate::{InputValue, ScalarValue, Value, graphql_scalar};
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-date
 /// [2]: https://docs.rs/jiff/*/jiff/civil/struct.Date.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = local_date,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-date",
@@ -74,29 +77,21 @@ use crate::{InputValue, ScalarValue, Value, graphql_scalar};
 pub type LocalDate = jiff::civil::Date;
 
 mod local_date {
-    use super::*;
+    use std::fmt::Display;
+
+    use super::LocalDate;
 
     /// Format of a [`LocalDate` scalar][1].
     ///
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-date
     const FORMAT: &str = "%Y-%m-%d";
 
-    pub(super) fn to_output<S>(v: &LocalDate) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        Value::scalar(v.strftime(FORMAT).to_string())
+    pub(super) fn to_output(v: &LocalDate) -> impl Display {
+        v.strftime(FORMAT)
     }
 
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<LocalDate, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| {
-                LocalDate::strptime(FORMAT, s).map_err(|e| format!("Invalid `LocalDate`: {e}"))
-            })
+    pub(super) fn from_input(s: &str) -> Result<LocalDate, Box<str>> {
+        LocalDate::strptime(FORMAT, s).map_err(|e| format!("Invalid `LocalDate`: {e}").into())
     }
 }
 
@@ -112,7 +107,8 @@ mod local_date {
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
 /// [2]: https://docs.rs/jiff/*/jiff/civil/struct.Time.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = local_time,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-time",
@@ -120,7 +116,9 @@ mod local_date {
 pub type LocalTime = jiff::civil::Time;
 
 mod local_time {
-    use super::*;
+    use std::fmt::Display;
+
+    use super::LocalTime;
 
     /// Full format of a [`LocalTime` scalar][1].
     ///
@@ -137,35 +135,21 @@ mod local_time {
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
     const FORMAT_NO_SECS: &str = "%H:%M";
 
-    pub(super) fn to_output<S>(v: &LocalTime) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        Value::scalar(
-            if v.subsec_nanosecond() == 0 {
-                v.strftime(FORMAT_NO_MILLIS)
-            } else {
-                v.strftime(FORMAT)
-            }
-            .to_string(),
-        )
+    pub(super) fn to_output(v: &LocalTime) -> impl Display {
+        if v.subsec_nanosecond() == 0 {
+            v.strftime(FORMAT_NO_MILLIS)
+        } else {
+            v.strftime(FORMAT)
+        }
     }
 
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<LocalTime, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| {
-                // First, try to parse the most used format.
-                // At the end, try to parse the full format for the parsing
-                // error to be most informative.
-                LocalTime::strptime(FORMAT_NO_MILLIS, s)
-                    .or_else(|_| LocalTime::strptime(FORMAT_NO_SECS, s))
-                    .or_else(|_| LocalTime::strptime(FORMAT, s))
-                    .map_err(|e| format!("Invalid `LocalTime`: {e}"))
-            })
+    pub(super) fn from_input(s: &str) -> Result<LocalTime, Box<str>> {
+        // First, try to parse the most used format.
+        // At the end, try to parse the full format for the parsing error to be most informative.
+        LocalTime::strptime(FORMAT_NO_MILLIS, s)
+            .or_else(|_| LocalTime::strptime(FORMAT_NO_SECS, s))
+            .or_else(|_| LocalTime::strptime(FORMAT, s))
+            .map_err(|e| format!("Invalid `LocalTime`: {e}").into())
     }
 }
 
@@ -183,7 +167,8 @@ mod local_time {
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-date-time
 /// [2]: https://docs.rs/jiff/*/jiff/civil/struct.DateTime.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = local_date_time,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-date-time",
@@ -191,30 +176,22 @@ mod local_time {
 pub type LocalDateTime = jiff::civil::DateTime;
 
 mod local_date_time {
-    use super::*;
+    use std::fmt::Display;
+
+    use super::LocalDateTime;
 
     /// Format of a [`LocalDateTime` scalar][1].
     ///
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-date-time
     const FORMAT: &str = "%Y-%m-%dT%H:%M:%S";
 
-    pub(super) fn to_output<S>(v: &LocalDateTime) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        Value::scalar(v.strftime(FORMAT).to_string())
+    pub(super) fn to_output(v: &LocalDateTime) -> impl Display {
+        v.strftime(FORMAT)
     }
 
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<LocalDateTime, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| {
-                LocalDateTime::strptime(FORMAT, s)
-                    .map_err(|e| format!("Invalid `LocalDateTime`: {e}"))
-            })
+    pub(super) fn from_input(s: &str) -> Result<LocalDateTime, Box<str>> {
+        LocalDateTime::strptime(FORMAT, s)
+            .map_err(|e| format!("Invalid `LocalDateTime`: {e}").into())
     }
 }
 
@@ -228,7 +205,8 @@ mod local_date_time {
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/date-time
 /// [2]: https://docs.rs/jiff/*/jiff/struct.Timestamp.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = date_time,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/date-time",
@@ -236,29 +214,22 @@ mod local_date_time {
 pub type DateTime = jiff::Timestamp;
 
 mod date_time {
-    use std::str::FromStr as _;
+    use std::fmt::Display;
 
-    use super::*;
+    use super::DateTime;
 
     /// Format of a [`DateTime` scalar][1].
     ///
     /// [1]: https://graphql-scalars.dev/docs/scalars/date-time
     const FORMAT: &str = "%Y-%m-%dT%H:%M:%S%.fZ";
 
-    pub(super) fn to_output<S>(v: &DateTime) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        Value::scalar(v.strftime(FORMAT).to_string())
+    pub(super) fn to_output(v: &DateTime) -> impl Display {
+        v.strftime(FORMAT)
     }
 
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<DateTime, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| DateTime::from_str(s).map_err(|e| format!("Invalid `DateTime`: {e}")))
+    pub(super) fn from_input(s: &str) -> Result<DateTime, Box<str>> {
+        s.parse()
+            .map_err(|e| format!("Invalid `DateTime`: {e}").into())
     }
 }
 
@@ -278,34 +249,21 @@ mod date_time {
 /// [3]: https://docs.rs/jiff/latest/jiff/struct.Timestamp.html
 /// [4]: https://docs.rs/jiff/latest/jiff/civil/struct.DateTime.html
 /// [5]: https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = zoned_date_time,
+    to_output_with = ScalarValue::from_displayable,
     parse_token(String),
     specified_by_url = "https://datatracker.ietf.org/doc/html/rfc9557#section-4.1",
 )]
 pub type ZonedDateTime = jiff::Zoned;
 
 mod zoned_date_time {
-    use std::str::FromStr as _;
+    use super::ZonedDateTime;
 
-    use super::*;
-
-    pub(super) fn to_output<S>(v: &ZonedDateTime) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        Value::scalar(v.to_string())
-    }
-
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<ZonedDateTime, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| {
-                ZonedDateTime::from_str(s).map_err(|e| format!("Invalid `ZonedDateTime`: {e}"))
-            })
+    pub(super) fn from_input(s: &str) -> Result<ZonedDateTime, Box<str>> {
+        s.parse()
+            .map_err(|e| format!("Invalid `ZonedDateTime`: {e}").into())
     }
 }
 
@@ -320,32 +278,21 @@ mod zoned_date_time {
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/duration
 /// [2]: https://docs.rs/jiff/*/jiff/struct.Span.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = duration,
+    to_output_with = ScalarValue::from_displayable,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/duration",
 )]
 pub type Duration = jiff::Span;
 
 mod duration {
-    use std::str::FromStr as _;
+    use super::Duration;
 
-    use super::*;
-
-    pub(super) fn to_output<S>(v: &Duration) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        Value::scalar(v.to_string())
-    }
-
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<Duration, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| Duration::from_str(s).map_err(|e| format!("Invalid `Duration`: {e}")))
+    pub(super) fn from_input(s: &str) -> Result<Duration, Box<str>> {
+        s.parse()
+            .map_err(|e| format!("Invalid `Duration`: {e}").into())
     }
 }
 
@@ -363,86 +310,58 @@ mod duration {
 /// [2]: https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html
 /// [3]: https://graphql-scalars.dev/docs/scalars/time-zone
 /// [4]: https://graphql-scalars.dev/docs/scalars/utc-offset
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = time_zone_or_utc_offset,
     parse_token(String),
 )]
 pub type TimeZoneOrUtcOffset = jiff::tz::TimeZone;
 
 mod time_zone_or_utc_offset {
-    use super::*;
+    use std::fmt::Display;
+
+    use super::{TimeZoneOrUtcOffset, TimeZoneParsingError, utc_offset};
+    use crate::util::Either;
 
     /// Format of a [`TimeZoneOrUtcOffset`] scalar.
     const FORMAT: &str = "%:Q";
 
-    pub(super) fn to_output<S>(v: &TimeZoneOrUtcOffset) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        Value::scalar(v.iana_name().map_or_else(
-            || {
-                // If no IANA time zone identifier is available, fall back to displaying the time
-                // offset directly (using format `[+-]HH:MM[:SS]` from RFC 9557, e.g. `+05:30`).
-                // See: https://github.com/graphql-rust/juniper/pull/1278#discussion_r1719161686
+    pub(super) fn to_output(v: &TimeZoneOrUtcOffset) -> impl Display {
+        if let Some(name) = v.iana_name() {
+            Either::Left(name)
+        } else {
+            // If no IANA time zone identifier is available, fall back to displaying the time
+            // offset directly (using format `[+-]HH:MM[:SS]` from RFC 9557, e.g. `+05:30`).
+            // See: https://github.com/graphql-rust/juniper/pull/1278#discussion_r1719161686
+            Either::Right(
                 jiff::Zoned::now()
                     .with_time_zone(v.clone())
-                    .strftime(FORMAT)
-                    .to_string()
-            },
-            ToOwned::to_owned,
-        ))
+                    .strftime(FORMAT),
+            )
+        }
     }
 
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<TimeZoneOrUtcOffset, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| {
-                TimeZoneOrUtcOffset::get(s)
-                    .map_err(TimeZoneParsingError::InvalidTimeZone)
-                    .or_else(|_| utc_offset::utc_offset_from_str(s).map(TimeZoneOrUtcOffset::fixed))
-                    .map_err(|e| format!("Invalid `TimeZoneOrUtcOffset`: {e}"))
-            })
+    pub(super) fn from_input(s: &str) -> Result<TimeZoneOrUtcOffset, Box<str>> {
+        TimeZoneOrUtcOffset::get(s)
+            .map_err(TimeZoneParsingError::InvalidTimeZone)
+            .or_else(|_| utc_offset::utc_offset_from_str(s).map(TimeZoneOrUtcOffset::fixed))
+            .map_err(|e| format!("Invalid `TimeZoneOrUtcOffset`: {e}").into())
     }
 }
 
 /// Error parsing a [`TimeZone`] value.
-#[derive(Clone)]
+#[derive(Clone, Debug, Display, Error)]
 pub enum TimeZoneParsingError {
     /// Identifier cannot not be parsed by the [`jiff::tz::TimeZone::get()`] method.
     InvalidTimeZone(jiff::Error),
 
     /// GraphQL scalar [`TimeZone`] requires `tz::TimeZone` with IANA name.
-    MissingIanaName(jiff::tz::TimeZone),
-}
-
-impl fmt::Debug for TimeZoneParsingError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::InvalidTimeZone(e) => write!(f, "TimeZoneParsingError::InvalidTimeZone({e:?})"),
-            Self::MissingIanaName(_) => write!(f, "TimeZoneParsingError::MissingIanaName(..)"),
-        }
-    }
-}
-
-impl fmt::Display for TimeZoneParsingError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::InvalidTimeZone(e) => e.fmt(f),
-            Self::MissingIanaName(..) => write!(f, "missing IANA name"),
-        }
-    }
-}
-
-impl Error for TimeZoneParsingError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            Self::InvalidTimeZone(e) => Some(e),
-            Self::MissingIanaName(..) => None,
-        }
-    }
+    #[display("missing IANA name")]
+    MissingIanaName(
+        #[debug(ignore)]
+        #[error(not(source))]
+        jiff::tz::TimeZone,
+    ),
 }
 
 /// Representation of a time zone from the [IANA Time Zone Database][0].
@@ -458,12 +377,15 @@ impl Error for TimeZoneParsingError {
 /// [0]: http://iana.org/time-zones
 /// [1]: https://graphql-scalars.dev/docs/scalars/time-zone
 /// [2]: https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = time_zone,
+    to_output_with = ScalarValue::from_displayable,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/time-zone",
 )]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Display, Eq, Into, PartialEq)]
+#[display("{}", _0.iana_name().expect("failed to display `TimeZone`: no IANA name"))]
 pub struct TimeZone(jiff::tz::TimeZone);
 
 impl TryFrom<jiff::tz::TimeZone> for TimeZone {
@@ -487,41 +409,12 @@ impl str::FromStr for TimeZone {
     }
 }
 
-impl fmt::Display for TimeZone {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0
-            .iana_name()
-            .unwrap_or_else(|| {
-                // PANIC: We made sure that IANA name is available when constructing `Self`.
-                panic!("failed to display `TimeZone`: no IANA name")
-            })
-            .fmt(f)
-    }
-}
-
-impl From<TimeZone> for jiff::tz::TimeZone {
-    fn from(value: TimeZone) -> Self {
-        value.0
-    }
-}
-
 mod time_zone {
-    use super::*;
+    use super::TimeZone;
 
-    pub(super) fn to_output<S>(v: &TimeZone) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        Value::scalar(v.to_string())
-    }
-
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<TimeZone, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| s.parse().map_err(|e| format!("Invalid `TimeZone`: {e}")))
+    pub(super) fn from_input(s: &str) -> Result<TimeZone, Box<str>> {
+        s.parse()
+            .map_err(|e| format!("Invalid `TimeZone`: {e}").into())
     }
 }
 
@@ -533,7 +426,8 @@ mod time_zone {
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/utc-offset
 /// [2]: https://docs.rs/jiff/latest/jiff/tz/struct.Offset.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = utc_offset,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/utc-offset",
@@ -541,7 +435,11 @@ mod time_zone {
 pub type UtcOffset = jiff::tz::Offset;
 
 mod utc_offset {
-    use super::*;
+    use std::fmt::{self, Display};
+
+    use jiff::fmt::{StdFmtWrite, strtime::BrokenDownTime};
+
+    use super::UtcOffset;
 
     /// Format of a [`UtcOffset` scalar][1].
     ///
@@ -549,32 +447,31 @@ mod utc_offset {
     const FORMAT: &str = "%:z";
 
     pub(super) fn utc_offset_from_str(value: &str) -> Result<jiff::tz::Offset, jiff::Error> {
-        let tm = jiff::fmt::strtime::BrokenDownTime::parse(FORMAT, value)?;
+        let tm = BrokenDownTime::parse(FORMAT, value)?;
         let offset = tm
             .offset()
             .expect("successful %:z parsing guarantees offset");
         Ok(offset)
     }
 
-    pub(super) fn to_output<S>(v: &UtcOffset) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        let mut buf = String::new();
-        let tm = jiff::fmt::strtime::BrokenDownTime::from(
+    pub(super) fn to_output(v: &UtcOffset) -> impl Display {
+        struct LazyFmt(BrokenDownTime);
+
+        impl Display for LazyFmt {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                self.0
+                    .format(FORMAT, StdFmtWrite(f))
+                    .map_err(|_| fmt::Error)
+            }
+        }
+
+        LazyFmt(BrokenDownTime::from(
             &jiff::Zoned::now().with_time_zone(jiff::tz::TimeZone::fixed(*v)),
-        );
-        tm.format(FORMAT, &mut buf).unwrap();
-        Value::scalar(buf)
+        ))
     }
 
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<UtcOffset, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| utc_offset_from_str(s).map_err(|e| format!("Invalid `UtcOffset`: {e}")))
+    pub(super) fn from_input(s: &str) -> Result<UtcOffset, Box<str>> {
+        utc_offset_from_str(s).map_err(|e| format!("Invalid `UtcOffset`: {e}").into())
     }
 }
 

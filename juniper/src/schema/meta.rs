@@ -1,8 +1,9 @@
 //! Types used to describe a `GraphQL` schema
 
-use std::{borrow::ToOwned, fmt};
+use std::borrow::ToOwned;
 
 use arcstr::ArcStr;
+use derive_more::with_trait::Debug;
 
 use crate::{
     FieldError, IntoFieldError,
@@ -42,6 +43,7 @@ impl DeprecationStatus {
 }
 
 /// Scalar type metadata
+#[derive(Debug)]
 pub struct ScalarMeta<S> {
     #[doc(hidden)]
     pub name: ArcStr,
@@ -49,18 +51,10 @@ pub struct ScalarMeta<S> {
     pub description: Option<ArcStr>,
     #[doc(hidden)]
     pub specified_by_url: Option<ArcStr>,
+    #[debug(ignore)]
     pub(crate) try_parse_fn: InputValueParseFn<S>,
+    #[debug(ignore)]
     pub(crate) parse_fn: ScalarTokenParseFn<S>,
-}
-
-impl<S: fmt::Debug> fmt::Debug for ScalarMeta<S> {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.debug_struct("ScalarMeta")
-            .field("name", &self.name)
-            .field("description", &self.description)
-            .field("specified_by_url", &self.specified_by_url)
-            .finish_non_exhaustive()
-    }
 }
 
 impl<S> ScalarMeta<S> {
@@ -213,6 +207,7 @@ impl<S> ObjectMeta<S> {
 }
 
 /// Enum type metadata
+#[derive(Debug)]
 pub struct EnumMeta<S> {
     #[doc(hidden)]
     pub name: ArcStr,
@@ -220,17 +215,8 @@ pub struct EnumMeta<S> {
     pub description: Option<ArcStr>,
     #[doc(hidden)]
     pub values: Vec<EnumValue>,
+    #[debug(ignore)]
     pub(crate) try_parse_fn: InputValueParseFn<S>,
-}
-
-impl<S: fmt::Debug> fmt::Debug for EnumMeta<S> {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.debug_struct("EnumMeta")
-            .field("name", &self.name)
-            .field("description", &self.description)
-            .field("values", &self.values)
-            .finish_non_exhaustive()
-    }
 }
 
 impl<S> EnumMeta<S> {
@@ -354,6 +340,7 @@ impl UnionMeta {
 }
 
 /// Input object metadata
+#[derive(Debug)]
 pub struct InputObjectMeta<S> {
     #[doc(hidden)]
     pub name: ArcStr,
@@ -361,17 +348,8 @@ pub struct InputObjectMeta<S> {
     pub description: Option<ArcStr>,
     #[doc(hidden)]
     pub input_fields: Vec<Argument<S>>,
+    #[debug(ignore)]
     pub(crate) try_parse_fn: InputValueParseFn<S>,
-}
-
-impl<S: fmt::Debug> fmt::Debug for InputObjectMeta<S> {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.debug_struct("InputObjectMeta")
-            .field("name", &self.name)
-            .field("description", &self.description)
-            .field("input_fields", &self.input_fields)
-            .finish_non_exhaustive()
-    }
 }
 
 impl<S> InputObjectMeta<S> {

@@ -23,7 +23,7 @@ use std::fmt;
 
 use chrono::{FixedOffset, TimeZone};
 
-use crate::{InputValue, ScalarValue, Value, graphql_scalar};
+use crate::graphql_scalar;
 
 /// Date in the proleptic Gregorian calendar (without time zone).
 ///
@@ -36,7 +36,8 @@ use crate::{InputValue, ScalarValue, Value, graphql_scalar};
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-date
 /// [2]: https://docs.rs/chrono/latest/chrono/naive/struct.NaiveDate.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = local_date,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-date",
@@ -44,30 +45,21 @@ use crate::{InputValue, ScalarValue, Value, graphql_scalar};
 pub type LocalDate = chrono::NaiveDate;
 
 mod local_date {
-    use super::*;
+    use std::fmt::Display;
+
+    use super::LocalDate;
 
     /// Format of a [`LocalDate` scalar][1].
     ///
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-date
     const FORMAT: &str = "%Y-%m-%d";
 
-    pub(super) fn to_output<S>(v: &LocalDate) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        Value::scalar(v.format(FORMAT).to_string())
+    pub(super) fn to_output(v: &LocalDate) -> impl Display {
+        v.format(FORMAT)
     }
 
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<LocalDate, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| {
-                LocalDate::parse_from_str(s, FORMAT)
-                    .map_err(|e| format!("Invalid `LocalDate`: {e}"))
-            })
+    pub(super) fn from_input(s: &str) -> Result<LocalDate, Box<str>> {
+        LocalDate::parse_from_str(s, FORMAT).map_err(|e| format!("Invalid `LocalDate`: {e}").into())
     }
 }
 
@@ -83,7 +75,8 @@ mod local_date {
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
 /// [2]: https://docs.rs/chrono/latest/chrono/naive/struct.NaiveTime.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = local_time,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-time",
@@ -91,9 +84,11 @@ mod local_date {
 pub type LocalTime = chrono::NaiveTime;
 
 mod local_time {
+    use std::fmt::Display;
+
     use chrono::Timelike as _;
 
-    use super::*;
+    use super::LocalTime;
 
     /// Full format of a [`LocalTime` scalar][1].
     ///
@@ -110,35 +105,21 @@ mod local_time {
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-time
     const FORMAT_NO_SECS: &str = "%H:%M";
 
-    pub(super) fn to_output<S>(v: &LocalTime) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        Value::scalar(
-            if v.nanosecond() == 0 {
-                v.format(FORMAT_NO_MILLIS)
-            } else {
-                v.format(FORMAT)
-            }
-            .to_string(),
-        )
+    pub(super) fn to_output(v: &LocalTime) -> impl Display {
+        if v.nanosecond() == 0 {
+            v.format(FORMAT_NO_MILLIS)
+        } else {
+            v.format(FORMAT)
+        }
     }
 
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<LocalTime, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| {
-                // First, try to parse the most used format.
-                // At the end, try to parse the full format for the parsing
-                // error to be most informative.
-                LocalTime::parse_from_str(s, FORMAT_NO_MILLIS)
-                    .or_else(|_| LocalTime::parse_from_str(s, FORMAT_NO_SECS))
-                    .or_else(|_| LocalTime::parse_from_str(s, FORMAT))
-                    .map_err(|e| format!("Invalid `LocalTime`: {e}"))
-            })
+    pub(super) fn from_input(s: &str) -> Result<LocalTime, Box<str>> {
+        // First, try to parse the most used format.
+        // At the end, try to parse the full format for the parsing error to be most informative.
+        LocalTime::parse_from_str(s, FORMAT_NO_MILLIS)
+            .or_else(|_| LocalTime::parse_from_str(s, FORMAT_NO_SECS))
+            .or_else(|_| LocalTime::parse_from_str(s, FORMAT))
+            .map_err(|e| format!("Invalid `LocalTime`: {e}").into())
     }
 }
 
@@ -150,7 +131,8 @@ mod local_time {
 ///
 /// [1]: https://graphql-scalars.dev/docs/scalars/local-date-time
 /// [2]: https://docs.rs/chrono/latest/chrono/naive/struct.NaiveDateTime.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = local_date_time,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/local-date-time",
@@ -158,30 +140,22 @@ mod local_time {
 pub type LocalDateTime = chrono::NaiveDateTime;
 
 mod local_date_time {
-    use super::*;
+    use std::fmt::Display;
+
+    use super::LocalDateTime;
 
     /// Format of a [`LocalDateTime` scalar][1].
     ///
     /// [1]: https://graphql-scalars.dev/docs/scalars/local-date-time
     const FORMAT: &str = "%Y-%m-%dT%H:%M:%S";
 
-    pub(super) fn to_output<S>(v: &LocalDateTime) -> Value<S>
-    where
-        S: ScalarValue,
-    {
-        Value::scalar(v.format(FORMAT).to_string())
+    pub(super) fn to_output(v: &LocalDateTime) -> impl Display {
+        v.format(FORMAT)
     }
 
-    pub(super) fn from_input<S>(v: &InputValue<S>) -> Result<LocalDateTime, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| {
-                LocalDateTime::parse_from_str(s, FORMAT)
-                    .map_err(|e| format!("Invalid `LocalDateTime`: {e}"))
-            })
+    pub(super) fn from_input(s: &str) -> Result<LocalDateTime, Box<str>> {
+        LocalDateTime::parse_from_str(s, FORMAT)
+            .map_err(|e| format!("Invalid `LocalDateTime`: {e}").into())
     }
 }
 
@@ -197,7 +171,8 @@ mod local_date_time {
 /// [0]: https://datatracker.ietf.org/doc/html/rfc3339#section-5
 /// [1]: https://graphql-scalars.dev/docs/scalars/date-time
 /// [2]: https://docs.rs/chrono/latest/chrono/struct.DateTime.html
-#[graphql_scalar(
+#[graphql_scalar]
+#[graphql(
     with = date_time,
     parse_token(String),
     specified_by_url = "https://graphql-scalars.dev/docs/scalars/date-time",
@@ -209,34 +184,28 @@ mod local_date_time {
 pub type DateTime<Tz> = chrono::DateTime<Tz>;
 
 mod date_time {
-    use chrono::{SecondsFormat, Utc};
+    use std::fmt::Display;
 
-    use super::*;
+    use chrono::{FixedOffset, SecondsFormat, TimeZone, Utc};
 
-    pub(super) fn to_output<S, Tz>(v: &DateTime<Tz>) -> Value<S>
+    use super::{DateTime, FromFixedOffset};
+
+    pub(super) fn to_output<Tz>(v: &DateTime<Tz>) -> String
     where
-        S: ScalarValue,
-        Tz: chrono::TimeZone,
-        Tz::Offset: fmt::Display,
+        Tz: TimeZone,
+        Tz::Offset: Display,
     {
-        Value::scalar(
-            v.with_timezone(&Utc)
-                .to_rfc3339_opts(SecondsFormat::AutoSi, true),
-        )
+        v.with_timezone(&Utc)
+            .to_rfc3339_opts(SecondsFormat::AutoSi, true)
     }
 
-    pub(super) fn from_input<S, Tz>(v: &InputValue<S>) -> Result<DateTime<Tz>, String>
+    pub(super) fn from_input<Tz>(s: &str) -> Result<DateTime<Tz>, Box<str>>
     where
-        S: ScalarValue,
         Tz: TimeZone + FromFixedOffset,
     {
-        v.as_string_value()
-            .ok_or_else(|| format!("Expected `String`, found: {v}"))
-            .and_then(|s| {
-                DateTime::<FixedOffset>::parse_from_rfc3339(s)
-                    .map_err(|e| format!("Invalid `DateTime`: {e}"))
-                    .map(FromFixedOffset::from_fixed_offset)
-            })
+        DateTime::<FixedOffset>::parse_from_rfc3339(s)
+            .map(FromFixedOffset::from_fixed_offset)
+            .map_err(|e| format!("Invalid `DateTime`: {e}").into())
     }
 }
 

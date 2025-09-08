@@ -1203,10 +1203,10 @@ mod full_featured_enum {
 
     impl<T> Character<T> {
         fn as_droid(&self, ctx: &CustomContext) -> prelude::Option<&DroidCustomContext> {
-            if let CustomContext::Droid = ctx {
-                if let Self::B(droid) = self {
-                    return Some(droid);
-                }
+            if let CustomContext::Droid = ctx
+                && let Self::B(droid) = self
+            {
+                return Some(droid);
             }
             None
         }
@@ -1352,19 +1352,19 @@ mod trivial_struct {
 
     impl Character {
         fn as_human<'db>(&self, db: &'db Database) -> prelude::Option<&'db Human> {
-            if let Some(human) = &db.human {
-                if human.id == self.id {
-                    return Some(human);
-                }
+            if let Some(human) = &db.human
+                && human.id == self.id
+            {
+                return Some(human);
             }
             None
         }
 
         fn as_droid<'db>(&self, db: &'db Database) -> prelude::Option<&'db Droid> {
-            if let Some(droid) = &db.droid {
-                if droid.id == self.id {
-                    return Some(droid);
-                }
+            if let Some(droid) = &db.droid
+                && droid.id == self.id
+            {
+                return Some(droid);
             }
             None
         }
@@ -1530,10 +1530,10 @@ mod generic_struct {
 
     impl<A, B> Character<A, B> {
         fn as_human<'db>(&self, db: &'db Database) -> prelude::Option<&'db Human> {
-            if let Some(human) = &db.human {
-                if human.id == self.id {
-                    return Some(human);
-                }
+            if let Some(human) = &db.human
+                && human.id == self.id
+            {
+                return Some(human);
             }
             None
         }
@@ -1619,10 +1619,10 @@ mod full_featured_struct {
 
     impl<T> Character<T> {
         fn as_human<'db>(&self, db: &'db Database) -> prelude::Option<&'db Human> {
-            if let Some(human) = &db.human {
-                if human.id == self.id {
-                    return Some(human);
-                }
+            if let Some(human) = &db.human
+                && human.id == self.id
+            {
+                return Some(human);
             }
             None
         }
@@ -1630,10 +1630,10 @@ mod full_featured_struct {
 
     impl<T> Character<T> {
         fn as_droid<'db>(&self, db: &'db Database) -> prelude::Option<&'db Droid> {
-            if let Some(droid) = &db.droid {
-                if droid.id == self.id {
-                    return Some(droid);
-                }
+            if let Some(droid) = &db.droid
+                && droid.id == self.id
+            {
+                return Some(droid);
             }
             None
         }

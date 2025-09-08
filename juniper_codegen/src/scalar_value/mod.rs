@@ -9,12 +9,14 @@ use syn::{
     parse_quote,
     spanned::Spanned as _,
     token,
-    visit::Visit,
 };
 
 use crate::common::{
     SpanContainer, diagnostic, filter_attrs,
-    parse::{ParseBufferExt as _, attr::err},
+    parse::{
+        ParseBufferExt as _,
+        attr::{OptionExt as _, err},
+    },
 };
 
 /// [`diagnostic::Scope`] of errors for `#[derive(ScalarValue)]` macro.
@@ -23,7 +25,6 @@ const ERR: diagnostic::Scope = diagnostic::Scope::ScalarValueDerive;
 /// Expands `#[derive(ScalarValue)]` macro into generated code.
 pub fn expand_derive(input: TokenStream) -> syn::Result<TokenStream> {
     let ast = syn::parse2::<syn::DeriveInput>(input)?;
-    let span = ast.span();
 
     let data_enum = match ast.data {
         syn::Data::Enum(e) => e,
@@ -45,39 +46,15 @@ pub fn expand_derive(input: TokenStream) -> syn::Result<TokenStream> {
         }
     }
 
-    let missing_methods = [
-        (Method::AsInt, "as_int"),
-        (Method::AsFloat, "as_float"),
-        (Method::AsStr, "as_str"),
-        (Method::AsString, "as_string"),
-        (Method::IntoString, "into_string"),
-        (Method::AsBool, "as_bool"),
-    ]
-    .iter()
-    .filter_map(|(method, err)| (!methods.contains_key(method)).then_some(err))
-    .fold(None, |acc, &method| {
-        Some(
-            acc.map(|acc| format!("{acc}, {method}"))
-                .unwrap_or_else(|| method.into()),
-        )
-    })
-    .filter(|_| !attr.allow_missing_attrs);
-    if let Some(missing_methods) = missing_methods {
-        return Err(ERR.custom_error(
-            span,
-            format!(
-                "missing `#[value({missing_methods})]` attributes. In case you \
-                 are sure that it's ok, use `#[value(allow_missing_attributes)]` \
-                 to suppress this error.",
-            ),
-        ));
-    }
-
     Ok(Definition {
         ident: ast.ident,
         generics: ast.generics,
         variants: data_enum.variants.into_iter().collect(),
         methods,
+        from_displayable: attr.from_displayable.map(SpanContainer::into_inner),
+        from_displayable_non_static: attr
+            .from_displayable_non_static
+            .map(SpanContainer::into_inner),
     }
     .into_token_stream())
 }
@@ -86,8 +63,13 @@ pub fn expand_derive(input: TokenStream) -> syn::Result<TokenStream> {
 /// an enum definition.
 #[derive(Default)]
 struct Attr {
-    /// Allows missing [`Method`]s.
-    allow_missing_attrs: bool,
+    /// Explicitly specified function to be used as `ScalarValue::from_displayable()`
+    /// implementation.
+    from_displayable: Option<SpanContainer<syn::ExprPath>>,
+
+    /// Explicitly specified function to be used as `ScalarValue::from_displayable_non_static()`
+    /// implementation.
+    from_displayable_non_static: Option<SpanContainer<syn::ExprPath>>,
 }
 
 impl Parse for Attr {
@@ -96,8 +78,19 @@ impl Parse for Attr {
         while !input.is_empty() {
             let ident = input.parse::<syn::Ident>()?;
             match ident.to_string().as_str() {
-                "allow_missing_attributes" => {
-                    out.allow_missing_attrs = true;
+                "from_displayable_with" => {
+                    input.parse::<token::Eq>()?;
+                    let scl = input.parse::<syn::ExprPath>()?;
+                    out.from_displayable
+                        .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
+                "from_displayable_non_static_with" => {
+                    input.parse::<token::Eq>()?;
+                    let scl = input.parse::<syn::ExprPath>()?;
+                    out.from_displayable_non_static
+                        .replace(SpanContainer::new(ident.span(), Some(scl.span()), scl))
+                        .none_or_else(|_| err::dup_arg(&ident))?
                 }
                 name => {
                     return Err(err::unknown_arg(&ident, name));
@@ -112,9 +105,11 @@ impl Parse for Attr {
 impl Attr {
     /// Tries to merge two [`Attr`]s into a single one, reporting about
     /// duplicates, if any.
-    fn try_merge(mut self, another: Self) -> syn::Result<Self> {
-        self.allow_missing_attrs |= another.allow_missing_attrs;
-        Ok(self)
+    fn try_merge(self, mut another: Self) -> syn::Result<Self> {
+        Ok(Self {
+            from_displayable: try_merge_opt!(from_displayable: self, another),
+            from_displayable_non_static: try_merge_opt!(from_displayable_non_static: self, another),
+        })
     }
 
     /// Parses [`Attr`] from the given multiple `name`d [`syn::Attribute`]s
@@ -129,23 +124,20 @@ impl Attr {
 /// Possible attribute names of the `#[derive(ScalarValue)]`.
 #[derive(Eq, Hash, PartialEq)]
 enum Method {
-    /// `#[value(as_int)]`.
-    AsInt,
+    /// `#[value(to_int)]`.
+    ToInt,
 
-    /// `#[value(as_float)]`.
-    AsFloat,
+    /// `#[value(to_float)]`.
+    ToFloat,
 
     /// `#[value(as_str)]`.
     AsStr,
 
-    /// `#[value(as_string)]`.
-    AsString,
+    /// `#[value(to_string)]`.
+    ToString,
 
-    /// `#[value(into_string)]`.
-    IntoString,
-
-    /// `#[value(as_bool)]`.
-    AsBool,
+    /// `#[value(to_bool)]`.
+    ToBool,
 }
 
 /// Available arguments behind `#[value]` attribute when generating code for an
@@ -159,12 +151,11 @@ impl Parse for VariantAttr {
         while !input.is_empty() {
             let ident = input.parse::<syn::Ident>()?;
             let method = match ident.to_string().as_str() {
-                "as_int" => Method::AsInt,
-                "as_float" => Method::AsFloat,
+                "to_int" => Method::ToInt,
+                "to_float" => Method::ToFloat,
                 "as_str" => Method::AsStr,
-                "as_string" => Method::AsString,
-                "into_string" => Method::IntoString,
-                "as_bool" => Method::AsBool,
+                "to_string" => Method::ToString,
+                "to_bool" => Method::ToBool,
                 name => {
                     return Err(err::unknown_arg(&ident, name));
                 }
@@ -207,214 +198,185 @@ impl VariantAttr {
     }
 }
 
-/// Definition of a [`ScalarValue`] for code generation.
-///
-/// [`ScalarValue`]: juniper::ScalarValue
+/// Definition of a `ScalarValue` for code generation.
 struct Definition {
-    /// [`syn::Ident`] of the enum representing this [`ScalarValue`].
-    ///
-    /// [`ScalarValue`]: juniper::ScalarValue
+    /// [`syn::Ident`] of the enum representing this `ScalarValue`.
     ident: syn::Ident,
 
-    /// [`syn::Generics`] of the enum representing this [`ScalarValue`].
-    ///
-    /// [`ScalarValue`]: juniper::ScalarValue
+    /// [`syn::Generics`] of the enum representing this `ScalarValue`.
     generics: syn::Generics,
 
-    /// [`syn::Variant`]s of the enum representing this [`ScalarValue`].
-    ///
-    /// [`ScalarValue`]: juniper::ScalarValue
+    /// [`syn::Variant`]s of the enum representing this `ScalarValue`.
     variants: Vec<syn::Variant>,
 
     /// [`Variant`]s marked with a [`Method`] attribute.
     methods: HashMap<Method, Vec<Variant>>,
+
+    /// Custom definition to call in `ScalarValue::from_displayable()` method.
+    ///
+    /// If [`None`] then `ScalarValue::from_displayable()` method is not generated.
+    from_displayable: Option<syn::ExprPath>,
+
+    /// Custom definition to call in `ScalarValue::from_displayable_non_static()` method.
+    ///
+    /// If [`None`] then `ScalarValue::from_displayable_non_static()` method is not generated.
+    from_displayable_non_static: Option<syn::ExprPath>,
 }
 
 impl ToTokens for Definition {
     fn to_tokens(&self, into: &mut TokenStream) {
         self.impl_scalar_value_tokens().to_tokens(into);
-        self.impl_from_tokens().to_tokens(into);
-        self.impl_display_tokens().to_tokens(into);
+        self.impl_try_to_primitive_tokens().to_tokens(into);
     }
 }
 
 impl Definition {
-    /// Returns generated code implementing [`ScalarValue`].
-    ///
-    /// [`ScalarValue`]: juniper::ScalarValue
+    /// Returns generated code implementing `ScalarValue`.
     fn impl_scalar_value_tokens(&self) -> TokenStream {
-        let ident = &self.ident;
+        let ty_ident = &self.ident;
         let (impl_gens, ty_gens, where_clause) = self.generics.split_for_impl();
 
-        let methods = [
-            (
-                Method::AsInt,
-                quote! { fn as_int(&self) -> ::core::option::Option<::core::primitive::i32> },
-                quote! { ::core::primitive::i32::from(*v) },
-            ),
-            (
-                Method::AsFloat,
-                quote! { fn as_float(&self) -> ::core::option::Option<::core::primitive::f64> },
-                quote! { ::core::primitive::f64::from(*v) },
-            ),
-            (
-                Method::AsStr,
-                quote! { fn as_str(&self) -> ::core::option::Option<&::core::primitive::str> },
-                quote! { ::core::convert::AsRef::as_ref(v) },
-            ),
-            (
-                Method::AsString,
-                quote! { fn as_string(&self) -> ::core::option::Option<::std::string::String> },
-                quote! { ::std::string::ToString::to_string(v) },
-            ),
-            (
-                Method::IntoString,
-                quote! { fn into_string(self) -> ::core::option::Option<::std::string::String> },
-                quote! { ::std::string::String::from(v) },
-            ),
-            (
-                Method::AsBool,
-                quote! { fn as_bool(&self) -> ::core::option::Option<::core::primitive::bool> },
-                quote! { ::core::primitive::bool::from(*v) },
-            ),
-        ];
-        let methods = methods.iter().map(|(m, sig, def)| {
-            let arms = self.methods.get(m).into_iter().flatten().map(|v| {
-                let arm = v.match_arm();
-                let call = v.expr.as_ref().map_or(def.clone(), |f| quote! { #f(v) });
-                quote! { #arm => ::core::option::Option::Some(#call), }
-            });
+        let is_type_arms = self.variants.iter().map(|var| {
+            let var_ident = &var.ident;
+            let field = Field::try_from(var.fields.clone())
+                .unwrap_or_else(|_| unreachable!("already checked"));
+            let var_pattern = field.match_arg();
+
             quote! {
-                #sig {
-                    match self {
-                        #(#arms)*
-                        _ => ::core::option::Option::None,
-                    }
+                Self::#var_ident #var_pattern => ::juniper::AnyExt::is::<__T>(v),
+            }
+        });
+
+        let downcast_type_arms = self.variants.iter().map(|var| {
+            let var_ident = &var.ident;
+            let field = Field::try_from(var.fields.clone())
+                .unwrap_or_else(|_| unreachable!("already checked"));
+            let var_pattern = field.match_arg();
+
+            quote! {
+                Self::#var_ident #var_pattern => ::juniper::AnyExt::downcast_ref(v),
+            }
+        });
+
+        let from_displayable = self.from_displayable.as_ref().map(|expr| {
+            quote! {
+                fn from_displayable<
+                    __T: ::core::fmt::Display + ::core::any::Any + ?::core::marker::Sized,
+                >(__v: &__T) -> Self {
+                    #expr(__v)
+                }
+            }
+        });
+        let from_displayable_non_static = self.from_displayable_non_static.as_ref().map(|expr| {
+            quote! {
+                fn from_displayable_non_static<
+                    __T: ::core::fmt::Display + ?::core::marker::Sized,
+                >(__v: &__T) -> Self {
+                    #expr(__v)
                 }
             }
         });
 
         quote! {
             #[automatically_derived]
-            impl #impl_gens ::juniper::ScalarValue for #ident #ty_gens
-                #where_clause
-            {
-                #( #methods )*
+            impl #impl_gens ::juniper::ScalarValue for #ty_ident #ty_gens #where_clause {
+                fn is_type<__T: ::core::any::Any + ?::core::marker::Sized>(&self) -> bool {
+                    match self {
+                        #( #is_type_arms )*
+                    }
+                }
+
+                fn downcast_type<__T: ::core::any::Any>(&self) -> ::core::option::Option<&__T> {
+                    match self {
+                        #( #downcast_type_arms )*
+                    }
+                }
+
+                #from_displayable
+                #from_displayable_non_static
             }
         }
     }
 
-    /// Returns generated code implementing:
-    /// - [`From`] each variant into enum itself.
-    /// - [`From`] enum into [`Option`] of each variant.
-    /// - [`From`] enum reference into [`Option`] of each variant reference.
-    fn impl_from_tokens(&self) -> TokenStream {
+    /// Returns generated code implementing `TryToPrimitive`.
+    fn impl_try_to_primitive_tokens(&self) -> TokenStream {
         let ty_ident = &self.ident;
-        let (impl_gen, ty_gen, where_clause) = self.generics.split_for_impl();
+        let (_, ty_gens, where_clause) = self.generics.split_for_impl();
 
-        // We don't impose additional bounds on generic parameters, because
-        // `ScalarValue` itself has `'static` bound.
+        let ref_lt = quote! { '___a };
+        // We don't impose additional bounds on generic parameters,
+        // because `ScalarValue` itself has `'static` bound.
         let mut generics = self.generics.clone();
-        generics.params.push(parse_quote! { '___a });
-        let (lf_impl_gen, _, _) = generics.split_for_impl();
+        generics.params.push(parse_quote! { #ref_lt });
+        let (lt_impl_gens, _, _) = generics.split_for_impl();
 
-        self.variants
-            .iter()
-            .map(|v| {
-                let var_ident = &v.ident;
-                let field = v.fields.iter().next().unwrap();
-                let var_ty = &field.ty;
-                let var_field = field
-                    .ident
-                    .as_ref()
-                    .map_or_else(|| quote! { (v) }, |i| quote! { { #i: v } });
-
+        let methods = [
+            (
+                Method::ToInt,
+                "Int",
+                quote! { ::core::primitive::i32 },
+                quote! { ::core::convert::Into::into(*v) },
+            ),
+            (
+                Method::ToFloat,
+                "Float",
+                quote! { ::core::primitive::f64 },
+                quote! { ::core::convert::Into::into(*v) },
+            ),
+            (
+                Method::AsStr,
+                "String",
+                quote! { &#ref_lt ::core::primitive::str },
+                quote! { ::core::convert::AsRef::as_ref(v) },
+            ),
+            (
+                Method::ToString,
+                "String",
+                quote! { ::std::string::String },
+                quote! { ::std::string::ToString::to_string(v) },
+            ),
+            (
+                Method::ToBool,
+                "Bool",
+                quote! { ::core::primitive::bool },
+                quote! { ::core::convert::Into::into(*v) },
+            ),
+        ];
+        let impls = methods.iter().filter_map(|(m, into_name, as_ty, default_expr)| {
+            let arms = self.methods.get(m)?.iter().map(|v| {
+                let arm_pattern = v.match_arm();
+                let call = if let Some(func) = &v.expr {
+                    quote! { #func(v) }
+                } else {
+                    default_expr.clone()
+                };
                 quote! {
-                    #[automatically_derived]
-                    impl #impl_gen ::core::convert::From<#var_ty> for #ty_ident #ty_gen
-                        #where_clause
-                    {
-                        fn from(v: #var_ty) -> Self {
-                            Self::#var_ident #var_field
-                        }
-                    }
+                    #arm_pattern => ::core::result::Result::Ok(#call),
+                }
+            });
+            Some(quote! {
+                #[automatically_derived]
+                impl #lt_impl_gens ::juniper::TryToPrimitive<#ref_lt, #as_ty> for #ty_ident #ty_gens
+                     #where_clause
+                {
+                    type Error = ::juniper::WrongInputScalarTypeError<#ref_lt, #ty_ident #ty_gens>;
 
-                    #[automatically_derived]
-                    impl #impl_gen ::core::convert::From<#ty_ident #ty_gen>
-                     for ::core::option::Option<#var_ty> #where_clause
-                    {
-                        fn from(ty: #ty_ident #ty_gen) -> Self {
-                            if let #ty_ident::#var_ident #var_field = ty {
-                                ::core::option::Option::Some(v)
-                            } else {
-                                ::core::option::Option::None
-                            }
-                        }
-                    }
-
-                    #[automatically_derived]
-                    impl #lf_impl_gen ::core::convert::From<&'___a #ty_ident #ty_gen>
-                     for ::core::option::Option<&'___a #var_ty> #where_clause
-                    {
-                        fn from(ty: &'___a #ty_ident #ty_gen) -> Self {
-                            if let #ty_ident::#var_ident #var_field = ty {
-                                ::core::option::Option::Some(v)
-                            } else {
-                                ::core::option::Option::None
-                            }
+                    fn try_to_primitive(
+                        &#ref_lt self,
+                    ) -> ::core::result::Result<#as_ty, Self::Error> {
+                        match self {
+                            #( #arms )*
+                            _ => ::core::result::Result::Err(::juniper::WrongInputScalarTypeError {
+                                type_name: ::juniper::arcstr::literal!(#into_name),
+                                input: self,
+                            }),
                         }
                     }
                 }
             })
-            .collect()
-    }
-
-    /// Returns generated code implementing [`Display`] by matching over each
-    /// enum variant.
-    ///
-    /// [`Display`]: std::fmt::Display
-    fn impl_display_tokens(&self) -> TokenStream {
-        let ident = &self.ident;
-
-        let mut generics = self.generics.clone();
-        generics.make_where_clause();
-        for var in &self.variants {
-            let var_ty = &var.fields.iter().next().unwrap().ty;
-            let mut check = IsVariantGeneric::new(&self.generics);
-            check.visit_type(var_ty);
-            if check.res {
-                generics
-                    .where_clause
-                    .as_mut()
-                    .unwrap()
-                    .predicates
-                    .push(parse_quote! { #var_ty: ::core::fmt::Display });
-            }
-        }
-        let (impl_gen, ty_gen, where_clause) = generics.split_for_impl();
-
-        let arms = self.variants.iter().map(|v| {
-            let var_ident = &v.ident;
-            let field = v.fields.iter().next().unwrap();
-            let var_field = field
-                .ident
-                .as_ref()
-                .map_or_else(|| quote! { (v) }, |i| quote! { { #i: v } });
-
-            quote! { Self::#var_ident #var_field => ::core::fmt::Display::fmt(v, f), }
         });
-
         quote! {
-            #[automatically_derived]
-            impl #impl_gen ::core::fmt::Display for #ident #ty_gen
-                #where_clause
-            {
-                fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-                    match self {
-                        #( #arms )*
-                    }
-                }
-            }
+            #( #impls )*
         }
     }
 }
@@ -481,46 +443,6 @@ impl Field {
         match self {
             Self::Named(_) => quote! { { #self: v } },
             Self::Unnamed => quote! { (v) },
-        }
-    }
-}
-
-/// [`Visit`]or checking whether a [`Variant`]'s [`Field`] contains generic
-/// parameters.
-struct IsVariantGeneric<'a> {
-    /// Indicates whether the checked [`Variant`]'s [`Field`] contains generic
-    /// parameters.
-    res: bool,
-
-    /// [`syn::Generics`] to search generic parameters in.
-    generics: &'a syn::Generics,
-}
-
-impl<'a> IsVariantGeneric<'a> {
-    /// Constructs a new [`IsVariantGeneric`] [`Visit`]or.
-    fn new(generics: &'a syn::Generics) -> Self {
-        Self {
-            res: false,
-            generics,
-        }
-    }
-}
-
-impl<'ast> Visit<'ast> for IsVariantGeneric<'_> {
-    fn visit_path(&mut self, path: &'ast syn::Path) {
-        if let Some(ident) = path.get_ident() {
-            let is_generic = self.generics.params.iter().any(|par| {
-                if let syn::GenericParam::Type(ty) = par {
-                    ty.ident == *ident
-                } else {
-                    false
-                }
-            });
-            if is_generic {
-                self.res = true;
-            } else {
-                syn::visit::visit_path(self, path);
-            }
         }
     }
 }
