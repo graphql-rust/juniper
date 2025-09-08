@@ -6,10 +6,13 @@ All user visible changes to `juniper_warp` crate will be documented in this file
 
 
 
-## master
+## [0.9.0] · 2025-09-08
+[0.9.0]: /../../tree/juniper_warp-v0.9.0/juniper_warp
 
 ### BC Breaks
 
+- Switched to 0.17 version of [`juniper` crate].
+- Switched to 0.5 version of [`juniper_graphql_ws` crate].
 - Bumped up [MSRV] to 1.85. ([#1272], [1b1fc618])
 - Switched to [0.4 version][warp-0.4] of [`warp` crate]. ([#1343])
 
