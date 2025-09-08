@@ -39,7 +39,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
         - Remade as a struct with methods: ([#1322])
             - Added `modifier()` and `modifiers()` methods returning `TypeModifier`.
             - Added `is_list()` method.
-            - Added `wrap_list()` and `wrap_non_null() methods.
+            - Added `wrap_list()` and `wrap_non_null()` methods.
             - Added `nullable()` constructor.
             - Added `BorrowedType` representation.
     - `MetaType`:
@@ -159,7 +159,6 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1311]: /../../pull/1311
 [#1318]: /../../pull/1318
 [#1322]: /../../pull/1322
-[#1323]: /../../pull/1323
 [#1324]: /../../pull/1324
 [#1327]: /../../pull/1327
 [#1329]: /../../pull/1329
