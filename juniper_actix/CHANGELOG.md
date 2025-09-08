@@ -6,16 +6,28 @@ All user visible changes to `juniper_actix` crate will be documented in this fil
 
 
 
+## [0.7.0] · 2025-09-08
+[0.7.0]: /../../tree/juniper_actix-v0.7.0/juniper_actix
+
+### BC Breaks
+
+- Switched to 0.17 version of [`juniper` crate].
+- Switched to 0.5 version of [`juniper_graphql_ws` crate].
+- Bumped up [MSRV] to 1.85 due to [`actix-ws` crate] requirements and migration to 2024 edition. ([#1267], [1b1fc618])
+
+[1b1fc618]: /../../commit/1b1fc61879ffdd640d741e187dc20678bf7ab295
+
+
+
+
 ## [0.6.0] · 2024-07-23
 [0.6.0]: /../../tree/juniper_actix-v0.6.0/juniper_actix
 
 ### BC Breaks
 
 - Switched to 0.3 version of [`actix-ws` crate]. ([#1267])
-- Bumped up [MSRV] to 1.85 due to [`actix-ws` crate] requirements and migration to 2024 edition. ([#1267], [todo])
 
 [#1267]: /../../pull/1267
-[todo]: /../../commit/todo
 
 
 
