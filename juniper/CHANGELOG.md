@@ -6,9 +6,10 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 
 
-## master
+## [0.17.0] · 2025-09-08
+[0.17.0]: /../../tree/juniper-v0.17.0/juniper
 
-[Diff](/../../compare/juniper-v0.16.2...master) | [Milestone](/../../milestone/7)
+[Diff](/../../compare/juniper-v0.16.2...juniper-v0.17.0) | [Milestone](/../../milestone/7)
 
 ### BC Breaks
 
