@@ -1,6 +1,6 @@
 [package]
 name = "juniper_axum"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 rust-version = "1.85"
 description = "`juniper` GraphQL integration with `axum`."
@@ -33,7 +33,7 @@ subscriptions = [
 axum = { version = "0.8", features = ["json", "query"], default-features = false }
 derive_more = { version = "2.0", features = ["display", "error"], optional = true }
 futures = { version = "0.3.22", optional = true }
-juniper = { version = "0.17.0", path = "../juniper", default-features = false }
+juniper = { version = "0.17", path = "../juniper", default-features = false }
 juniper_graphql_ws = { version = "0.5", path = "../juniper_graphql_ws", features = ["graphql-transport-ws"] }
 serde = { version = "1.0.122", features = ["derive"] }
 serde_json = "1.0.18"

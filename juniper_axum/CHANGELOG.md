@@ -6,14 +6,17 @@ All user visible changes to `juniper_axum` crate will be documented in this file
 
 
 
-## master
+## [0.3.0] · 2025-09-08
+[0.3.0]: /../../tree/juniper_axum-v0.3.0/juniper_axum
 
 ### BC Breaks
 
-- Bumped up [MSRV] to 1.85. ([#1272], [todo])
+- Switched to 0.17 version of [`juniper` crate].
+- Switched to 0.5 version of [`juniper_graphql_ws` crate].
+- Bumped up [MSRV] to 1.85. ([#1272], [1b1fc618])
 
 [#1272]: /../../pull/1272
-[todo]: /../../commit/todo
+[1b1fc618]: /../../commit/1b1fc61879ffdd640d741e187dc20678bf7ab295
 
 
 
