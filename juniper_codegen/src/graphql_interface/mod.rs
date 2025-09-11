@@ -610,11 +610,18 @@ impl Definition {
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         let (_, ty_generics, _) = self.generics.split_for_impl();
         let ty_const_generics = self.const_trait_generics();
+        let reflectable_ty: syn::Type = parse_quote! { #ty #ty_const_generics };
 
         let fields_marks = self
             .fields
             .iter()
             .map(|f| f.method_mark_tokens(false, scalar));
+
+        let assert_args_deprecable = self.fields.iter().flat_map(|field| {
+            field.arguments.iter().flatten().filter_map(|arg| {
+                arg.assert_deprecable_tokens(&reflectable_ty, const_scalar, &field.name)
+            })
+        });
 
         let is_output = self.implemented_for.iter().map(|impler| {
             quote_spanned! { impler.span() =>
@@ -639,7 +646,7 @@ impl Definition {
             quote_spanned! { const_impl_for.span() =>
                 ::juniper::assert_transitive_impls!(
                     #const_scalar,
-                    #ty #ty_const_generics,
+                    #reflectable_ty,
                     #const_impl_for,
                     #( #const_implements ),*
                 );
@@ -654,15 +661,16 @@ impl Definition {
             {
                 fn mark() {
                     #( #fields_marks )*
+                    #( #assert_args_deprecable )*
                     #( #is_output )*
                     ::juniper::assert_interfaces_impls!(
                         #const_scalar,
-                        #ty #ty_const_generics,
+                        #reflectable_ty,
                         #( #const_impl_for ),*
                     );
                     ::juniper::assert_implemented_for!(
                         #const_scalar,
-                        #ty #ty_const_generics,
+                        #reflectable_ty,
                         #( #const_implements ),*
                     );
                     #( #transitive_checks )*
@@ -1017,8 +1025,8 @@ impl Definition {
             .collect()
     }
 
-    /// Returns generated code implementing [`Field`] trait for each field of
-    /// this [GraphQL interface][1].
+    /// Returns generated code implementing [`Field`] trait for each field of this
+    /// [GraphQL interface][1].
     ///
     /// [`Field`]: juniper::macros::reflect::Field
     /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
@@ -1053,7 +1061,7 @@ impl Definition {
                 let mut return_ty = field.ty.clone();
                 generics.replace_type_with_defaults(&mut return_ty);
 
-                let const_ty_generics = self.const_trait_generics();
+                let ty_const_generics = self.const_trait_generics();
 
                 let unreachable_arm = (self.implemented_for.is_empty()
                     || !self.generics.params.is_empty())
@@ -1077,7 +1085,7 @@ impl Definition {
                             match self {
                                 #( #ty::#implemented_for_idents(v) => {
                                     ::juniper::assert_field!(
-                                        #ty #const_ty_generics,
+                                        #ty #ty_const_generics,
                                         #const_implemented_for,
                                         #const_scalar,
                                         #field_name,
@@ -1097,8 +1105,8 @@ impl Definition {
             .collect()
     }
 
-    /// Returns generated code implementing [`AsyncField`] trait for each field
-    /// of this [GraphQL interface][1].
+    /// Returns generated code implementing [`AsyncField`] trait for each field of this
+    /// [GraphQL interface][1].
     ///
     /// [`AsyncField`]: juniper::macros::reflect::AsyncField
     /// [1]: https://spec.graphql.org/October2021#sec-Interfaces
@@ -1133,7 +1141,7 @@ impl Definition {
                 let mut return_ty = field.ty.clone();
                 generics.replace_type_with_defaults(&mut return_ty);
 
-                let const_ty_generics = self.const_trait_generics();
+                let ty_const_generics = self.const_trait_generics();
 
                 let unreachable_arm = (self.implemented_for.is_empty()
                     || !self.generics.params.is_empty())
@@ -1157,7 +1165,7 @@ impl Definition {
                             match self {
                                 #( #ty::#implemented_for_idents(v) => {
                                     ::juniper::assert_field!(
-                                        #ty #const_ty_generics,
+                                        #ty #ty_const_generics,
                                         #const_implemented_for,
                                         #const_scalar,
                                         #field_name,

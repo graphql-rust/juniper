@@ -459,7 +459,7 @@ pub const fn can_be_subtype(ty: WrappedValue, subtype: WrappedValue) -> bool {
 
 /// Extracts an [`Argument`] from the provided [`Arguments`] by its [`Name`].
 #[must_use]
-pub const fn extract_argument(args: Arguments, name: Name) -> Option<Argument> {
+pub const fn get_arg_by_name(args: Arguments, name: Name) -> Option<Argument> {
     let mut i = 0;
     while i < args.len() {
         let arg = args[i];
@@ -694,8 +694,9 @@ macro_rules! assert_subtype {
     };
 }
 
-/// Asserts validness of the [`Field`]s arguments. See [spec][1] for more
-/// info.
+/// Asserts validness of the [`Field`]s [`Arguments`].
+///
+/// See [spec][1] for more info.
 ///
 /// [1]: https://spec.graphql.org/October2021#sel-IAHZhCHCDEEFAAADHD8Cxob
 #[macro_export]
@@ -877,33 +878,55 @@ macro_rules! assert_field_args {
     };
 }
 
+/// Statically asserts whether a [`Field`]'s [`Argument`] represents a `Null`able type, so can be
+/// deprecated.
+///
+/// Must be used in conjunction with the check whether the [`Argument`] has its default value set.
+#[doc(hidden)]
 #[macro_export]
-macro_rules! assert_field_arg_nullable {
+macro_rules! assert_field_arg_deprecable {
     (
         $ty: ty,
         $scalar: ty,
         $field_name: expr,
-        $arg_name: expr
-        $(, $err_prefix: expr)? $(,)?
+        $arg_name: expr $(,)?
     ) => {
-        const {
+        const _: () = {
             const TY_NAME: &::core::primitive::str =
                 <$ty as $crate::macros::reflect::BaseType<$scalar>>::NAME;
             const FIELD_NAME: &::core::primitive::str = $field_name;
             const ARGS: $crate::macros::reflect::Arguments =
                 <$ty as $crate::macros::reflect::FieldMeta<
                     $scalar,
-                    { $crate::checked_hash!(FIELD_NAME, $ty, $scalar, $err_prefix) },
+                    { $crate::checked_hash!(FIELD_NAME, $ty, $scalar) },
                 >>::ARGUMENTS;
             const ARG_NAME: &::core::primitive::str = $arg_name;
             const ARG: $crate::macros::reflect::Argument =
-                $crate::macros::reflect::extract_argument(ARGS, ARG_NAME).unwrap(
+                $crate::macros::reflect::get_arg_by_name(ARGS, ARG_NAME).expect(
                     $crate::const_concat!(
-                        $err_prefix, "Field `", FIELD_NAME, "` has no argument `", ARG_NAME, "`",
+                        "field `",
+                        FIELD_NAME,
+                        "` has no argument `",
+                        ARG_NAME,
+                        "`",
                     ),
                 );
-            todo!()
-        }
+            if ARG.2 % 10 != 2 {
+                const ARG_TY: &::core::primitive::str = $crate::format_type!(ARG.1, ARG.2);
+                const ERROR_MSG: &::core::primitive::str = $crate::const_concat!(
+                    "argument `",
+                    ARG_NAME,
+                    "` of `",
+                    TY_NAME,
+                    ".",
+                    FIELD_NAME,
+                    "` field cannot be deprecated, because its type `",
+                    ARG_TY,
+                    "` is neither `Null`able nor the default argument value is specified",
+                );
+                ::core::panic!("{}", ERROR_MSG);
+            }
+        };
     };
 }
 
@@ -951,7 +974,7 @@ macro_rules! checked_hash {
         } else {
             const MSG: &str = $crate::const_concat!(
                 $($prefix,)?
-                "Field `",
+                "field `",
                 $field_name,
                 "` isn't implemented on `",
                 <$impl_ty as $crate::macros::reflect::BaseType<$scalar>>::NAME,

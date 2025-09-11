@@ -1,0 +1,15 @@
+error[E0080]: evaluation panicked: argument `num` of `Character.id` field cannot be deprecated, because its type `Int!` is neither `Null`able nor the default argument value is specified                                                                                                                                       
+ --> fail/object/argument_non_deprecable.rs:7:46                                                                                                                
+  |                                                                                                                                                             
+7 |     fn id(&self, #[graphql(deprecated)] num: i32) -> &str {                                                                                                 
+  |                                              ^^^ evaluation of `<Character as juniper::marker::IsOutputType<__S>>::mark::_` failed here                     
+  |                                                                                                                                                             
+  = note: this error originates in the macro `$crate::panic::panic_2021` which comes from the expansion of the macro `::juniper::assert_field_arg_deprecable` (in Nightly builds, run with -Z macro-backtrace for more info)                                                                                                    
+                                                                                                                                                                
+error[E0080]: evaluation panicked: argument `pre` of `Character.name` field cannot be deprecated, because its type `[String!]!` is neither `Null`able nor the default argument value is specified                                                                                                                               
+  --> fail/object/argument_non_deprecable.rs:12:65                                                                                                              
+   |                                                                                                                                                            
+12 |     async fn name(&self, #[graphql(deprecated = "reason")] pre: Vec<String>) -> &str {                                                                     
+   |                                                                 ^^^ evaluation of `<Character as juniper::marker::IsOutputType<__S>>::mark::_` failed here 
+   |                                                                                                                                                            
+   = note: this error originates in the macro `$crate::panic::panic_2021` which comes from the expansion of the macro `::juniper::assert_field_arg_deprecable` (in Nightly builds, run with -Z macro-backtrace for more info)

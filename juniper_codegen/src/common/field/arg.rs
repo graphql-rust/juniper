@@ -306,20 +306,37 @@ impl OnMethod {
         }
     }
 
-    /// Returns generated code for the [`marker::IsOutputType::mark`] method,
-    /// which performs static checks for this argument, if it represents an
-    /// [`OnField`] one.
+    /// Returns generated code statically asserting deprecability for this argument, if it
+    /// represents an [`OnField`] one.
+    #[must_use]
+    pub(crate) fn assert_deprecable_tokens(
+        &self,
+        ty: &syn::Type,
+        const_scalar: &syn::Type,
+        field_name: &str,
+    ) -> Option<TokenStream> {
+        let arg = self.as_regular()?;
+        (arg.deprecated.is_some() && arg.default.is_none()).then(|| {
+            let arg_ty = &arg.ty;
+            let arg_name = &arg.name;
+            quote_spanned! { arg_ty.span() =>
+                ::juniper::assert_field_arg_deprecable!(
+                    #ty,
+                    #const_scalar,
+                    #field_name,
+                    #arg_name,
+                );
+            }
+        })
+    }
+
+    /// Returns generated code for the [`marker::IsOutputType::mark`] method, which performs static
+    /// checks for this argument, if it represents an [`OnField`] one.
     ///
     /// [`marker::IsOutputType::mark`]: juniper::marker::IsOutputType::mark
     #[must_use]
     pub(crate) fn method_mark_tokens(&self, scalar: &scalar::Type) -> Option<TokenStream> {
-        let arg = self.as_regular()?;
-        let ty = &arg.ty;
-
-        if arg.deprecated.is_some() && arg.default.is_none() {
-            // TODO: Panic in compile time if not `Null`able.
-        }
-
+        let ty = &self.as_regular()?.ty;
         Some(quote_spanned! { ty.span() =>
             <#ty as ::juniper::marker::IsInputType<#scalar>>::mark();
         })
