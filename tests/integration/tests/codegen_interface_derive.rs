@@ -1092,7 +1092,7 @@ mod description_from_doc_comment {
     }
 }
 
-mod deprecation_from_attr {
+mod field_deprecation_from_rust_attr {
     use super::*;
 
     #[derive(GraphQLInterface)]

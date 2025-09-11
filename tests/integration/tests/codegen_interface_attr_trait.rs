@@ -37,6 +37,7 @@ mod no_implers {
 
     #[tokio::test]
     async fn is_graphql_interface() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 kind
@@ -53,6 +54,7 @@ mod no_implers {
 
     #[tokio::test]
     async fn uses_trait_name() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 name
@@ -69,6 +71,7 @@ mod no_implers {
 
     #[tokio::test]
     async fn has_no_description() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 description
@@ -141,6 +144,7 @@ mod trivial {
 
     #[tokio::test]
     async fn resolves_human() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -166,6 +170,7 @@ mod trivial {
 
     #[tokio::test]
     async fn resolves_droid() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -191,6 +196,7 @@ mod trivial {
 
     #[tokio::test]
     async fn resolves_id_field() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 id
@@ -212,6 +218,7 @@ mod trivial {
 
     #[tokio::test]
     async fn is_graphql_interface() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 kind
@@ -228,6 +235,7 @@ mod trivial {
 
     #[tokio::test]
     async fn registers_all_implementers() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 possibleTypes {
@@ -281,6 +289,7 @@ mod trivial {
 
     #[tokio::test]
     async fn uses_trait_name() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 name
@@ -297,6 +306,7 @@ mod trivial {
 
     #[tokio::test]
     async fn has_no_description() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 description
@@ -369,6 +379,7 @@ mod explicit_alias {
 
     #[tokio::test]
     async fn resolves_human() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -394,6 +405,7 @@ mod explicit_alias {
 
     #[tokio::test]
     async fn resolves_droid() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -419,6 +431,7 @@ mod explicit_alias {
 
     #[tokio::test]
     async fn resolves_id_field() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 id
@@ -440,6 +453,7 @@ mod explicit_alias {
 
     #[tokio::test]
     async fn is_graphql_interface() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 kind
@@ -456,6 +470,7 @@ mod explicit_alias {
 
     #[tokio::test]
     async fn uses_trait_name() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 name
@@ -472,6 +487,7 @@ mod explicit_alias {
 
     #[tokio::test]
     async fn has_no_description() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 description
@@ -544,6 +560,7 @@ mod trivial_async {
 
     #[tokio::test]
     async fn resolves_human() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -569,6 +586,7 @@ mod trivial_async {
 
     #[tokio::test]
     async fn resolves_droid() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -594,6 +612,7 @@ mod trivial_async {
 
     #[tokio::test]
     async fn resolves_id_field() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 id
@@ -615,6 +634,7 @@ mod trivial_async {
 
     #[tokio::test]
     async fn is_graphql_interface() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 kind
@@ -631,6 +651,7 @@ mod trivial_async {
 
     #[tokio::test]
     async fn registers_all_implementers() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 possibleTypes {
@@ -684,6 +705,7 @@ mod trivial_async {
 
     #[tokio::test]
     async fn uses_trait_name() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 name
@@ -700,6 +722,7 @@ mod trivial_async {
 
     #[tokio::test]
     async fn has_no_description() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 description
@@ -780,6 +803,7 @@ mod fallible_field {
 
     #[tokio::test]
     async fn resolves_human() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -805,6 +829,7 @@ mod fallible_field {
 
     #[tokio::test]
     async fn resolves_droid() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -830,6 +855,7 @@ mod fallible_field {
 
     #[tokio::test]
     async fn resolves_id_field() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 id
@@ -851,6 +877,7 @@ mod fallible_field {
 
     #[tokio::test]
     async fn has_correct_graphql_type() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 name
@@ -946,6 +973,7 @@ mod generic {
 
     #[tokio::test]
     async fn resolves_human() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -968,6 +996,7 @@ mod generic {
 
     #[tokio::test]
     async fn resolves_droid() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -993,6 +1022,7 @@ mod generic {
 
     #[tokio::test]
     async fn resolves_id_field() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 id
@@ -1014,6 +1044,7 @@ mod generic {
 
     #[tokio::test]
     async fn uses_trait_name_without_type_params() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 name
@@ -1105,6 +1136,7 @@ mod argument {
 
     #[tokio::test]
     async fn camelcases_name() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 fields {
@@ -1140,6 +1172,7 @@ mod argument {
 
     #[tokio::test]
     async fn has_no_description() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 fields {
@@ -1166,6 +1199,7 @@ mod argument {
 
     #[tokio::test]
     async fn has_no_defaults() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 fields {
@@ -1279,6 +1313,7 @@ mod default_argument {
 
     #[tokio::test]
     async fn has_defaults() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 fields {
@@ -1361,6 +1396,7 @@ mod description_from_doc_comment {
 
     #[tokio::test]
     async fn uses_doc_comment_as_description() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 description
@@ -1385,7 +1421,7 @@ mod description_from_doc_comment {
     }
 }
 
-mod deprecation_from_attr {
+mod field_deprecation_from_rust_attr {
     use super::*;
 
     #[graphql_interface(for = Human)]
@@ -1438,6 +1474,7 @@ mod deprecation_from_attr {
 
     #[tokio::test]
     async fn resolves_id_field() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 id
@@ -1454,6 +1491,7 @@ mod deprecation_from_attr {
 
     #[tokio::test]
     async fn resolves_deprecated_fields() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 a
@@ -1471,6 +1509,7 @@ mod deprecation_from_attr {
 
     #[tokio::test]
     async fn deprecates_fields() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 fields(includeDeprecated: true) {
@@ -1497,6 +1536,7 @@ mod deprecation_from_attr {
 
     #[tokio::test]
     async fn provides_deprecation_reason() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 fields(includeDeprecated: true) {
@@ -1533,7 +1573,10 @@ mod explicit_name_description_and_deprecation {
         #[deprecated(note = "Should be omitted.")]
         fn id(
             &self,
-            #[graphql(name = "myName", desc = "My argument.")] n: prelude::Option<prelude::String>,
+            #[graphql(name = "myName", desc = "My name.", deprecated)] n: prelude::Option<
+                prelude::String,
+            >,
+            #[graphql(name = "myAge", desc = "My age.", default, deprecated = "Because.")] a: i32,
         ) -> &str;
 
         #[graphql(deprecated)]
@@ -1550,7 +1593,11 @@ mod explicit_name_description_and_deprecation {
 
     #[graphql_object(impl = CharacterValue)]
     impl Human {
-        fn my_id(&self, #[graphql(name = "myName")] _: prelude::Option<prelude::String>) -> &str {
+        fn my_id(
+            &self,
+            #[graphql(name = "myName")] _: prelude::Option<prelude::String>,
+            #[graphql(name = "myAge", default)] _: i32,
+        ) -> &str {
             &self.id
         }
 
@@ -1582,6 +1629,7 @@ mod explicit_name_description_and_deprecation {
 
     #[tokio::test]
     async fn resolves_fields() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 myId
@@ -1607,12 +1655,13 @@ mod explicit_name_description_and_deprecation {
 
     #[tokio::test]
     async fn uses_custom_name() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "MyChar") {
                 name
                 fields(includeDeprecated: true) {
                     name
-                    args {
+                    args(includeDeprecated: true) {
                         name
                     }
                 }
@@ -1627,7 +1676,7 @@ mod explicit_name_description_and_deprecation {
                 graphql_value!({"__type": {
                     "name": "MyChar",
                     "fields": [
-                        {"name": "myId", "args": [{"name": "myName"}]},
+                        {"name": "myId", "args": [{"name": "myName"}, {"name": "myAge"}]},
                         {"name": "a", "args": []},
                         {"name": "b", "args": []},
                     ],
@@ -1639,13 +1688,14 @@ mod explicit_name_description_and_deprecation {
 
     #[tokio::test]
     async fn uses_custom_description() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "MyChar") {
                 description
                 fields(includeDeprecated: true) {
                     name
                     description
-                    args {
+                    args(includeDeprecated: true) {
                         description
                     }
                 }
@@ -1662,7 +1712,7 @@ mod explicit_name_description_and_deprecation {
                     "fields": [{
                         "name": "myId",
                         "description": "My character ID.",
-                        "args": [{"description": "My argument."}],
+                        "args": [{"description": "My name."}, {"description": "My age."}],
                     }, {
                         "name": "a",
                         "description": null,
@@ -1680,12 +1730,18 @@ mod explicit_name_description_and_deprecation {
 
     #[tokio::test]
     async fn uses_custom_deprecation() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "MyChar") {
                 fields(includeDeprecated: true) {
                     name
                     isDeprecated
                     deprecationReason
+                    args(includeDeprecated: true) {
+                        name
+                        isDeprecated
+                        deprecationReason
+                    }
                 }
             }
         }"#;
@@ -1700,14 +1756,25 @@ mod explicit_name_description_and_deprecation {
                         "name": "myId",
                         "isDeprecated": true,
                         "deprecationReason": "Not used.",
+                        "args": [{
+                            "name": "myName",
+                            "isDeprecated": true,
+                            "deprecationReason": null,
+                        }, {
+                            "name": "myAge",
+                            "isDeprecated": true,
+                            "deprecationReason": "Because.",
+                        }],
                     }, {
                         "name": "a",
                         "isDeprecated": true,
                         "deprecationReason": null,
+                        "args": [],
                     }, {
                         "name": "b",
                         "isDeprecated": false,
                         "deprecationReason": null,
+                        "args": [],
                     }],
                 }}),
                 vec![],
@@ -1756,6 +1823,7 @@ mod renamed_all_fields_and_args {
 
     #[tokio::test]
     async fn resolves_fields() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 id
@@ -1781,6 +1849,7 @@ mod renamed_all_fields_and_args {
 
     #[tokio::test]
     async fn uses_correct_fields_and_args_names() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 fields {
@@ -1866,6 +1935,7 @@ mod explicit_scalar {
 
     #[tokio::test]
     async fn resolves_human() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -1891,6 +1961,7 @@ mod explicit_scalar {
 
     #[tokio::test]
     async fn resolves_droid() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -1916,6 +1987,7 @@ mod explicit_scalar {
 
     #[tokio::test]
     async fn resolves_id_field() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 id
@@ -1995,6 +2067,7 @@ mod custom_scalar {
 
     #[tokio::test]
     async fn resolves_human() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -2020,6 +2093,7 @@ mod custom_scalar {
 
     #[tokio::test]
     async fn resolves_droid() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -2045,6 +2119,7 @@ mod custom_scalar {
 
     #[tokio::test]
     async fn resolves_id_field() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 id
@@ -2122,6 +2197,7 @@ mod explicit_generic_scalar {
 
     #[tokio::test]
     async fn resolves_human() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -2147,6 +2223,7 @@ mod explicit_generic_scalar {
 
     #[tokio::test]
     async fn resolves_droid() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -2172,6 +2249,7 @@ mod explicit_generic_scalar {
 
     #[tokio::test]
     async fn resolves_id_field() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 id
@@ -2249,6 +2327,7 @@ mod bounded_generic_scalar {
 
     #[tokio::test]
     async fn resolves_human() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -2274,6 +2353,7 @@ mod bounded_generic_scalar {
 
     #[tokio::test]
     async fn resolves_droid() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -2299,6 +2379,7 @@ mod bounded_generic_scalar {
 
     #[tokio::test]
     async fn resolves_id_field() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 id
@@ -2411,6 +2492,7 @@ mod explicit_custom_context {
 
     #[tokio::test]
     async fn resolves_human() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -2436,6 +2518,7 @@ mod explicit_custom_context {
 
     #[tokio::test]
     async fn resolves_droid() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -2461,6 +2544,7 @@ mod explicit_custom_context {
 
     #[tokio::test]
     async fn resolves_fields() {
+        // language=GraphQL
         const DOC: &str = r#"{
            character {
                 id
@@ -2566,6 +2650,7 @@ mod inferred_custom_context_from_field {
 
     #[tokio::test]
     async fn resolves_human() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -2592,6 +2677,7 @@ mod inferred_custom_context_from_field {
 
     #[tokio::test]
     async fn resolves_droid() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -2618,6 +2704,7 @@ mod inferred_custom_context_from_field {
 
     #[tokio::test]
     async fn resolves_fields() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 id
@@ -2727,6 +2814,7 @@ mod executor {
 
     #[tokio::test]
     async fn resolves_human() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -2752,6 +2840,7 @@ mod executor {
 
     #[tokio::test]
     async fn resolves_droid() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -2777,6 +2866,7 @@ mod executor {
 
     #[tokio::test]
     async fn resolves_fields() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 id
@@ -2802,6 +2892,7 @@ mod executor {
 
     #[tokio::test]
     async fn not_arg() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 fields {
@@ -2866,6 +2957,7 @@ mod ignored_method {
 
     #[tokio::test]
     async fn resolves_human() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -2891,6 +2983,7 @@ mod ignored_method {
 
     #[tokio::test]
     async fn resolves_id_field() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 id
@@ -2907,6 +3000,7 @@ mod ignored_method {
 
     #[tokio::test]
     async fn is_not_field() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Character") {
                 fields {
@@ -2984,6 +3078,7 @@ mod field_return_subtyping {
 
     #[tokio::test]
     async fn resolves_human() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -3009,6 +3104,7 @@ mod field_return_subtyping {
 
     #[tokio::test]
     async fn resolves_droid() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -3034,6 +3130,7 @@ mod field_return_subtyping {
 
     #[tokio::test]
     async fn resolves_id_field() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 id
@@ -3140,6 +3237,7 @@ mod field_return_union_subtyping {
 
     #[tokio::test]
     async fn resolves_human() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -3169,6 +3267,7 @@ mod field_return_union_subtyping {
 
     #[tokio::test]
     async fn resolves_droid() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -3198,6 +3297,7 @@ mod field_return_union_subtyping {
 
     #[tokio::test]
     async fn resolves_fields() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 id
@@ -3293,6 +3393,7 @@ mod nullable_argument_subtyping {
 
     #[tokio::test]
     async fn resolves_human() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Human {
@@ -3318,6 +3419,7 @@ mod nullable_argument_subtyping {
 
     #[tokio::test]
     async fn resolves_droid() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 ... on Droid {
@@ -3343,6 +3445,7 @@ mod nullable_argument_subtyping {
 
     #[tokio::test]
     async fn resolves_id_field() {
+        // language=GraphQL
         const DOC: &str = r#"{
             character {
                 id
@@ -3427,6 +3530,7 @@ mod simple_subtyping {
 
     #[tokio::test]
     async fn resolves_node() {
+        // language=GraphQL
         const DOC: &str = r#"{
             node {
                 id
@@ -3443,6 +3547,7 @@ mod simple_subtyping {
 
     #[tokio::test]
     async fn resolves_node_on_resource() {
+        // language=GraphQL
         const DOC: &str = r#"{
             node {
                 ... on Resource {
@@ -3468,6 +3573,7 @@ mod simple_subtyping {
 
     #[tokio::test]
     async fn resolves_node_on_endpoint() {
+        // language=GraphQL
         const DOC: &str = r#"{
             node {
                 ... on Endpoint {
@@ -3493,6 +3599,7 @@ mod simple_subtyping {
 
     #[tokio::test]
     async fn resolves_resource() {
+        // language=GraphQL
         const DOC: &str = r#"{
             resource {
                 id
@@ -3516,6 +3623,7 @@ mod simple_subtyping {
 
     #[tokio::test]
     async fn resolves_resource_on_endpoint() {
+        // language=GraphQL
         const DOC: &str = r#"{
             resource {
                 ... on Endpoint {
@@ -3717,6 +3825,7 @@ mod branching_subtyping {
 
     #[tokio::test]
     async fn resolves_human_connection() {
+        // language=GraphQL
         const DOC: &str = r#"{
             crew {
                 ... on HumanConnection {
@@ -3746,6 +3855,7 @@ mod branching_subtyping {
 
     #[tokio::test]
     async fn resolves_human() {
+        // language=GraphQL
         const DOC: &str = r#"{
             crew {
                 nodes {
@@ -3775,6 +3885,7 @@ mod branching_subtyping {
 
     #[tokio::test]
     async fn resolves_luke() {
+        // language=GraphQL
         const DOC: &str = r#"{
             crew {
                 nodes {
@@ -3806,6 +3917,7 @@ mod branching_subtyping {
 
     #[tokio::test]
     async fn resolves_droid_connection() {
+        // language=GraphQL
         const DOC: &str = r#"{
             crew {
                 ... on DroidConnection {
@@ -3835,6 +3947,7 @@ mod branching_subtyping {
 
     #[tokio::test]
     async fn resolves_droid() {
+        // language=GraphQL
         const DOC: &str = r#"{
             crew {
                 nodes {
@@ -3864,6 +3977,7 @@ mod branching_subtyping {
 
     #[tokio::test]
     async fn resolves_r2d2() {
+        // language=GraphQL
         const DOC: &str = r#"{
             crew {
                 nodes {
