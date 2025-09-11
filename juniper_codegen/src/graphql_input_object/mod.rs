@@ -5,7 +5,7 @@
 pub(crate) mod derive;
 
 use proc_macro2::TokenStream;
-use quote::{ToTokens, format_ident, quote};
+use quote::{ToTokens, format_ident, quote, quote_spanned};
 use syn::{
     ext::IdentExt as _,
     parse::{Parse, ParseStream},
@@ -17,7 +17,7 @@ use syn::{
 use crate::common::{
     Description, SpanContainer, default, deprecation, filter_attrs,
     parse::{
-        ParseBufferExt as _,
+        GenericsExt as _, ParseBufferExt as _,
         attr::{OptionExt as _, err},
     },
     rename, scalar,
@@ -428,6 +428,7 @@ impl ToTokens for Definition {
         self.impl_from_input_value_tokens().to_tokens(into);
         self.impl_to_input_value_tokens().to_tokens(into);
         self.impl_reflection_traits_tokens().to_tokens(into);
+        self.impl_field_meta_tokens().to_tokens(into);
     }
 }
 
@@ -441,19 +442,31 @@ impl Definition {
     fn impl_input_type_tokens(&self) -> TokenStream {
         let ident = &self.ident;
         let scalar = &self.scalar;
+        let const_scalar = &self.scalar.default_ty();
 
         let generics = self.impl_generics(false);
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
-        let assert_fields_input_values = self.fields.iter().filter_map(|f| {
-            let ty = &f.ty;
+        let assert_fields_input_values = self.fields.iter().filter(|f| !f.ignored).map(|f| {
+            let field_ty = &f.ty;
 
-            (!f.ignored).then(|| {
-                quote! {
-                    <#ty as ::juniper::marker::IsInputType<#scalar>>::mark();
+            let assert_deprecable = (f.deprecated.is_some() && f.default.is_none()).then(|| {
+                let field_name = &f.name;
+
+                quote_spanned! { field_ty.span() =>
+                    ::juniper::assert_input_field_deprecable!(
+                        #ident #ty_generics,
+                        #const_scalar,
+                        #field_name,
+                    );
                 }
-            })
+            });
+
+            quote! {
+                <#field_ty as ::juniper::marker::IsInputType<#scalar>>::mark();
+                #assert_deprecable
+            }
         });
 
         quote! {
@@ -726,6 +739,8 @@ impl Definition {
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
+        let fields = self.fields.iter().filter(|f| !f.ignored).map(|f| &f.name);
+
         quote! {
             #[automatically_derived]
             impl #impl_generics ::juniper::macros::reflect::BaseType<#scalar>
@@ -735,6 +750,7 @@ impl Definition {
                 const NAME: ::juniper::macros::reflect::Type = #name;
             }
 
+            #[automatically_derived]
             impl #impl_generics ::juniper::macros::reflect::BaseSubTypes<#scalar>
                 for #ident #ty_generics
                 #where_clause
@@ -743,13 +759,70 @@ impl Definition {
                     &[<Self as ::juniper::macros::reflect::BaseType<#scalar>>::NAME];
             }
 
+            #[automatically_derived]
             impl #impl_generics ::juniper::macros::reflect::WrappedType<#scalar>
                 for #ident #ty_generics
                 #where_clause
             {
                 const VALUE: ::juniper::macros::reflect::WrappedValue = 1;
             }
+
+            #[automatically_derived]
+            impl #impl_generics ::juniper::macros::reflect::Fields<#scalar>
+                for #ident #ty_generics
+                #where_clause
+            {
+                const NAMES: ::juniper::macros::reflect::Names = &[#(#fields),*];
+            }
         }
+    }
+
+    /// Returns generated code implementing [`FieldMeta`] for each field of this
+    /// [GraphQL input object][0].
+    ///
+    /// [`FieldMeta`]: juniper::macros::reflect::FieldMeta
+    /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
+    fn impl_field_meta_tokens(&self) -> TokenStream {
+        let ident = &self.ident;
+        let context = &self.context;
+        let scalar = &self.scalar;
+
+        let generics = self.impl_generics(false);
+        let (impl_generics, _, where_clause) = generics.split_for_impl();
+        let (_, ty_generics, _) = self.generics.split_for_impl();
+
+        self.fields
+            .iter()
+            .filter(|f| !f.ignored)
+            .map(|field| {
+                let field_name = &field.name;
+                let mut field_ty = field.ty.clone();
+                generics.replace_type_with_defaults(&mut field_ty);
+
+                quote! {
+                    #[allow(non_snake_case)]
+                    #[automatically_derived]
+                    impl #impl_generics ::juniper::macros::reflect::FieldMeta<
+                        #scalar,
+                        { ::juniper::macros::reflect::fnv1a128(#field_name) }
+                    > for #ident #ty_generics #where_clause {
+                        type Context = #context;
+                        type TypeInfo = ();
+                        const TYPE: ::juniper::macros::reflect::Type =
+                            <#field_ty as ::juniper::macros::reflect::BaseType<#scalar>>::NAME;
+                        const SUB_TYPES: ::juniper::macros::reflect::Types =
+                            <#field_ty as ::juniper::macros::reflect::BaseSubTypes<#scalar>>::NAMES;
+                        const WRAPPED_VALUE: ::juniper::macros::reflect::WrappedValue =
+                            <#field_ty as ::juniper::macros::reflect::WrappedType<#scalar>>::VALUE;
+                        const ARGUMENTS: &'static [(
+                            ::juniper::macros::reflect::Name,
+                            ::juniper::macros::reflect::Type,
+                            ::juniper::macros::reflect::WrappedValue,
+                        )] = &[];
+                    }
+                }
+            })
+            .collect()
     }
 
     /// Returns prepared [`syn::Generics`] for [`GraphQLType`] trait (and
