@@ -313,7 +313,13 @@ impl OnMethod {
     /// [`marker::IsOutputType::mark`]: juniper::marker::IsOutputType::mark
     #[must_use]
     pub(crate) fn method_mark_tokens(&self, scalar: &scalar::Type) -> Option<TokenStream> {
-        let ty = &self.as_regular()?.ty;
+        let arg = self.as_regular()?;
+        let ty = &arg.ty;
+
+        if arg.deprecated.is_some() && arg.default.is_none() {
+            // TODO: Panic in compile time if not `Null`able.
+        }
+
         Some(quote_spanned! { ty.span() =>
             <#ty as ::juniper::marker::IsInputType<#scalar>>::mark();
         })

@@ -457,6 +457,20 @@ pub const fn can_be_subtype(ty: WrappedValue, subtype: WrappedValue) -> bool {
     }
 }
 
+/// Extracts an [`Argument`] from the provided [`Arguments`] by its [`Name`].
+#[must_use]
+pub const fn extract_argument(args: Arguments, name: Name) -> Option<Argument> {
+    let mut i = 0;
+    while i < args.len() {
+        let arg = args[i];
+        if str_eq(arg.0, name) {
+            return Some(arg);
+        }
+        i += 1;
+    }
+    None
+}
+
 /// Checks whether the given `val` exists in the given `arr`.
 #[must_use]
 pub const fn str_exists_in_arr(val: &str, arr: &[&str]) -> bool {
@@ -860,6 +874,36 @@ macro_rules! assert_field_args {
                 ::core::panic!("{}", ERROR_MSG);
             }
         };
+    };
+}
+
+#[macro_export]
+macro_rules! assert_field_arg_nullable {
+    (
+        $ty: ty,
+        $scalar: ty,
+        $field_name: expr,
+        $arg_name: expr
+        $(, $err_prefix: expr)? $(,)?
+    ) => {
+        const {
+            const TY_NAME: &::core::primitive::str =
+                <$ty as $crate::macros::reflect::BaseType<$scalar>>::NAME;
+            const FIELD_NAME: &::core::primitive::str = $field_name;
+            const ARGS: $crate::macros::reflect::Arguments =
+                <$ty as $crate::macros::reflect::FieldMeta<
+                    $scalar,
+                    { $crate::checked_hash!(FIELD_NAME, $ty, $scalar, $err_prefix) },
+                >>::ARGUMENTS;
+            const ARG_NAME: &::core::primitive::str = $arg_name;
+            const ARG: $crate::macros::reflect::Argument =
+                $crate::macros::reflect::extract_argument(ARGS, ARG_NAME).unwrap(
+                    $crate::const_concat!(
+                        $err_prefix, "Field `", FIELD_NAME, "` has no argument `", ARG_NAME, "`",
+                    ),
+                );
+            todo!()
+        }
     };
 }
 
