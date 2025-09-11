@@ -477,7 +477,7 @@ async fn scalar_introspection() {
             name
             kind
             description
-            specifiedByUrl
+            specifiedByURL
             fields { name }
             interfaces { name }
             possibleTypes { name }
@@ -513,7 +513,7 @@ async fn scalar_introspection() {
             "name": "SampleScalar",
             "kind": "SCALAR",
             "description": null,
-            "specifiedByUrl": null,
+            "specifiedByURL": null,
             "fields": null,
             "interfaces": null,
             "possibleTypes": null,

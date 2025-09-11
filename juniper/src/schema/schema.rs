@@ -1,6 +1,6 @@
 //! GraphQL [Type System Definitions][0].
 //!
-//! [0]: https://spec.graphql.org/September2025#sec-Appendix-Type-System-Definitions
+//! [0]:https://spec.graphql.org/September2025/#sec-Schema-Introspection.Schema-Introspection-Schema
 
 use arcstr::ArcStr;
 
@@ -387,11 +387,11 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
         }
     }
 
-    fn is_one_of(&self) -> bool {
+    fn is_one_of(&self) -> Option<bool> {
         match self {
             Self::Concrete(t) => match t {
                 // TODO: Implement once `@oneOf` is implemented for input objects.
-                MetaType::InputObject(InputObjectMeta { .. }) => todo!(),
+                MetaType::InputObject(InputObjectMeta { .. }) => Some(false),
                 MetaType::Enum(..)
                 | MetaType::Interface(..)
                 | MetaType::List(..)
@@ -399,9 +399,9 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
                 | MetaType::Object(..)
                 | MetaType::Placeholder(..)
                 | MetaType::Scalar(..)
-                | MetaType::Union(..) => false,
+                | MetaType::Union(..) => None,
             },
-            Self::List(..) | Self::NonNull(..) => false,
+            Self::List(..) | Self::NonNull(..) => None,
         }
     }
 }

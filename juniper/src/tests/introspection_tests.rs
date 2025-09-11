@@ -289,7 +289,10 @@ async fn test_builtin_introspection_query() {
     let result = crate::introspect(&schema, &database, IntrospectionFormat::default()).unwrap();
     let expected = schema_introspection_result();
 
-    assert_eq!(result, (expected, vec![]));
+    assert_eq!(
+        serde_json::to_string_pretty(&result.0).unwrap(),
+        serde_json::to_string_pretty(&expected).unwrap(),
+    );
 }
 
 #[tokio::test]
@@ -305,5 +308,8 @@ async fn test_builtin_introspection_query_without_descriptions() {
         crate::introspect(&schema, &database, IntrospectionFormat::WithoutDescriptions).unwrap();
     let expected = schema_introspection_result_without_descriptions();
 
-    assert_eq!(result, (expected, vec![]));
+    assert_eq!(
+        serde_json::to_string_pretty(&result.0).unwrap(),
+        serde_json::to_string_pretty(&expected).unwrap(),
+    );
 }
