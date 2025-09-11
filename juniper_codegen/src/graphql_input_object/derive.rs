@@ -115,6 +115,7 @@ fn parse_field(
         default: field_attr.default.map(SpanContainer::into_inner),
         name,
         description: field_attr.description.map(SpanContainer::into_inner),
+        deprecated: field_attr.deprecated.map(SpanContainer::into_inner),
         ignored: field_attr.ignore.is_some(),
     })
 }

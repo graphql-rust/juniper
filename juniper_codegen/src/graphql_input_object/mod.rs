@@ -15,7 +15,7 @@ use syn::{
 };
 
 use crate::common::{
-    Description, SpanContainer, default, filter_attrs,
+    Description, SpanContainer, default, deprecation, filter_attrs,
     parse::{
         ParseBufferExt as _,
         attr::{OptionExt as _, err},
@@ -186,17 +186,16 @@ struct FieldAttr {
     name: Option<SpanContainer<String>>,
 
     /// Explicitly specified [default value][2] of this
-    /// [GraphQL input object field][1] to be used used in case a field value is
+    /// [GraphQL input object field][1] to be used in case a field value is
     /// not provided.
     ///
-    /// If [`None`], the this [field][1] will have no [default value][2].
+    /// If [`None`], then this [field][1] will have no [default value][2].
     ///
     /// [1]: https://spec.graphql.org/October2021#InputValueDefinition
     /// [2]: https://spec.graphql.org/October2021#DefaultValue
     default: Option<SpanContainer<default::Value>>,
 
-    /// Explicitly specified [description][2] of this
-    /// [GraphQL input object field][1].
+    /// Explicitly specified [description][2] of this [GraphQL input object field][1].
     ///
     /// If [`None`], then Rust doc comment will be used as the [description][2],
     /// if any.
@@ -204,6 +203,15 @@ struct FieldAttr {
     /// [1]: https://spec.graphql.org/October2021#InputValueDefinition
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
     description: Option<SpanContainer<Description>>,
+
+    /// Explicitly specified [deprecation][2] of this [GraphQL input object field][1].
+    ///
+    /// If [`None`], then Rust `#[deprecated]` attribute will be used as the
+    /// [deprecation][2], if any.
+    ///
+    /// [1]: https://spec.graphql.org/October2021#InputValueDefinition
+    /// [2]: https://spec.graphql.org/October2021#sec-Deprecation
+    pub(crate) deprecated: Option<SpanContainer<deprecation::Directive>>,
 
     /// Explicitly specified marker for the Rust struct field to be ignored and
     /// not included into the code generated for a [GraphQL input object][0]
@@ -247,6 +255,16 @@ impl Parse for FieldAttr {
                         .replace(SpanContainer::new(ident.span(), Some(desc.span()), desc))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
+                "deprecated" => {
+                    let directive = input.parse::<deprecation::Directive>()?;
+                    out.deprecated
+                        .replace(SpanContainer::new(
+                            ident.span(),
+                            directive.reason.as_ref().map(|r| r.span()),
+                            directive,
+                        ))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
                 "ignore" | "skip" => out
                     .ignore
                     .replace(SpanContainer::new(ident.span(), None, ident.clone()))
@@ -269,12 +287,13 @@ impl FieldAttr {
             name: try_merge_opt!(name: self, another),
             default: try_merge_opt!(default: self, another),
             description: try_merge_opt!(description: self, another),
+            deprecated: try_merge_opt!(deprecated: self, another),
             ignore: try_merge_opt!(ignore: self, another),
         })
     }
 
-    /// Parses [`FieldAttr`] from the given multiple `name`d [`syn::Attribute`]s
-    /// placed on a trait definition.
+    /// Parses [`FieldAttr`] from the given multiple `name`d [`syn::Attribute`]s placed on a field
+    /// definition.
     fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
         let mut attr = filter_attrs(name, attrs)
             .map(|attr| attr.parse_args())
@@ -282,6 +301,10 @@ impl FieldAttr {
 
         if attr.description.is_none() {
             attr.description = Description::parse_from_doc_attrs(attrs)?;
+        }
+
+        if attr.deprecated.is_none() {
+            attr.deprecated = deprecation::Directive::parse_from_deprecated_attr(attrs)?;
         }
 
         Ok(attr)
@@ -325,6 +348,12 @@ struct FieldDefinition {
     /// [1]: https://spec.graphql.org/October2021#InputValueDefinition
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
     description: Option<Description>,
+
+    /// [Deprecation][2] of this [GraphQL input object field][1] to put into GraphQL schema.
+    ///
+    /// [1]: https://spec.graphql.org/October2021#InputValueDefinition
+    /// [2]: https://spec.graphql.org/October2021#sec-Deprecation
+    deprecated: Option<deprecation::Directive>,
 
     /// Indicator whether the Rust struct field behinds this
     /// [GraphQL input object field][1] is being ignored and should not be
@@ -474,8 +503,9 @@ impl Definition {
                     }
                 };
                 let description = &f.description;
+                let deprecated = &f.deprecated;
 
-                quote! { registry #arg #description }
+                quote! { registry #arg #description #deprecated }
             })
         });
 
