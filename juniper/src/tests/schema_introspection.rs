@@ -2859,7 +2859,7 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> Value {
                   "deprecationReason": null
                 },
                 {
-                  "name": "inputFields",make fm
+                  "name": "inputFields",
                   "args": [
                     {
                       "name": "includeDeprecated",
