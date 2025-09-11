@@ -14,10 +14,14 @@ use syn::{
     token,
 };
 
-use crate::common::{Description, SpanContainer, default, diagnostic, filter_attrs, parse::{
-    ParseBufferExt as _, TypeExt as _,
-    attr::{OptionExt as _, err},
-}, path_eq_single, rename, scalar, deprecation};
+use crate::common::{
+    Description, SpanContainer, default, deprecation, diagnostic, filter_attrs,
+    parse::{
+        ParseBufferExt as _, TypeExt as _,
+        attr::{OptionExt as _, err},
+    },
+    path_eq_single, rename, scalar,
+};
 
 /// Available metadata (arguments) behind `#[graphql]` attribute placed on a
 /// method argument, when generating code for [GraphQL argument][1].

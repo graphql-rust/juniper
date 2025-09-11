@@ -32,6 +32,7 @@ mod trivial {
 
     #[tokio::test]
     async fn resolves() {
+        // language=GraphQL
         const DOC: &str = r#"{
             x(point: { x: 10, y: 20 })
         }"#;
@@ -46,6 +47,7 @@ mod trivial {
 
     #[tokio::test]
     async fn is_graphql_input_object() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 kind
@@ -62,6 +64,7 @@ mod trivial {
 
     #[tokio::test]
     async fn uses_type_name() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 name
@@ -78,6 +81,7 @@ mod trivial {
 
     #[tokio::test]
     async fn has_no_description() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 description
@@ -94,6 +98,7 @@ mod trivial {
 
     #[tokio::test]
     async fn has_input_fields() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 inputFields {
@@ -156,6 +161,7 @@ mod default_value {
 
     #[tokio::test]
     async fn resolves() {
+        // language=GraphQL
         const DOC: &str = r#"query q($ve_num: Float!) {
             literal_implicit_other_number: x(point: { y: 20 })
             literal_explicit_number: x(point: { x: 20 })
@@ -181,6 +187,7 @@ mod default_value {
 
     #[tokio::test]
     async fn errs_on_explicit_null_literal() {
+        // language=GraphQL
         const DOC: &str = r#"{ x(point: { x: 20, y: null }) }"#;
 
         let schema = schema(QueryRoot);
@@ -198,6 +205,7 @@ mod default_value {
 
     #[tokio::test]
     async fn errs_on_missing_variable() {
+        // language=GraphQL
         const DOC: &str = r#"query q($x: Float!){ x(point: { x: $x }) }"#;
 
         let schema = schema(QueryRoot);
@@ -214,6 +222,7 @@ mod default_value {
 
     #[tokio::test]
     async fn is_graphql_input_object() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 kind
@@ -230,6 +239,7 @@ mod default_value {
 
     #[tokio::test]
     async fn has_input_fields() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 inputFields {
@@ -289,6 +299,7 @@ mod default_nullable_value {
 
     #[tokio::test]
     async fn resolves() {
+        // language=GraphQL
         const DOC: &str = r#"query q(
             $ve_num: Float,
             $ve_null: Float,
@@ -347,6 +358,7 @@ mod default_nullable_value {
 
     #[tokio::test]
     async fn is_graphql_input_object() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 kind
@@ -363,6 +375,7 @@ mod default_nullable_value {
 
     #[tokio::test]
     async fn has_input_fields() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 inputFields {
@@ -435,6 +448,7 @@ mod ignored_field {
 
     #[tokio::test]
     async fn resolves() {
+        // language=GraphQL
         const DOC: &str = r#"{
             x(point: { x: 10, y: 20 })
         }"#;
@@ -449,6 +463,7 @@ mod ignored_field {
 
     #[tokio::test]
     async fn is_graphql_input_object() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 kind
@@ -465,6 +480,7 @@ mod ignored_field {
 
     #[tokio::test]
     async fn uses_type_name() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 name
@@ -481,6 +497,7 @@ mod ignored_field {
 
     #[tokio::test]
     async fn has_no_description() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 description
@@ -497,6 +514,7 @@ mod ignored_field {
 
     #[tokio::test]
     async fn has_input_fields() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 inputFields {
@@ -561,6 +579,7 @@ mod description_from_doc_comment {
 
     #[tokio::test]
     async fn resolves() {
+        // language=GraphQL
         const DOC: &str = r#"{
             x(point: { x: 10, yCoord: 20 })
         }"#;
@@ -575,6 +594,7 @@ mod description_from_doc_comment {
 
     #[tokio::test]
     async fn is_graphql_input_object() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 kind
@@ -591,6 +611,7 @@ mod description_from_doc_comment {
 
     #[tokio::test]
     async fn uses_type_name() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 name
@@ -607,6 +628,7 @@ mod description_from_doc_comment {
 
     #[tokio::test]
     async fn has_description() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 description
@@ -628,6 +650,7 @@ mod description_from_doc_comment {
 
     #[tokio::test]
     async fn has_input_fields() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 inputFields {
@@ -694,6 +717,7 @@ mod description_from_graphql_attr {
 
     #[tokio::test]
     async fn resolves() {
+        // language=GraphQL
         const DOC: &str = r#"{
             x(point: { x: 10, y: 20 })
         }"#;
@@ -708,6 +732,7 @@ mod description_from_graphql_attr {
 
     #[tokio::test]
     async fn is_graphql_input_object() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point") {
                 kind
@@ -724,6 +749,7 @@ mod description_from_graphql_attr {
 
     #[tokio::test]
     async fn uses_type_name() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point") {
                 name
@@ -740,6 +766,7 @@ mod description_from_graphql_attr {
 
     #[tokio::test]
     async fn has_description() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point") {
                 description
@@ -761,6 +788,7 @@ mod description_from_graphql_attr {
 
     #[tokio::test]
     async fn has_input_fields() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point") {
                 inputFields {
@@ -801,6 +829,304 @@ mod description_from_graphql_attr {
     }
 }
 
+mod deprecation_from_graphql_attr {
+    use super::*;
+
+    #[derive(GraphQLInputObject)]
+    struct Point {
+        x: f64,
+        #[graphql(deprecated = "Use `Point2D.x`.")]
+        #[deprecated(note = "Should be omitted.")]
+        x_coord: prelude::Option<f64>,
+        y: f64,
+        #[graphql(deprecated)]
+        #[deprecated(note = "Should be omitted.")]
+        z: prelude::Option<f64>,
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn x(point: Point) -> f64 {
+            point.x
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves() {
+        // language=GraphQL
+        const DOC: &str = r#"{
+            x(point: { x: 10, y: 20 })
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"x": 10.0}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn is_graphql_input_object() {
+        // language=GraphQL
+        const DOC: &str = r#"{
+            __type(name: "Point") {
+                kind
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"__type": {"kind": "INPUT_OBJECT"}}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn has_input_fields() {
+        // language=GraphQL
+        const DOC: &str = r#"{
+            __type(name: "Point") {
+                inputFields {
+                    name
+                    type {
+                        ofType {
+                            name
+                        }
+                    }
+                    defaultValue
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"__type": {"inputFields": [{
+                    "name": "x",
+                    "type": {"ofType": {"name": "Float"}},
+                    "defaultValue": null,
+                }, {
+                    "name": "y",
+                    "type": {"ofType": {"name": "Float"}},
+                    "defaultValue": null,
+                }]}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn deprecates_fields() {
+        // language=GraphQL
+        const DOC: &str = r#"{
+            __type(name: "Point") {
+                inputFields(includeDeprecated: true) {
+                    name
+                    isDeprecated
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"__type": {"inputFields": [
+                    {"name": "x", "isDeprecated": false},
+                    {"name": "xCoord", "isDeprecated": true},
+                    {"name": "y", "isDeprecated": false},
+                    {"name": "z", "isDeprecated": true},
+                ]}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn provides_deprecation_reason() {
+        // language=GraphQL
+        const DOC: &str = r#"{
+            __type(name: "Point") {
+                inputFields(includeDeprecated: true) {
+                    name
+                    deprecationReason
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"__type": {"inputFields": [
+                    {"name": "x", "deprecationReason": null},
+                    {"name": "xCoord", "deprecationReason": "Use `Point2D.x`."},
+                    {"name": "y", "deprecationReason": null},
+                    {"name": "z", "deprecationReason": null},
+                ]}}),
+                vec![],
+            )),
+        );
+    }
+}
+
+mod deprecation_from_rust_attr {
+    use super::*;
+
+    #[derive(GraphQLInputObject)]
+    struct Point {
+        x: f64,
+        #[deprecated(note = "Use `Point2D.x`.")]
+        #[graphql(default = 0.0)]
+        x_coord: f64,
+        y: f64,
+        #[deprecated]
+        #[graphql(default = 0.0)]
+        z: f64,
+    }
+
+    struct QueryRoot;
+
+    #[graphql_object]
+    impl QueryRoot {
+        fn x(point: Point) -> f64 {
+            point.x
+        }
+    }
+
+    #[tokio::test]
+    async fn resolves() {
+        // language=GraphQL
+        const DOC: &str = r#"{
+            x(point: { x: 10, y: 20 })
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"x": 10.0}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn is_graphql_input_object() {
+        // language=GraphQL
+        const DOC: &str = r#"{
+            __type(name: "Point") {
+                kind
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((graphql_value!({"__type": {"kind": "INPUT_OBJECT"}}), vec![])),
+        );
+    }
+
+    #[tokio::test]
+    async fn has_input_fields() {
+        // language=GraphQL
+        const DOC: &str = r#"{
+            __type(name: "Point") {
+                inputFields {
+                    name
+                    type {
+                        ofType {
+                            name
+                        }
+                    }
+                    defaultValue
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"__type": {"inputFields": [{
+                    "name": "x",
+                    "type": {"ofType": {"name": "Float"}},
+                    "defaultValue": null,
+                }, {
+                    "name": "y",
+                    "type": {"ofType": {"name": "Float"}},
+                    "defaultValue": null,
+                }]}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn deprecates_fields() {
+        // language=GraphQL
+        const DOC: &str = r#"{
+            __type(name: "Point") {
+                inputFields(includeDeprecated: true) {
+                    name
+                    isDeprecated
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"__type": {"inputFields": [
+                    {"name": "x", "isDeprecated": false},
+                    {"name": "xCoord", "isDeprecated": true},
+                    {"name": "y", "isDeprecated": false},
+                    {"name": "z", "isDeprecated": true},
+                ]}}),
+                vec![],
+            )),
+        );
+    }
+
+    #[tokio::test]
+    async fn provides_deprecation_reason() {
+        // language=GraphQL
+        const DOC: &str = r#"{
+            __type(name: "Point") {
+                inputFields(includeDeprecated: true) {
+                    name
+                    deprecationReason
+                }
+            }
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Ok((
+                graphql_value!({"__type": {"inputFields": [
+                    {"name": "x", "deprecationReason": null},
+                    {"name": "xCoord", "deprecationReason": "Use `Point2D.x`."},
+                    {"name": "y", "deprecationReason": null},
+                    {"name": "z", "deprecationReason": null},
+                ]}}),
+                vec![],
+            )),
+        );
+    }
+}
+
 mod renamed_all_fields {
     use super::*;
 
@@ -822,6 +1148,7 @@ mod renamed_all_fields {
 
     #[tokio::test]
     async fn resolves() {
+        // language=GraphQL
         const DOC: &str = r#"{
             x(point: { x_coord: 10, y: 20 })
         }"#;
@@ -836,6 +1163,7 @@ mod renamed_all_fields {
 
     #[tokio::test]
     async fn is_graphql_input_object() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 kind
@@ -852,6 +1180,7 @@ mod renamed_all_fields {
 
     #[tokio::test]
     async fn has_input_fields() {
+        // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 inputFields {
