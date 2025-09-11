@@ -206,12 +206,12 @@ struct FieldAttr {
 
     /// Explicitly specified [deprecation][2] of this [GraphQL input object field][1].
     ///
-    /// If [`None`], then Rust `#[deprecated]` attribute will be used as the
-    /// [deprecation][2], if any.
+    /// If [`None`], then Rust `#[deprecated]` attribute will be used as the [deprecation][2], if
+    /// any.
     ///
     /// [1]: https://spec.graphql.org/October2021#InputValueDefinition
     /// [2]: https://spec.graphql.org/October2021#sec-Deprecation
-    pub(crate) deprecated: Option<SpanContainer<deprecation::Directive>>,
+    deprecated: Option<SpanContainer<deprecation::Directive>>,
 
     /// Explicitly specified marker for the Rust struct field to be ignored and
     /// not included into the code generated for a [GraphQL input object][0]
