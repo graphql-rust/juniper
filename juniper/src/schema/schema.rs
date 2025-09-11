@@ -1,3 +1,7 @@
+//! GraphQL [Type System Definitions][0].
+//!
+//! [0]: https://spec.graphql.org/September2025#sec-Appendix-Type-System-Definitions
+
 use arcstr::ArcStr;
 
 use crate::{
@@ -184,6 +188,14 @@ impl<S: ScalarValue> SchemaType<S> {
     internal,
 )]
 impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
+    fn kind(&self) -> TypeKind {
+        match self {
+            Self::Concrete(t) => t.type_kind(),
+            Self::List(..) => TypeKind::List,
+            Self::NonNull(..) => TypeKind::NonNull,
+        }
+    }
+
     fn name(&self) -> Option<&ArcStr> {
         match self {
             Self::Concrete(t) => t.name(),
@@ -198,18 +210,11 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
         }
     }
 
+    #[graphql(name = "specifiedByURL")]
     fn specified_by_url(&self) -> Option<&ArcStr> {
         match self {
             Self::Concrete(t) => t.specified_by_url(),
             Self::List(..) | Self::NonNull(..) => None,
-        }
-    }
-
-    fn kind(&self) -> TypeKind {
-        match self {
-            Self::Concrete(t) => t.type_kind(),
-            Self::List(..) => TypeKind::List,
-            Self::NonNull(..) => TypeKind::NonNull,
         }
     }
 
@@ -234,32 +239,6 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
                 | MetaType::InputObject(..)
                 | MetaType::List(..)
                 | MetaType::Nullable(..)
-                | MetaType::Placeholder(..)
-                | MetaType::Scalar(..)
-                | MetaType::Union(..) => None,
-            },
-            Self::List(..) | Self::NonNull(..) => None,
-        }
-    }
-
-    fn of_type(&self) -> Option<&Self> {
-        match self {
-            Self::Concrete(..) => None,
-            Self::List(l, _) | Self::NonNull(l) => Some(&**l),
-        }
-    }
-
-    fn input_fields(&self) -> Option<&[Argument<S>]> {
-        match self {
-            Self::Concrete(t) => match t {
-                MetaType::InputObject(InputObjectMeta { input_fields, .. }) => {
-                    Some(input_fields.as_slice())
-                }
-                MetaType::Enum(..)
-                | MetaType::Interface(..)
-                | MetaType::List(..)
-                | MetaType::Nullable(..)
-                | MetaType::Object(..)
                 | MetaType::Placeholder(..)
                 | MetaType::Scalar(..)
                 | MetaType::Union(..) => None,
@@ -372,6 +351,59 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
             Self::List(..) | Self::NonNull(..) => None,
         }
     }
+
+    fn input_fields(
+        &self,
+        #[graphql(default = false)] include_deprecated: Option<bool>,
+    ) -> Option<Vec<&Argument<S>>> {
+        match self {
+            Self::Concrete(t) => match t {
+                MetaType::InputObject(InputObjectMeta { input_fields, .. }) => Some(
+                    input_fields
+                        .iter()
+                        .filter(|f| {
+                            include_deprecated.unwrap_or_default()
+                                || !f.deprecation_status.is_deprecated()
+                        })
+                        .collect(),
+                ),
+                MetaType::Enum(..)
+                | MetaType::Interface(..)
+                | MetaType::List(..)
+                | MetaType::Nullable(..)
+                | MetaType::Object(..)
+                | MetaType::Placeholder(..)
+                | MetaType::Scalar(..)
+                | MetaType::Union(..) => None,
+            },
+            Self::List(..) | Self::NonNull(..) => None,
+        }
+    }
+
+    fn of_type(&self) -> Option<&Self> {
+        match self {
+            Self::Concrete(..) => None,
+            Self::List(l, _) | Self::NonNull(l) => Some(&**l),
+        }
+    }
+
+    fn is_one_of(&self) -> bool {
+        match self {
+            Self::Concrete(t) => match t {
+                // TODO: Implement once `@oneOf` is implemented for input objects.
+                MetaType::InputObject(InputObjectMeta { .. }) => todo!(),
+                MetaType::Enum(..)
+                | MetaType::Interface(..)
+                | MetaType::List(..)
+                | MetaType::Nullable(..)
+                | MetaType::Object(..)
+                | MetaType::Placeholder(..)
+                | MetaType::Scalar(..)
+                | MetaType::Union(..) => false,
+            },
+            Self::List(..) | Self::NonNull(..) => false,
+        }
+    }
 }
 
 #[graphql_object]
@@ -391,10 +423,17 @@ impl<S: ScalarValue> Field<S> {
         self.description.as_ref()
     }
 
-    fn args(&self) -> Vec<&Argument<S>> {
-        self.arguments
-            .as_ref()
-            .map_or_else(Vec::new, |v| v.iter().collect())
+    fn args(
+        &self,
+        #[graphql(default = false)] include_deprecated: Option<bool>,
+    ) -> Vec<&Argument<S>> {
+        self.arguments.as_ref().map_or_else(Vec::new, |args| {
+            args.iter()
+                .filter(|a| {
+                    include_deprecated.unwrap_or_default() || !a.deprecation_status.is_deprecated()
+                })
+                .collect()
+        })
     }
 
     #[graphql(name = "type")]
@@ -437,6 +476,14 @@ impl<S: ScalarValue> Argument<S> {
     fn default_value_(&self) -> Option<String> {
         self.default_value.as_ref().map(ToString::to_string)
     }
+
+    fn is_deprecated(&self) -> bool {
+        self.deprecation_status.is_deprecated()
+    }
+
+    fn deprecation_reason(&self) -> Option<&ArcStr> {
+        self.deprecation_status.reason()
+    }
 }
 
 #[graphql_object]
@@ -477,26 +524,34 @@ impl<S: ScalarValue> DirectiveType<S> {
         self.description.as_ref()
     }
 
-    fn locations(&self) -> &[DirectiveLocation] {
-        &self.locations
-    }
-
     fn is_repeatable(&self) -> bool {
         self.is_repeatable
     }
 
-    fn args(&self) -> &[Argument<S>] {
-        &self.arguments
+    fn locations(&self) -> &[DirectiveLocation] {
+        &self.locations
     }
 
-    // Included for compatibility with the introspection query in GraphQL.js
-    #[graphql(deprecated = "Use the locations array instead")]
+    fn args(
+        &self,
+        #[graphql(default = false)] include_deprecated: Option<bool>,
+    ) -> Vec<&Argument<S>> {
+        self.arguments
+            .iter()
+            .filter(|a| {
+                include_deprecated.unwrap_or_default() || !a.deprecation_status.is_deprecated()
+            })
+            .collect()
+    }
+
+    // Included for compatibility with the introspection query in GraphQL.js.
+    #[graphql(deprecated = "Use `__Directive.locations` instead.")]
     fn on_operation(&self) -> bool {
         self.locations.contains(&DirectiveLocation::Query)
     }
 
-    // Included for compatibility with the introspection query in GraphQL.js
-    #[graphql(deprecated = "Use the locations array instead")]
+    // Included for compatibility with the introspection query in GraphQL.js.
+    #[graphql(deprecated = "Use `__Directive.locations` instead.")]
     fn on_fragment(&self) -> bool {
         self.locations
             .contains(&DirectiveLocation::FragmentDefinition)
@@ -504,8 +559,8 @@ impl<S: ScalarValue> DirectiveType<S> {
             || self.locations.contains(&DirectiveLocation::FragmentSpread)
     }
 
-    // Included for compatibility with the introspection query in GraphQL.js
-    #[graphql(deprecated = "Use the locations array instead")]
+    // Included for compatibility with the introspection query in GraphQL.js.
+    #[graphql(deprecated = "Use `__Directive.locations` instead.")]
     fn on_field(&self) -> bool {
         self.locations.contains(&DirectiveLocation::Field)
     }

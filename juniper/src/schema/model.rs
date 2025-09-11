@@ -661,20 +661,36 @@ pub enum DirectiveLocation {
     Subscription,
     #[display("field")]
     Field,
-    #[display("scalar")]
-    Scalar,
     #[display("fragment definition")]
     FragmentDefinition,
-    #[display("field definition")]
-    FieldDefinition,
-    #[display("variable definition")]
-    VariableDefinition,
     #[display("fragment spread")]
     FragmentSpread,
     #[display("inline fragment")]
     InlineFragment,
+    #[display("variable definition")]
+    VariableDefinition,
+    #[display("schema")]
+    Schema,
+    #[display("scalar")]
+    Scalar,
+    #[display("object")]
+    Object,
+    #[display("field definition")]
+    FieldDefinition,
+    #[display("argument definition")]
+    ArgumentDefinition,
+    #[display("interface")]
+    Interface,
+    #[display("union")]
+    Union,
+    #[display("enum")]
+    Enum,
     #[display("enum value")]
     EnumValue,
+    #[display("input object")]
+    InputObject,
+    #[display("input field definition")]
+    InputFieldDefinition,
 }
 
 /// Sorts the provided [`TypeType`]s in the "type-then-name" manner.
