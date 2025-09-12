@@ -1465,6 +1465,8 @@ pub(crate) fn schema_introspection_result() -> Value {
               "isRepeatable": false,
               "locations": [
                 "FIELD_DEFINITION",
+                "ARGUMENT_DEFINITION",
+                "INPUT_FIELD_DEFINITION",
                 "ENUM_VALUE"
               ],
               "args": [
@@ -1480,7 +1482,7 @@ pub(crate) fn schema_introspection_result() -> Value {
                       "ofType": null
                     }
                   },
-                  "defaultValue": null,
+                  "defaultValue": "\"No longer supported\"",
                   "isDeprecated": false,
                   "deprecationReason": null
                 }
@@ -2924,6 +2926,8 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> Value {
               "isRepeatable": false,
               "locations": [
                 "FIELD_DEFINITION",
+                "ARGUMENT_DEFINITION",
+                "INPUT_FIELD_DEFINITION",
                 "ENUM_VALUE"
               ],
               "args": [
@@ -2938,7 +2942,7 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> Value {
                       "ofType": null
                     }
                   },
-                  "defaultValue": null,
+                  "defaultValue": "\"No longer supported\"",
                   "isDeprecated": false,
                   "deprecationReason": null
                 }

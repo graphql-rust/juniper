@@ -196,6 +196,8 @@ async fn test_introspection_directives() {
                     "name": "deprecated",
                     "locations": [
                         "FIELD_DEFINITION",
+                        "ARGUMENT_DEFINITION",
+                        "INPUT_FIELD_DEFINITION",
                         "ENUM_VALUE",
                     ],
                 },
