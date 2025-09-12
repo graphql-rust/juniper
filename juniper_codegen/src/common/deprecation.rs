@@ -42,13 +42,12 @@ impl Parse for Directive {
 }
 
 impl Directive {
-    /// Tries to parse a [`Directive`] from a `#[deprecated(note = ...)]`
-    /// attribute, by looking up for it in the provided [`syn::Attribute`]s.
+    /// Tries to parse a [`Directive`] from a `#[deprecated(note = ...)]` attribute, by looking up
+    /// for it in the provided [`syn::Attribute`]s.
     ///
     /// # Errors
     ///
-    /// If failed to parse a [`Directive`] from a found
-    /// `#[deprecated(note = ...)]` attribute.
+    /// If failed to parse a [`Directive`] from the found `#[deprecated(note = ...)]` attribute.
     pub(crate) fn parse_from_deprecated_attr(
         attrs: &[syn::Attribute],
     ) -> syn::Result<Option<SpanContainer<Self>>> {
@@ -83,7 +82,7 @@ impl Directive {
                 return if !nv.path.is_ident("note") {
                     Err(syn::Error::new(
                         nv.path.span(),
-                        "unrecognized setting on #[deprecated(..)] attribute",
+                        "unrecognized setting on `#[deprecated(..)]` attribute",
                     ))
                 } else if let syn::Expr::Lit(syn::ExprLit {
                     lit: syn::Lit::Str(strlit),

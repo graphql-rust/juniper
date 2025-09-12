@@ -1,25 +1,10 @@
 use std::collections::BTreeMap;
 
-use graphql_parser::{
-    Pos,
-    query::{Directive as ExternalDirective, Number as ExternalNumber, Type as ExternalType},
-    schema::{
-        Definition, Document, EnumType as ExternalEnum, EnumValue as ExternalEnumValue,
-        Field as ExternalField, InputObjectType as ExternalInputObjectType,
-        InputValue as ExternalInputValue, InterfaceType as ExternalInterfaceType,
-        ObjectType as ExternalObjectType, ScalarType as ExternalScalarType, SchemaDefinition, Text,
-        TypeDefinition as ExternalTypeDefinition, UnionType as ExternalUnionType,
-        Value as ExternalValue,
-    },
-};
+use graphql_parser::{Pos, schema};
 
 use crate::{
-    ast::{InputValue, Type, TypeModifier},
-    schema::{
-        meta::{Argument, DeprecationStatus, EnumValue, Field, MetaType},
-        model::SchemaType,
-        translate::SchemaTranslator,
-    },
+    ast,
+    schema::{meta, model::SchemaType, translate::SchemaTranslator},
     value::ScalarValue,
 };
 
@@ -30,26 +15,25 @@ mod for_minimal_versions_check_only {
 
 pub struct GraphQLParserTranslator;
 
-impl<'a, S: 'a, T> From<&'a SchemaType<S>> for Document<'a, T>
+impl<'a, S: 'a, T> From<&'a SchemaType<S>> for schema::Document<'a, T>
 where
     S: ScalarValue,
-    T: Text<'a> + Default,
+    T: schema::Text<'a> + Default,
 {
-    fn from(input: &'a SchemaType<S>) -> Document<'a, T> {
+    fn from(input: &'a SchemaType<S>) -> schema::Document<'a, T> {
         GraphQLParserTranslator::translate_schema(input)
     }
 }
 
-impl<'a, T> SchemaTranslator<'a, graphql_parser::schema::Document<'a, T>>
-    for GraphQLParserTranslator
+impl<'a, T> SchemaTranslator<'a, schema::Document<'a, T>> for GraphQLParserTranslator
 where
-    T: Text<'a> + Default,
+    T: schema::Text<'a> + Default,
 {
-    fn translate_schema<S>(input: &'a SchemaType<S>) -> graphql_parser::schema::Document<'a, T>
+    fn translate_schema<S>(input: &'a SchemaType<S>) -> schema::Document<'a, T>
     where
         S: ScalarValue + 'a,
     {
-        let mut doc = Document::default();
+        let mut doc = schema::Document::default();
 
         // Translate type defs.
         let mut types = input
@@ -57,263 +41,303 @@ where
             .iter()
             .filter(|(_, meta)| !meta.is_builtin())
             .map(|(_, meta)| GraphQLParserTranslator::translate_meta(meta))
-            .map(Definition::TypeDefinition)
+            .map(schema::Definition::TypeDefinition)
             .collect();
         doc.definitions.append(&mut types);
 
-        doc.definitions
-            .push(Definition::SchemaDefinition(SchemaDefinition {
+        doc.definitions.push(schema::Definition::SchemaDefinition(
+            schema::SchemaDefinition {
                 position: Pos::default(),
                 directives: vec![],
-                query: Some(From::from(input.query_type_name.as_str())),
-                mutation: input
-                    .mutation_type_name
-                    .as_ref()
-                    .map(|s| From::from(s.as_str())),
+                query: Some(input.query_type_name.as_str().into()),
+                mutation: input.mutation_type_name.as_ref().map(|s| s.as_str().into()),
                 subscription: input
                     .subscription_type_name
                     .as_ref()
-                    .map(|s| From::from(s.as_str())),
-            }));
+                    .map(|s| s.as_str().into()),
+            },
+        ));
 
         doc
     }
 }
 
 impl GraphQLParserTranslator {
-    fn translate_argument<'a, S, T>(input: &'a Argument<S>) -> ExternalInputValue<'a, T>
+    fn translate_argument<'a, S, T>(input: &'a meta::Argument<S>) -> schema::InputValue<'a, T>
     where
         S: ScalarValue,
-        T: Text<'a>,
+        T: schema::Text<'a>,
     {
-        ExternalInputValue {
+        let meta::Argument {
+            name,
+            description,
+            arg_type,
+            default_value,
+            deprecation_status,
+        } = input;
+        schema::InputValue {
             position: Pos::default(),
-            description: input.description.as_deref().map(Into::into),
-            name: From::from(input.name.as_str()),
-            value_type: GraphQLParserTranslator::translate_type(&input.arg_type),
-            default_value: input
-                .default_value
+            description: description.as_deref().map(Into::into),
+            name: name.as_str().into(),
+            value_type: GraphQLParserTranslator::translate_type(arg_type),
+            default_value: default_value
                 .as_ref()
                 .map(|x| GraphQLParserTranslator::translate_value(x)),
-            directives: vec![],
+            directives: generate_directives(deprecation_status),
         }
     }
 
-    fn translate_value<'a, S, T>(input: &'a InputValue<S>) -> ExternalValue<'a, T>
+    fn translate_value<'a, S, T>(input: &'a ast::InputValue<S>) -> schema::Value<'a, T>
     where
         S: ScalarValue + 'a,
-        T: Text<'a>,
+        T: schema::Text<'a>,
     {
         match input {
-            InputValue::Null => ExternalValue::Null,
-            InputValue::Scalar(x) => {
+            ast::InputValue::Null => schema::Value::Null,
+            ast::InputValue::Scalar(x) => {
                 if let Some(v) = x.try_to_string() {
-                    ExternalValue::String(v)
+                    schema::Value::String(v)
                 } else if let Some(v) = x.try_to_int() {
-                    ExternalValue::Int(ExternalNumber::from(v))
+                    schema::Value::Int(v.into())
                 } else if let Some(v) = x.try_to_float() {
-                    ExternalValue::Float(v)
+                    schema::Value::Float(v)
                 } else if let Some(v) = x.try_to_bool() {
-                    ExternalValue::Boolean(v)
+                    schema::Value::Boolean(v)
                 } else {
                     panic!("unknown argument type")
                 }
             }
-            InputValue::Enum(x) => ExternalValue::Enum(From::from(x.as_str())),
-            InputValue::Variable(x) => ExternalValue::Variable(From::from(x.as_str())),
-            InputValue::List(x) => ExternalValue::List(
+            ast::InputValue::Enum(x) => schema::Value::Enum(x.as_str().into()),
+            ast::InputValue::Variable(x) => schema::Value::Variable(x.as_str().into()),
+            ast::InputValue::List(x) => schema::Value::List(
                 x.iter()
                     .map(|s| GraphQLParserTranslator::translate_value(&s.item))
                     .collect(),
             ),
-            InputValue::Object(x) => {
+            ast::InputValue::Object(x) => {
                 let mut fields = BTreeMap::new();
                 x.iter().for_each(|(name_span, value_span)| {
                     fields.insert(
-                        From::from(name_span.item.as_str()),
+                        name_span.item.as_str().into(),
                         GraphQLParserTranslator::translate_value(&value_span.item),
                     );
                 });
-                ExternalValue::Object(fields)
+                schema::Value::Object(fields)
             }
         }
     }
 
-    fn translate_type<'a, T>(input: &'a Type) -> ExternalType<'a, T>
+    fn translate_type<'a, T>(input: &'a ast::Type) -> schema::Type<'a, T>
     where
-        T: Text<'a>,
+        T: schema::Text<'a>,
     {
-        let mut ty = ExternalType::NamedType(input.innermost_name().into());
+        let mut ty = schema::Type::NamedType(input.innermost_name().into());
         for m in input.modifiers() {
             ty = match m {
-                TypeModifier::NonNull => ExternalType::NonNullType(ty.into()),
-                TypeModifier::List(..) => ExternalType::ListType(ty.into()),
+                ast::TypeModifier::NonNull => schema::Type::NonNullType(ty.into()),
+                ast::TypeModifier::List(..) => schema::Type::ListType(ty.into()),
             };
         }
         ty
     }
 
-    fn translate_meta<'a, S, T>(input: &'a MetaType<S>) -> ExternalTypeDefinition<'a, T>
+    fn translate_meta<'a, S, T>(input: &'a meta::MetaType<S>) -> schema::TypeDefinition<'a, T>
     where
         S: ScalarValue,
-        T: Text<'a>,
+        T: schema::Text<'a>,
     {
         match input {
-            MetaType::Scalar(x) => ExternalTypeDefinition::Scalar(ExternalScalarType {
+            meta::MetaType::Scalar(meta::ScalarMeta {
+                name,
+                description,
+                specified_by_url,
+                try_parse_fn: _,
+                parse_fn: _,
+            }) => schema::TypeDefinition::Scalar(schema::ScalarType {
                 position: Pos::default(),
-                description: x.description.as_deref().map(Into::into),
-                name: From::from(x.name.as_ref()),
-                directives: vec![],
+                description: description.as_deref().map(Into::into),
+                name: name.as_str().into(),
+                directives: specified_by_url
+                    .as_deref()
+                    .map(|url| vec![specified_by_url_to_directive(url)])
+                    .unwrap_or_default(),
             }),
-            MetaType::Enum(x) => ExternalTypeDefinition::Enum(ExternalEnum {
+            meta::MetaType::Enum(meta::EnumMeta {
+                name,
+                description,
+                values,
+                try_parse_fn: _,
+            }) => schema::TypeDefinition::Enum(schema::EnumType {
                 position: Pos::default(),
-                description: x.description.as_deref().map(Into::into),
-                name: From::from(x.name.as_ref()),
+                description: description.as_deref().map(Into::into),
+                name: name.as_str().into(),
                 directives: vec![],
-                values: x
-                    .values
+                values: values
                     .iter()
                     .map(GraphQLParserTranslator::translate_enum_value)
                     .collect(),
             }),
-            MetaType::Union(x) => ExternalTypeDefinition::Union(ExternalUnionType {
+            meta::MetaType::Union(meta::UnionMeta {
+                name,
+                description,
+                of_type_names,
+            }) => schema::TypeDefinition::Union(schema::UnionType {
                 position: Pos::default(),
-                description: x.description.as_deref().map(Into::into),
-                name: From::from(x.name.as_ref()),
+                description: description.as_deref().map(Into::into),
+                name: name.as_str().into(),
                 directives: vec![],
-                types: x
-                    .of_type_names
-                    .iter()
-                    .map(|s| From::from(s.as_str()))
-                    .collect(),
+                types: of_type_names.iter().map(|s| s.as_str().into()).collect(),
             }),
-            MetaType::Interface(x) => ExternalTypeDefinition::Interface(ExternalInterfaceType {
+            meta::MetaType::Interface(meta::InterfaceMeta {
+                name,
+                description,
+                fields,
+                interface_names,
+            }) => schema::TypeDefinition::Interface(schema::InterfaceType {
                 position: Pos::default(),
-                description: x.description.as_deref().map(Into::into),
-                name: From::from(x.name.as_ref()),
-                implements_interfaces: x
-                    .interface_names
-                    .iter()
-                    .map(|s| From::from(s.as_str()))
-                    .collect(),
+                description: description.as_deref().map(Into::into),
+                name: name.as_str().into(),
+                implements_interfaces: interface_names.iter().map(|s| s.as_str().into()).collect(),
                 directives: vec![],
-                fields: x
-                    .fields
+                fields: fields
                     .iter()
                     .filter(|x| !x.is_builtin())
                     .map(GraphQLParserTranslator::translate_field)
                     .collect(),
             }),
-            MetaType::InputObject(x) => {
-                ExternalTypeDefinition::InputObject(ExternalInputObjectType {
-                    position: Pos::default(),
-                    description: x.description.as_deref().map(Into::into),
-                    name: From::from(x.name.as_ref()),
-                    directives: vec![],
-                    fields: x
-                        .input_fields
-                        .iter()
-                        .filter(|x| !x.is_builtin())
-                        .map(GraphQLParserTranslator::translate_argument)
-                        .collect(),
-                })
-            }
-            MetaType::Object(x) => ExternalTypeDefinition::Object(ExternalObjectType {
+            meta::MetaType::InputObject(meta::InputObjectMeta {
+                name,
+                description,
+                input_fields,
+                try_parse_fn: _,
+            }) => schema::TypeDefinition::InputObject(schema::InputObjectType {
                 position: Pos::default(),
-                description: x.description.as_deref().map(Into::into),
-                name: From::from(x.name.as_ref()),
+                description: description.as_deref().map(Into::into),
+                name: name.as_str().into(),
                 directives: vec![],
-                fields: x
-                    .fields
+                fields: input_fields
+                    .iter()
+                    .filter(|x| !x.is_builtin())
+                    .map(GraphQLParserTranslator::translate_argument)
+                    .collect(),
+            }),
+            meta::MetaType::Object(meta::ObjectMeta {
+                name,
+                description,
+                fields,
+                interface_names,
+            }) => schema::TypeDefinition::Object(schema::ObjectType {
+                position: Pos::default(),
+                description: description.as_deref().map(Into::into),
+                name: name.as_str().into(),
+                directives: vec![],
+                fields: fields
                     .iter()
                     .filter(|x| !x.is_builtin())
                     .map(GraphQLParserTranslator::translate_field)
                     .collect(),
-                implements_interfaces: x
-                    .interface_names
-                    .iter()
-                    .map(|s| From::from(s.as_str()))
-                    .collect(),
+                implements_interfaces: interface_names.iter().map(|s| s.as_str().into()).collect(),
             }),
-            _ => panic!("unknown meta type when translating"),
+            _ => panic!("unknown `MetaType` when translating"),
         }
     }
 
-    fn translate_enum_value<'a, T>(input: &'a EnumValue) -> ExternalEnumValue<'a, T>
+    fn translate_enum_value<'a, T>(input: &'a meta::EnumValue) -> schema::EnumValue<'a, T>
     where
-        T: Text<'a>,
+        T: schema::Text<'a>,
     {
-        ExternalEnumValue {
+        let meta::EnumValue {
+            name,
+            description,
+            deprecation_status,
+        } = input;
+        schema::EnumValue {
             position: Pos::default(),
-            name: From::from(input.name.as_ref()),
-            description: input.description.as_deref().map(Into::into),
-            directives: generate_directives(&input.deprecation_status),
+            name: name.as_str().into(),
+            description: description.as_deref().map(Into::into),
+            directives: generate_directives(deprecation_status),
         }
     }
 
-    fn translate_field<'a, S, T>(input: &'a Field<S>) -> ExternalField<'a, T>
+    fn translate_field<'a, S, T>(input: &'a meta::Field<S>) -> schema::Field<'a, T>
     where
         S: ScalarValue + 'a,
-        T: Text<'a>,
+        T: schema::Text<'a>,
     {
-        let arguments = input
-            .arguments
-            .as_ref()
-            .map(|a| {
-                a.iter()
-                    .filter(|x| !x.is_builtin())
-                    .map(|x| GraphQLParserTranslator::translate_argument(x))
-                    .collect()
-            })
-            .unwrap_or_default();
-
-        ExternalField {
-            position: Pos::default(),
-            name: From::from(input.name.as_str()),
-            description: input.description.as_deref().map(Into::into),
-            directives: generate_directives(&input.deprecation_status),
-            field_type: GraphQLParserTranslator::translate_type(&input.field_type),
+        let meta::Field {
+            name,
+            description,
             arguments,
+            field_type,
+            deprecation_status,
+        } = input;
+        schema::Field {
+            position: Pos::default(),
+            name: name.as_str().into(),
+            description: description.as_deref().map(Into::into),
+            directives: generate_directives(deprecation_status),
+            field_type: GraphQLParserTranslator::translate_type(field_type),
+            arguments: arguments
+                .as_ref()
+                .map(|a| {
+                    a.iter()
+                        .filter(|x| !x.is_builtin())
+                        .map(|x| GraphQLParserTranslator::translate_argument(x))
+                        .collect()
+                })
+                .unwrap_or_default(),
         }
     }
 }
 
-fn deprecation_to_directive<'a, T>(status: &DeprecationStatus) -> Option<ExternalDirective<'a, T>>
+fn deprecation_to_directive<'a, T>(
+    status: &meta::DeprecationStatus,
+) -> Option<schema::Directive<'a, T>>
 where
-    T: Text<'a>,
+    T: schema::Text<'a>,
 {
     match status {
-        DeprecationStatus::Current => None,
-        DeprecationStatus::Deprecated(reason) => Some(ExternalDirective {
+        meta::DeprecationStatus::Current => None,
+        meta::DeprecationStatus::Deprecated(reason) => Some(schema::Directive {
             position: Pos::default(),
             name: "deprecated".into(),
             arguments: reason
                 .as_ref()
-                .map(|rsn| {
-                    vec![(
-                        From::from("reason"),
-                        ExternalValue::String(rsn.as_str().into()),
-                    )]
-                })
+                .map(|rsn| vec![("reason".into(), schema::Value::String(rsn.as_str().into()))])
                 .unwrap_or_default(),
         }),
+    }
+}
+
+/// Returns the `@specifiedBy(url:)` [`schema::Directive`] for the provided `url`.
+fn specified_by_url_to_directive<'a, T>(url: &str) -> schema::Directive<'a, T>
+where
+    T: schema::Text<'a>,
+{
+    schema::Directive {
+        position: Pos::default(),
+        name: "specifiedBy".into(),
+        arguments: vec![("url".into(), schema::Value::String(url.into()))],
     }
 }
 
 // Right now the only directive supported is `@deprecated`.
 // `@skip` and `@include` are dealt with elsewhere.
 // https://spec.graphql.org/October2021#sec-Type-System.Directives.Built-in-Directives
-fn generate_directives<'a, T>(status: &DeprecationStatus) -> Vec<ExternalDirective<'a, T>>
+fn generate_directives<'a, T>(status: &meta::DeprecationStatus) -> Vec<schema::Directive<'a, T>>
 where
-    T: Text<'a>,
+    T: schema::Text<'a>,
 {
     deprecation_to_directive(status)
         .map(|d| vec![d])
         .unwrap_or_default()
 }
 
-/// Sorts the provided [`Document`] in the "type-then-name" manner.
-pub(crate) fn sort_schema_document<'a, T: Text<'a>>(document: &mut Document<'a, T>) {
+/// Sorts the provided [`schema::Document`] in the "type-then-name" manner.
+pub(crate) fn sort_schema_document<'a, T>(document: &mut schema::Document<'a, T>)
+where
+    T: schema::Text<'a>,
+{
     document.definitions.sort_by(move |a, b| {
         let type_cmp = sort_value::by_type(a).cmp(&sort_value::by_type(b));
         let name_cmp = sort_value::by_is_directive(a)
@@ -324,14 +348,14 @@ pub(crate) fn sort_schema_document<'a, T: Text<'a>>(document: &mut Document<'a, 
     })
 }
 
-/// Evaluation of a [`Definition`] weights for sorting.
+/// Evaluation of a [`schema::Definition`] weights for sorting.
 mod sort_value {
-    use graphql_parser::schema::{Definition, Text, TypeDefinition, TypeExtension};
+    use graphql_parser::schema::{self, Definition, TypeDefinition, TypeExtension};
 
     /// Returns a [`Definition`] sorting weight by its type.
     pub(super) fn by_type<'a, T>(definition: &Definition<'a, T>) -> u8
     where
-        T: Text<'a>,
+        T: schema::Text<'a>,
     {
         match definition {
             Definition::SchemaDefinition(_) => 0,
@@ -358,7 +382,7 @@ mod sort_value {
     /// Returns a [`Definition`] sorting weight by its name.
     pub(super) fn by_name<'b, 'a, T>(definition: &'b Definition<'a, T>) -> Option<&'b T::Value>
     where
-        T: Text<'a>,
+        T: schema::Text<'a>,
     {
         match definition {
             Definition::SchemaDefinition(_) => None,
@@ -385,7 +409,7 @@ mod sort_value {
     /// Returns a [`Definition`] sorting weight by its directive.
     pub(super) fn by_directive<'b, 'a, T>(definition: &'b Definition<'a, T>) -> Option<&'b T::Value>
     where
-        T: Text<'a>,
+        T: schema::Text<'a>,
     {
         match definition {
             Definition::SchemaDefinition(_) => None,
@@ -412,7 +436,7 @@ mod sort_value {
     /// Returns a [`Definition`] sorting weight by whether it represents a directive.
     pub(super) fn by_is_directive<'a, T>(definition: &Definition<'a, T>) -> u8
     where
-        T: Text<'a>,
+        T: schema::Text<'a>,
     {
         match definition {
             Definition::SchemaDefinition(_) => 0,

@@ -387,7 +387,7 @@ mod where_attribute {
     async fn has_specified_by_url() {
         const DOC: &str = r#"{
             __type(name: "CustomDateTime") {
-                specifiedByUrl
+                specifiedByURL
             }
         }"#;
 
@@ -396,7 +396,7 @@ mod where_attribute {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"__type": {"specifiedByUrl": "https://tools.ietf.org/html/rfc3339"}}),
+                graphql_value!({"__type": {"specifiedByURL": "https://tools.ietf.org/html/rfc3339"}}),
                 vec![],
             )),
         );
@@ -546,7 +546,7 @@ mod with_module {
     async fn has_specified_by_url() {
         const DOC: &str = r#"{
             __type(name: "CustomDateTime") {
-                specifiedByUrl
+                specifiedByURL
             }
         }"#;
 
@@ -555,7 +555,7 @@ mod with_module {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"__type": {"specifiedByUrl": "https://tools.ietf.org/html/rfc3339"}}),
+                graphql_value!({"__type": {"specifiedByURL": "https://tools.ietf.org/html/rfc3339"}}),
                 vec![],
             )),
         );

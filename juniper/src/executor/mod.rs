@@ -1217,7 +1217,7 @@ impl<S> Registry<S> {
         Argument::new(name, self.get_type::<T>(info))
     }
 
-    /// Creates an [`Argument`] with the provided default `value`.
+    /// Creates an [`Argument`] with the provided `name` and default `value`.
     pub fn arg_with_default<T>(
         &mut self,
         name: impl Into<ArcStr>,
@@ -1228,7 +1228,8 @@ impl<S> Registry<S> {
         T: GraphQLType<S> + ToInputValue<S> + FromInputValue<S>,
         S: ScalarValue,
     {
-        Argument::new(name, self.get_type::<T>(info)).default_value(value.to_input_value())
+        self.arg::<T>(name, info)
+            .default_value(value.to_input_value())
     }
 
     fn insert_placeholder(&mut self, name: Name, of_type: Type) {

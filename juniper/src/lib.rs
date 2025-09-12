@@ -297,7 +297,9 @@ where
         .await
 }
 
-/// Execute the reference introspection query in the provided schema
+/// Executes the [canonical introspection query][0] in the provided schema.
+///
+/// [0]: https://github.com/graphql/graphql-js/blob/v16.11.0/src/utilities/getIntrospectionQuery.ts#L75
 pub fn introspect<S, QueryT, MutationT, SubscriptionT>(
     root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
     context: &QueryT::Context,

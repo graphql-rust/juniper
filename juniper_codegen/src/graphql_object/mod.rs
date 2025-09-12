@@ -332,6 +332,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
     #[must_use]
     pub(crate) fn impl_output_type_tokens(&self) -> TokenStream {
         let scalar = &self.scalar;
+        let const_scalar = &self.scalar.default_ty();
 
         let (impl_generics, where_clause) = self.impl_generics(false);
         let ty = &self.ty;
@@ -342,6 +343,14 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
             .iter()
             .map(|f| f.method_mark_tokens(coerce_result, scalar));
 
+        let assert_args_deprecable = self.fields.iter().flat_map(|field| {
+            field
+                .arguments
+                .iter()
+                .flatten()
+                .filter_map(|arg| arg.assert_deprecable_tokens(ty, const_scalar, &field.name))
+        });
+
         let interface_tys = self.interfaces.iter();
 
         quote! {
@@ -350,6 +359,7 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
             {
                 fn mark() {
                     #( #fields_marks )*
+                    #( #assert_args_deprecable )*
                     #( <#interface_tys as ::juniper::marker::IsOutputType<#scalar>>::mark(); )*
                 }
             }

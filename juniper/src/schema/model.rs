@@ -194,8 +194,8 @@ where
     ///
     /// # Unsorted
     ///
-    /// The order of the generated definitions in the returned [`Document`] is NOT stable and may change without any
-    /// real schema changes.
+    /// The order of the generated definitions in the returned [`Document`] is NOT stable and may
+    /// change without any real schema changes.
     #[must_use]
     pub fn as_document(&self) -> Document<'_, &str> {
         use crate::schema::translate::{
@@ -250,12 +250,12 @@ impl<S> SchemaType<S> {
 
         registry.get_type::<SchemaType<S>>(&());
 
-        let skip_directive = DirectiveType::new_skip(&mut registry);
         let include_directive = DirectiveType::new_include(&mut registry);
+        let skip_directive = DirectiveType::new_skip(&mut registry);
         let deprecated_directive = DirectiveType::new_deprecated(&mut registry);
         let specified_by_directive = DirectiveType::new_specified_by(&mut registry);
-        directives.insert(skip_directive.name.clone(), skip_directive);
         directives.insert(include_directive.name.clone(), include_directive);
+        directives.insert(skip_directive.name.clone(), skip_directive);
         directives.insert(deprecated_directive.name.clone(), deprecated_directive);
         directives.insert(specified_by_directive.name.clone(), specified_by_directive);
 
@@ -440,7 +440,7 @@ impl<S> SchemaType<S> {
         }
     }
 
-    /// A list of possible typeees for a given type.
+    /// A list of possible types for a given type.
     pub fn possible_types(&self, t: &MetaType<S>) -> Vec<&MetaType<S>> {
         match *t {
             MetaType::Union(UnionMeta {
@@ -585,12 +585,12 @@ impl<S> DirectiveType<S> {
         }
     }
 
-    fn new_skip(registry: &mut Registry<S>) -> Self
+    fn new_include(registry: &mut Registry<S>) -> Self
     where
         S: ScalarValue,
     {
         Self::new(
-            arcstr::literal!("skip"),
+            arcstr::literal!("include"),
             &[
                 DirectiveLocation::Field,
                 DirectiveLocation::FragmentSpread,
@@ -601,12 +601,12 @@ impl<S> DirectiveType<S> {
         )
     }
 
-    fn new_include(registry: &mut Registry<S>) -> Self
+    fn new_skip(registry: &mut Registry<S>) -> Self
     where
         S: ScalarValue,
     {
         Self::new(
-            arcstr::literal!("include"),
+            arcstr::literal!("skip"),
             &[
                 DirectiveLocation::Field,
                 DirectiveLocation::FragmentSpread,
@@ -625,9 +625,15 @@ impl<S> DirectiveType<S> {
             arcstr::literal!("deprecated"),
             &[
                 DirectiveLocation::FieldDefinition,
+                DirectiveLocation::ArgumentDefinition,
+                DirectiveLocation::InputFieldDefinition,
                 DirectiveLocation::EnumValue,
             ],
-            &[registry.arg::<String>(arcstr::literal!("reason"), &())],
+            &[registry.arg_with_default::<String>(
+                arcstr::literal!("reason"),
+                &"No longer supported".into(),
+                &(),
+            )],
             false,
         )
     }
@@ -661,20 +667,36 @@ pub enum DirectiveLocation {
     Subscription,
     #[display("field")]
     Field,
-    #[display("scalar")]
-    Scalar,
     #[display("fragment definition")]
     FragmentDefinition,
-    #[display("field definition")]
-    FieldDefinition,
-    #[display("variable definition")]
-    VariableDefinition,
     #[display("fragment spread")]
     FragmentSpread,
     #[display("inline fragment")]
     InlineFragment,
+    #[display("variable definition")]
+    VariableDefinition,
+    #[display("schema")]
+    Schema,
+    #[display("scalar")]
+    Scalar,
+    #[display("object")]
+    Object,
+    #[display("field definition")]
+    FieldDefinition,
+    #[display("argument definition")]
+    ArgumentDefinition,
+    #[display("interface")]
+    Interface,
+    #[display("union")]
+    Union,
+    #[display("enum")]
+    Enum,
     #[display("enum value")]
     EnumValue,
+    #[display("input object")]
+    InputObject,
+    #[display("input field definition")]
+    InputFieldDefinition,
 }
 
 /// Sorts the provided [`TypeType`]s in the "type-then-name" manner.

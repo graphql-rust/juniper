@@ -84,9 +84,9 @@ struct Person {
 > **TIP**: Supported policies are: `SCREAMING_SNAKE_CASE`, `camelCase` and `none` (disables any renaming).
 
 
-### Documentation
+### Documentation and deprecation
 
-Similarly, [GraphQL descriptions][7] may be provided by either using [Rust doc comments][6] or with the `#[graphql(description = "...")]` attribute:
+Similarly, [GraphQL input fields][1] may also be [documented][7] and [deprecated][9] via `#[graphql(description = "...")]` and `#[graphql(deprecated = "...")]`/[`#[deprecated]`][13] attributes:
 ```rust
 # extern crate juniper;
 # use juniper::GraphQLInputObject;
@@ -102,12 +102,20 @@ struct Person {
 
     /// This doc comment is visible in both Rust API docs and GraphQL schema 
     /// descriptions.
+    // Only `Null`able input fields or non-`Null` input fields with default values
+    // can be deprecated.
+    #[graphql(default, deprecated = "Just because.")]
     age: i32,
+
+    // If no explicit deprecation reason is provided,
+    // then the default "No longer supported" one is used.
+    #[deprecated]
+    another: Option<f64>, // has no description in GraphQL schema
 }
 #
 # fn main() {}
 ```
-> **NOTE**: As of [October 2021 GraphQL specification][spec], [GraphQL input object][0]'s fields **cannot be** [deprecated][9].
+> **NOTE**: Only [GraphQL input object][0]/[object][8]/[interface][11] fields, [arguments][5] and [GraphQL enum][10] values can be [deprecated][9].
 
 
 ### Ignoring
@@ -150,14 +158,17 @@ struct Point2D {
 [Juniper]: https://docs.rs/juniper
 [Rust]: https://www.rust-lang.org
 [struct]: https://doc.rust-lang.org/reference/items/structs.html
-[spec]: https://spec.graphql.org/October2021
 
 [0]: https://spec.graphql.org/October2021#sec-Input-Objects
+[1]: https://spec.graphql.org/October2021#InputFieldsDefinition
 [2]: https://docs.rs/juniper/0.17.0/juniper/derive.GraphQLInputObject.html
 [4]: https://spec.graphql.org/October2021#sec-Language.Fields
 [5]: https://spec.graphql.org/October2021#sec-Language.Arguments
 [6]: https://doc.rust-lang.org/reference/comments.html#doc-comments
 [7]: https://spec.graphql.org/October2021#sec-Descriptions
+[8]: https://spec.graphql.org/October2021#sec-Objects
 [9]: https://spec.graphql.org/October2021#sec--deprecated
 [10]: https://spec.graphql.org/October2021#sec-Enums
+[11]: https://spec.graphql.org/October2021#sec-Interfaces
 [12]: https://spec.graphql.org/October2021#sec-Scalars
+[13]: https://doc.rust-lang.org/reference/attributes/diagnostics.html#the-deprecated-attribute

@@ -15,7 +15,7 @@ use syn::{
 };
 
 use crate::common::{
-    Description, SpanContainer, default, diagnostic, filter_attrs,
+    Description, SpanContainer, default, deprecation, diagnostic, filter_attrs,
     parse::{
         ParseBufferExt as _, TypeExt as _,
         attr::{OptionExt as _, err},
@@ -42,6 +42,15 @@ pub(crate) struct Attr {
     /// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
     /// [2]: https://spec.graphql.org/October2021#sec-Descriptions
     pub(crate) description: Option<SpanContainer<Description>>,
+
+    /// Explicitly specified [deprecation][2] of this [GraphQL argument][1].
+    ///
+    /// If [`None`], then Rust `#[deprecated]` attribute will be used as the [deprecation][2], if
+    /// any.
+    ///
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
+    /// [2]: https://spec.graphql.org/October2021#sec-Deprecation
+    pub(crate) deprecated: Option<SpanContainer<deprecation::Directive>>,
 
     /// Explicitly specified [default value][2] of this [GraphQL argument][1].
     ///
@@ -97,6 +106,16 @@ impl Parse for Attr {
                         .replace(SpanContainer::new(ident.span(), Some(desc.span()), desc))
                         .none_or_else(|_| err::dup_arg(&ident))?
                 }
+                "deprecated" => {
+                    let directive = input.parse::<deprecation::Directive>()?;
+                    out.deprecated
+                        .replace(SpanContainer::new(
+                            ident.span(),
+                            directive.reason.as_ref().map(|r| r.span()),
+                            directive,
+                        ))
+                        .none_or_else(|_| err::dup_arg(&ident))?
+                }
                 "default" => {
                     let val = input.parse::<default::Value>()?;
                     out.default
@@ -132,6 +151,7 @@ impl Attr {
         Ok(Self {
             name: try_merge_opt!(name: self, another),
             description: try_merge_opt!(description: self, another),
+            deprecated: try_merge_opt!(deprecated: self, another),
             default: try_merge_opt!(default: self, another),
             context: try_merge_opt!(context: self, another),
             executor: try_merge_opt!(executor: self, another),
@@ -141,13 +161,14 @@ impl Attr {
     /// Parses [`Attr`] from the given multiple `name`d [`syn::Attribute`]s
     /// placed on a function argument.
     pub(crate) fn from_attrs(name: &str, attrs: &[syn::Attribute]) -> syn::Result<Self> {
-        let attr = filter_attrs(name, attrs)
+        let mut attr = filter_attrs(name, attrs)
             .map(|attr| attr.parse_args())
             .try_fold(Self::default(), |prev, curr| prev.try_merge(curr?))?;
 
         if let Some(context) = &attr.context {
             if attr.name.is_some()
                 || attr.description.is_some()
+                || attr.deprecated.is_some()
                 || attr.default.is_some()
                 || attr.executor.is_some()
             {
@@ -161,6 +182,7 @@ impl Attr {
         if let Some(executor) = &attr.executor {
             if attr.name.is_some()
                 || attr.description.is_some()
+                || attr.deprecated.is_some()
                 || attr.default.is_some()
                 || attr.context.is_some()
             {
@@ -169,6 +191,10 @@ impl Attr {
                     "`executor` attribute argument is not composable with any other arguments",
                 ));
             }
+        }
+
+        if attr.deprecated.is_none() && attr.context.is_none() && attr.executor.is_none() {
+            attr.deprecated = deprecation::Directive::parse_from_deprecated_attr(attrs)?;
         }
 
         Ok(attr)
@@ -229,6 +255,12 @@ pub(crate) struct OnField {
     /// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
     /// [2]: https://spec.graphql.org/October2021#sec-Required-Arguments
     pub(crate) default: Option<default::Value>,
+
+    /// [Deprecation][2] of this [GraphQL field argument][1] to put into GraphQL schema.
+    ///
+    /// [1]: https://spec.graphql.org/October2021#sec-Language.Arguments
+    /// [2]: https://spec.graphql.org/October2021#sec-Deprecation
+    pub(crate) deprecated: Option<deprecation::Directive>,
 }
 
 /// Possible kinds of Rust method arguments for code generation.
@@ -274,9 +306,32 @@ impl OnMethod {
         }
     }
 
-    /// Returns generated code for the [`marker::IsOutputType::mark`] method,
-    /// which performs static checks for this argument, if it represents an
-    /// [`OnField`] one.
+    /// Returns generated code statically asserting deprecability for this argument, if it
+    /// represents an [`OnField`] one.
+    #[must_use]
+    pub(crate) fn assert_deprecable_tokens(
+        &self,
+        ty: &syn::Type,
+        const_scalar: &syn::Type,
+        field_name: &str,
+    ) -> Option<TokenStream> {
+        let arg = self.as_regular()?;
+        (arg.deprecated.is_some() && arg.default.is_none()).then(|| {
+            let arg_ty = &arg.ty;
+            let arg_name = &arg.name;
+            quote_spanned! { arg_ty.span() =>
+                ::juniper::assert_field_arg_deprecable!(
+                    #ty,
+                    #const_scalar,
+                    #field_name,
+                    #arg_name,
+                );
+            }
+        })
+    }
+
+    /// Returns generated code for the [`marker::IsOutputType::mark`] method, which performs static
+    /// checks for this argument, if it represents an [`OnField`] one.
     ///
     /// [`marker::IsOutputType::mark`]: juniper::marker::IsOutputType::mark
     #[must_use]
@@ -300,6 +355,7 @@ impl OnMethod {
         let (name, ty) = (&arg.name, &arg.ty);
 
         let description = &arg.description;
+        let deprecated = &arg.deprecated;
 
         let method = if let Some(val) = &arg.default {
             quote_spanned! { val.span() =>
@@ -311,7 +367,7 @@ impl OnMethod {
             }
         };
 
-        Some(quote! { .argument(registry #method #description) })
+        Some(quote! { .argument(registry #method #description #deprecated) })
     }
 
     /// Returns generated code for the [`GraphQLValue::resolve_field`] method,
@@ -437,6 +493,7 @@ impl OnMethod {
             ty: argument.ty.as_ref().clone(),
             description: attr.description.map(SpanContainer::into_inner),
             default: attr.default.map(SpanContainer::into_inner),
+            deprecated: attr.deprecated.map(SpanContainer::into_inner),
         })))
     }
 }

@@ -135,7 +135,7 @@ use self::common::diagnostic::{self, ResultExt as _};
 /// }
 /// ```
 ///
-/// # Custom name and description
+/// # Custom name, description and deprecation
 ///
 /// The name of a [GraphQL input object][0] or its [fields][1] may be overridden
 /// with the `name` attribute's argument. By default, a type name or a struct
@@ -144,6 +144,9 @@ use self::common::diagnostic::{self, ResultExt as _};
 /// The description of a [GraphQL input object][0] or its [fields][1] may be
 /// specified either with the `description`/`desc` attribute's argument, or with
 /// a regular Rust doc comment.
+///
+/// [GraphQL input object fields][1] may be deprecated by specifying the `deprecated` attribute's
+/// argument, or with the regular Rust `#[deprecated]` attribute.
 ///
 /// ```rust
 /// # use juniper::GraphQLInputObject;
@@ -161,7 +164,15 @@ use self::common::diagnostic::{self, ResultExt as _};
 ///     x: f64,
 ///
 ///     #[graphql(name = "y", desc = "Ordinate value")]
+///     // Only `Null`able input fields or non-`Null` input fields with default values
+///     // can be deprecated.
+///     #[graphql(default, deprecated = "Obsolete")]
 ///     y_coord: f64,
+///
+///     // If no explicit deprecation reason is provided,
+///     // then the default "No longer supported" one is used.
+///     #[deprecated]
+///     z: Option<f64>, // has no description in GraphQL schema
 /// }
 /// ```
 ///
@@ -1004,8 +1015,8 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 /// The description of [GraphQL interface][1], its field, or a field argument may be specified
 /// either with a `description`/`desc` attribute's argument, or with a regular Rust doc comment.
 ///
-/// A field of [GraphQL interface][1] may be deprecated by specifying a `deprecated` attribute's
-/// argument, or with regular Rust `#[deprecated]` attribute.
+/// A field (or its argument) of [GraphQL interface][1] may be deprecated by specifying a
+/// `deprecated` attribute's argument, or with the regular Rust `#[deprecated]` attribute.
 ///
 /// The default value of a field argument may be specified with a `default` attribute argument (if
 /// no exact value is specified then [`Default::default`] is used).
@@ -1014,25 +1025,43 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 /// # use juniper::graphql_interface;
 /// #
 /// #[graphql_interface]
-/// #[graphql(name = "Character", desc = "Possible episode characters.")]
+/// #[graphql(
+///     // Rename the type for GraphQL by specifying the name here.
+///     name = "Character",
+///     // You may also specify a description here.
+///     // If present, doc comments will be ignored.
+///     desc = "Possible episode characters.",
+/// )]
 /// trait Chrctr {
 ///     #[graphql(name = "id", desc = "ID of the character.")]
 ///     #[graphql(deprecated = "Don't use it")]
 ///     fn some_id(
 ///         &self,
 ///         #[graphql(name = "number", desc = "Arbitrary number.")]
+///         // You may specify default values.
+///         // A default can be any valid expression that yields the right type.
 ///         #[graphql(default = 5)]
 ///         num: i32,
 ///     ) -> &str;
 /// }
 ///
-/// // NOTICE: Rust docs are used as GraphQL description.
+/// // Rust docs are used as GraphQL description.
 /// /// Possible episode characters.
 /// #[graphql_interface]
 /// trait CharacterWithDocs {
+///     // Doc comments also work on fields.
 ///     /// ID of the character.
+///     // If no explicit deprecation reason is provided,
+///     // then the default "No longer supported" one is used.
 ///     #[deprecated]
-///     fn id(&self, #[graphql(default)] num: i32) -> &str;
+///     fn id(
+///         &self,
+///         // If expression is not specified then `Default::default()` is used.
+///         #[graphql(default, deprecated)] num: i32,
+///         // Only `Null`able arguments or non-`Null` arguments with default values
+///         // can be deprecated.
+///         #[graphql(deprecated)] modifier: Option<f64>,
+///     ) -> &str;
 /// }
 /// ```
 ///
@@ -1652,9 +1681,8 @@ pub fn derive_object(body: TokenStream) -> TokenStream {
 /// be specified either with a `description`/`desc` attribute's argument, or
 /// with a regular Rust doc comment.
 ///
-/// A field of [GraphQL object][1] may be deprecated by specifying a
-/// `deprecated` attribute's argument, or with regular Rust `#[deprecated]`
-/// attribute.
+/// A field (or its argument) of [GraphQL object][1] may be deprecated by specifying a `deprecated`
+/// attribute's argument, or with the regular Rust `#[deprecated]` attribute.
 ///
 /// The default value of a field argument may be specified with a `default`
 /// attribute argument (if no exact value is specified then [`Default::default`]
@@ -1696,11 +1724,16 @@ pub fn derive_object(body: TokenStream) -> TokenStream {
 /// impl HumanWithDocs {
 ///     // Doc comments also work on fields.
 ///     /// ID of the human.
+///     // If no explicit deprecation reason is provided,
+///     // then the default "No longer supported" one is used.
 ///     #[deprecated]
 ///     fn id(
 ///         &self,
 ///         // If expression is not specified then `Default::default()` is used.
-///         #[graphql(default)] num: i32,
+///         #[graphql(default, deprecated)] num: i32,
+///         // Only `Null`able arguments or non-`Null` arguments with default values
+///         // can be deprecated.
+///         #[graphql(deprecated)] modifier: Option<f64>,
 ///     ) -> &str {
 ///         "Deprecated"
 ///     }

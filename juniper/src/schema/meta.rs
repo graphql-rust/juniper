@@ -462,6 +462,8 @@ pub struct Argument<S> {
     pub arg_type: Type,
     #[doc(hidden)]
     pub default_value: Option<InputValue<S>>,
+    #[doc(hidden)]
+    pub deprecation_status: DeprecationStatus,
 }
 
 impl<S> Argument<S> {
@@ -472,6 +474,7 @@ impl<S> Argument<S> {
             description: None,
             arg_type,
             default_value: None,
+            deprecation_status: DeprecationStatus::Current,
         }
     }
 
@@ -497,6 +500,15 @@ impl<S> Argument<S> {
     #[must_use]
     pub fn default_value(mut self, val: InputValue<S>) -> Self {
         self.default_value = Some(val);
+        self
+    }
+
+    /// Sets this [`Argument`] as deprecated with an optional `reason`.
+    ///
+    /// Overwrites any previously set deprecation reason.
+    #[must_use]
+    pub fn deprecated(mut self, reason: Option<impl Into<ArcStr>>) -> Self {
+        self.deprecation_status = DeprecationStatus::Deprecated(reason.map(Into::into));
         self
     }
 }

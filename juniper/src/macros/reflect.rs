@@ -329,7 +329,7 @@ pub trait FieldMeta<S, const N: FieldName> {
     /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     type TypeInfo;
 
-    /// [`Types`] of [GraphQL field's][1] return type.
+    /// [`Type`] of [GraphQL field's][1] return type.
     ///
     /// [1]: https://spec.graphql.org/October2021#sec-Language.Fields
     const TYPE: Type;
@@ -455,6 +455,20 @@ pub const fn can_be_subtype(ty: WrappedValue, subtype: WrappedValue) -> bool {
     } else {
         false
     }
+}
+
+/// Extracts an [`Argument`] from the provided [`Arguments`] by its [`Name`].
+#[must_use]
+pub const fn get_arg_by_name(args: Arguments, name: Name) -> Option<Argument> {
+    let mut i = 0;
+    while i < args.len() {
+        let arg = args[i];
+        if str_eq(arg.0, name) {
+            return Some(arg);
+        }
+        i += 1;
+    }
+    None
 }
 
 /// Checks whether the given `val` exists in the given `arr`.
@@ -680,8 +694,9 @@ macro_rules! assert_subtype {
     };
 }
 
-/// Asserts validness of the [`Field`]s arguments. See [spec][1] for more
-/// info.
+/// Asserts validness of the [`Field`]s [`Arguments`].
+///
+/// See [spec][1] for more info.
 ///
 /// [1]: https://spec.graphql.org/October2021#sel-IAHZhCHCDEEFAAADHD8Cxob
 #[macro_export]
@@ -863,6 +878,103 @@ macro_rules! assert_field_args {
     };
 }
 
+/// Statically asserts whether a [`Field`]'s [`Argument`] represents a `Null`able type, so can be
+/// deprecated.
+///
+/// Must be used in conjunction with the check whether the [`Argument`] has its default value set.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! assert_field_arg_deprecable {
+    (
+        $ty: ty,
+        $scalar: ty,
+        $field_name: expr,
+        $arg_name: expr $(,)?
+    ) => {
+        const _: () = {
+            const TY_NAME: &::core::primitive::str =
+                <$ty as $crate::macros::reflect::BaseType<$scalar>>::NAME;
+            const FIELD_NAME: &::core::primitive::str = $field_name;
+            const ARGS: $crate::macros::reflect::Arguments =
+                <$ty as $crate::macros::reflect::FieldMeta<
+                    $scalar,
+                    { $crate::checked_hash!(FIELD_NAME, $ty, $scalar) },
+                >>::ARGUMENTS;
+            const ARG_NAME: &::core::primitive::str = $arg_name;
+            const ARG: $crate::macros::reflect::Argument =
+                $crate::macros::reflect::get_arg_by_name(ARGS, ARG_NAME).expect(
+                    $crate::const_concat!(
+                        "field `",
+                        FIELD_NAME,
+                        "` has no argument `",
+                        ARG_NAME,
+                        "`",
+                    ),
+                );
+            if ARG.2 % 10 != 2 {
+                const ARG_TY: &::core::primitive::str = $crate::format_type!(ARG.1, ARG.2);
+                const ERROR_MSG: &::core::primitive::str = $crate::const_concat!(
+                    "argument `",
+                    ARG_NAME,
+                    "` of `",
+                    TY_NAME,
+                    ".",
+                    FIELD_NAME,
+                    "` field cannot be deprecated, because its type `",
+                    ARG_TY,
+                    "` is neither `Null`able nor the default argument value is specified",
+                );
+                ::core::panic!("{}", ERROR_MSG);
+            }
+        };
+    };
+}
+
+/// Statically asserts whether an input object [`Field`] represents a `Null`able type, so can be
+/// deprecated.
+///
+/// Must be used in conjunction with the check whether the [`Field`] has its default value set.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! assert_input_field_deprecable {
+    (
+        $ty: ty,
+        $scalar: ty,
+        $field_name: expr $(,)?
+    ) => {
+        const _: () = {
+            const TY_NAME: &::core::primitive::str =
+                <$ty as $crate::macros::reflect::BaseType<$scalar>>::NAME;
+            const FIELD_NAME: &::core::primitive::str = $field_name;
+            const FIELD_TY_NAME: &::core::primitive::str =
+                <$ty as $crate::macros::reflect::FieldMeta<
+                    $scalar,
+                    { $crate::checked_hash!(FIELD_NAME, $ty, $scalar) },
+                >>::TYPE;
+            const FIELD_WRAPPED_VAL: $crate::macros::reflect::WrappedValue =
+                <$ty as $crate::macros::reflect::FieldMeta<
+                    $scalar,
+                    { $crate::checked_hash!(FIELD_NAME, $ty, $scalar) },
+                >>::WRAPPED_VALUE;
+
+            if FIELD_WRAPPED_VAL % 10 != 2 {
+                const FIELD_TY: &::core::primitive::str =
+                    $crate::format_type!(FIELD_TY_NAME, FIELD_WRAPPED_VAL);
+                const ERROR_MSG: &::core::primitive::str = $crate::const_concat!(
+                    "field `",
+                    FIELD_NAME,
+                    "` of `",
+                    TY_NAME,
+                    "` input object cannot be deprecated, because its type `",
+                    FIELD_TY,
+                    "` is neither `Null`able nor the default field value is specified",
+                );
+                ::core::panic!("{}", ERROR_MSG);
+            }
+        };
+    };
+}
+
 /// Concatenates `const` [`str`](prim@str)s in a `const` context.
 #[macro_export]
 macro_rules! const_concat {
@@ -907,11 +1019,11 @@ macro_rules! checked_hash {
         } else {
             const MSG: &str = $crate::const_concat!(
                 $($prefix,)?
-                "Field `",
+                "field `",
                 $field_name,
                 "` isn't implemented on `",
                 <$impl_ty as $crate::macros::reflect::BaseType<$scalar>>::NAME,
-                "`."
+                "`"
             );
             ::core::panic!("{}", MSG)
         }

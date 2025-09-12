@@ -387,7 +387,7 @@ mod description_from_doc_comment {
     }
 }
 
-mod deprecation_from_attr {
+mod value_deprecation_from_rust_attr {
     #![expect(deprecated, reason = "GraphQL schema testing")]
 
     use super::*;
