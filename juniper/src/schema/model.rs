@@ -194,8 +194,8 @@ where
     ///
     /// # Unsorted
     ///
-    /// The order of the generated definitions in the returned [`Document`] is NOT stable and may change without any
-    /// real schema changes.
+    /// The order of the generated definitions in the returned [`Document`] is NOT stable and may
+    /// change without any real schema changes.
     #[must_use]
     pub fn as_document(&self) -> Document<'_, &str> {
         use crate::schema::translate::{

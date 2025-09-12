@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use graphql_parser::{Pos, query, schema};
+use graphql_parser::{Pos, schema};
 
 use crate::{
     ast,
@@ -127,15 +127,15 @@ impl GraphQLParserTranslator {
         }
     }
 
-    fn translate_type<'a, T>(input: &'a ast::Type) -> query::Type<'a, T>
+    fn translate_type<'a, T>(input: &'a ast::Type) -> schema::Type<'a, T>
     where
         T: schema::Text<'a>,
     {
-        let mut ty = query::Type::NamedType(input.innermost_name().into());
+        let mut ty = schema::Type::NamedType(input.innermost_name().into());
         for m in input.modifiers() {
             ty = match m {
-                ast::TypeModifier::NonNull => query::Type::NonNullType(ty.into()),
-                ast::TypeModifier::List(..) => query::Type::ListType(ty.into()),
+                ast::TypeModifier::NonNull => schema::Type::NonNullType(ty.into()),
+                ast::TypeModifier::List(..) => schema::Type::ListType(ty.into()),
             };
         }
         ty
@@ -150,14 +150,17 @@ impl GraphQLParserTranslator {
             meta::MetaType::Scalar(meta::ScalarMeta {
                 name,
                 description,
-                specified_by_url: _,
+                specified_by_url,
                 try_parse_fn: _,
                 parse_fn: _,
             }) => schema::TypeDefinition::Scalar(schema::ScalarType {
                 position: Pos::default(),
                 description: description.as_deref().map(Into::into),
                 name: name.as_str().into(),
-                directives: vec![], // TODO: show directive
+                directives: specified_by_url
+                    .as_deref()
+                    .map(|url| vec![specified_by_url_to_directive(url)])
+                    .unwrap_or_default(),
             }),
             meta::MetaType::Enum(meta::EnumMeta {
                 name,
@@ -289,13 +292,13 @@ impl GraphQLParserTranslator {
 
 fn deprecation_to_directive<'a, T>(
     status: &meta::DeprecationStatus,
-) -> Option<query::Directive<'a, T>>
+) -> Option<schema::Directive<'a, T>>
 where
     T: schema::Text<'a>,
 {
     match status {
         meta::DeprecationStatus::Current => None,
-        meta::DeprecationStatus::Deprecated(reason) => Some(query::Directive {
+        meta::DeprecationStatus::Deprecated(reason) => Some(schema::Directive {
             position: Pos::default(),
             name: "deprecated".into(),
             arguments: reason
@@ -306,10 +309,22 @@ where
     }
 }
 
+/// Returns the `@specifiedBy(url:)` [`schema::Directive`] for the provided `url`.
+fn specified_by_url_to_directive<'a, T>(url: &str) -> schema::Directive<'a, T>
+where
+    T: schema::Text<'a>,
+{
+    schema::Directive {
+        position: Pos::default(),
+        name: "specifiedBy".into(),
+        arguments: vec![("url".into(), schema::Value::String(url.into()))],
+    }
+}
+
 // Right now the only directive supported is `@deprecated`.
 // `@skip` and `@include` are dealt with elsewhere.
 // https://spec.graphql.org/October2021#sec-Type-System.Directives.Built-in-Directives
-fn generate_directives<'a, T>(status: &meta::DeprecationStatus) -> Vec<query::Directive<'a, T>>
+fn generate_directives<'a, T>(status: &meta::DeprecationStatus) -> Vec<schema::Directive<'a, T>>
 where
     T: schema::Text<'a>,
 {
