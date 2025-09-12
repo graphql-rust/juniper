@@ -11,10 +11,11 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
 ### Added
 
 - [September 2025] GraphQL spec: ([#1347])
-    - Arguments and input object fields deprecation: ([#1348], [graphql/graphql-spec#525], [graphql/graphql-spec#805])
+    - Arguments and input object fields deprecation: ([#1348], [#864], [graphql/graphql-spec#525], [graphql/graphql-spec#805])
         - Placing `#[graphql(deprecated)]` and `#[deprecated]` attributes on struct fields in `#[derive(GraphQLInputObject)]` macro.
         - Placing `#[graphql(deprecated)]` attribute on method arguments in `#[graphql_object]` and `#[graphql_interface]` macros.
 
+[#864]: /../../issues/864
 [#1347]: /../../issues/1347
 [#1348]: /../../pull/1348
 [graphql/graphql-spec#525]: https://github.com/graphql/graphql-spec/pull/525
