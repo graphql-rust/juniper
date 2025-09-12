@@ -1,14 +1,13 @@
-use std::{char, iter::Peekable, ops::Deref, str::CharIndices};
+use std::{char, ops::Deref, str::CharIndices};
 
 use derive_more::with_trait::{Display, Error};
-//use itertools::Itertools as _;
 
 use crate::parser::{SourcePosition, Spanning};
 
 #[doc(hidden)]
 #[derive(Debug)]
 pub struct Lexer<'a> {
-    iterator: Peekable<CharIndices<'a>>,
+    iterator: itertools::PeekNth<CharIndices<'a>>,
     source: &'a str,
     length: usize,
     position: SourcePosition,
@@ -150,7 +149,7 @@ impl<'a> Lexer<'a> {
     #[doc(hidden)]
     pub fn new(source: &'a str) -> Lexer<'a> {
         Lexer {
-            iterator: source.char_indices().peekable(),
+            iterator: itertools::peek_nth(source.char_indices()),
             source,
             length: source.len(),
             position: SourcePosition::new_origin(),
@@ -325,7 +324,6 @@ impl<'a> Lexer<'a> {
         ))
     }
 
-    /*
     fn scan_block_string(&mut self) -> LexerResult<'a> {
         let start_pos = self.position;
         let (start_idx, mut start_ch) = self
@@ -349,43 +347,23 @@ impl<'a> Lexer<'a> {
             }
         }
 
-        let mut quotes = 0;
-        let mut escaped = false;
-        let mut old_pos = self.position;
+        let (mut quotes, mut escaped) = (0, false);
         while let Some((idx, ch)) = self.next_char() {
             match ch {
-                '\\' => escaped = true,
-
-
-                'b' | 'f' | 'n' | 'r' | 't' | '\\' | '/' | '"' if escaped => {
-                    escaped = false;
-                }
-                'u' if escaped => {
-                    self.scan_escaped_unicode(&old_pos)?;
-                    escaped = false;
-                }
-                c if escaped => {
-                    return Err(Spanning::zero_width(
-                        &old_pos,
-                        LexerError::UnknownEscapeSequence(format!("\\{c}")),
-                    ));
-                }
-
-
-
-                '"' if !escaped => {
+                '\\' => (quotes, escaped) = (0, true),
+                '"' if escaped => (quotes, escaped) = (0, false),
+                '"' if quotes < 2 => quotes += 1,
+                '"' if quotes == 2 => {
                     return Ok(Spanning::start_end(
                         &start_pos,
                         &self.position,
-                        Token::Scalar(ScalarToken::String(StringValue::Quoted(
-                            &self.source[start_idx + 1..idx],
+                        Token::Scalar(ScalarToken::String(StringLiteral::Block(
+                            &self.source[start_idx..=idx],
                         ))),
                     ));
                 }
-
-                _ => {}
+                _ => (quotes, escaped) = (0, false),
             }
-            old_pos = self.position;
         }
 
         Err(Spanning::zero_width(
@@ -393,8 +371,6 @@ impl<'a> Lexer<'a> {
             LexerError::UnterminatedBlockString,
         ))
     }
-
-     */
 
     fn scan_escaped_unicode(
         &mut self,
@@ -584,7 +560,15 @@ impl<'a> Iterator for Lexer<'a> {
             Some('@') => Ok(self.emit_single_char(Token::At)),
             Some('|') => Ok(self.emit_single_char(Token::Pipe)),
             Some('.') => self.scan_ellipsis(),
-            Some('"') => self.scan_string(),
+            Some('"') => {
+                if self.iterator.peek_nth(1).map(|&(_, ch)| ch) == Some('"')
+                    && self.iterator.peek_nth(2).map(|&(_, ch)| ch) == Some('"')
+                {
+                    self.scan_block_string()
+                } else {
+                    self.scan_string()
+                }
+            }
             Some(ch) => {
                 if is_number_start(ch) {
                     self.scan_number()

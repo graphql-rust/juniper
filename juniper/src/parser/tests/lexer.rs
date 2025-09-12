@@ -18,8 +18,8 @@ fn tokenize_to_vec(s: &str) -> Vec<Spanning<Token<'_>>> {
                     break;
                 }
             }
-            Some(Err(e)) => panic!("Error in input stream: {e:#?} for {s:#?}"),
-            None => panic!("EOF before EndOfFile token in {s:#?}"),
+            Some(Err(e)) => panic!("error in input stream: {e} for {s:#?}"),
+            None => panic!("EOF before `Token::EndOfFile` in {s:#?}"),
         }
     }
 
@@ -36,6 +36,7 @@ fn tokenize_single(s: &str) -> Spanning<Token<'_>> {
     tokens.remove(0)
 }
 
+#[track_caller]
 fn tokenize_error(s: &str) -> Spanning<LexerError> {
     let mut lexer = Lexer::new(s);
 
@@ -43,13 +44,13 @@ fn tokenize_error(s: &str) -> Spanning<LexerError> {
         match lexer.next() {
             Some(Ok(t)) => {
                 if t.item == Token::EndOfFile {
-                    panic!("Tokenizer did not return error for {s:#?}");
+                    panic!("lexer did not return error for {s:#?}");
                 }
             }
             Some(Err(e)) => {
                 return e;
             }
-            None => panic!("Tokenizer did not return error for {s:#?}"),
+            None => panic!("lexer did not return error for {s:#?}"),
         }
     }
 }
@@ -140,13 +141,13 @@ fn error_positions() {
 
             ?
 
-            "#
+            "#,
         )
         .next(),
         Some(Err(Spanning::zero_width(
             &SourcePosition::new(14, 2, 12),
-            LexerError::UnknownCharacter('?')
-        )))
+            LexerError::UnknownCharacter('?'),
+        ))),
     );
 }
 
@@ -205,19 +206,6 @@ fn strings() {
             Token::Scalar(ScalarToken::String(Quoted(
                 r#""unicode \u1234\u5678\u90AB\uCDEF""#
             ))),
-        ),
-    );
-}
-
-#[test]
-#[ignore]
-fn block_strings() {
-    assert_eq!(
-        tokenize_single(r#""""""#),
-        Spanning::start_end(
-            &SourcePosition::new(0, 0, 0),
-            &SourcePosition::new(8, 0, 8),
-            Token::Scalar(ScalarToken::String(Block(r#""""""#))),
         ),
     );
 }
@@ -350,6 +338,175 @@ fn string_errors() {
         Spanning::zero_width(
             &SourcePosition::new(5, 0, 5),
             LexerError::UnterminatedString,
+        ),
+    );
+}
+
+#[test]
+fn block_strings() {
+    assert_eq!(
+        tokenize_single(r#""""""""#),
+        Spanning::start_end(
+            &SourcePosition::new(0, 0, 0),
+            &SourcePosition::new(6, 0, 6),
+            Token::Scalar(ScalarToken::String(Block(r#""""""""#))),
+        ),
+    );
+    assert_eq!(
+        tokenize_single(r#""""simple""""#),
+        Spanning::start_end(
+            &SourcePosition::new(0, 0, 0),
+            &SourcePosition::new(12, 0, 12),
+            Token::Scalar(ScalarToken::String(Block(r#""""simple""""#))),
+        ),
+    );
+    assert_eq!(
+        tokenize_single(r#"""" white space """"#),
+        Spanning::start_end(
+            &SourcePosition::new(0, 0, 0),
+            &SourcePosition::new(19, 0, 19),
+            Token::Scalar(ScalarToken::String(Block(r#"""" white space """"#))),
+        ),
+    );
+    assert_eq!(
+        tokenize_single(r#""""contains " quote""""#),
+        Spanning::start_end(
+            &SourcePosition::new(0, 0, 0),
+            &SourcePosition::new(22, 0, 22),
+            Token::Scalar(ScalarToken::String(Block(r#""""contains " quote""""#))),
+        ),
+    );
+    assert_eq!(
+        tokenize_single(r#""""contains \""" triple quote""""#),
+        Spanning::start_end(
+            &SourcePosition::new(0, 0, 0),
+            &SourcePosition::new(32, 0, 32),
+            Token::Scalar(ScalarToken::String(Block(
+                r#""""contains \""" triple quote""""#
+            ))),
+        ),
+    );
+    assert_eq!(
+        tokenize_single(r#""""contains \"" double quote""""#),
+        Spanning::start_end(
+            &SourcePosition::new(0, 0, 0),
+            &SourcePosition::new(31, 0, 31),
+            Token::Scalar(ScalarToken::String(Block(
+                r#""""contains \"" double quote""""#
+            ))),
+        ),
+    );
+    assert_eq!(
+        tokenize_single(r#""""contains \\""" triple quote""""#),
+        Spanning::start_end(
+            &SourcePosition::new(0, 0, 0),
+            &SourcePosition::new(33, 0, 33),
+            Token::Scalar(ScalarToken::String(Block(
+                r#""""contains \\""" triple quote""""#
+            ))),
+        ),
+    );
+    assert_eq!(
+        tokenize_single(r#""""\"""quote" """"#),
+        Spanning::start_end(
+            &SourcePosition::new(0, 0, 0),
+            &SourcePosition::new(17, 0, 17),
+            Token::Scalar(ScalarToken::String(Block(r#""""\"""quote" """"#))),
+        ),
+    );
+    assert_eq!(
+        tokenize_single(r#""""multi\nline""""#),
+        Spanning::start_end(
+            &SourcePosition::new(0, 0, 0),
+            &SourcePosition::new(17, 0, 17),
+            Token::Scalar(ScalarToken::String(Block(r#""""multi\nline""""#))),
+        ),
+    );
+    assert_eq!(
+        tokenize_single(r#""""multi\rline\r\nnormalized""""#),
+        Spanning::start_end(
+            &SourcePosition::new(0, 0, 0),
+            &SourcePosition::new(31, 0, 31),
+            Token::Scalar(ScalarToken::String(Block(
+                r#""""multi\rline\r\nnormalized""""#
+            ))),
+        ),
+    );
+    assert_eq!(
+        tokenize_single(r#""""unescaped \\n\\r\\b\\t\\f\\u1234""""#),
+        Spanning::start_end(
+            &SourcePosition::new(0, 0, 0),
+            &SourcePosition::new(38, 0, 38),
+            Token::Scalar(ScalarToken::String(Block(
+                r#""""unescaped \\n\\r\\b\\t\\f\\u1234""""#
+            ))),
+        ),
+    );
+    assert_eq!(
+        tokenize_single(r#""""unescaped unicode outside BMP \u{1f600}""""#),
+        Spanning::start_end(
+            &SourcePosition::new(0, 0, 0),
+            &SourcePosition::new(45, 0, 45),
+            Token::Scalar(ScalarToken::String(Block(
+                r#""""unescaped unicode outside BMP \u{1f600}""""#,
+            ))),
+        ),
+    );
+    assert_eq!(
+        tokenize_single(r#""""slashes \\\\ \\/""""#),
+        Spanning::start_end(
+            &SourcePosition::new(0, 0, 0),
+            &SourcePosition::new(22, 0, 22),
+            Token::Scalar(ScalarToken::String(Block(r#""""slashes \\\\ \\/""""#))),
+        ),
+    );
+    assert_eq!(
+        tokenize_single(
+            r#""""
+        
+        spans
+          multiple
+            lines
+
+        """"#,
+        ),
+        Spanning::start_end(
+            &SourcePosition::new(0, 0, 0),
+            &SourcePosition::new(76, 6, 11),
+            Token::Scalar(ScalarToken::String(Block(
+                r#""""
+        
+        spans
+          multiple
+            lines
+
+        """"#,
+            ))),
+        ),
+    );
+}
+
+#[test]
+fn block_string_errors() {
+    assert_eq!(
+        tokenize_error(r#""""""#),
+        Spanning::zero_width(
+            &SourcePosition::new(4, 0, 4),
+            LexerError::UnterminatedBlockString,
+        ),
+    );
+    assert_eq!(
+        tokenize_error(r#"""""""#),
+        Spanning::zero_width(
+            &SourcePosition::new(5, 0, 5),
+            LexerError::UnterminatedBlockString,
+        ),
+    );
+    assert_eq!(
+        tokenize_error(r#""""no end quote"#),
+        Spanning::zero_width(
+            &SourcePosition::new(15, 0, 15),
+            LexerError::UnterminatedBlockString,
         ),
     );
 }
