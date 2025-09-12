@@ -1,4 +1,4 @@
-use crate::parser::{Lexer, LexerError, ScalarToken, SourcePosition, Spanning, Token};
+use crate::parser::{Lexer, LexerError, ScalarToken, SourcePosition, Spanning, StringValue, Token};
 
 fn tokenize_to_vec(s: &str) -> Vec<Spanning<Token<'_>>> {
     let mut tokens = Vec::new();
@@ -21,6 +21,7 @@ fn tokenize_to_vec(s: &str) -> Vec<Spanning<Token<'_>>> {
     tokens
 }
 
+#[track_caller]
 fn tokenize_single(s: &str) -> Spanning<Token<'_>> {
     let mut tokens = tokenize_to_vec(s);
 
@@ -151,7 +152,7 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(8, 0, 8),
-            Token::Scalar(ScalarToken::String("simple"))
+            Token::Scalar(ScalarToken::String(StringValue::Quoted("simple")))
         )
     );
 
@@ -160,7 +161,7 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(15, 0, 15),
-            Token::Scalar(ScalarToken::String(" white space "))
+            Token::Scalar(ScalarToken::String(StringValue::Quoted(" white space ")))
         )
     );
 
@@ -169,7 +170,7 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(10, 0, 10),
-            Token::Scalar(ScalarToken::String(r#"quote \""#))
+            Token::Scalar(ScalarToken::String(StringValue::Quoted(r#"quote \""#)))
         )
     );
 
@@ -178,7 +179,9 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(20, 0, 20),
-            Token::Scalar(ScalarToken::String(r"escaped \n\r\b\t\f"))
+            Token::Scalar(ScalarToken::String(StringValue::Quoted(
+                r"escaped \n\r\b\t\f"
+            )))
         )
     );
 
@@ -187,7 +190,7 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(15, 0, 15),
-            Token::Scalar(ScalarToken::String(r"slashes \\ \/"))
+            Token::Scalar(ScalarToken::String(StringValue::Quoted(r"slashes \\ \/")))
         )
     );
 
@@ -196,7 +199,21 @@ fn strings() {
         Spanning::start_end(
             &SourcePosition::new(0, 0, 0),
             &SourcePosition::new(34, 0, 34),
-            Token::Scalar(ScalarToken::String(r"unicode \u1234\u5678\u90AB\uCDEF")),
+            Token::Scalar(ScalarToken::String(StringValue::Quoted(
+                r"unicode \u1234\u5678\u90AB\uCDEF"
+            ))),
+        )
+    );
+}
+
+#[test]
+fn block_strings() {
+    assert_eq!(
+        tokenize_single(r#""""""#),
+        Spanning::start_end(
+            &SourcePosition::new(0, 0, 0),
+            &SourcePosition::new(8, 0, 8),
+            Token::Scalar(ScalarToken::String(StringValue::Block("".into()))),
         )
     );
 }
@@ -665,13 +682,16 @@ fn display() {
         (Token::Scalar(ScalarToken::Int("123")), "123"),
         (Token::Scalar(ScalarToken::Float("4.5")), "4.5"),
         (
-            Token::Scalar(ScalarToken::String("some string")),
+            Token::Scalar(ScalarToken::String(StringValue::Quoted("some string"))),
             "\"some string\"",
         ),
         (
-            Token::Scalar(ScalarToken::String("string with \\ escape and \" quote")),
+            Token::Scalar(ScalarToken::String(StringValue::Quoted(
+                "string with \\ escape and \" quote",
+            ))),
             "\"string with \\\\ escape and \\\" quote\"",
         ),
+        // TODO: tests for block string
         (Token::ExclamationMark, "!"),
         (Token::Dollar, "$"),
         (Token::ParenOpen, "("),

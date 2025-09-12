@@ -1,4 +1,4 @@
-use std::{char, iter::Peekable, str::CharIndices};
+use std::{char, iter::Peekable, ops::Deref, str::CharIndices};
 
 use derive_more::with_trait::{Display, Error};
 
@@ -20,10 +20,38 @@ pub struct Lexer<'a> {
 #[expect(missing_docs, reason = "self-explanatory")]
 #[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
 pub enum ScalarToken<'a> {
-    #[display("\"{}\"", _0.replace('\\', "\\\\").replace('"', "\\\""))]
-    String(&'a str),
+    String(StringValue<'a>),
     Float(&'a str),
     Int(&'a str),
+}
+
+/// Representation of a [String Value].
+///
+/// [String Value]: https://spec.graphql.org/October2021#sec-String-Value
+#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
+pub enum StringValue<'a> {
+    /// [Quoted][0] string representation.
+    ///
+    /// [0]: https://spec.graphql.org/October2021#StringCharacter
+    #[display(r#""{}""#, _0.replace('\\', r"\\").replace('"', r#"\""#))]
+    Quoted(&'a str),
+
+    /// [Block][0] string representation.
+    ///
+    /// [0]: https://spec.graphql.org/October2021#BlockStringCharacter
+    #[display(r#""""{}""""#, _0.replace(r#"""""#, r#"\""""#))]
+    Block(&'a str),
+}
+
+impl Deref for StringValue<'_> {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        match self {
+            Self::Quoted(s) => s,
+            Self::Block(s) => s,
+        }
+    }
 }
 
 /// A single token in the input source
@@ -266,7 +294,9 @@ impl<'a> Lexer<'a> {
                     return Ok(Spanning::start_end(
                         &start_pos,
                         &self.position,
-                        Token::Scalar(ScalarToken::String(&self.source[start_idx + 1..idx])),
+                        Token::Scalar(ScalarToken::String(StringValue::Quoted(
+                            &self.source[start_idx + 1..idx],
+                        ))),
                     ));
                 }
                 '\n' | '\r' => {

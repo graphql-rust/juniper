@@ -68,6 +68,7 @@ type String = std::string::String;
 
 mod impl_string_scalar {
     use super::*;
+    use crate::parser::StringValue;
 
     impl<'s, S> FromScalarValue<'s, S> for String
     where
@@ -81,7 +82,7 @@ mod impl_string_scalar {
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
-        if let ScalarToken::String(value) = value {
+        if let ScalarToken::String(StringValue::Quoted(value)) = value {
             let mut ret = String::with_capacity(value.len());
             let mut char_iter = value.chars();
             while let Some(ch) = char_iter.next() {
@@ -128,6 +129,7 @@ mod impl_string_scalar {
             }
             Ok(ret.into())
         } else {
+            // TODO: Support block string too.
             Err(ParseError::unexpected_token(Token::Scalar(value)))
         }
     }
@@ -571,7 +573,9 @@ mod tests {
 
     #[test]
     fn parse_strings() {
-        fn parse_string(s: &str, expected: &str) {
+        use crate::parser::StringValue::{self, Quoted};
+
+        fn parse_string(s: StringValue<'_>, expected: &str) {
             let s =
                 <String as ParseScalarValue<DefaultScalarValue>>::from_str(ScalarToken::String(s));
             assert!(s.is_ok(), "A parsing error occurred: {s:?}");
@@ -580,13 +584,16 @@ mod tests {
             assert_eq!(s.unwrap(), expected);
         }
 
-        parse_string("simple", "simple");
-        parse_string(" white space ", " white space ");
-        parse_string(r#"quote \""#, "quote \"");
-        parse_string(r"escaped \n\r\b\t\f", "escaped \n\r\u{0008}\t\u{000c}");
-        parse_string(r"slashes \\ \/", "slashes \\ /");
+        parse_string(Quoted("simple"), "simple");
+        parse_string(Quoted(" white space "), " white space ");
+        parse_string(Quoted(r#"quote \""#), "quote \"");
         parse_string(
-            r"unicode \u1234\u5678\u90AB\uCDEF",
+            Quoted(r"escaped \n\r\b\t\f"),
+            "escaped \n\r\u{0008}\t\u{000c}",
+        );
+        parse_string(Quoted(r"slashes \\ \/"), "slashes \\ /");
+        parse_string(
+            Quoted(r"unicode \u1234\u5678\u90AB\uCDEF"),
             "unicode \u{1234}\u{5678}\u{90ab}\u{cdef}",
         );
     }

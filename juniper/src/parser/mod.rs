@@ -13,7 +13,7 @@ mod tests;
 pub use self::document::parse_document_source;
 
 pub use self::{
-    lexer::{Lexer, LexerError, ScalarToken, Token},
+    lexer::{Lexer, LexerError, ScalarToken, StringValue, Token},
     parser::{OptionParseResult, ParseError, ParseResult, Parser, UnlocatedParseResult},
     utils::{SourcePosition, Span, Spanning},
 };

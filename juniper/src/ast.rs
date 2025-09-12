@@ -384,6 +384,7 @@ pub enum OperationType {
 #[expect(missing_docs, reason = "self-explanatory")]
 #[derive(Clone, Debug, PartialEq)]
 pub struct Operation<'a, S> {
+    //pub description: Option<Spanning<&'a str>>,
     pub operation_type: OperationType,
     pub name: Option<Spanning<&'a str>>,
     pub variable_definitions: Option<Spanning<VariableDefinitions<'a, S>>>,
