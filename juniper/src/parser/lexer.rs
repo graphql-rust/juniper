@@ -1,6 +1,7 @@
 use std::{char, iter::Peekable, ops::Deref, str::CharIndices};
 
 use derive_more::with_trait::{Display, Error};
+//use itertools::Itertools as _;
 
 use crate::parser::{SourcePosition, Spanning};
 
@@ -14,36 +15,34 @@ pub struct Lexer<'a> {
     has_reached_eof: bool,
 }
 
-/// A single scalar value literal
+/// Representation of a raw unparsed scalar value literal.
 ///
 /// This is only used for tagging how the lexer has interpreted a value literal
 #[expect(missing_docs, reason = "self-explanatory")]
 #[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
 pub enum ScalarToken<'a> {
-    String(StringValue<'a>),
+    String(StringLiteral<'a>),
     Float(&'a str),
     Int(&'a str),
 }
 
-/// Representation of a [String Value].
+/// Representation of a raw unparsed [String Value] literal (with quotes included).
 ///
 /// [String Value]: https://spec.graphql.org/October2021#sec-String-Value
 #[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
-pub enum StringValue<'a> {
-    /// [Quoted][0] string representation.
+pub enum StringLiteral<'a> {
+    /// [Quoted][0] literal (denoted by single quotes `"`).
     ///
     /// [0]: https://spec.graphql.org/October2021#StringCharacter
-    #[display(r#""{}""#, _0.replace('\\', r"\\").replace('"', r#"\""#))]
     Quoted(&'a str),
 
-    /// [Block][0] string representation.
+    /// [Block][0] literal (denoted by triple quotes `"""`).
     ///
     /// [0]: https://spec.graphql.org/October2021#BlockStringCharacter
-    #[display(r#""""{}""""#, _0.replace(r#"""""#, r#"\""""#))]
     Block(&'a str),
 }
 
-impl Deref for StringValue<'_> {
+impl Deref for StringLiteral<'_> {
     type Target = str;
 
     fn deref(&self) -> &Self::Target {
@@ -114,6 +113,10 @@ pub enum LexerError {
     /// causes this error.
     #[display("Unterminated string literal")]
     UnterminatedString,
+
+    /// An unterminated block string literal was found.
+    #[display("Unterminated block string literal")]
+    UnterminatedBlockString,
 
     /// An unknown character in a string literal was found
     ///
@@ -294,8 +297,8 @@ impl<'a> Lexer<'a> {
                     return Ok(Spanning::start_end(
                         &start_pos,
                         &self.position,
-                        Token::Scalar(ScalarToken::String(StringValue::Quoted(
-                            &self.source[start_idx + 1..idx],
+                        Token::Scalar(ScalarToken::String(StringLiteral::Quoted(
+                            &self.source[start_idx..=idx],
                         ))),
                     ));
                 }
@@ -321,6 +324,77 @@ impl<'a> Lexer<'a> {
             LexerError::UnterminatedString,
         ))
     }
+
+    /*
+    fn scan_block_string(&mut self) -> LexerResult<'a> {
+        let start_pos = self.position;
+        let (start_idx, mut start_ch) = self
+            .next_char()
+            .ok_or_else(|| Spanning::zero_width(&self.position, LexerError::UnexpectedEndOfFile))?;
+        if start_ch != '"' {
+            return Err(Spanning::zero_width(
+                &self.position,
+                LexerError::UnterminatedString,
+            ));
+        }
+        for _ in 0..2 {
+            (_, start_ch) = self.next_char().ok_or_else(|| {
+                Spanning::zero_width(&self.position, LexerError::UnexpectedEndOfFile)
+            })?;
+            if start_ch != '"' {
+                return Err(Spanning::zero_width(
+                    &self.position,
+                    LexerError::UnexpectedCharacter(start_ch),
+                ));
+            }
+        }
+
+        let mut quotes = 0;
+        let mut escaped = false;
+        let mut old_pos = self.position;
+        while let Some((idx, ch)) = self.next_char() {
+            match ch {
+                '\\' => escaped = true,
+
+
+                'b' | 'f' | 'n' | 'r' | 't' | '\\' | '/' | '"' if escaped => {
+                    escaped = false;
+                }
+                'u' if escaped => {
+                    self.scan_escaped_unicode(&old_pos)?;
+                    escaped = false;
+                }
+                c if escaped => {
+                    return Err(Spanning::zero_width(
+                        &old_pos,
+                        LexerError::UnknownEscapeSequence(format!("\\{c}")),
+                    ));
+                }
+
+
+
+                '"' if !escaped => {
+                    return Ok(Spanning::start_end(
+                        &start_pos,
+                        &self.position,
+                        Token::Scalar(ScalarToken::String(StringValue::Quoted(
+                            &self.source[start_idx + 1..idx],
+                        ))),
+                    ));
+                }
+
+                _ => {}
+            }
+            old_pos = self.position;
+        }
+
+        Err(Spanning::zero_width(
+            &self.position,
+            LexerError::UnterminatedBlockString,
+        ))
+    }
+
+     */
 
     fn scan_escaped_unicode(
         &mut self,

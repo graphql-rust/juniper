@@ -85,7 +85,7 @@ pub use crate::{
     },
     introspection::IntrospectionFormat,
     macros::helper::subscription::{ExtractTypeFromStream, IntoFieldResult},
-    parser::{ParseError, ScalarToken, Span, Spanning},
+    parser::{ParseError, ScalarToken, Span, Spanning, StringLiteral},
     schema::{
         meta,
         model::{RootNode, SchemaType},

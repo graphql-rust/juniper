@@ -1,9 +1,9 @@
-use std::fmt;
+use std::{borrow::Cow, fmt};
 
 use compact_str::{CompactString, format_compact};
 use derive_more::with_trait::{Display, Error};
 
-use crate::parser::{Lexer, LexerError, Spanning, Token};
+use crate::parser::{Lexer, LexerError, ScalarToken, Spanning, StringLiteral, Token};
 
 /// Error while parsing a GraphQL query
 #[derive(Clone, Debug, Display, Eq, Error, PartialEq)]
@@ -198,4 +198,129 @@ impl<'a> Parser<'a> {
             _ => Err(self.next_token()?.map(ParseError::unexpected_token)),
         }
     }
+}
+
+impl<'a> StringLiteral<'a> {
+    /// Parses this [`StringLiteral`] returning an unescaped and unquoted string value.
+    ///
+    /// # Errors
+    ///
+    /// If this [`StringLiteral`] is invalid.
+    pub fn parse(self) -> Result<Cow<'a, str>, ParseError> {
+        match self {
+            Self::Quoted(lit) => {
+                if !lit.starts_with('"') {
+                    return Err(ParseError::unexpected_token(Token::Scalar(
+                        ScalarToken::String(self),
+                    )));
+                }
+                if !lit.ends_with('"') {
+                    return Err(ParseError::LexerError(LexerError::UnterminatedString));
+                }
+
+                let unquoted = &lit[1..lit.len() - 1];
+                if !unquoted.contains('\\') {
+                    return Ok(unquoted.into());
+                }
+
+                let mut unescaped = String::with_capacity(unquoted.len());
+                let mut char_iter = unquoted.chars();
+                while let Some(ch) = char_iter.next() {
+                    match ch {
+                        '\\' => match char_iter.next() {
+                            Some('"') => {
+                                unescaped.push('"');
+                            }
+                            Some('/') => {
+                                unescaped.push('/');
+                            }
+                            Some('n') => {
+                                unescaped.push('\n');
+                            }
+                            Some('r') => {
+                                unescaped.push('\r');
+                            }
+                            Some('t') => {
+                                unescaped.push('\t');
+                            }
+                            Some('\\') => {
+                                unescaped.push('\\');
+                            }
+                            Some('f') => {
+                                unescaped.push('\u{000c}');
+                            }
+                            Some('b') => {
+                                unescaped.push('\u{0008}');
+                            }
+                            Some('u') => {
+                                unescaped.push(parse_unicode_codepoint(&mut char_iter)?);
+                            }
+                            Some(s) => {
+                                return Err(ParseError::LexerError(
+                                    LexerError::UnknownEscapeSequence(format!(r"\{s}")),
+                                ));
+                            }
+                            None => {
+                                return Err(ParseError::LexerError(LexerError::UnterminatedString));
+                            }
+                        },
+                        ch => {
+                            unescaped.push(ch);
+                        }
+                    }
+                }
+                Ok(unescaped.into())
+            }
+            Self::Block(_) => todo!(),
+        }
+    }
+}
+
+fn parse_unicode_codepoint<I>(char_iter: &mut I) -> Result<char, ParseError>
+where
+    I: Iterator<Item = char>,
+{
+    let escaped_code_point = char_iter
+        .next()
+        .ok_or_else(|| ParseError::LexerError(LexerError::UnknownEscapeSequence(r"\u".into())))
+        .and_then(|c1| {
+            char_iter
+                .next()
+                .map(|c2| format!("{c1}{c2}"))
+                .ok_or_else(|| {
+                    ParseError::LexerError(LexerError::UnknownEscapeSequence(format!(r"\u{c1}")))
+                })
+        })
+        .and_then(|mut s| {
+            char_iter
+                .next()
+                .ok_or_else(|| {
+                    ParseError::LexerError(LexerError::UnknownEscapeSequence(format!(r"\u{s}")))
+                })
+                .map(|c2| {
+                    s.push(c2);
+                    s
+                })
+        })
+        .and_then(|mut s| {
+            char_iter
+                .next()
+                .ok_or_else(|| {
+                    ParseError::LexerError(LexerError::UnknownEscapeSequence(format!(r"\u{s}")))
+                })
+                .map(|c2| {
+                    s.push(c2);
+                    s
+                })
+        })?;
+    let code_point = u32::from_str_radix(&escaped_code_point, 16).map_err(|_| {
+        ParseError::LexerError(LexerError::UnknownEscapeSequence(format!(
+            r"\u{escaped_code_point}",
+        )))
+    })?;
+    char::from_u32(code_point).ok_or_else(|| {
+        ParseError::LexerError(LexerError::UnknownEscapeSequence(format!(
+            r"\u{escaped_code_point}",
+        )))
+    })
 }
