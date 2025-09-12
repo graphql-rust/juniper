@@ -271,7 +271,66 @@ impl<'a> StringLiteral<'a> {
                 }
                 Ok(unescaped.into())
             }
-            Self::Block(_) => todo!(),
+            Self::Block(lit) => {
+                if !lit.starts_with(r#"""""#) {
+                    return Err(ParseError::unexpected_token(Token::Scalar(
+                        ScalarToken::String(self),
+                    )));
+                }
+                if !lit.ends_with(r#"""""#) {
+                    return Err(ParseError::LexerError(LexerError::UnterminatedBlockString));
+                }
+
+                let unquoted = &lit[3..lit.len() - 3];
+
+                let (mut indent, mut total_lines) = (usize::MAX, 0);
+                let (mut first_text_line, mut last_text_line) = (None, 0);
+                for (n, line) in unquoted.lines().enumerate() {
+                    total_lines += 1;
+
+                    let trimmed = line.trim_start();
+                    if trimmed.is_empty() {
+                        continue;
+                    }
+
+                    _ = first_text_line.get_or_insert(n);
+                    last_text_line = n;
+
+                    if n != 0 {
+                        indent = indent.min(line.len() - trimmed.len());
+                    }
+                }
+
+                let Some(first_text_line) = first_text_line else {
+                    return Ok("".into()); // no text, only whitespaces
+                };
+                if (indent == 0 || total_lines == 1) && !unquoted.contains(r#"\""""#) {
+                    return Ok(unquoted.into()); // nothing to dedent or unescape
+                }
+
+                let mut unescaped = String::with_capacity(unquoted.len());
+                let mut lines = unquoted
+                    .lines()
+                    .enumerate()
+                    .skip(first_text_line)
+                    .take(last_text_line - first_text_line + 1)
+                    .map(|(n, line)| {
+                        if n != 0 && line.len() >= indent {
+                            &line[indent..]
+                        } else {
+                            line
+                        }
+                    })
+                    .map(|x| x.replace(r#"\""""#, r#"""""#));
+                if let Some(line) = lines.next() {
+                    unescaped.push_str(&line);
+                    for line in lines {
+                        unescaped.push('\n');
+                        unescaped.push_str(&line);
+                    }
+                }
+                Ok(unescaped.into())
+            }
         }
     }
 }

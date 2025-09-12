@@ -86,7 +86,6 @@ mod impl_string_scalar {
             // TODO: Allow cheaper from `Cow<'_, str>` conversions for `ScalarValue`.
             Ok(parsed.into_owned().into())
         } else {
-            // TODO: Support block string too.
             Err(ParseError::unexpected_token(Token::Scalar(value)))
         }
     }
@@ -492,6 +491,104 @@ mod tests {
         ] {
             let res = <String as ParseScalarValue<DefaultScalarValue>>::from_str(
                 ScalarToken::String(StringLiteral::Quoted(input)),
+            );
+            assert!(res.is_ok(), "parsing error occurred: {}", res.unwrap_err());
+
+            let s: Option<String> = res.unwrap().try_to().ok();
+            assert!(s.is_some(), "no string returned");
+            assert_eq!(s.unwrap(), expected);
+        }
+    }
+
+    #[test]
+    fn parse_block_strings() {
+        for (input, expected) in [
+            (r#""""""""#, ""),
+            (r#""""simple""""#, "simple"),
+            (r#"""" white space """"#, " white space "),
+            (r#""""contains " quote""""#, r#"contains " quote"#),
+            (
+                r#""""contains \""" triple quote""""#,
+                r#"contains """ triple quote"#,
+            ),
+            (
+                r#""""contains \"" double quote""""#,
+                r#"contains \"" double quote"#,
+            ),
+            (
+                r#""""contains \\""" triple quote""""#,
+                r#"contains \""" triple quote"#,
+            ),
+            (r#""""\"""quote" """"#, r#""""quote" "#),
+            (r#""""multi\nline""""#, r"multi\nline"),
+            (
+                r#""""multi\rline\r\nnormalized""""#,
+                r"multi\rline\r\nnormalized",
+            ),
+            (
+                r#""""unescaped \\n\\r\\b\\t\\f\\u1234""""#,
+                r"unescaped \\n\\r\\b\\t\\f\\u1234",
+            ),
+            (
+                r#""""unescaped unicode outside BMP \u{1f600}""""#,
+                r"unescaped unicode outside BMP \u{1f600}",
+            ),
+            (r#""""slashes \\\\ \\/""""#, r"slashes \\\\ \\/"),
+            (
+                r#""""
+
+        spans
+          multiple
+            lines
+
+        """"#,
+                "spans\n  multiple\n    lines",
+            ),
+            // removes uniform indentation
+            (
+                r#""""
+    Hello,
+      World!
+
+    Yours,
+      GraphQL.""""#,
+                "Hello,\n  World!\n\nYours,\n  GraphQL.",
+            ),
+            // removes empty leading and trailing lines
+            (
+                r#""""
+
+    Hello,
+      World!
+
+    Yours,
+      GraphQL.
+
+        """"#,
+                "Hello,\n  World!\n\nYours,\n  GraphQL.",
+            ),
+            // retains indentation from first line
+            (
+                r#""""    Hello,
+      World!
+
+    Yours,
+      GraphQL.""""#,
+                "    Hello,\n  World!\n\nYours,\n  GraphQL.",
+            ),
+            // does not alter trailing spaces
+            (
+                r#""""
+    Hello,
+      World!
+
+    Yours,
+      GraphQL.   """"#,
+                "Hello,\n  World!\n\nYours,\n  GraphQL.   ",
+            ),
+        ] {
+            let res = <String as ParseScalarValue<DefaultScalarValue>>::from_str(
+                ScalarToken::String(StringLiteral::Block(input)),
             );
             assert!(res.is_ok(), "parsing error occurred: {}", res.unwrap_err());
 
