@@ -34,7 +34,7 @@ This creates a [GraphQL object][0] type called `Person`, with two fields: `name`
 
 ### Documentation
 
-We should take advantage of the fact that [GraphQL] is [self-documenting][5] and add descriptions to the defined [GraphQL object][0] type and its fields. [Juniper] will automatically use associated [Rust doc comments][6] as [GraphQL descriptions][7]:
+We should take advantage of the fact that [GraphQL] is [self-documenting][15] and add descriptions to the defined [GraphQL object][0] type and its fields. [Juniper] will automatically use associated [Rust doc comments][6] as [GraphQL descriptions][7]:
 ```rust
 # extern crate juniper;
 # use juniper::GraphQLObject;
@@ -145,7 +145,7 @@ struct Person {
 #
 # fn main() {}
 ```
-> **NOTE**: Only [GraphQL object][0]/[interface][11] fields and [GraphQL enum][10] values can be [deprecated][9].
+> **NOTE**: Only [GraphQL object][0]/[interface][11]/[input object][8] fields, [arguments][5] and [GraphQL enum][10] values can be [deprecated][9].
 
 
 ### Ignoring
@@ -216,7 +216,7 @@ Because `Person` is a valid [GraphQL] type, we can have a `Vec<Person>` in a [st
 [2]: https://docs.rs/juniper/0.17.0/juniper/derive.GraphQLObject.html
 [3]: https://docs.rs/juniper/0.17.0/juniper/attr.graphql_object.html
 [4]: https://spec.graphql.org/October2021#sec-Non-Null
-[5]: https://spec.graphql.org/October2021#sec-Introspection
+[5]: https://spec.graphql.org/October2021#sec-Language.Arguments
 [6]: https://doc.rust-lang.org/reference/comments.html#doc-comments
 [7]: https://spec.graphql.org/October2021#sec-Descriptions
 [8]: https://spec.graphql.org/October2021#sec-Input-Objects
@@ -226,3 +226,4 @@ Because `Person` is a valid [GraphQL] type, we can have a `Vec<Person>` in a [st
 [12]: https://spec.graphql.org/October2021#sec-List
 [13]: https://doc.rust-lang.org/reference/attributes/diagnostics.html#the-deprecated-attribute
 [14]: https://spec.graphql.org/October2021#sel-EAFdRDHAAEJDAoBxzT
+[15]: https://spec.graphql.org/October2021#sec-Introspection

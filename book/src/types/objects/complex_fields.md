@@ -116,7 +116,7 @@ impl Person {
 
 ### Documentation and deprecation
 
-Similarly, [GraphQL fields][4] may also be [documented][7] and [deprecated][9] via `#[graphql(description = "...")]` and `#[graphql(deprecated = "...")]`/[`#[deprecated]`][13] attributes:
+Similarly, [GraphQL fields][4] (and their [arguments][5]) may also be [documented][7] and [deprecated][9] via `#[graphql(description = "...")]` and `#[graphql(deprecated = "...")]`/[`#[deprecated]`][13] attributes:
 ```rust
 # extern crate juniper;
 # use juniper::graphql_object;
@@ -145,20 +145,28 @@ impl Person {
     /// This doc comment is visible in both Rust API docs and GraphQL schema 
     /// descriptions.
     #[graphql(deprecated = "Just because.")]
-    fn deprecated_graphql() -> bool {
+    fn deprecated_graphql(
+        // Only `Null`able arguments or non-`Null` arguments with default values
+        // can be deprecated.
+        #[graphql(default, deprecated = "No need.")] arg: bool,
+    ) -> bool {
         true
     }
     
     // Standard Rust's `#[deprecated]` attribute works too!
     #[deprecated(note = "Reason is optional, btw!")]
-    fn deprecated_standard() -> bool { // has no description in GraphQL schema
+    fn deprecated_standard( // has no description in GraphQL schema
+        // If no explicit deprecation reason is provided,
+        // then the default "No longer supported" one is used.
+        #[graphql(deprecated)] arg: Option<bool>,
+    ) -> bool {
         false
     }
 }
 #
 # fn main() {}
 ```
-> **NOTE**: Only [GraphQL object][0]/[interface][11] fields and [GraphQL enum][10] values can be [deprecated][9].
+> **NOTE**: Only [GraphQL object][0]/[interface][11]/[input object][8] fields, [arguments][5] and [GraphQL enum][10] values can be [deprecated][9].
 
 
 ### Ignoring
@@ -223,6 +231,7 @@ impl Person {
 [5]: https://spec.graphql.org/October2021#sec-Language.Arguments
 [6]: https://doc.rust-lang.org/reference/items/implementations.html#inherent-implementations
 [7]: https://spec.graphql.org/October2021#sec-Descriptions
+[8]: https://spec.graphql.org/October2021#sec-Input-Objects
 [9]: https://spec.graphql.org/October2021#sec--deprecated
 [10]: https://spec.graphql.org/October2021#sec-Enums
 [11]: https://spec.graphql.org/October2021#sec-Interfaces

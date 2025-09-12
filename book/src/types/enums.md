@@ -75,7 +75,7 @@ enum Episode {
 
 ### Documentation and deprecation
 
-Just like when [defining GraphQL objects](objects/index.md#documentation), the [GraphQL enum][0] type and its values could be [documented][4] and [deprecated][5] via `#[graphql(description = "...")]` and `#[graphql(deprecated = "...")]`/[`#[deprecated]`][13] attributes:
+Just like when [defining GraphQL objects](objects/index.md#documentation), the [GraphQL enum][0] type and its values could be [documented][4] and [deprecated][9] via `#[graphql(description = "...")]` and `#[graphql(deprecated = "...")]`/[`#[deprecated]`][13] attributes:
 ```rust
 # extern crate juniper;
 # use juniper::GraphQLEnum;
@@ -105,7 +105,7 @@ enum StarWarsEpisode {
 #
 # fn main() {}
 ```
-> **NOTE**: Only [GraphQL object][6]/[interface][7] fields and [GraphQL enum][0] values can be [deprecated][5].
+> **NOTE**: Only [GraphQL object][6]/[interface][7]/[input object][8] fields, [arguments][5] and [GraphQL enum][0] values can be [deprecated][9].
 
 
 ### Ignoring
@@ -145,7 +145,9 @@ enum Episode<T> {
 [2]: https://docs.rs/juniper/0.17.0/juniper/derive.GraphQLEnum.html
 [3]: https://doc.rust-lang.org/reference/items/enumerations.html
 [4]: https://spec.graphql.org/October2021#sec-Descriptions
-[5]: https://spec.graphql.org/October2021#sec--deprecated
+[5]: https://spec.graphql.org/October2021#sec-Language.Arguments
 [6]: https://spec.graphql.org/October2021#sec-Objects
 [7]: https://spec.graphql.org/October2021#sec-Interfaces
+[8]: https://spec.graphql.org/October2021#sec-Input-Objects
+[9]: https://spec.graphql.org/October2021#sec--deprecated
 [13]: https://doc.rust-lang.org/reference/attributes/diagnostics.html#the-deprecated-attribute

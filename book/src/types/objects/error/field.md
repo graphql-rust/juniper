@@ -37,11 +37,11 @@ impl Example {
 # fn main() {}
 ```
 
-[`FieldResult<T>`][21] is an alias for [`Result<T, FieldError>`][22], which is the [error type][1] all fallible [fields][6] must return. By using the [`?` operator][14], any type that implements the [`Display` trait][15] (which most of the error types out there do) can be automatically converted into a [`FieldError`][22].
+[`FieldResult<T>`][21] is an alias for [`Result<T, FieldError>`][22], which is the [error type][1] all fallible [fields][6] must return. By using the [`?` operator][14], any type that implements the [`Display` trait][19] (which most of the error types out there do) can be automatically converted into a [`FieldError`][22].
 
 > **TIP**: If a custom conversion into a [`FieldError`][22] is needed (to [fill up `extensions`][2], for example), the [`IntoFieldError` trait][23] should be implemented.
 
-> **NOTE**: [`FieldError`][22]s are [GraphQL field errors][1] and are [not visible][9] in a [GraphQL schema][8] in any way.
+> **NOTE**: [`FieldError`][22]s are [GraphQL field errors][1] and are [not visible][15] in a [GraphQL schema][8] in any way.
 
 
 
@@ -172,12 +172,12 @@ And the specified structured error information will be included into the [error'
 [6]: https://spec.graphql.org/October2021#sec-Language.Fields
 [7]: https://spec.graphql.org/October2021#sec-Response
 [8]: https://graphql.org/learn/schema
-[9]: https://spec.graphql.org/October2021#sec-Introspection
 [11]: https://doc.rust-lang.org/book/ch09-00-error-handling.html
 [12]: https://doc.rust-lang.org/stable/std/result/enum.Result.html
 [13]: https://doc.rust-lang.org/stable/std/macro.panic.html
 [14]: https://doc.rust-lang.org/book/ch09-02-recoverable-errors-with-result.html#a-shortcut-for-propagating-errors-the--operator
-[15]: https://doc.rust-lang.org/stable/std/fmt/trait.Display.html
+[15]: https://spec.graphql.org/October2021#sec-Introspection
+[19]: https://doc.rust-lang.org/stable/std/fmt/trait.Display.html
 [21]: https://docs.rs/juniper/0.17.0/juniper/executor/type.FieldResult.html
 [22]: https://docs.rs/juniper/0.17.0/juniper/executor/struct.FieldError.html
 [23]: https://docs.rs/juniper/0.17.0/juniper/executor/trait.IntoFieldError.html
