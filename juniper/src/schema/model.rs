@@ -440,7 +440,7 @@ impl<S> SchemaType<S> {
         }
     }
 
-    /// A list of possible typeees for a given type.
+    /// A list of possible types for a given type.
     pub fn possible_types(&self, t: &MetaType<S>) -> Vec<&MetaType<S>> {
         match *t {
             MetaType::Union(UnionMeta {
