@@ -6,6 +6,23 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
 
 
 
+## main
+
+### Added
+
+- [September 2025] GraphQL spec: ([#1347])
+    - Arguments and input object fields deprecation: ([#1348], [graphql/graphql-spec#525], [graphql/graphql-spec#805])
+        - Placing `#[graphql(deprecated)]` and `#[deprecated]` attributes on struct fields in `#[derive(GraphQLInputObject)]` macro.
+        - Placing `#[graphql(deprecated)]` attribute on method arguments in `#[graphql_object]` and `#[graphql_interface]` macros.
+
+[#1347]: /../../issues/1347
+[#1348]: /../../pull/1348
+[graphql/graphql-spec#525]: https://github.com/graphql/graphql-spec/pull/525
+[graphql/graphql-spec#805]: https://github.com/graphql/graphql-spec/pull/805
+
+
+
+
 ## [0.17.0] · 2025-09-08
 [0.17.0]: /../../tree/juniper_codegen-v0.17.0/juniper_codegen
 
@@ -110,3 +127,4 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
 [MSRV]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field
 [orphan rules]: https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules
 [Semantic Versioning 2.0.0]: https://semver.org
+[September 2025]: https://spec.graphql.org/September2025
