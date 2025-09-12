@@ -218,20 +218,14 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
         }
     }
 
-    fn fields(
-        &self,
-        #[graphql(default = false)] include_deprecated: Option<bool>,
-    ) -> Option<Vec<&Field<S>>> {
+    fn fields(&self, #[graphql(default)] include_deprecated: bool) -> Option<Vec<&Field<S>>> {
         match self {
             Self::Concrete(t) => match t {
                 MetaType::Interface(InterfaceMeta { fields, .. })
                 | MetaType::Object(ObjectMeta { fields, .. }) => Some(
                     fields
                         .iter()
-                        .filter(|f| {
-                            include_deprecated.unwrap_or_default()
-                                || !f.deprecation_status.is_deprecated()
-                        })
+                        .filter(|f| include_deprecated || !f.deprecation_status.is_deprecated())
                         .filter(|f| !f.name.starts_with("__"))
                         .collect(),
                 ),
@@ -324,19 +318,13 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
         }
     }
 
-    fn enum_values(
-        &self,
-        #[graphql(default = false)] include_deprecated: Option<bool>,
-    ) -> Option<Vec<&EnumValue>> {
+    fn enum_values(&self, #[graphql(default)] include_deprecated: bool) -> Option<Vec<&EnumValue>> {
         match self {
             Self::Concrete(t) => match t {
                 MetaType::Enum(EnumMeta { values, .. }) => Some(
                     values
                         .iter()
-                        .filter(|f| {
-                            include_deprecated.unwrap_or_default()
-                                || !f.deprecation_status.is_deprecated()
-                        })
+                        .filter(|f| include_deprecated || !f.deprecation_status.is_deprecated())
                         .collect(),
                 ),
                 MetaType::InputObject(..)
@@ -354,17 +342,14 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
 
     fn input_fields(
         &self,
-        #[graphql(default = false)] include_deprecated: Option<bool>,
+        #[graphql(default)] include_deprecated: bool,
     ) -> Option<Vec<&Argument<S>>> {
         match self {
             Self::Concrete(t) => match t {
                 MetaType::InputObject(InputObjectMeta { input_fields, .. }) => Some(
                     input_fields
                         .iter()
-                        .filter(|f| {
-                            include_deprecated.unwrap_or_default()
-                                || !f.deprecation_status.is_deprecated()
-                        })
+                        .filter(|f| include_deprecated || !f.deprecation_status.is_deprecated())
                         .collect(),
                 ),
                 MetaType::Enum(..)
@@ -423,15 +408,10 @@ impl<S: ScalarValue> Field<S> {
         self.description.as_ref()
     }
 
-    fn args(
-        &self,
-        #[graphql(default = false)] include_deprecated: Option<bool>,
-    ) -> Vec<&Argument<S>> {
+    fn args(&self, #[graphql(default)] include_deprecated: bool) -> Vec<&Argument<S>> {
         self.arguments.as_ref().map_or_else(Vec::new, |args| {
             args.iter()
-                .filter(|a| {
-                    include_deprecated.unwrap_or_default() || !a.deprecation_status.is_deprecated()
-                })
+                .filter(|a| include_deprecated || !a.deprecation_status.is_deprecated())
                 .collect()
         })
     }
@@ -532,15 +512,10 @@ impl<S: ScalarValue> DirectiveType<S> {
         &self.locations
     }
 
-    fn args(
-        &self,
-        #[graphql(default = false)] include_deprecated: Option<bool>,
-    ) -> Vec<&Argument<S>> {
+    fn args(&self, #[graphql(default)] include_deprecated: bool) -> Vec<&Argument<S>> {
         self.arguments
             .iter()
-            .filter(|a| {
-                include_deprecated.unwrap_or_default() || !a.deprecation_status.is_deprecated()
-            })
+            .filter(|a| include_deprecated || !a.deprecation_status.is_deprecated())
             .collect()
     }
 

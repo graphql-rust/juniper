@@ -745,9 +745,13 @@ pub(crate) fn schema_introspection_result() -> Value {
                       "name": "includeDeprecated",
                       "description": null,
                       "type": {
-                        "kind": "SCALAR",
-                        "name": "Boolean",
-                        "ofType": null
+                        "kind": "NON_NULL",
+                        "name": null,
+                        "ofType": {
+                          "kind": "SCALAR",
+                          "name": "Boolean",
+                          "ofType": null
+                        }
                       },
                       "defaultValue": "false",
                       "isDeprecated": false,
@@ -940,9 +944,13 @@ pub(crate) fn schema_introspection_result() -> Value {
                       "name": "includeDeprecated",
                       "description": null,
                       "type": {
-                        "kind": "SCALAR",
-                        "name": "Boolean",
-                        "ofType": null
+                        "kind": "NON_NULL",
+                        "name": null,
+                        "ofType": {
+                          "kind": "SCALAR",
+                          "name": "Boolean",
+                          "ofType": null
+                        }
                       },
                       "defaultValue": "false",
                       "isDeprecated": false,
@@ -1296,9 +1304,13 @@ pub(crate) fn schema_introspection_result() -> Value {
                       "name": "includeDeprecated",
                       "description": null,
                       "type": {
-                        "kind": "SCALAR",
-                        "name": "Boolean",
-                        "ofType": null
+                        "kind": "NON_NULL",
+                        "name": null,
+                        "ofType": {
+                          "kind": "SCALAR",
+                          "name": "Boolean",
+                          "ofType": null
+                        }
                       },
                       "defaultValue": "false",
                       "isDeprecated": false,
@@ -1369,9 +1381,13 @@ pub(crate) fn schema_introspection_result() -> Value {
                       "name": "includeDeprecated",
                       "description": null,
                       "type": {
-                        "kind": "SCALAR",
-                        "name": "Boolean",
-                        "ofType": null
+                        "kind": "NON_NULL",
+                        "name": null,
+                        "ofType": {
+                          "kind": "SCALAR",
+                          "name": "Boolean",
+                          "ofType": null
+                        }
                       },
                       "defaultValue": "false",
                       "isDeprecated": false,
@@ -1402,9 +1418,13 @@ pub(crate) fn schema_introspection_result() -> Value {
                       "name": "includeDeprecated",
                       "description": null,
                       "type": {
-                        "kind": "SCALAR",
-                        "name": "Boolean",
-                        "ofType": null
+                        "kind": "NON_NULL",
+                        "name": null,
+                        "ofType": {
+                          "kind": "SCALAR",
+                          "name": "Boolean",
+                          "ofType": null
+                        }
                       },
                       "defaultValue": "false",
                       "isDeprecated": false,
@@ -2252,9 +2272,13 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> Value {
                     {
                       "name": "includeDeprecated",
                       "type": {
-                        "kind": "SCALAR",
-                        "name": "Boolean",
-                        "ofType": null
+                        "kind": "NON_NULL",
+                        "name": null,
+                        "ofType": {
+                          "kind": "SCALAR",
+                          "name": "Boolean",
+                          "ofType": null
+                        }
                       },
                       "defaultValue": "false",
                       "isDeprecated": false,
@@ -2434,9 +2458,13 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> Value {
                     {
                       "name": "includeDeprecated",
                       "type": {
-                        "kind": "SCALAR",
-                        "name": "Boolean",
-                        "ofType": null
+                        "kind": "NON_NULL",
+                        "name": null,
+                        "ofType": {
+                          "kind": "SCALAR",
+                          "name": "Boolean",
+                          "ofType": null
+                        }
                       },
                       "defaultValue": "false",
                       "isDeprecated": false,
@@ -2766,9 +2794,13 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> Value {
                     {
                       "name": "includeDeprecated",
                       "type": {
-                        "kind": "SCALAR",
-                        "name": "Boolean",
-                        "ofType": null
+                        "kind": "NON_NULL",
+                        "name": null,
+                        "ofType": {
+                          "kind": "SCALAR",
+                          "name": "Boolean",
+                          "ofType": null
+                        }
                       },
                       "defaultValue": "false",
                       "isDeprecated": false,
@@ -2835,9 +2867,13 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> Value {
                     {
                       "name": "includeDeprecated",
                       "type": {
-                        "kind": "SCALAR",
-                        "name": "Boolean",
-                        "ofType": null
+                        "kind": "NON_NULL",
+                        "name": null,
+                        "ofType": {
+                          "kind": "SCALAR",
+                          "name": "Boolean",
+                          "ofType": null
+                        }
                       },
                       "defaultValue": "false",
                       "isDeprecated": false,
@@ -2866,9 +2902,13 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> Value {
                     {
                       "name": "includeDeprecated",
                       "type": {
-                        "kind": "SCALAR",
-                        "name": "Boolean",
-                        "ofType": null
+                        "kind": "NON_NULL",
+                        "name": null,
+                        "ofType": {
+                          "kind": "SCALAR",
+                          "name": "Boolean",
+                          "ofType": null
+                        }
                       },
                       "defaultValue": "false",
                       "isDeprecated": false,
