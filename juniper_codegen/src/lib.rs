@@ -135,7 +135,7 @@ use self::common::diagnostic::{self, ResultExt as _};
 /// }
 /// ```
 ///
-/// # Custom name and description
+/// # Custom name, description and deprecation
 ///
 /// The name of a [GraphQL input object][0] or its [fields][1] may be overridden
 /// with the `name` attribute's argument. By default, a type name or a struct
@@ -144,6 +144,9 @@ use self::common::diagnostic::{self, ResultExt as _};
 /// The description of a [GraphQL input object][0] or its [fields][1] may be
 /// specified either with the `description`/`desc` attribute's argument, or with
 /// a regular Rust doc comment.
+///
+/// [GraphQL input object fields][1] may be deprecated by specifying the `deprecated` attribute's
+/// argument, or with the regular Rust `#[deprecated]` attribute.
 ///
 /// ```rust
 /// # use juniper::GraphQLInputObject;
@@ -161,7 +164,15 @@ use self::common::diagnostic::{self, ResultExt as _};
 ///     x: f64,
 ///
 ///     #[graphql(name = "y", desc = "Ordinate value")]
+///     // Only `Null`able input fields or non-`Null` input fields with default values
+///     // can be deprecated.
+///     #[graphql(default, deprecated = "Obsolete")]
 ///     y_coord: f64,
+///
+///     // If no explicit deprecation reason is provided,
+///     // then the default "No longer supported" one is used.
+///     #[deprecated]
+///     z: Option<f64>, // has no description in GraphQL schema
 /// }
 /// ```
 ///
