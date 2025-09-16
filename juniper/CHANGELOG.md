@@ -23,13 +23,15 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - [September 2025] GraphQL spec: ([#1347])
     - `__Type.isOneOf` field. ([#1348], [graphql/graphql-spec#825])
     - `SCHEMA`, `OBJECT`, `ARGUMENT_DEFINITION`, `INTERFACE`, `UNION`, `ENUM`, `INPUT_OBJECT` and `INPUT_FIELD_DEFINITION` values to `__DirectiveLocation` enum. ([#1348])
-    - Arguments and input object fields deprecation: ([#1348], [#864], [graphql/graphql-spec#525], [graphql/graphql-spec#805]) 
+    - Arguments and input object fields deprecation: ([#1348], [#864], [graphql/graphql-spec#525], [graphql/graphql-spec#805])
         - Placing `#[graphql(deprecated)]` and `#[deprecated]` attributes on struct fields in `#[derive(GraphQLInputObject)]` macro.
         - Placing `#[graphql(deprecated)]` attribute on method arguments in `#[graphql_object]` and `#[graphql_interface]` macros.
         - Placing `@deprecated` directive on arguments and input object fields.
         - `includeDeprecated` argument to `__Type.inputFields`, `__Field.args` and `__Directive.args` fields.
         - `__InputValue.isDeprecated` and `__InputValue.deprecationReason` fields.
         - `schema::meta::Argument::deprecation_status` field.
+    - Support for variable-length escaped Unicode characters (e.g. `\u{110000}`) in strings. ([#1349], [graphql/graphql-spec#849], [graphql/graphql-spec#687])
+    - Support full Unicode range. ([#1349], [graphql/graphql-spec#849], [graphql/graphql-spec#687])
 - Support for [block strings][0180-1]. ([#1349])
 
 ### Changed
@@ -48,8 +50,10 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1348]: /../../pull/1348
 [#1349]: /../../pull/1349
 [graphql/graphql-spec#525]: https://github.com/graphql/graphql-spec/pull/525
+[graphql/graphql-spec#687]: https://github.com/graphql/graphql-spec/issues/687
 [graphql/graphql-spec#805]: https://github.com/graphql/graphql-spec/pull/805
 [graphql/graphql-spec#825]: https://github.com/graphql/graphql-spec/pull/825
+[graphql/graphql-spec#849]: https://github.com/graphql/graphql-spec/pull/849
 [graphql/graphql-spec#1040]: https://github.com/graphql/graphql-spec/pull/1040
 [graphql/graphql-spec#1142]: https://github.com/graphql/graphql-spec/pull/1142
 [0180-1]: https://spec.graphql.org/September2025/#sec-String-Value.Block-Strings
