@@ -1569,7 +1569,28 @@ mod test {
                 ))),
                 r#""string with \\ escape and \" quote""#,
             ),
-            // TODO: Tests for `Block` string.
+            (
+                Token::Scalar(ScalarToken::String(Block(
+                    r#""""string with \\ escape and \" quote""""#,
+                ))),
+                r#""""string with \\ escape and \" quote""""#,
+            ),
+            (
+                Token::Scalar(ScalarToken::String(Block(
+                    r#""""block string with \\ escape and \" quote""""#,
+                ))),
+                r#""""block string with \\ escape and \" quote""""#,
+            ),
+            (
+                Token::Scalar(ScalarToken::String(Block(
+                    r#""""block
+                    multiline
+                    string"""#,
+                ))),
+                r#""""block
+                    multiline
+                    string"""#,
+            ),
             (Token::ExclamationMark, "!"),
             (Token::Dollar, "$"),
             (Token::ParenOpen, "("),
