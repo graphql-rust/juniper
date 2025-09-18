@@ -295,7 +295,7 @@ struct Person {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
-<p><strong>NOTE</strong>: Only <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a>/<a href="https://spec.graphql.org/October2021#sec-Interfaces">interface</a> fields and <a href="https://spec.graphql.org/October2021#sec-Enums">GraphQL enum</a> values can be <a href="https://spec.graphql.org/October2021#sec--deprecated">deprecated</a>.</p>
+<p><strong>NOTE</strong>: Only <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a>/<a href="https://spec.graphql.org/October2021#sec-Interfaces">interface</a>/<a href="https://spec.graphql.org/October2021#sec-Input-Objects">input object</a> fields, <a href="https://spec.graphql.org/October2021#sec-Language.Arguments">arguments</a> and <a href="https://spec.graphql.org/October2021#sec-Enums">GraphQL enum</a> values can be <a href="https://spec.graphql.org/October2021#sec--deprecated">deprecated</a>.</p>
 </blockquote>
 <h3 id="ignoring"><a class="header" href="#ignoring">Ignoring</a></h3>
 <p>By default, all <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a> fields are included into the generated <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a> type. To prevent inclusion of a specific field annotate it with the <code>#[graphql(ignore)]</code> attribute:</p>

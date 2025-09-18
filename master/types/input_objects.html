@@ -246,8 +246,8 @@ struct Person {
 <blockquote>
 <p><strong>TIP</strong>: Supported policies are: <code>SCREAMING_SNAKE_CASE</code>, <code>camelCase</code> and <code>none</code> (disables any renaming).</p>
 </blockquote>
-<h3 id="documentation"><a class="header" href="#documentation">Documentation</a></h3>
-<p>Similarly, <a href="https://spec.graphql.org/October2021#sec-Descriptions">GraphQL descriptions</a> may be provided by either using <a href="https://doc.rust-lang.org/reference/comments.html#doc-comments">Rust doc comments</a> or with the <code>#[graphql(description = "...")]</code> attribute:</p>
+<h3 id="documentation-and-deprecation"><a class="header" href="#documentation-and-deprecation">Documentation and deprecation</a></h3>
+<p>Similarly, <a href="https://spec.graphql.org/October2021#InputFieldsDefinition">GraphQL input fields</a> may also be <a href="https://spec.graphql.org/October2021#sec-Descriptions">documented</a> and <a href="https://spec.graphql.org/October2021#sec--deprecated">deprecated</a> via <code>#[graphql(description = "...")]</code> and <code>#[graphql(deprecated = "...")]</code>/<a href="https://doc.rust-lang.org/reference/attributes/diagnostics.html#the-deprecated-attribute"><code>#[deprecated]</code></a> attributes:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::GraphQLInputObject;
 </span><span class="boring">
@@ -262,12 +262,20 @@ struct Person {
 
     /// This doc comment is visible in both Rust API docs and GraphQL schema 
     /// descriptions.
+    // Only `Null`able input fields or non-`Null` input fields with default values
+    // can be deprecated.
+    #[graphql(default, deprecated = "Just because.")]
     age: i32,
+
+    // If no explicit deprecation reason is provided,
+    // then the default "No longer supported" one is used.
+    #[deprecated]
+    another: Option&lt;f64&gt;, // has no description in GraphQL schema
 }
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
-<p><strong>NOTE</strong>: As of <a href="https://spec.graphql.org/October2021">October 2021 GraphQL specification</a>, <a href="https://spec.graphql.org/October2021#sec-Input-Objects">GraphQL input object</a>'s fields <strong>cannot be</strong> <a href="https://spec.graphql.org/October2021#sec--deprecated">deprecated</a>.</p>
+<p><strong>NOTE</strong>: Only <a href="https://spec.graphql.org/October2021#sec-Input-Objects">GraphQL input object</a>/<a href="https://spec.graphql.org/October2021#sec-Objects">object</a>/<a href="https://spec.graphql.org/October2021#sec-Interfaces">interface</a> fields, <a href="https://spec.graphql.org/October2021#sec-Language.Arguments">arguments</a> and <a href="https://spec.graphql.org/October2021#sec-Enums">GraphQL enum</a> values can be <a href="https://spec.graphql.org/October2021#sec--deprecated">deprecated</a>.</p>
 </blockquote>
 <h3 id="ignoring"><a class="header" href="#ignoring">Ignoring</a></h3>
 <p>By default, all <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a> fields are included into the generated <a href="https://spec.graphql.org/October2021#sec-Input-Objects">GraphQL input object</a> type. To prevent inclusion of a specific field annotate it with the <code>#[graphql(ignore)]</code> attribute:</p>

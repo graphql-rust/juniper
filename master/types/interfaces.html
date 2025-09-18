@@ -463,7 +463,7 @@ trait Person {
 <p><strong>TIP</strong>: Supported policies are: <code>SCREAMING_SNAKE_CASE</code>, <code>camelCase</code> and <code>none</code> (disables any renaming).</p>
 </blockquote>
 <h3 id="documentation-and-deprecation"><a class="header" href="#documentation-and-deprecation">Documentation and deprecation</a></h3>
-<p>Similarly, <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL fields</a> of <a href="https://spec.graphql.org/October2021#sec-Interfaces">interfaces</a> may also be <a href="https://spec.graphql.org/October2021#sec-Descriptions">documented</a> and <a href="https://spec.graphql.org/October2021#sec--deprecated">deprecated</a> via <code>#[graphql(description = "...")]</code> and <code>#[graphql(deprecated = "...")]</code>/<a href="https://doc.rust-lang.org/reference/attributes/diagnostics.html#the-deprecated-attribute"><code>#[deprecated]</code></a> attributes:</p>
+<p>Similarly, <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL fields</a> (and their <a href="https://spec.graphql.org/October2021#sec-Language.Arguments">arguments</a>) of <a href="https://spec.graphql.org/October2021#sec-Interfaces">interfaces</a> may also be <a href="https://spec.graphql.org/October2021#sec-Descriptions">documented</a> and <a href="https://spec.graphql.org/October2021#sec--deprecated">deprecated</a> via <code>#[graphql(description = "...")]</code> and <code>#[graphql(deprecated = "...")]</code>/<a href="https://doc.rust-lang.org/reference/attributes/diagnostics.html#the-deprecated-attribute"><code>#[deprecated]</code></a> attributes:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::graphql_interface;
 </span><span class="boring">
@@ -485,16 +485,24 @@ trait Person {
     /// This doc comment is visible in both Rust API docs and GraphQL schema 
     /// descriptions.
     #[graphql(deprecated = "Just because.")]
-    fn deprecated_graphql() -&gt; bool;
+    fn deprecated_graphql(
+        // Only `Null`able arguments or non-`Null` arguments with default values
+        // can be deprecated.
+        #[graphql(default, deprecated = "No need.")] arg: bool,
+    ) -&gt; bool;
     
     // Standard Rust's `#[deprecated]` attribute works too!
     #[deprecated(note = "Reason is optional, btw!")]
-    fn deprecated_standard() -&gt; bool; // has no description in GraphQL schema
+    fn deprecated_standard( // has no description in GraphQL schema
+        // If no explicit deprecation reason is provided,
+        // then the default "No longer supported" one is used.
+        #[graphql(deprecated)] arg: Option&lt;bool&gt;,
+    ) -&gt; bool;
 }
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
-<p><strong>NOTE</strong>: Only <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interface</a>/<a href="https://spec.graphql.org/October2021#sec-Objects">object</a> fields and <a href="https://spec.graphql.org/October2021#sec-Enums">GraphQL enum</a> values can be <a href="https://spec.graphql.org/October2021#sec--deprecated">deprecated</a>.</p>
+<p><strong>NOTE</strong>: Only <a href="https://spec.graphql.org/October2021#sec-Interfaces">GraphQL interface</a>/<a href="https://spec.graphql.org/October2021#sec-Objects">object</a>/<a href="https://spec.graphql.org/October2021#sec-Input-Objects">input object</a> fields, <a href="https://spec.graphql.org/October2021#sec-Language.Arguments">arguments</a> and <a href="https://spec.graphql.org/October2021#sec-Enums">GraphQL enum</a> values can be <a href="https://spec.graphql.org/October2021#sec--deprecated">deprecated</a>.</p>
 </blockquote>
 <h3 id="ignoring"><a class="header" href="#ignoring">Ignoring</a></h3>
 <p>By default, all <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a> fields or <a href="https://doc.rust-lang.org/reference/items/traits.html#traits">trait</a> methods are considered as <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL fields</a>. If a helper method is needed, or it should be ignored for some reason, then it should be marked with the <code>#[graphql(ignore)]</code> attribute:</p>
