@@ -1,7 +1,7 @@
 error[E0391]: cycle detected when expanding type alias `Node1Value`
   --> fail/interface/struct/derive_cyclic_impl.rs:4:36
    |
-4  | #[graphql(impl = Node2Value, for = Node2Value)]
+ 4 | #[graphql(impl = Node2Value, for = Node2Value)]
    |                                    ^^^^^^^^^^
    |
 note: ...which requires expanding type alias `Node2Value`...
@@ -16,7 +16,7 @@ note: ...which requires expanding type alias `Node2Value`...
 note: cycle used when computing type of `<impl at $DIR/fail/interface/struct/derive_cyclic_impl.rs:3:10: 3:26>`
   --> fail/interface/struct/derive_cyclic_impl.rs:3:10
    |
-3  | #[derive(GraphQLInterface)]
+ 3 | #[derive(GraphQLInterface)]
    |          ^^^^^^^^^^^^^^^^
    = note: see https://rustc-dev-guide.rust-lang.org/overview.html#queries and https://rustc-dev-guide.rust-lang.org/query.html for more information
    = note: this error originates in the derive macro `GraphQLInterface` (in Nightly builds, run with -Z macro-backtrace for more info)

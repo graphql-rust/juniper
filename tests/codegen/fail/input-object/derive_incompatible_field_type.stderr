@@ -18,9 +18,9 @@ error[E0277]: the trait bound `ObjectA: IsInputType<__S>` is not satisfied
 error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
   --> fail/input-object/derive_incompatible_field_type.rs:10:12
    |
-8  | #[derive(GraphQLInputObject)]
+ 8 | #[derive(GraphQLInputObject)]
    |          ------------------ required by a bound introduced by this call
-9  | struct Object {
+ 9 | struct Object {
 10 |     field: ObjectA,
    |            ^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjectA`
    |

@@ -18,9 +18,9 @@ error[E0277]: the trait bound `ObjA: IsInputType<__S>` is not satisfied
 error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
   --> fail/interface/trait/argument_non_input_type.rs:10:23
    |
-8  | #[graphql_interface]
+ 8 | #[graphql_interface]
    | -------------------- required by a bound introduced by this call
-9  | trait Character {
+ 9 | trait Character {
 10 |     fn id(&self, obj: ObjA) -> &str;
    |                       ^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjA`
    |
