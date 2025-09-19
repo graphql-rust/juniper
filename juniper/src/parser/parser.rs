@@ -1,9 +1,9 @@
-use std::fmt;
+use std::{borrow::Cow, fmt, iter};
 
 use compact_str::{CompactString, format_compact};
 use derive_more::with_trait::{Display, Error};
 
-use crate::parser::{Lexer, LexerError, Spanning, Token};
+use crate::parser::{Lexer, LexerError, ScalarToken, Spanning, StringLiteral, Token};
 
 /// Error while parsing a GraphQL query
 #[derive(Clone, Debug, Display, Eq, Error, PartialEq)]
@@ -198,4 +198,195 @@ impl<'a> Parser<'a> {
             _ => Err(self.next_token()?.map(ParseError::unexpected_token)),
         }
     }
+}
+
+impl<'a> StringLiteral<'a> {
+    /// Parses this [`StringLiteral`] returning an unescaped and unquoted string value.
+    ///
+    /// # Errors
+    ///
+    /// If this [`StringLiteral`] is invalid.
+    pub fn parse(self) -> Result<Cow<'a, str>, ParseError> {
+        match self {
+            Self::Quoted(lit) => {
+                if !lit.starts_with('"') {
+                    return Err(ParseError::unexpected_token(Token::Scalar(
+                        ScalarToken::String(self),
+                    )));
+                }
+                if !lit.ends_with('"') {
+                    return Err(ParseError::LexerError(LexerError::UnterminatedString));
+                }
+
+                let unquoted = &lit[1..lit.len() - 1];
+                if !unquoted.contains('\\') {
+                    return Ok(unquoted.into());
+                }
+
+                let mut unescaped = String::with_capacity(unquoted.len());
+                let mut char_iter = unquoted.chars();
+                while let Some(ch) = char_iter.next() {
+                    match ch {
+                        // StringCharacter ::
+                        //     SourceCharacter but not " or \ or LineTerminator
+                        //     \uEscapedUnicode
+                        //     \EscapedCharacter
+                        '\\' => match char_iter.next() {
+                            // EscapedCharacter :: one of
+                            //     " \ / b f n r t
+                            Some('"') => unescaped.push('"'),
+                            Some('\\') => unescaped.push('\\'),
+                            Some('/') => unescaped.push('/'),
+                            Some('b') => unescaped.push('\u{0008}'),
+                            Some('f') => unescaped.push('\u{000C}'),
+                            Some('n') => unescaped.push('\n'),
+                            Some('r') => unescaped.push('\r'),
+                            Some('t') => unescaped.push('\t'),
+                            // EscapedUnicode ::
+                            //     {HexDigit[list]}
+                            //     HexDigit HexDigit HexDigit HexDigit
+                            Some('u') => {
+                                unescaped.push(parse_unicode_codepoint(&mut char_iter)?);
+                            }
+                            Some(s) => {
+                                return Err(ParseError::LexerError(
+                                    LexerError::UnknownEscapeSequence(format!(r"\{s}")),
+                                ));
+                            }
+                            None => {
+                                return Err(ParseError::LexerError(LexerError::UnterminatedString));
+                            }
+                        },
+                        ch => {
+                            unescaped.push(ch);
+                        }
+                    }
+                }
+                Ok(unescaped.into())
+            }
+            Self::Block(lit) => {
+                if !lit.starts_with(r#"""""#) {
+                    return Err(ParseError::unexpected_token(Token::Scalar(
+                        ScalarToken::String(self),
+                    )));
+                }
+                if !lit.ends_with(r#"""""#) {
+                    return Err(ParseError::LexerError(LexerError::UnterminatedBlockString));
+                }
+
+                let unquoted = &lit[3..lit.len() - 3];
+
+                let (mut indent, mut total_lines) = (usize::MAX, 0);
+                let (mut first_text_line, mut last_text_line) = (None, 0);
+                for (n, line) in unquoted.lines().enumerate() {
+                    total_lines += 1;
+
+                    let trimmed = line.trim_start();
+                    if trimmed.is_empty() {
+                        continue;
+                    }
+
+                    _ = first_text_line.get_or_insert(n);
+                    last_text_line = n;
+
+                    if n != 0 {
+                        indent = indent.min(line.len() - trimmed.len());
+                    }
+                }
+
+                let Some(first_text_line) = first_text_line else {
+                    return Ok("".into()); // no text, only whitespaces
+                };
+                if (indent == 0 || total_lines == 1) && !unquoted.contains(r#"\""""#) {
+                    return Ok(unquoted.into()); // nothing to dedent or unescape
+                }
+
+                let mut unescaped = String::with_capacity(unquoted.len());
+                let mut lines = unquoted
+                    .lines()
+                    .enumerate()
+                    .skip(first_text_line)
+                    .take(last_text_line - first_text_line + 1)
+                    .map(|(n, line)| {
+                        if n != 0 && line.len() >= indent {
+                            &line[indent..]
+                        } else {
+                            line
+                        }
+                    })
+                    .map(|x| x.replace(r#"\""""#, r#"""""#));
+                if let Some(line) = lines.next() {
+                    unescaped.push_str(&line);
+                    for line in lines {
+                        unescaped.push('\n');
+                        unescaped.push_str(&line);
+                    }
+                }
+                Ok(unescaped.into())
+            }
+        }
+    }
+}
+
+/// Parses an [escaped unicode] character.
+///
+/// [escaped unicode]: https://spec.graphql.org/September2025#EscapedUnicode
+// TODO: Add tests
+// TODO: Check surrogate pairs?
+fn parse_unicode_codepoint(char_iter: &mut impl Iterator<Item = char>) -> Result<char, ParseError> {
+    // EscapedUnicode ::
+    //     {HexDigit[list]}
+    //     HexDigit HexDigit HexDigit HexDigit
+
+    let Some(mut curr_ch) = char_iter.next() else {
+        return Err(ParseError::LexerError(LexerError::UnknownEscapeSequence(
+            r"\u".into(),
+        )));
+    };
+    let mut escaped_code_point = String::with_capacity(6); // `\u{10FFFF}` is max code point
+
+    let is_variable_width = curr_ch == '{';
+    if is_variable_width {
+        loop {
+            curr_ch = char_iter.next().ok_or_else(|| {
+                ParseError::LexerError(LexerError::UnknownEscapeSequence(format!(
+                    r"\u{{{escaped_code_point}"
+                )))
+            })?;
+            if curr_ch == '}' {
+                break;
+            } else if !curr_ch.is_alphanumeric() {
+                return Err(ParseError::LexerError(LexerError::UnknownEscapeSequence(
+                    format!(r"\u{{{escaped_code_point}"),
+                )));
+            }
+            escaped_code_point.push(curr_ch);
+        }
+    } else {
+        let mut char_iter = iter::once(curr_ch).chain(char_iter);
+        for _ in 0..4 {
+            curr_ch = char_iter.next().ok_or_else(|| {
+                ParseError::LexerError(LexerError::UnknownEscapeSequence(format!(
+                    r"\u{escaped_code_point}"
+                )))
+            })?;
+            if !curr_ch.is_alphanumeric() {
+                return Err(ParseError::LexerError(LexerError::UnknownEscapeSequence(
+                    format!(r"\u{escaped_code_point}"),
+                )));
+            }
+            escaped_code_point.push(curr_ch);
+        }
+    }
+
+    u32::from_str_radix(&escaped_code_point, 16)
+        .ok()
+        .and_then(char::from_u32)
+        .ok_or_else(|| {
+            ParseError::LexerError(LexerError::UnknownEscapeSequence(if is_variable_width {
+                format!(r"\u{{{escaped_code_point}}}")
+            } else {
+                format!(r"\u{escaped_code_point}")
+            }))
+        })
 }
