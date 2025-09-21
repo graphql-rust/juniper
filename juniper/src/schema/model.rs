@@ -662,15 +662,29 @@ impl<'a, S> TypeType<'a, S> {
 }
 
 #[derive(Debug)]
+/// Represents a GraphQL directive type, including its name, description, locations, arguments, and repeatability.
 pub struct DirectiveType<S> {
+    /// The name of the directive.
     pub name: ArcStr,
+    /// The description of the directive.
     pub description: Option<ArcStr>,
+    /// The locations where the directive can be used.
     pub locations: Vec<DirectiveLocation>,
+    /// The arguments accepted by the directive.
     pub arguments: Vec<Argument<S>>,
+    /// Whether the directive is repeatable.
     pub is_repeatable: bool,
 }
 
 impl<S> DirectiveType<S> {
+    /// Creates a new custom directive type with the given name, locations, arguments, and repeatability.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The name of the directive.
+    /// * `locations` - The locations where the directive can be used.
+    /// * `arguments` - The arguments accepted by the directive.
+    /// * `is_repeatable` - Whether the directive is repeatable.
     pub fn new(
         name: impl Into<ArcStr>,
         locations: &[DirectiveLocation],
@@ -763,51 +777,76 @@ impl<S> DirectiveType<S> {
         )
     }
 
+    /// Sets the description for the directive type and returns the updated instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `description` - The description to set for the directive.
     pub fn description(mut self, description: impl Into<ArcStr>) -> Self {
         self.description = Some(description.into());
         self
     }
 }
 
+/// Represents the valid locations where a GraphQL directive can be used.
 #[derive(Clone, Debug, Display, Eq, GraphQLEnum, PartialEq)]
 #[graphql(name = "__DirectiveLocation", internal)]
 pub enum DirectiveLocation {
+    /// Location adjacent to a query operation.
     #[display("query")]
     Query,
+    /// Location adjacent to a mutation operation.
     #[display("mutation")]
     Mutation,
+    /// Location adjacent to a subscription operation.
     #[display("subscription")]
     Subscription,
+    /// Location adjacent to a field.
     #[display("field")]
     Field,
+    /// Location adjacent to a fragment definition.
     #[display("fragment definition")]
     FragmentDefinition,
+    /// Location adjacent to a fragment spread.
     #[display("fragment spread")]
     FragmentSpread,
+    /// Location adjacent to an inline fragment.
     #[display("inline fragment")]
     InlineFragment,
+    /// Location adjacent to a variable definition.
     #[display("variable definition")]
     VariableDefinition,
+    /// Location adjacent to a schema definition.
     #[display("schema")]
     Schema,
+    /// Location adjacent to a scalar definition.
     #[display("scalar")]
     Scalar,
+    /// Location adjacent to an object type definition.
     #[display("object")]
     Object,
+    /// Location adjacent to a field definition.
     #[display("field definition")]
     FieldDefinition,
+    /// Location adjacent to an argument definition.
     #[display("argument definition")]
     ArgumentDefinition,
+    /// Location adjacent to an interface definition.
     #[display("interface")]
     Interface,
+    /// Location adjacent to a union definition.
     #[display("union")]
     Union,
+    /// Location adjacent to an enum definition.
     #[display("enum")]
     Enum,
+    /// Location adjacent to an enum value definition.
     #[display("enum value")]
     EnumValue,
+    /// Location adjacent to an input object definition.
     #[display("input object")]
     InputObject,
+    /// Location adjacent to an input field definition.
     #[display("input field definition")]
     InputFieldDefinition,
 }

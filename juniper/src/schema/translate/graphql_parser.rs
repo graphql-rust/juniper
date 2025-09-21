@@ -8,25 +8,14 @@ use crate::{
 };
 
 use graphql_parser::{
-    query::{Directive as ExternalDirective, Number as ExternalNumber, Type as ExternalType},
     schema::{
         Definition, DirectiveDefinition as ExternalDirectiveDefinition,
-        DirectiveLocation as ExternalDirectiveLocation, Document, EnumType as ExternalEnum,
-        EnumValue as ExternalEnumValue, Field as ExternalField,
-        InputObjectType as ExternalInputObjectType, InputValue as ExternalInputValue,
-        InterfaceType as ExternalInterfaceType, ObjectType as ExternalObjectType,
-        ScalarType as ExternalScalarType, SchemaDefinition, Text,
-        TypeDefinition as ExternalTypeDefinition, UnionType as ExternalUnionType,
-        Value as ExternalValue,
+        DirectiveLocation as ExternalDirectiveLocation, 
     },
 };
 
 use crate::{
     DirectiveLocation,
-    ast::{InputValue, Type},
-    schema::{
-        meta::{Argument, DeprecationStatus, EnumValue, Field, MetaType},
-    },
     value::ScalarValue,
 };
 
@@ -114,7 +103,7 @@ impl GraphQLParserTranslator {
     fn translate_location<'a, S, T>(location: &DirectiveLocation) -> ExternalDirectiveLocation
     where
         S: ScalarValue,
-        T: Text<'a>,
+        T: schema::Text<'a>,
     {
         match location {
             DirectiveLocation::Query => ExternalDirectiveLocation::Query,
