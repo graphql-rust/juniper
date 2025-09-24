@@ -319,7 +319,30 @@ impl<'a> Lexer<'a> {
                 //     {HexDigit[list]}
                 //     HexDigit HexDigit HexDigit HexDigit
                 'u' if escaped => {
-                    self.scan_escaped_unicode(&old_pos)?;
+                    let mut code_point = self.scan_escaped_unicode(&old_pos)?;
+                    if code_point.is_high_surrogate() {
+                        let new_pos = self.position;
+                        let (Some((_, '\\')), Some((_, 'u'))) =
+                            (self.next_char(), self.next_char())
+                        else {
+                            return Err(Spanning::zero_width(
+                                &old_pos,
+                                LexerError::UnknownEscapeSequence(code_point.to_string()),
+                            ));
+                        };
+                        let trailing_code_point = self.scan_escaped_unicode(&new_pos)?;
+                        if !trailing_code_point.is_low_surrogate() {
+                            return Err(Spanning::zero_width(
+                                &old_pos,
+                                LexerError::UnknownEscapeSequence(code_point.to_string()),
+                            ));
+                        }
+                        code_point =
+                            UnicodeCodePoint::from_surrogate_pair(code_point, trailing_code_point);
+                    }
+                    _ = code_point
+                        .try_into_char()
+                        .map_err(|e| Spanning::zero_width(&old_pos, e))?;
                     escaped = false;
                 }
                 c if escaped => {
@@ -419,7 +442,7 @@ impl<'a> Lexer<'a> {
     fn scan_escaped_unicode(
         &mut self,
         start_pos: &SourcePosition,
-    ) -> Result<(), Spanning<LexerError>> {
+    ) -> Result<UnicodeCodePoint, Spanning<LexerError>> {
         // EscapedUnicode ::
         //     {HexDigit[list]}
         //     HexDigit HexDigit HexDigit HexDigit
@@ -474,6 +497,13 @@ impl<'a> Lexer<'a> {
                     )),
                 ));
             }
+            // `\u{10FFFF}` is max code point
+            if escape.len() - 2 > 6 {
+                return Err(Spanning::zero_width(
+                    start_pos,
+                    LexerError::UnknownEscapeSequence(format!(r"\u{}", &escape[..escape.len()])),
+                ));
+            }
             u32::from_str_radix(&escape[1..escape.len() - 1], 16)
         } else {
             if len != 4 {
@@ -491,16 +521,10 @@ impl<'a> Lexer<'a> {
             )
         })?;
 
-        // TODO: Support surrogate.
-
-        char::from_u32(code_point)
-            .ok_or_else(|| {
-                Spanning::zero_width(
-                    start_pos,
-                    LexerError::UnknownEscapeSequence(format!(r"\u{escape}")),
-                )
-            })
-            .map(drop)
+        Ok(UnicodeCodePoint {
+            code: code_point,
+            is_variable_width,
+        })
     }
 
     fn scan_number(&mut self) -> LexerResult<'a> {
@@ -725,6 +749,8 @@ impl UnicodeCodePoint {
     ///
     /// [0]: https://unicodebook.readthedocs.io/unicode_encodings.html#utf-16-surrogate-pairs
     pub(crate) fn from_surrogate_pair(high: Self, low: Self) -> Self {
+        debug_assert!(high.is_high_surrogate(), "`{high}` is not a high surrogate");
+        debug_assert!(low.is_low_surrogate(), "`{high}` is not a low surrogate");
         Self {
             code: 0x10000 + ((high.code & 0x03FF) << 10) + (low.code & 0x03FF),
             is_variable_width: true,
@@ -968,6 +994,83 @@ mod test {
         );
 
         assert_eq!(
+            tokenize_single(r#""string with unicode escape outside BMP \u{1F600}""#),
+            Spanning::start_end(
+                &SourcePosition::new(0, 0, 0),
+                &SourcePosition::new(50, 0, 50),
+                Token::Scalar(ScalarToken::String(Quoted(
+                    r#""string with unicode escape outside BMP \u{1F600}""#,
+                ))),
+            ),
+        );
+
+        assert_eq!(
+            tokenize_single(r#""string with minimal unicode escape \u{0}""#),
+            Spanning::start_end(
+                &SourcePosition::new(0, 0, 0),
+                &SourcePosition::new(42, 0, 42),
+                Token::Scalar(ScalarToken::String(Quoted(
+                    r#""string with minimal unicode escape \u{0}""#,
+                ))),
+            ),
+        );
+
+        assert_eq!(
+            tokenize_single(r#""string with maximal unicode escape \u{10FFFF}""#),
+            Spanning::start_end(
+                &SourcePosition::new(0, 0, 0),
+                &SourcePosition::new(47, 0, 47),
+                Token::Scalar(ScalarToken::String(Quoted(
+                    r#""string with maximal unicode escape \u{10FFFF}""#,
+                ))),
+            ),
+        );
+
+        assert_eq!(
+            tokenize_single(r#""string with maximal minimal unicode escape \u{000000}""#),
+            Spanning::start_end(
+                &SourcePosition::new(0, 0, 0),
+                &SourcePosition::new(55, 0, 55),
+                Token::Scalar(ScalarToken::String(Quoted(
+                    r#""string with maximal minimal unicode escape \u{000000}""#,
+                ))),
+            ),
+        );
+
+        assert_eq!(
+            tokenize_single(r#""string with unicode surrogate pair escape \uD83D\uDE00""#),
+            Spanning::start_end(
+                &SourcePosition::new(0, 0, 0),
+                &SourcePosition::new(56, 0, 56),
+                Token::Scalar(ScalarToken::String(Quoted(
+                    r#""string with unicode surrogate pair escape \uD83D\uDE00""#,
+                ))),
+            ),
+        );
+
+        assert_eq!(
+            tokenize_single(r#""string with minimal surrogate pair escape \uD800\uDC00""#),
+            Spanning::start_end(
+                &SourcePosition::new(0, 0, 0),
+                &SourcePosition::new(56, 0, 56),
+                Token::Scalar(ScalarToken::String(Quoted(
+                    r#""string with minimal surrogate pair escape \uD800\uDC00""#,
+                ))),
+            ),
+        );
+
+        assert_eq!(
+            tokenize_single(r#""string with maximal surrogate pair escape \uDBFF\uDFFF""#),
+            Spanning::start_end(
+                &SourcePosition::new(0, 0, 0),
+                &SourcePosition::new(56, 0, 56),
+                Token::Scalar(ScalarToken::String(Quoted(
+                    r#""string with maximal surrogate pair escape \uDBFF\uDFFF""#,
+                ))),
+            ),
+        );
+
+        assert_eq!(
             tokenize_single("\"contains unescaped \u{0007} control char\""),
             Spanning::start_end(
                 &SourcePosition::new(0, 0, 0),
@@ -1089,18 +1192,98 @@ mod test {
         );
 
         assert_eq!(
-            tokenize_error(r#""bad \u{DEAD} esc""#),
+            tokenize_error(r#""bad \u{FXXX} esc""#),
             Spanning::zero_width(
                 &SourcePosition::new(6, 0, 6),
+                LexerError::UnknownEscapeSequence(r"\u{FXXX}".into()),
+            ),
+        );
+
+        assert_eq!(
+            tokenize_error(r#""bad \u{FFFF esc""#),
+            Spanning::zero_width(
+                &SourcePosition::new(6, 0, 6),
+                LexerError::UnknownEscapeSequence(r"\u{FFFF".into()),
+            ),
+        );
+
+        assert_eq!(
+            tokenize_error(r#""bad \u{FFF esc""#),
+            Spanning::zero_width(
+                &SourcePosition::new(6, 0, 6),
+                LexerError::UnknownEscapeSequence(r"\u{FFF".into()),
+            ),
+        );
+
+        assert_eq!(
+            tokenize_error(r#""bad \u{FFFF""#),
+            Spanning::zero_width(
+                &SourcePosition::new(6, 0, 6),
+                LexerError::UnknownEscapeSequence(r"\u{FFFF".into()),
+            ),
+        );
+
+        assert_eq!(
+            tokenize_error(r#""bad \u{} esc""#),
+            Spanning::zero_width(
+                &SourcePosition::new(6, 0, 6),
+                LexerError::UnknownEscapeSequence(r"\u{}".into()),
+            ),
+        );
+
+        assert_eq!(
+            tokenize_error(r#""too high \u{110000} esc""#),
+            Spanning::zero_width(
+                &SourcePosition::new(11, 0, 11),
+                LexerError::UnknownEscapeSequence(r"\u{110000}".into()),
+            ),
+        );
+
+        assert_eq!(
+            tokenize_error(r#""way too high \u{12345678} esc""#),
+            Spanning::zero_width(
+                &SourcePosition::new(15, 0, 15),
+                LexerError::UnknownEscapeSequence(r"\u{12345678}".into()),
+            ),
+        );
+
+        assert_eq!(
+            tokenize_error(r#""too long \u{000000000} esc""#),
+            Spanning::zero_width(
+                &SourcePosition::new(11, 0, 11),
+                LexerError::UnknownEscapeSequence(r"\u{000000000}".into()),
+            ),
+        );
+
+        assert_eq!(
+            tokenize_error(r#""bad surrogate \uDEAD esc""#),
+            Spanning::zero_width(
+                &SourcePosition::new(16, 0, 16),
+                LexerError::UnknownEscapeSequence(r"\uDEAD".into()),
+            ),
+        );
+
+        assert_eq!(
+            tokenize_error(r#""bad surrogate \u{DEAD} esc""#),
+            Spanning::zero_width(
+                &SourcePosition::new(16, 0, 16),
                 LexerError::UnknownEscapeSequence(r"\u{DEAD}".into()),
             ),
         );
 
         assert_eq!(
-            tokenize_error(r#""bad \u{DEA esc""#),
+            tokenize_error(r#""bad high surrogate pair \uDEAD\uDEAD esc""#),
             Spanning::zero_width(
-                &SourcePosition::new(6, 0, 6),
-                LexerError::UnknownEscapeSequence(r"\u{DEA".into()),
+                &SourcePosition::new(26, 0, 26),
+                LexerError::UnknownEscapeSequence(r"\uDEAD".into()),
+            ),
+        );
+
+        assert_eq!(
+            tokenize_error(r#""bad low surrogate pair \uD800\uD800 esc""#),
+            Spanning::zero_width(
+                &SourcePosition::new(25, 0, 25),
+                LexerError::UnknownEscapeSequence(r"\uD800".into()),
             ),
         );
 
