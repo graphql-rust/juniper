@@ -1,5 +1,11 @@
-#![cfg_attr(test, expect(dead_code, reason = "GraphQL schema testing"))]
-#![cfg_attr(not(test), expect(missing_docs, reason = "GraphQL schema testing"))]
+#![cfg_attr(
+    not(feature = "expose-test-schema"),
+    expect(dead_code, reason = "GraphQL schema testing")
+)]
+#![cfg_attr(
+    feature = "expose-test-schema",
+    expect(missing_docs, reason = "GraphQL schema testing")
+)]
 
 use std::{collections::HashMap, pin::Pin};
 

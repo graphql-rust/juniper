@@ -13,6 +13,15 @@ extern crate self as juniper;
 mod for_benches_only {
     use bencher as _;
 }
+#[cfg(test)]
+mod for_feature_gated_tests_only {
+    #[cfg(not(feature = "chrono"))]
+    use chrono as _;
+    #[cfg(not(feature = "jiff"))]
+    use jiff as _;
+    #[cfg(not(feature = "anyhow"))]
+    use serial_test as _;
+}
 
 // These are required by the code generated via the `juniper_codegen` macros.
 #[doc(hidden)]

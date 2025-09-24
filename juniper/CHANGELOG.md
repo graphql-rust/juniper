@@ -31,7 +31,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
         - `__InputValue.isDeprecated` and `__InputValue.deprecationReason` fields.
         - `schema::meta::Argument::deprecation_status` field.
     - Support for variable-length escaped Unicode characters (e.g. `\u{110000}`) in strings. ([#1349], [graphql/graphql-spec#849], [graphql/graphql-spec#687])
-    - Support full Unicode range. ([#1349], [graphql/graphql-spec#849], [graphql/graphql-spec#687])
+    - Full Unicode range support. ([#1349], [graphql/graphql-spec#849], [graphql/graphql-spec#687])
 - Support for [block strings][0180-1]. ([#1349])
 
 ### Changed
