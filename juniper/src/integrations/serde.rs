@@ -5,7 +5,6 @@ use serde::{
     Deserialize, Serialize,
     de::{self, Deserializer, IntoDeserializer as _},
     ser::{SerializeMap as _, Serializer},
-    serde_if_integer128,
 };
 
 use crate::{
@@ -105,10 +104,8 @@ impl<'de, S: Deserialize<'de>> Deserialize<'de> for InputValue<S> {
                 S::deserialize(n.into_deserializer()).map(InputValue::Scalar)
             }
 
-            serde_if_integer128! {
-                fn visit_i128<E: de::Error>(self, n: i128) ->  Result<Self::Value, E> {
-                    S::deserialize(n.into_deserializer()).map(InputValue::Scalar)
-                }
+            fn visit_i128<E: de::Error>(self, n: i128) -> Result<Self::Value, E> {
+                S::deserialize(n.into_deserializer()).map(InputValue::Scalar)
             }
 
             fn visit_u8<E: de::Error>(self, n: u8) -> Result<Self::Value, E> {
@@ -127,10 +124,8 @@ impl<'de, S: Deserialize<'de>> Deserialize<'de> for InputValue<S> {
                 S::deserialize(n.into_deserializer()).map(InputValue::Scalar)
             }
 
-            serde_if_integer128! {
-                fn visit_u128<E: de::Error>(self, n: u128) ->  Result<Self::Value, E> {
-                    S::deserialize(n.into_deserializer()).map(InputValue::Scalar)
-                }
+            fn visit_u128<E: de::Error>(self, n: u128) -> Result<Self::Value, E> {
+                S::deserialize(n.into_deserializer()).map(InputValue::Scalar)
             }
 
             fn visit_f32<E: de::Error>(self, n: f32) -> Result<Self::Value, E> {
