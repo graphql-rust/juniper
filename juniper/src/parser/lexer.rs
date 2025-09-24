@@ -1,4 +1,4 @@
-use std::{char, ops::Deref, str::CharIndices};
+use std::{char, fmt, ops::Deref, str::CharIndices};
 
 use derive_more::with_trait::{Display, Error};
 
@@ -491,6 +491,8 @@ impl<'a> Lexer<'a> {
             )
         })?;
 
+        // TODO: Support surrogate.
+
         char::from_u32(code_point)
             .ok_or_else(|| {
                 Spanning::zero_width(
@@ -675,6 +677,70 @@ fn is_name_cont(c: char) -> bool {
 
 fn is_number_start(c: char) -> bool {
     c == '-' || c.is_ascii_digit()
+}
+
+/// Representation of a [Unicode code point].
+///
+/// This is different from a [Unicode scalar value] (aka "character") represented by a [`char`],
+/// because can denote a [surrogate code point].
+///
+/// [surrogate code point]: https://unicode.org/glossary#surrogate_code_point
+/// [Unicode code point]: https://unicode.org/glossary#code_point
+/// [Unicode scalar value]: https://unicode.org/glossary#unicode_scalar_value
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct UnicodeCodePoint {
+    /// Code representing this [`UnicodeCodePoint`].
+    pub(crate) code: u32,
+
+    /// Indicator whether this [`UnicodeCodePoint`] should be [`Display`]ed in variable-width form.
+    pub(crate) is_variable_width: bool,
+}
+
+impl Display for UnicodeCodePoint {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.is_variable_width {
+            write!(f, r"\u{{{:X}}}", self.code)
+        } else {
+            write!(f, r"\u{:04X}", self.code)
+        }
+    }
+}
+
+impl UnicodeCodePoint {
+    /// Indicates whether this [`UnicodeCodePoint`] is a high (leading) [surrogate].
+    ///
+    /// [surrogate]: https://unicode.org/glossary#surrogate_code_point
+    pub(crate) fn is_high_surrogate(self) -> bool {
+        (0xD800..=0xDBFF).contains(&self.code)
+    }
+
+    /// Indicates whether this [`UnicodeCodePoint`] is a low (trailing) [surrogate].
+    ///
+    /// [surrogate]: https://unicode.org/glossary#surrogate_code_point
+    pub(crate) fn is_low_surrogate(self) -> bool {
+        (0xDC00..=0xDFFF).contains(&self.code)
+    }
+
+    /// Joins a [`UnicodeCodePoint`] from the provided [surrogate pair][0].
+    ///
+    /// [0]: https://unicodebook.readthedocs.io/unicode_encodings.html#utf-16-surrogate-pairs
+    pub(crate) fn from_surrogate_pair(high: Self, low: Self) -> Self {
+        Self {
+            code: 0x10000 + ((high.code & 0x03FF) << 10) + (low.code & 0x03FF),
+            is_variable_width: true,
+        }
+    }
+
+    /// Tries to convert this [`UnicodeCodePoint`] into a [`char`].
+    ///
+    /// # Errors
+    ///
+    /// If this [`UnicodeCodePoint`] doesn't represent a [Unicode scalar value].
+    ///
+    /// [Unicode scalar value]: https://unicode.org/glossary#unicode_scalar_value
+    pub(crate) fn try_into_char(self) -> Result<char, LexerError> {
+        char::from_u32(self.code).ok_or_else(|| LexerError::UnknownEscapeSequence(self.to_string()))
+    }
 }
 
 #[cfg(test)]

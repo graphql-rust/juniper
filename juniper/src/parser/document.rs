@@ -25,7 +25,7 @@ where
     S: ScalarValue,
 {
     let mut lexer = Lexer::new(s);
-    let mut parser = Parser::new(&mut lexer).map_err(|s| s.map(ParseError::LexerError))?;
+    let mut parser = Parser::new(&mut lexer).map_err(|s| s.map(Into::into))?;
     parse_document(&mut parser, schema)
 }
 

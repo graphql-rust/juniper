@@ -17,3 +17,4 @@ pub use self::{
     parser::{OptionParseResult, ParseError, ParseResult, Parser, UnlocatedParseResult},
     utils::{SourcePosition, Span, Spanning},
 };
+pub(crate) use self::lexer::UnicodeCodePoint;
