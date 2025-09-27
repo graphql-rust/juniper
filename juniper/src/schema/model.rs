@@ -3,6 +3,7 @@ use std::ptr;
 use arcstr::ArcStr;
 use derive_more::with_trait::Display;
 use fnv::FnvHashMap;
+
 #[cfg(feature = "schema-language")]
 use graphql_parser::schema::Document;
 
@@ -54,7 +55,7 @@ where
     SubscriptionT: GraphQLType<DefaultScalarValue, TypeInfo = ()>,
 {
     /// Constructs a new [`RootNode`] from `query`, `mutation` and `subscription` nodes,
-    /// parametrizing it with a [`DefaultScalarValue`].
+    /// parametrizing it with a [`DefaultScalarValue`] .
     pub fn new(query: QueryT, mutation: MutationT, subscription: SubscriptionT) -> Self {
         Self::new_with_info(query, mutation, subscription, (), (), ())
     }
@@ -68,13 +69,66 @@ where
     SubscriptionT: GraphQLType<S, TypeInfo = ()>,
 {
     /// Constructs a new [`RootNode`] from `query`, `mutation` and `subscription` nodes,
-    /// parametrizing it with the provided [`ScalarValue`].
+    /// parametrized it with the provided [`ScalarValue`].
     pub fn new_with_scalar_value(
         query: QueryT,
         mutation: MutationT,
         subscription: SubscriptionT,
     ) -> Self {
         RootNode::new_with_info(query, mutation, subscription, (), (), ())
+    }
+
+    /// Constructs a new [`RootNode`] from `query`, `mutation` and `subscription` nodes,
+    /// parametrized it with a [`ScalarValue`] and directives
+   /// ```rust 
+    ///  use juniper::{
+    ///      graphql_object, graphql_vars, EmptyMutation, EmptySubscription, GraphQLError,
+    ///      RootNode, DirectiveLocation , DirectiveType
+    ///  };
+    /// 
+    /// struct Query{}
+    /// 
+    /// #[graphql_object]
+    /// impl Query {
+    ///    pub fn hello() -> String {
+    ///       "Hello".to_string()
+    ///    }  
+    /// }
+    /// 
+    /// type Schema = RootNode<'static, Query, EmptyMutation, EmptySubscription>;
+    ///
+    /// let schema = Schema::new_with_directives(Query {}, EmptyMutation::new(), EmptySubscription::new()
+    ///                           ,vec![ DirectiveType::new("my_directive", &[DirectiveLocation::Query] , &[] , false )]);
+    /// 
+    /// let query = "query @my_directive { hello }";
+    ///
+    /// match juniper::execute_sync(query, None, &schema, &graphql_vars! {}, &()) {
+    ///     Err(GraphQLError::ValidationError(errs)) => { panic!("should not give an error"); }
+    ///     res => {}
+    /// }
+    /// 
+    ///  let query = "query @non_existing_directive { hello }";
+    ///
+    /// match juniper::execute_sync(query, None, &schema, &graphql_vars! {}, &()) {
+    ///     Err(GraphQLError::ValidationError(errs)) => {  }
+    ///     res => { panic!("should give an error"); }
+    /// }
+    /// ```
+    pub fn new_with_directives(
+        query: QueryT,
+        mutation: MutationT,
+        subscription: SubscriptionT,
+        custom_directives: Vec<DirectiveType<S>>,
+    ) -> Self {
+        Self::new_with_directives_and_info(
+            query,
+            mutation,
+            subscription,
+            custom_directives,
+            (),
+            (),
+            (),
+        )
     }
 }
 
@@ -104,6 +158,34 @@ where
                 &query_info,
                 &mutation_info,
                 &subscription_info,
+            ),
+            query_info,
+            mutation_info,
+            subscription_info,
+            introspection_disabled: false,
+        }
+    }
+
+    /// Construct a new root node with default meta types
+    /// and with custom directives
+    pub fn new_with_directives_and_info(
+        query_obj: QueryT,
+        mutation_obj: MutationT,
+        subscription_obj: SubscriptionT,
+        custom_directives: Vec<DirectiveType<S>>,
+        query_info: QueryT::TypeInfo,
+        mutation_info: MutationT::TypeInfo,
+        subscription_info: SubscriptionT::TypeInfo,
+    ) -> Self {
+        Self {
+            query_type: query_obj,
+            mutation_type: mutation_obj,
+            subscription_type: subscription_obj,
+            schema: SchemaType::new_with_directives::<QueryT, MutationT, SubscriptionT>(
+                &query_info,
+                &mutation_info,
+                &subscription_info,
+                custom_directives.into(),
             ),
             query_info,
             mutation_info,
@@ -214,7 +296,7 @@ pub struct SchemaType<S> {
     pub(crate) query_type_name: String,
     pub(crate) mutation_type_name: Option<String>,
     pub(crate) subscription_type_name: Option<String>,
-    directives: FnvHashMap<ArcStr, DirectiveType<S>>,
+    pub(crate) directives: FnvHashMap<ArcStr, DirectiveType<S>>,
 }
 
 impl<S> Context for SchemaType<S> {}
@@ -225,6 +307,22 @@ impl<S> SchemaType<S> {
         query_info: &QueryT::TypeInfo,
         mutation_info: &MutationT::TypeInfo,
         subscription_info: &SubscriptionT::TypeInfo,
+    ) -> Self
+    where
+        S: ScalarValue,
+        QueryT: GraphQLType<S>,
+        MutationT: GraphQLType<S>,
+        SubscriptionT: GraphQLType<S>,
+    {
+        Self::new_with_directives::<QueryT,MutationT,SubscriptionT>(query_info, mutation_info, subscription_info, None)
+    }
+
+    /// Create a new schema with custom directives
+    pub fn new_with_directives<QueryT, MutationT, SubscriptionT>(
+        query_info: &QueryT::TypeInfo,
+        mutation_info: &MutationT::TypeInfo,
+        subscription_info: &SubscriptionT::TypeInfo,
+        custom_directives: Option<Vec<DirectiveType<S>>>,
     ) -> Self
     where
         S: ScalarValue,
@@ -258,6 +356,12 @@ impl<S> SchemaType<S> {
         directives.insert(skip_directive.name.clone(), skip_directive);
         directives.insert(deprecated_directive.name.clone(), deprecated_directive);
         directives.insert(specified_by_directive.name.clone(), specified_by_directive);
+
+        if let Some(custom_directives) = custom_directives {
+            for custom_directive in custom_directives.into_iter() {
+                directives.insert(custom_directive.name.clone(), custom_directive);
+            }
+        }
 
         let mut meta_fields = vec![
             registry.field::<SchemaType<S>>(arcstr::literal!("__schema"), &()),
@@ -558,15 +662,29 @@ impl<'a, S> TypeType<'a, S> {
 }
 
 #[derive(Debug)]
+/// Represents a GraphQL directive type, including its name, description, locations, arguments, and repeatability.
 pub struct DirectiveType<S> {
+    /// The name of the directive.
     pub name: ArcStr,
+    /// The description of the directive.
     pub description: Option<ArcStr>,
+    /// The locations where the directive can be used.
     pub locations: Vec<DirectiveLocation>,
+    /// The arguments accepted by the directive.
     pub arguments: Vec<Argument<S>>,
+    /// Whether the directive is repeatable.
     pub is_repeatable: bool,
 }
 
 impl<S> DirectiveType<S> {
+    /// Creates a new custom directive type with the given name, locations, arguments, and repeatability.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The name of the directive.
+    /// * `locations` - The locations where the directive can be used.
+    /// * `arguments` - The arguments accepted by the directive.
+    /// * `is_repeatable` - Whether the directive is repeatable.
     pub fn new(
         name: impl Into<ArcStr>,
         locations: &[DirectiveLocation],
@@ -599,6 +717,15 @@ impl<S> DirectiveType<S> {
             &[registry.arg::<bool>(arcstr::literal!("if"), &())],
             false,
         )
+    }
+
+      /// skip,include,deprecated,specifiedBy are standard graphQL directive
+    /// wiil not show up in generated scheme
+    pub fn is_builtin(&self) -> bool {
+        match self.name.as_str() {
+            "skip" | "include" | "deprecated" | "specifiedBy" => true,
+            _ => false,
+        }
     }
 
     fn new_skip(registry: &mut Registry<S>) -> Self
@@ -650,51 +777,76 @@ impl<S> DirectiveType<S> {
         )
     }
 
+    /// Sets the description for the directive type and returns the updated instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `description` - The description to set for the directive.
     pub fn description(mut self, description: impl Into<ArcStr>) -> Self {
         self.description = Some(description.into());
         self
     }
 }
 
+/// Represents the valid locations where a GraphQL directive can be used.
 #[derive(Clone, Debug, Display, Eq, GraphQLEnum, PartialEq)]
 #[graphql(name = "__DirectiveLocation", internal)]
 pub enum DirectiveLocation {
+    /// Location adjacent to a query operation.
     #[display("query")]
     Query,
+    /// Location adjacent to a mutation operation.
     #[display("mutation")]
     Mutation,
+    /// Location adjacent to a subscription operation.
     #[display("subscription")]
     Subscription,
+    /// Location adjacent to a field.
     #[display("field")]
     Field,
+    /// Location adjacent to a fragment definition.
     #[display("fragment definition")]
     FragmentDefinition,
+    /// Location adjacent to a fragment spread.
     #[display("fragment spread")]
     FragmentSpread,
+    /// Location adjacent to an inline fragment.
     #[display("inline fragment")]
     InlineFragment,
+    /// Location adjacent to a variable definition.
     #[display("variable definition")]
     VariableDefinition,
+    /// Location adjacent to a schema definition.
     #[display("schema")]
     Schema,
+    /// Location adjacent to a scalar definition.
     #[display("scalar")]
     Scalar,
+    /// Location adjacent to an object type definition.
     #[display("object")]
     Object,
+    /// Location adjacent to a field definition.
     #[display("field definition")]
     FieldDefinition,
+    /// Location adjacent to an argument definition.
     #[display("argument definition")]
     ArgumentDefinition,
+    /// Location adjacent to an interface definition.
     #[display("interface")]
     Interface,
+    /// Location adjacent to a union definition.
     #[display("union")]
     Union,
+    /// Location adjacent to an enum definition.
     #[display("enum")]
     Enum,
+    /// Location adjacent to an enum value definition.
     #[display("enum value")]
     EnumValue,
+    /// Location adjacent to an input object definition.
     #[display("input object")]
     InputObject,
+    /// Location adjacent to an input field definition.
     #[display("input field definition")]
     InputFieldDefinition,
 }
