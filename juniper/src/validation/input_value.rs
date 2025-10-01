@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use derive_more::with_trait::Display;
 
 use crate::{
-    ast::{InputValue, Operation, VariableDefinitions},
+    ast::{InputValue, Operation, VariablesDefinition},
     executor::Variables,
     parser::{SourcePosition, Spanning},
     schema::{
@@ -35,7 +35,7 @@ where
 {
     let mut errs = vec![];
 
-    if let Some(ref vars) = operation.item.variable_definitions {
+    if let Some(ref vars) = operation.item.variables_definition {
         validate_var_defs(values, &vars.item, schema, &mut errs);
     }
 
@@ -45,7 +45,7 @@ where
 
 fn validate_var_defs<S>(
     values: &Variables<S>,
-    var_defs: &VariableDefinitions<S>,
+    var_defs: &VariablesDefinition<S>,
     schema: &SchemaType<S>,
     errors: &mut Vec<RuleError>,
 ) where

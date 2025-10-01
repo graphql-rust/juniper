@@ -4,7 +4,7 @@ use crate::{
     ast::{
         Arguments, Definition, Directive, Field, Fragment, FragmentSpread, InlineFragment,
         InputValue, Operation, OperationType, OwnedDocument, Selection, Type, VariableDefinition,
-        VariableDefinitions,
+        VariablesDefinition,
     },
     parser::{
         Lexer, OptionParseResult, ParseError, ParseResult, Parser, ScalarToken, Spanning, Token,
@@ -94,7 +94,7 @@ where
                 operation_type: OperationType::Query,
                 name: None,
                 description: None,
-                variable_definitions: None,
+                variables_definition: None,
                 directives: None,
                 selection_set: selection_set.item,
             },
@@ -114,7 +114,7 @@ where
             Token::Name(_) => Some(parser.expect_name()?),
             _ => None,
         };
-        let variable_definitions = parse_variable_definitions(parser, schema)?;
+        let variables_definition = parse_variables_definition(parser, schema)?;
         let directives = parse_directives(parser, schema)?;
         let selection_set = parse_selection_set(parser, schema, fields)?;
 
@@ -125,7 +125,7 @@ where
                 operation_type: operation_type.item,
                 name,
                 description: None,
-                variable_definitions,
+                variables_definition,
                 directives: directives.map(|s| s.item),
                 selection_set: selection_set.item,
             },
@@ -409,10 +409,10 @@ fn parse_operation_type(parser: &mut Parser<'_>) -> ParseResult<OperationType> {
     }
 }
 
-fn parse_variable_definitions<'a, S>(
+fn parse_variables_definition<'a, S>(
     parser: &mut Parser<'a>,
     schema: &SchemaType<S>,
-) -> OptionParseResult<VariableDefinitions<'a, S>>
+) -> OptionParseResult<VariablesDefinition<'a, S>>
 where
     S: ScalarValue,
 {
@@ -426,7 +426,7 @@ where
                     |p| parse_variable_definition(p, schema),
                     &Token::ParenClose,
                 )?
-                .map(|defs| VariableDefinitions {
+                .map(|defs| VariablesDefinition {
                     items: defs.into_iter().map(|s| s.item).collect(),
                 }),
         ))

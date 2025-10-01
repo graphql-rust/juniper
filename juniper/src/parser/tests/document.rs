@@ -49,7 +49,7 @@ fn simple_ast() {
                 operation_type: ast::OperationType::Query,
                 name: None,
                 description: None,
-                variable_definitions: None,
+                variables_definition: None,
                 directives: None,
                 selection_set: vec![ast::Selection::Field(Spanning::start_end(
                     &SourcePosition::new(18, 1, 16),
@@ -168,10 +168,10 @@ fn description() {
                         &SourcePosition::new(54, 1, 53),
                         Cow::Owned("Some description with \u{90AB} symbol".into()),
                     )),
-                    variable_definitions: Some(Spanning::start_end(
+                    variables_definition: Some(Spanning::start_end(
                         &SourcePosition::new(90, 2, 35),
                         &SourcePosition::new(364, 10, 17),
-                        ast::VariableDefinitions {
+                        ast::VariablesDefinition {
                             items: vec![
                                 (
                                     Spanning::start_end(
