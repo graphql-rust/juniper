@@ -582,7 +582,7 @@ where
 
 #[cfg(test)]
 mod coercion {
-    use crate::{FromInputValue as _, InputValue, IntoFieldError as _, graphql_input_value};
+    use crate::{FromInputValue as _, InputValue, IntoFieldError as _, graphql};
 
     use super::{FromInputValueArrayError, FromInputValueVecError};
 
@@ -590,10 +590,10 @@ mod coercion {
 
     #[test]
     fn option() {
-        let v: V = graphql_input_value!(null);
+        let v: V = graphql::input_value!(null);
         assert_eq!(<Option<i32>>::from_input_value(&v), Ok(None));
 
-        let v: V = graphql_input_value!(1);
+        let v: V = graphql::input_value!(1);
         assert_eq!(<Option<i32>>::from_input_value(&v), Ok(Some(1)));
     }
 
@@ -601,7 +601,7 @@ mod coercion {
     // https://spec.graphql.org/October2021/#sec-List.Input-Coercion
     #[test]
     fn vec() {
-        let v: V = graphql_input_value!(null);
+        let v: V = graphql::input_value!(null);
         assert_eq!(
             <Vec<i32>>::from_input_value(&v),
             Err(FromInputValueVecError::Null),
@@ -621,7 +621,7 @@ mod coercion {
             Ok(None),
         );
 
-        let v: V = graphql_input_value!(1);
+        let v: V = graphql::input_value!(1);
         assert_eq!(<Vec<i32>>::from_input_value(&v), Ok(vec![1]));
         assert_eq!(<Vec<Option<i32>>>::from_input_value(&v), Ok(vec![Some(1)]));
         assert_eq!(<Option<Vec<i32>>>::from_input_value(&v), Ok(Some(vec![1])));
@@ -635,7 +635,7 @@ mod coercion {
             Ok(Some(vec![Some(vec![Some(1)])])),
         );
 
-        let v: V = graphql_input_value!([1, 2, 3]);
+        let v: V = graphql::input_value!([1, 2, 3]);
         assert_eq!(<Vec<i32>>::from_input_value(&v), Ok(vec![1, 2, 3]));
         assert_eq!(
             <Option<Vec<i32>>>::from_input_value(&v),
@@ -664,7 +664,7 @@ mod coercion {
             ])),
         );
 
-        let v: V = graphql_input_value!([1, 2, null]);
+        let v: V = graphql::input_value!([1, 2, null]);
         assert_eq!(
             <Vec<i32>>::from_input_value(&v),
             Err(FromInputValueVecError::Item(
@@ -701,7 +701,7 @@ mod coercion {
     // https://spec.graphql.org/October2021#sec-List.Input-Coercion
     #[test]
     fn array() {
-        let v: V = graphql_input_value!(null);
+        let v: V = graphql::input_value!(null);
         assert_eq!(
             <[i32; 0]>::from_input_value(&v),
             Err(FromInputValueArrayError::Null),
@@ -731,7 +731,7 @@ mod coercion {
             Ok(None),
         );
 
-        let v: V = graphql_input_value!(1);
+        let v: V = graphql::input_value!(1);
         assert_eq!(<[i32; 1]>::from_input_value(&v), Ok([1]));
         assert_eq!(
             <[i32; 0]>::from_input_value(&v),
@@ -752,7 +752,7 @@ mod coercion {
             Ok(Some([Some([Some(1)])])),
         );
 
-        let v: V = graphql_input_value!([1, 2, 3]);
+        let v: V = graphql::input_value!([1, 2, 3]);
         assert_eq!(<[i32; 3]>::from_input_value(&v), Ok([1, 2, 3]));
         assert_eq!(
             <Option<[i32; 3]>>::from_input_value(&v),
@@ -774,7 +774,7 @@ mod coercion {
             Ok(Some([Some([Some(1)]), Some([Some(2)]), Some([Some(3)]),])),
         );
 
-        let v: V = graphql_input_value!([1, 2, null]);
+        let v: V = graphql::input_value!([1, 2, null]);
         assert_eq!(
             <[i32; 3]>::from_input_value(&v),
             Err(FromInputValueArrayError::Item(

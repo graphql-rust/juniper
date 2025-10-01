@@ -67,8 +67,8 @@ mod test {
     use serial_test::serial;
 
     use crate::{
-        EmptyMutation, EmptySubscription, RootNode, execute, graphql_object, graphql_value,
-        graphql_vars, parser::SourcePosition,
+        EmptyMutation, EmptySubscription, RootNode, execute, graphql, graphql_object,
+        parser::SourcePosition,
     };
 
     #[tokio::test]
@@ -99,13 +99,13 @@ mod test {
             EmptySubscription::<()>::new(),
         );
 
-        let res = execute(DOC, None, &schema, &graphql_vars! {}, &()).await;
+        let res = execute(DOC, None, &schema, &graphql::vars! {}, &()).await;
 
         assert!(res.is_ok(), "failed: {:?}", res.unwrap_err());
 
         let (val, errs) = res.unwrap();
 
-        assert_eq!(val, graphql_value!(null));
+        assert_eq!(val, graphql::value!(null));
         assert_eq!(errs.len(), 1, "too many errors: {errs:?}");
 
         let err = errs.first().unwrap();
@@ -117,7 +117,7 @@ mod test {
 
         assert_eq!(err.message(), "errored!");
         #[cfg(not(any(nightly, feature = "backtrace")))]
-        assert_eq!(err.extensions(), &graphql_value!(null));
+        assert_eq!(err.extensions(), &graphql::value!(null));
         #[cfg(any(nightly, feature = "backtrace"))]
         assert_eq!(
             err.extensions()

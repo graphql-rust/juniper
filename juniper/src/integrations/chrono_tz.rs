@@ -59,10 +59,10 @@ mod test {
     mod from_input_value {
         use super::TimeZone;
 
-        use crate::{FromInputValue, InputValue, IntoFieldError, graphql_input_value};
+        use crate::{FromInputValue, InputValue, IntoFieldError, graphql};
 
         fn tz_input_test(raw: &'static str, expected: Result<TimeZone, &str>) {
-            let input: InputValue = graphql_input_value!((raw));
+            let input: InputValue = graphql::input_value!((raw));
             let parsed = FromInputValue::from_input_value(&input);
 
             assert_eq!(

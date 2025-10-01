@@ -3,7 +3,7 @@
 use crate::{
     GraphQLInputObject,
     ast::{FromInputValue, InputValue},
-    graphql_input_value, graphql_object, graphql_value, graphql_vars,
+    graphql, graphql_object,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
     value::{DefaultScalarValue, Object, Value},
@@ -122,7 +122,7 @@ where
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
+    let (result, errs) = crate::execute(doc, None, &schema, &graphql::vars! {}, &())
         .await
         .expect("Execution failed");
 
@@ -169,15 +169,15 @@ async fn default_name_introspection() {
     run_type_info_query(doc, |type_info, fields| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&graphql_value!("DefaultName")),
+            Some(&graphql::value!("DefaultName")),
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&graphql_value!(null)),
+            Some(&graphql::value!(null)),
         );
 
         assert_eq!(fields.len(), 2);
-        assert!(fields.contains(&graphql_value!({
+        assert!(fields.contains(&graphql::value!({
             "name": "fieldOne",
             "description": null,
             "type": {
@@ -185,7 +185,7 @@ async fn default_name_introspection() {
             },
             "defaultValue": null,
         })));
-        assert!(fields.contains(&graphql_value!({
+        assert!(fields.contains(&graphql::value!({
             "name": "fieldTwo",
             "description": null,
             "type": {
@@ -199,7 +199,7 @@ async fn default_name_introspection() {
 
 #[test]
 fn default_name_input_value() {
-    let iv: InputValue = graphql_input_value!({
+    let iv: InputValue = graphql::input_value!({
         "fieldOne": "number one",
         "fieldTwo": "number two",
     });
@@ -236,15 +236,15 @@ async fn no_trailing_comma_introspection() {
     run_type_info_query(doc, |type_info, fields| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&graphql_value!("NoTrailingComma")),
+            Some(&graphql::value!("NoTrailingComma")),
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&graphql_value!(null)),
+            Some(&graphql::value!(null)),
         );
 
         assert_eq!(fields.len(), 2);
-        assert!(fields.contains(&graphql_value!({
+        assert!(fields.contains(&graphql::value!({
             "name": "fieldOne",
             "description": null,
             "type": {
@@ -252,7 +252,7 @@ async fn no_trailing_comma_introspection() {
             },
             "defaultValue": null,
         })));
-        assert!(fields.contains(&graphql_value!({
+        assert!(fields.contains(&graphql::value!({
             "name": "fieldTwo",
             "description": null,
             "type": {
@@ -286,15 +286,15 @@ async fn derive_introspection() {
     run_type_info_query(doc, |type_info, fields| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&graphql_value!("Derive")),
+            Some(&graphql::value!("Derive")),
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&graphql_value!(null)),
+            Some(&graphql::value!(null)),
         );
 
         assert_eq!(fields.len(), 1);
-        assert!(fields.contains(&graphql_value!({
+        assert!(fields.contains(&graphql::value!({
             "name": "fieldOne",
             "description": null,
             "type": {
@@ -341,15 +341,15 @@ async fn named_introspection() {
     run_type_info_query(doc, |type_info, fields| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&graphql_value!("ANamedInputObject"))
+            Some(&graphql::value!("ANamedInputObject"))
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&graphql_value!(null))
+            Some(&graphql::value!(null))
         );
 
         assert_eq!(fields.len(), 1);
-        assert!(fields.contains(&graphql_value!({
+        assert!(fields.contains(&graphql::value!({
             "name": "fieldOne",
             "description": null,
             "type": {
@@ -383,15 +383,15 @@ async fn description_introspection() {
     run_type_info_query(doc, |type_info, fields| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&graphql_value!("Description")),
+            Some(&graphql::value!("Description")),
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&graphql_value!("Description for the input object")),
+            Some(&graphql::value!("Description for the input object")),
         );
 
         assert_eq!(fields.len(), 1);
-        assert!(fields.contains(&graphql_value!({
+        assert!(fields.contains(&graphql::value!({
             "name": "fieldOne",
             "description": null,
             "type": {
@@ -425,15 +425,15 @@ async fn field_description_introspection() {
     run_type_info_query(doc, |type_info, fields| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&graphql_value!("FieldDescription")),
+            Some(&graphql::value!("FieldDescription")),
         );
         assert_eq!(
             type_info.get_field_value("description"),
-            Some(&graphql_value!(null)),
+            Some(&graphql::value!(null)),
         );
 
         assert_eq!(fields.len(), 2);
-        assert!(fields.contains(&graphql_value!({
+        assert!(fields.contains(&graphql::value!({
             "name": "fieldOne",
             "description": "The first field",
             "type": {
@@ -441,7 +441,7 @@ async fn field_description_introspection() {
             },
             "defaultValue": null,
         })));
-        assert!(fields.contains(&graphql_value!({
+        assert!(fields.contains(&graphql::value!({
             "name": "fieldTwo",
             "description": "The second field",
             "type": {
@@ -474,16 +474,16 @@ async fn field_with_defaults_introspection() {
     run_type_info_query(doc, |type_info, fields| {
         assert_eq!(
             type_info.get_field_value("name"),
-            Some(&graphql_value!("FieldWithDefaults")),
+            Some(&graphql::value!("FieldWithDefaults")),
         );
 
         assert_eq!(fields.len(), 2);
-        assert!(fields.contains(&graphql_value!({
+        assert!(fields.contains(&graphql::value!({
             "name": "fieldOne",
             "type": {"name": null, "ofType": {"name": "Int"}},
             "defaultValue": "123",
         })));
-        assert!(fields.contains(&graphql_value!({
+        assert!(fields.contains(&graphql::value!({
             "name": "fieldTwo",
             "type": {"name": null, "ofType": {"name": "Int"}},
             "defaultValue": "456",

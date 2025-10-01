@@ -6,7 +6,7 @@ mod input_object;
 use self::input_object::{NamedPublic, NamedPublicWithDescription};
 
 use crate::{
-    GraphQLEnum, GraphQLScalar, graphql_interface, graphql_object, graphql_value, graphql_vars,
+    GraphQLEnum, GraphQLScalar, graphql, graphql_interface, graphql_object,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
 };
@@ -65,7 +65,7 @@ async fn test_execution() {
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
+    let (result, errs) = crate::execute(doc, None, &schema, &graphql::vars! {}, &())
         .await
         .expect("Execution failed");
 
@@ -75,7 +75,7 @@ async fn test_execution() {
 
     assert_eq!(
         result,
-        graphql_value!({
+        graphql::value!({
             "sampleEnum": "ONE",
             "first": 123,
             "second": 30,
@@ -110,7 +110,7 @@ async fn enum_introspection() {
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
+    let (result, errs) = crate::execute(doc, None, &schema, &graphql::vars! {}, &())
         .await
         .expect("Execution failed");
 
@@ -128,31 +128,31 @@ async fn enum_introspection() {
 
     assert_eq!(
         type_info.get_field_value("name"),
-        Some(&graphql_value!("SampleEnum")),
+        Some(&graphql::value!("SampleEnum")),
     );
     assert_eq!(
         type_info.get_field_value("kind"),
-        Some(&graphql_value!("ENUM")),
+        Some(&graphql::value!("ENUM")),
     );
     assert_eq!(
         type_info.get_field_value("description"),
-        Some(&graphql_value!(null)),
+        Some(&graphql::value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("interfaces"),
-        Some(&graphql_value!(null)),
+        Some(&graphql::value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("possibleTypes"),
-        Some(&graphql_value!(null)),
+        Some(&graphql::value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("inputFields"),
-        Some(&graphql_value!(null)),
+        Some(&graphql::value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("ofType"),
-        Some(&graphql_value!(null))
+        Some(&graphql::value!(null))
     );
 
     let values = type_info
@@ -163,14 +163,14 @@ async fn enum_introspection() {
 
     assert_eq!(values.len(), 2);
 
-    assert!(values.contains(&graphql_value!({
+    assert!(values.contains(&graphql::value!({
         "name": "ONE",
         "description": null,
         "isDeprecated": false,
         "deprecationReason": null,
     })));
 
-    assert!(values.contains(&graphql_value!({
+    assert!(values.contains(&graphql::value!({
         "name": "TWO",
         "description": null,
         "isDeprecated": false,
@@ -219,7 +219,7 @@ async fn interface_introspection() {
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
+    let (result, errs) = crate::execute(doc, None, &schema, &graphql::vars! {}, &())
         .await
         .expect("Execution failed");
 
@@ -237,31 +237,31 @@ async fn interface_introspection() {
 
     assert_eq!(
         type_info.get_field_value("name"),
-        Some(&graphql_value!("SampleInterface")),
+        Some(&graphql::value!("SampleInterface")),
     );
     assert_eq!(
         type_info.get_field_value("kind"),
-        Some(&graphql_value!("INTERFACE")),
+        Some(&graphql::value!("INTERFACE")),
     );
     assert_eq!(
         type_info.get_field_value("description"),
-        Some(&graphql_value!("A sample interface")),
+        Some(&graphql::value!("A sample interface")),
     );
     assert_eq!(
         type_info.get_field_value("interfaces"),
-        Some(&graphql_value!([])),
+        Some(&graphql::value!([])),
     );
     assert_eq!(
         type_info.get_field_value("enumValues"),
-        Some(&graphql_value!(null)),
+        Some(&graphql::value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("inputFields"),
-        Some(&graphql_value!(null)),
+        Some(&graphql::value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("ofType"),
-        Some(&graphql_value!(null))
+        Some(&graphql::value!(null))
     );
 
     let possible_types = type_info
@@ -272,7 +272,7 @@ async fn interface_introspection() {
 
     assert_eq!(possible_types.len(), 1);
 
-    assert!(possible_types.contains(&graphql_value!({"name": "Root"})));
+    assert!(possible_types.contains(&graphql::value!({"name": "Root"})));
 
     let fields = type_info
         .get_field_value("fields")
@@ -282,7 +282,7 @@ async fn interface_introspection() {
 
     assert_eq!(fields.len(), 1);
 
-    assert!(fields.contains(&graphql_value!({
+    assert!(fields.contains(&graphql::value!({
         "name": "sampleEnum",
         "description": "A sample field in the interface",
         "args": [],
@@ -351,7 +351,7 @@ async fn object_introspection() {
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
+    let (result, errs) = crate::execute(doc, None, &schema, &graphql::vars! {}, &())
         .await
         .expect("Execution failed");
 
@@ -369,35 +369,35 @@ async fn object_introspection() {
 
     assert_eq!(
         type_info.get_field_value("name"),
-        Some(&graphql_value!("Root")),
+        Some(&graphql::value!("Root")),
     );
     assert_eq!(
         type_info.get_field_value("kind"),
-        Some(&graphql_value!("OBJECT")),
+        Some(&graphql::value!("OBJECT")),
     );
     assert_eq!(
         type_info.get_field_value("description"),
-        Some(&graphql_value!("The root query object in the schema")),
+        Some(&graphql::value!("The root query object in the schema")),
     );
     assert_eq!(
         type_info.get_field_value("interfaces"),
-        Some(&graphql_value!([{"name": "SampleInterface"}])),
+        Some(&graphql::value!([{"name": "SampleInterface"}])),
     );
     assert_eq!(
         type_info.get_field_value("enumValues"),
-        Some(&graphql_value!(null)),
+        Some(&graphql::value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("inputFields"),
-        Some(&graphql_value!(null)),
+        Some(&graphql::value!(null)),
     );
     assert_eq!(
         type_info.get_field_value("ofType"),
-        Some(&graphql_value!(null))
+        Some(&graphql::value!(null))
     );
     assert_eq!(
         type_info.get_field_value("possibleTypes"),
-        Some(&graphql_value!(null)),
+        Some(&graphql::value!(null)),
     );
 
     let fields = type_info
@@ -410,7 +410,7 @@ async fn object_introspection() {
 
     println!("Fields: {fields:#?}");
 
-    assert!(fields.contains(&graphql_value!({
+    assert!(fields.contains(&graphql::value!({
         "name": "sampleEnum",
         "description": null,
         "args": [],
@@ -426,7 +426,7 @@ async fn object_introspection() {
         "deprecationReason": null,
     })));
 
-    assert!(fields.contains(&graphql_value!({
+    assert!(fields.contains(&graphql::value!({
         "name": "sampleScalar",
         "description": "A sample scalar field on the object",
         "args": [{
@@ -493,7 +493,7 @@ async fn scalar_introspection() {
         EmptySubscription::<()>::new(),
     );
 
-    let (result, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
+    let (result, errs) = crate::execute(doc, None, &schema, &graphql::vars! {}, &())
         .await
         .expect("Execution failed");
 
@@ -509,7 +509,7 @@ async fn scalar_introspection() {
 
     assert_eq!(
         type_info,
-        &graphql_value!({
+        &graphql::value!({
             "name": "SampleScalar",
             "kind": "SCALAR",
             "description": null,

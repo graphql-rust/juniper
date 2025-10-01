@@ -4,7 +4,7 @@ use futures::{StreamExt as _, stream};
 
 use crate::{
     Context, DefaultScalarValue, EmptyMutation, ExecutionError, FieldError, GraphQLObject, Object,
-    RootNode, Value, graphql_object, graphql_subscription, graphql_value, http::GraphQLRequest,
+    RootNode, Value, graphql, graphql_object, graphql_subscription, http::GraphQLRequest,
 };
 
 #[derive(Debug, Clone)]
@@ -56,7 +56,7 @@ impl MySubscription {
     async fn error_human() -> Result<HumanStream, FieldError> {
         Err(FieldError::new(
             "handler error",
-            graphql_value!("more details"),
+            graphql::value!("more details"),
         ))
     }
 
@@ -162,8 +162,8 @@ fn returns_requested_object() {
         std::iter::from_fn(move || {
             iterator_count += 1;
             match iterator_count {
-                1 => Some(("id", graphql_value!("stream id"))),
-                2 => Some(("name", graphql_value!("stream name"))),
+                1 => Some(("id", graphql::value!("stream id"))),
+                2 => Some(("name", graphql::value!("stream name"))),
                 _ => None,
             }
         }),
@@ -191,7 +191,7 @@ fn returns_error() {
     let expected_error = ExecutionError::new(
         crate::parser::SourcePosition::new(23, 1, 8),
         &["errorHuman"],
-        FieldError::new("handler error", graphql_value!("more details")),
+        FieldError::new("handler error", graphql::value!("more details")),
     );
 
     assert_eq!(returned_errors, vec![expected_error]);
@@ -213,7 +213,7 @@ fn can_access_context() {
         move || {
             iterator_count += 1;
             match iterator_count {
-                1 => Some(("id", graphql_value!("2"))),
+                1 => Some(("id", graphql::value!("2"))),
                 _ => None,
             }
         },
@@ -241,7 +241,7 @@ fn resolves_typed_inline_fragments() {
         move || {
             iterator_count += 1;
             match iterator_count {
-                1 => Some(("id", graphql_value!("stream id"))),
+                1 => Some(("id", graphql::value!("stream id"))),
                 _ => None,
             }
         },
@@ -269,7 +269,7 @@ fn resolves_nontyped_inline_fragments() {
         move || {
             iterator_count += 1;
             match iterator_count {
-                1 => Some(("id", graphql_value!("stream id"))),
+                1 => Some(("id", graphql::value!("stream id"))),
                 _ => None,
             }
         },
@@ -296,8 +296,8 @@ fn can_access_arguments() {
         move || {
             iterator_count += 1;
             match iterator_count {
-                1 => Some(("id", graphql_value!("123"))),
-                2 => Some(("name", graphql_value!("args name"))),
+                1 => Some(("id", graphql::value!("123"))),
+                2 => Some(("name", graphql::value!("args name"))),
                 _ => None,
             }
         },
@@ -324,8 +324,8 @@ fn type_alias() {
         move || {
             iterator_count += 1;
             match iterator_count {
-                1 => Some(("id", graphql_value!("stream id"))),
-                2 => Some(("name", graphql_value!("stream name"))),
+                1 => Some(("id", graphql::value!("stream id"))),
+                2 => Some(("name", graphql::value!("stream name"))),
                 _ => None,
             }
         },

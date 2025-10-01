@@ -89,12 +89,12 @@ mod date_time {
 mod test {
     use bson::oid::ObjectId;
 
-    use crate::{FromInputValue, InputValue, graphql_input_value};
+    use crate::{FromInputValue, InputValue, graphql};
 
     #[test]
     fn objectid_from_input() {
         let raw = "53e37d08776f724e42000000";
-        let input: InputValue = graphql_input_value!((raw));
+        let input: InputValue = graphql::input_value!((raw));
 
         let parsed: ObjectId = FromInputValue::from_input_value(&input).unwrap();
         let id = ObjectId::parse_str(raw).unwrap();
@@ -105,7 +105,7 @@ mod test {
 
 #[cfg(test)]
 mod date_time_test {
-    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql};
 
     use super::DateTime;
 
@@ -181,7 +181,7 @@ mod date_time_test {
                     .unwrap(),
             ),
         ] {
-            let input: InputValue = graphql_input_value!((raw));
+            let input: InputValue = graphql::input_value!((raw));
             let parsed = DateTime::from_input_value(&input);
 
             assert!(
@@ -196,28 +196,28 @@ mod date_time_test {
     #[test]
     fn fails_on_invalid_input() {
         for input in [
-            graphql_input_value!("12"),
-            graphql_input_value!("12:"),
-            graphql_input_value!("56:34:22"),
-            graphql_input_value!("56:34:22.000"),
-            graphql_input_value!("1996-12-1914:23:43"),
-            graphql_input_value!("1996-12-19T14:23:43"),
-            graphql_input_value!("1996-12-19T14:23:43ZZ"),
-            graphql_input_value!("1996-12-19T14:23:43.543"),
-            graphql_input_value!("1996-12-19T14:23"),
-            graphql_input_value!("1996-12-19T14:23:1"),
-            graphql_input_value!("1996-12-19T14:23:"),
-            graphql_input_value!("1996-12-19T23:78:43Z"),
-            graphql_input_value!("1996-12-19T23:18:99Z"),
-            graphql_input_value!("1996-12-19T24:00:00Z"),
-            graphql_input_value!("1996-12-19T99:02:13Z"),
-            graphql_input_value!("1996-12-19T99:02:13Z"),
-            graphql_input_value!("1996-12-19T12:02:13+4444444"),
-            graphql_input_value!("i'm not even a datetime"),
-            graphql_input_value!(2.32),
-            graphql_input_value!(1),
-            graphql_input_value!(null),
-            graphql_input_value!(false),
+            graphql::input_value!("12"),
+            graphql::input_value!("12:"),
+            graphql::input_value!("56:34:22"),
+            graphql::input_value!("56:34:22.000"),
+            graphql::input_value!("1996-12-1914:23:43"),
+            graphql::input_value!("1996-12-19T14:23:43"),
+            graphql::input_value!("1996-12-19T14:23:43ZZ"),
+            graphql::input_value!("1996-12-19T14:23:43.543"),
+            graphql::input_value!("1996-12-19T14:23"),
+            graphql::input_value!("1996-12-19T14:23:1"),
+            graphql::input_value!("1996-12-19T14:23:"),
+            graphql::input_value!("1996-12-19T23:78:43Z"),
+            graphql::input_value!("1996-12-19T23:18:99Z"),
+            graphql::input_value!("1996-12-19T24:00:00Z"),
+            graphql::input_value!("1996-12-19T99:02:13Z"),
+            graphql::input_value!("1996-12-19T99:02:13Z"),
+            graphql::input_value!("1996-12-19T12:02:13+4444444"),
+            graphql::input_value!("i'm not even a datetime"),
+            graphql::input_value!(2.32),
+            graphql::input_value!(1),
+            graphql::input_value!(null),
+            graphql::input_value!(false),
         ] {
             let input: InputValue = input;
             let parsed = DateTime::from_input_value(&input);
@@ -237,7 +237,7 @@ mod date_time_test {
                     .hour(12)
                     .build()
                     .unwrap(),
-                graphql_input_value!("1996-12-19T12:00:00Z"),
+                graphql::input_value!("1996-12-19T12:00:00Z"),
             ),
             (
                 DateTime::builder()
@@ -250,7 +250,7 @@ mod date_time_test {
                     .millisecond(1)
                     .build()
                     .unwrap(),
-                graphql_input_value!("1564-01-30T05:03:03.001Z"),
+                graphql::input_value!("1564-01-30T05:03:03.001Z"),
             ),
         ] {
             let actual: InputValue = val.to_input_value();

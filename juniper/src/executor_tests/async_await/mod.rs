@@ -1,6 +1,5 @@
 use crate::{
-    EmptyMutation, EmptySubscription, GraphQLEnum, RootNode, Value, graphql_object, graphql_value,
-    graphql_vars,
+    EmptyMutation, EmptySubscription, GraphQLEnum, RootNode, Value, graphql, graphql_object,
 };
 
 #[derive(GraphQLEnum)]
@@ -86,7 +85,7 @@ async fn async_simple() {
         }
     "#;
 
-    let (res, errs) = crate::execute(doc, None, &schema, &graphql_vars! {}, &())
+    let (res, errs) = crate::execute(doc, None, &schema, &graphql::vars! {}, &())
         .await
         .unwrap();
 
@@ -97,7 +96,7 @@ async fn async_simple() {
 
     assert_eq!(
         value,
-        graphql_value!({
+        graphql::value!({
             "delayed": true,
             "fieldAsyncPlain": "field_async_plain",
             "fieldSync": "field_sync",

@@ -477,7 +477,7 @@ mod utc_offset {
 
 #[cfg(test)]
 mod local_date_test {
-    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql};
 
     use super::LocalDate;
 
@@ -487,7 +487,7 @@ mod local_date_test {
             ("1996-12-19", LocalDate::constant(1996, 12, 19)),
             ("1564-01-30", LocalDate::constant(1564, 01, 30)),
         ] {
-            let input: InputValue = graphql_input_value!((raw));
+            let input: InputValue = graphql::input_value!((raw));
             let parsed = LocalDate::from_input_value(&input);
 
             assert!(
@@ -502,18 +502,18 @@ mod local_date_test {
     #[test]
     fn fails_on_invalid_input() {
         for input in [
-            graphql_input_value!("1996-13-19"),
-            graphql_input_value!("1564-01-61"),
-            graphql_input_value!("2021-11-31"),
-            graphql_input_value!("11-31"),
-            graphql_input_value!("2021-11"),
-            graphql_input_value!("2021"),
-            graphql_input_value!("31"),
-            graphql_input_value!("i'm not even a date"),
-            graphql_input_value!(2.32),
-            graphql_input_value!(1),
-            graphql_input_value!(null),
-            graphql_input_value!(false),
+            graphql::input_value!("1996-13-19"),
+            graphql::input_value!("1564-01-61"),
+            graphql::input_value!("2021-11-31"),
+            graphql::input_value!("11-31"),
+            graphql::input_value!("2021-11"),
+            graphql::input_value!("2021"),
+            graphql::input_value!("31"),
+            graphql::input_value!("i'm not even a date"),
+            graphql::input_value!(2.32),
+            graphql::input_value!(1),
+            graphql::input_value!(null),
+            graphql::input_value!(false),
         ] {
             let input: InputValue = input;
             let parsed = LocalDate::from_input_value(&input);
@@ -527,15 +527,15 @@ mod local_date_test {
         for (val, expected) in [
             (
                 LocalDate::constant(1996, 12, 19),
-                graphql_input_value!("1996-12-19"),
+                graphql::input_value!("1996-12-19"),
             ),
             (
                 LocalDate::constant(1564, 01, 30),
-                graphql_input_value!("1564-01-30"),
+                graphql::input_value!("1564-01-30"),
             ),
             (
                 LocalDate::constant(2020, 01, 01),
-                graphql_input_value!("2020-01-01"),
+                graphql::input_value!("2020-01-01"),
             ),
         ] {
             let actual: InputValue = val.to_input_value();
@@ -547,7 +547,7 @@ mod local_date_test {
 
 #[cfg(test)]
 mod local_time_test {
-    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql};
 
     use super::LocalTime;
 
@@ -561,7 +561,7 @@ mod local_time_test {
             ("14:00:00.000", LocalTime::constant(14, 00, 00, 000_000_000)),
             ("14:23:43.345", LocalTime::constant(14, 23, 43, 345_000_000)),
         ] {
-            let input: InputValue = graphql_input_value!((raw));
+            let input: InputValue = graphql::input_value!((raw));
             let parsed = LocalTime::from_input_value(&input);
 
             assert!(
@@ -576,22 +576,22 @@ mod local_time_test {
     #[test]
     fn fails_on_invalid_input() {
         for input in [
-            graphql_input_value!("12"),
-            graphql_input_value!("12:"),
-            graphql_input_value!("56:34:22"),
-            graphql_input_value!("23:78:43"),
-            graphql_input_value!("23:78:"),
-            graphql_input_value!("23:18:99"),
-            graphql_input_value!("23:18:22."),
-            graphql_input_value!("22.03"),
-            graphql_input_value!("24:00"),
-            graphql_input_value!("24:00:00"),
-            graphql_input_value!("24:00:00.000"),
-            graphql_input_value!("i'm not even a time"),
-            graphql_input_value!(2.32),
-            graphql_input_value!(1),
-            graphql_input_value!(null),
-            graphql_input_value!(false),
+            graphql::input_value!("12"),
+            graphql::input_value!("12:"),
+            graphql::input_value!("56:34:22"),
+            graphql::input_value!("23:78:43"),
+            graphql::input_value!("23:78:"),
+            graphql::input_value!("23:18:99"),
+            graphql::input_value!("23:18:22."),
+            graphql::input_value!("22.03"),
+            graphql::input_value!("24:00"),
+            graphql::input_value!("24:00:00"),
+            graphql::input_value!("24:00:00.000"),
+            graphql::input_value!("i'm not even a time"),
+            graphql::input_value!(2.32),
+            graphql::input_value!(1),
+            graphql::input_value!(null),
+            graphql::input_value!(false),
         ] {
             let input: InputValue = input;
             let parsed = LocalTime::from_input_value(&input);
@@ -605,19 +605,19 @@ mod local_time_test {
         for (val, expected) in [
             (
                 LocalTime::constant(1, 2, 3, 4_005_000),
-                graphql_input_value!("01:02:03.004"),
+                graphql::input_value!("01:02:03.004"),
             ),
             (
                 LocalTime::constant(0, 0, 0, 0),
-                graphql_input_value!("00:00:00"),
+                graphql::input_value!("00:00:00"),
             ),
             (
                 LocalTime::constant(12, 0, 0, 0),
-                graphql_input_value!("12:00:00"),
+                graphql::input_value!("12:00:00"),
             ),
             (
                 LocalTime::constant(1, 2, 3, 0),
-                graphql_input_value!("01:02:03"),
+                graphql::input_value!("01:02:03"),
             ),
         ] {
             let actual: InputValue = val.to_input_value();
@@ -629,7 +629,7 @@ mod local_time_test {
 
 #[cfg(test)]
 mod local_date_time_test {
-    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql};
 
     use super::LocalDateTime;
 
@@ -645,7 +645,7 @@ mod local_date_time_test {
                 LocalDateTime::constant(1564, 1, 30, 14, 00, 00, 0),
             ),
         ] {
-            let input: InputValue = graphql_input_value!((raw));
+            let input: InputValue = graphql::input_value!((raw));
             let parsed = LocalDateTime::from_input_value(&input);
 
             assert!(
@@ -660,26 +660,26 @@ mod local_date_time_test {
     #[test]
     fn fails_on_invalid_input() {
         for input in [
-            graphql_input_value!("12"),
-            graphql_input_value!("12:"),
-            graphql_input_value!("56:34:22"),
-            graphql_input_value!("56:34:22.000"),
-            graphql_input_value!("1996-12-1914:23:43"),
-            graphql_input_value!("1996-12-19 14:23:43"),
-            graphql_input_value!("1996-12-19Q14:23:43"),
-            graphql_input_value!("1996-12-19T14:23:43Z"),
-            graphql_input_value!("1996-12-19T14:23:43.543"),
-            graphql_input_value!("1996-12-19T14:23"),
-            graphql_input_value!("1996-12-19T14:23:"),
-            graphql_input_value!("1996-12-19T23:78:43"),
-            graphql_input_value!("1996-12-19T23:18:99"),
-            graphql_input_value!("1996-12-19T24:00:00"),
-            graphql_input_value!("1996-12-19T99:02:13"),
-            graphql_input_value!("i'm not even a datetime"),
-            graphql_input_value!(2.32),
-            graphql_input_value!(1),
-            graphql_input_value!(null),
-            graphql_input_value!(false),
+            graphql::input_value!("12"),
+            graphql::input_value!("12:"),
+            graphql::input_value!("56:34:22"),
+            graphql::input_value!("56:34:22.000"),
+            graphql::input_value!("1996-12-1914:23:43"),
+            graphql::input_value!("1996-12-19 14:23:43"),
+            graphql::input_value!("1996-12-19Q14:23:43"),
+            graphql::input_value!("1996-12-19T14:23:43Z"),
+            graphql::input_value!("1996-12-19T14:23:43.543"),
+            graphql::input_value!("1996-12-19T14:23"),
+            graphql::input_value!("1996-12-19T14:23:"),
+            graphql::input_value!("1996-12-19T23:78:43"),
+            graphql::input_value!("1996-12-19T23:18:99"),
+            graphql::input_value!("1996-12-19T24:00:00"),
+            graphql::input_value!("1996-12-19T99:02:13"),
+            graphql::input_value!("i'm not even a datetime"),
+            graphql::input_value!(2.32),
+            graphql::input_value!(1),
+            graphql::input_value!(null),
+            graphql::input_value!(false),
         ] {
             let input: InputValue = input;
             let parsed = LocalDateTime::from_input_value(&input);
@@ -693,11 +693,11 @@ mod local_date_time_test {
         for (val, expected) in [
             (
                 LocalDateTime::constant(1996, 12, 19, 0, 0, 0, 0),
-                graphql_input_value!("1996-12-19T00:00:00"),
+                graphql::input_value!("1996-12-19T00:00:00"),
             ),
             (
                 LocalDateTime::constant(1564, 1, 30, 14, 0, 0, 0),
-                graphql_input_value!("1564-01-30T14:00:00"),
+                graphql::input_value!("1564-01-30T14:00:00"),
             ),
         ] {
             let actual: InputValue = val.to_input_value();
@@ -711,7 +711,7 @@ mod local_date_time_test {
 mod date_time_test {
     use jiff::{civil, tz::TimeZone};
 
-    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql};
 
     use super::DateTime;
 
@@ -761,7 +761,7 @@ mod date_time_test {
                     .timestamp(),
             ),
         ] {
-            let input: InputValue = graphql_input_value!((raw));
+            let input: InputValue = graphql::input_value!((raw));
             let parsed = DateTime::from_input_value(&input);
 
             assert!(
@@ -776,30 +776,30 @@ mod date_time_test {
     #[test]
     fn fails_on_invalid_input() {
         for input in [
-            graphql_input_value!("12"),
-            graphql_input_value!("12:"),
-            graphql_input_value!("56:34:22"),
-            graphql_input_value!("56:34:22.000"),
-            graphql_input_value!("1996-12-1914:23:43"),
-            graphql_input_value!("1996-12-19 14:23:43"),
-            graphql_input_value!("1996-12-19Q14:23:43Z"),
-            graphql_input_value!("1996-12-19T14:23:43"),
-            graphql_input_value!("1996-12-19T14:23:43ZZ"),
-            graphql_input_value!("1996-12-19T14:23:43.543"),
-            graphql_input_value!("1996-12-19T14:23"),
-            graphql_input_value!("1996-12-19T14:23:1"),
-            graphql_input_value!("1996-12-19T14:23:"),
-            graphql_input_value!("1996-12-19T23:78:43Z"),
-            graphql_input_value!("1996-12-19T23:18:99Z"),
-            graphql_input_value!("1996-12-19T24:00:00Z"),
-            graphql_input_value!("1996-12-19T99:02:13Z"),
-            graphql_input_value!("1996-12-19T99:02:13Z"),
-            graphql_input_value!("1996-12-19T12:02:13+4444444"),
-            graphql_input_value!("i'm not even a datetime"),
-            graphql_input_value!(2.32),
-            graphql_input_value!(1),
-            graphql_input_value!(null),
-            graphql_input_value!(false),
+            graphql::input_value!("12"),
+            graphql::input_value!("12:"),
+            graphql::input_value!("56:34:22"),
+            graphql::input_value!("56:34:22.000"),
+            graphql::input_value!("1996-12-1914:23:43"),
+            graphql::input_value!("1996-12-19 14:23:43"),
+            graphql::input_value!("1996-12-19Q14:23:43Z"),
+            graphql::input_value!("1996-12-19T14:23:43"),
+            graphql::input_value!("1996-12-19T14:23:43ZZ"),
+            graphql::input_value!("1996-12-19T14:23:43.543"),
+            graphql::input_value!("1996-12-19T14:23"),
+            graphql::input_value!("1996-12-19T14:23:1"),
+            graphql::input_value!("1996-12-19T14:23:"),
+            graphql::input_value!("1996-12-19T23:78:43Z"),
+            graphql::input_value!("1996-12-19T23:18:99Z"),
+            graphql::input_value!("1996-12-19T24:00:00Z"),
+            graphql::input_value!("1996-12-19T99:02:13Z"),
+            graphql::input_value!("1996-12-19T99:02:13Z"),
+            graphql::input_value!("1996-12-19T12:02:13+4444444"),
+            graphql::input_value!("i'm not even a datetime"),
+            graphql::input_value!(2.32),
+            graphql::input_value!(1),
+            graphql::input_value!(null),
+            graphql::input_value!(false),
         ] {
             let input: InputValue = input;
             let parsed = DateTime::from_input_value(&input);
@@ -816,14 +816,14 @@ mod date_time_test {
                     .to_zoned(TimeZone::UTC)
                     .unwrap()
                     .timestamp(),
-                graphql_input_value!("1996-12-19T00:00:00Z"),
+                graphql::input_value!("1996-12-19T00:00:00Z"),
             ),
             (
                 civil::DateTime::constant(1564, 1, 30, 5, 0, 0, 123_000_000)
                     .to_zoned(TimeZone::UTC)
                     .unwrap()
                     .timestamp(),
-                graphql_input_value!("1564-01-30T05:00:00.123Z"),
+                graphql::input_value!("1564-01-30T05:00:00.123Z"),
             ),
         ] {
             let actual: InputValue = val.to_input_value();
@@ -837,7 +837,7 @@ mod date_time_test {
 mod zoned_date_time_test {
     use jiff::{civil, tz, tz::TimeZone};
 
-    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql};
 
     use super::ZonedDateTime;
 
@@ -905,7 +905,7 @@ mod zoned_date_time_test {
                     .unwrap(),
             ),
         ] {
-            let input: InputValue = graphql_input_value!((raw));
+            let input: InputValue = graphql::input_value!((raw));
             let parsed = ZonedDateTime::from_input_value(&input);
 
             assert!(
@@ -920,32 +920,32 @@ mod zoned_date_time_test {
     #[test]
     fn fails_on_invalid_input() {
         for input in [
-            graphql_input_value!("12"),
-            graphql_input_value!("12:"),
-            graphql_input_value!("56:34:22"),
-            graphql_input_value!("56:34:22.000"),
-            graphql_input_value!("1996-12-1914:23:43"),
-            graphql_input_value!("1996-12-19Q14:23:43Z"),
-            graphql_input_value!("1996-12-19T14:23:43"),
-            graphql_input_value!("1996-12-19T14:23:43ZZ"),
-            graphql_input_value!("1996-12-19T14:23:43.543"),
-            graphql_input_value!("1996-12-19T14:23"),
-            graphql_input_value!("1996-12-19T14:23:1"),
-            graphql_input_value!("1996-12-19T14:23:"),
-            graphql_input_value!("1996-12-19T23:78:43Z"),
-            graphql_input_value!("1996-12-19T23:18:99Z"),
-            graphql_input_value!("1996-12-19T24:00:00Z"),
-            graphql_input_value!("1996-12-19T99:02:13Z"),
-            graphql_input_value!("1996-12-19T99:02:13Z"),
-            graphql_input_value!("1996-12-19T12:02:13+4444444"),
-            graphql_input_value!("i'm not even a datetime"),
-            graphql_input_value!("2014-11-28T21:00:09Z"),
-            graphql_input_value!("2014-11-28T21:00:09+09:00"),
-            graphql_input_value!("2014-11-28T21:00:09+09:00[InvTZ]"),
-            graphql_input_value!(2.32),
-            graphql_input_value!(1),
-            graphql_input_value!(null),
-            graphql_input_value!(false),
+            graphql::input_value!("12"),
+            graphql::input_value!("12:"),
+            graphql::input_value!("56:34:22"),
+            graphql::input_value!("56:34:22.000"),
+            graphql::input_value!("1996-12-1914:23:43"),
+            graphql::input_value!("1996-12-19Q14:23:43Z"),
+            graphql::input_value!("1996-12-19T14:23:43"),
+            graphql::input_value!("1996-12-19T14:23:43ZZ"),
+            graphql::input_value!("1996-12-19T14:23:43.543"),
+            graphql::input_value!("1996-12-19T14:23"),
+            graphql::input_value!("1996-12-19T14:23:1"),
+            graphql::input_value!("1996-12-19T14:23:"),
+            graphql::input_value!("1996-12-19T23:78:43Z"),
+            graphql::input_value!("1996-12-19T23:18:99Z"),
+            graphql::input_value!("1996-12-19T24:00:00Z"),
+            graphql::input_value!("1996-12-19T99:02:13Z"),
+            graphql::input_value!("1996-12-19T99:02:13Z"),
+            graphql::input_value!("1996-12-19T12:02:13+4444444"),
+            graphql::input_value!("i'm not even a datetime"),
+            graphql::input_value!("2014-11-28T21:00:09Z"),
+            graphql::input_value!("2014-11-28T21:00:09+09:00"),
+            graphql::input_value!("2014-11-28T21:00:09+09:00[InvTZ]"),
+            graphql::input_value!(2.32),
+            graphql::input_value!(1),
+            graphql::input_value!(null),
+            graphql::input_value!(false),
         ] {
             let input: InputValue = input;
             let parsed = ZonedDateTime::from_input_value(&input);
@@ -961,55 +961,55 @@ mod zoned_date_time_test {
                 civil::DateTime::constant(1996, 12, 19, 0, 0, 0, 0)
                     .to_zoned(TimeZone::get("America/New_York").unwrap())
                     .unwrap(),
-                graphql_input_value!("1996-12-19T00:00:00-05:00[America/New_York]"),
+                graphql::input_value!("1996-12-19T00:00:00-05:00[America/New_York]"),
             ),
             (
                 civil::DateTime::constant(1964, 7, 30, 5, 0, 0, 123_000_000)
                     .to_zoned(TimeZone::get("America/New_York").unwrap())
                     .unwrap(),
-                graphql_input_value!("1964-07-30T05:00:00.123-04:00[America/New_York]"),
+                graphql::input_value!("1964-07-30T05:00:00.123-04:00[America/New_York]"),
             ),
             (
                 civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
                     .to_zoned(TimeZone::get("GMT+0").unwrap())
                     .unwrap(),
-                graphql_input_value!("2014-11-28T21:00:09+00:00[GMT+0]"),
+                graphql::input_value!("2014-11-28T21:00:09+00:00[GMT+0]"),
             ),
             (
                 civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
                     .to_zoned(TimeZone::get("Etc/GMT+3").unwrap())
                     .unwrap(),
-                graphql_input_value!("2014-11-28T21:00:09-03:00[Etc/GMT+3]"),
+                graphql::input_value!("2014-11-28T21:00:09-03:00[Etc/GMT+3]"),
             ),
             (
                 civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
                     .to_zoned(TimeZone::get("UTC").unwrap())
                     .unwrap(),
-                graphql_input_value!("2014-11-28T21:00:09+00:00[UTC]"),
+                graphql::input_value!("2014-11-28T21:00:09+00:00[UTC]"),
             ),
             (
                 civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
                     .to_zoned(TimeZone::UTC)
                     .unwrap(),
-                graphql_input_value!("2014-11-28T21:00:09+00:00[UTC]"),
+                graphql::input_value!("2014-11-28T21:00:09+00:00[UTC]"),
             ),
             (
                 civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
                     .to_zoned(TimeZone::fixed(tz::offset(0)))
                     .unwrap(),
-                graphql_input_value!("2014-11-28T21:00:09+00:00[UTC]"),
+                graphql::input_value!("2014-11-28T21:00:09+00:00[UTC]"),
             ),
             (
                 civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
                     .to_zoned(TimeZone::fixed(tz::offset(2)))
                     .unwrap(),
-                graphql_input_value!("2014-11-28T21:00:09+02:00[+02:00]"),
+                graphql::input_value!("2014-11-28T21:00:09+02:00[+02:00]"),
             ),
             (
                 civil::DateTime::constant(2014, 11, 28, 21, 0, 9, 0)
                     .to_zoned(TimeZone::fixed(tz::offset(-11)))
                     .unwrap(),
-                graphql_input_value!("2014-11-28T21:00:09-11:00[-11:00]"),
+                graphql::input_value!("2014-11-28T21:00:09-11:00[-11:00]"),
             ),
         ] {
             let actual: InputValue = val.to_input_value();
@@ -1023,7 +1023,7 @@ mod zoned_date_time_test {
 mod duration_test {
     use jiff::ToSpan as _;
 
-    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql};
 
     use super::Duration;
 
@@ -1055,7 +1055,7 @@ mod duration_test {
                     .milliseconds(100),
             ),
         ] {
-            let input: InputValue = graphql_input_value!((raw));
+            let input: InputValue = graphql::input_value!((raw));
             let parsed = Duration::from_input_value(&input).map(Duration::fieldwise);
 
             assert!(
@@ -1130,7 +1130,7 @@ mod duration_test {
                     .milliseconds(100),
             ),
         ] {
-            let input: InputValue = graphql_input_value!((raw));
+            let input: InputValue = graphql::input_value!((raw));
             let parsed = Duration::from_input_value(&input).map(Duration::fieldwise);
 
             assert!(
@@ -1145,19 +1145,19 @@ mod duration_test {
     #[test]
     fn fails_on_invalid_input() {
         for input in [
-            graphql_input_value!("12"),
-            graphql_input_value!("12S"),
-            graphql_input_value!("P0"),
-            graphql_input_value!("PT"),
-            graphql_input_value!("PTS"),
-            graphql_input_value!("1996-12-19"),
-            graphql_input_value!("1996-12-19T14:23:43"),
-            graphql_input_value!("1996-12-19T14:23:43Z"),
-            graphql_input_value!("i'm not even a duration"),
-            graphql_input_value!(2.32),
-            graphql_input_value!(1),
-            graphql_input_value!(null),
-            graphql_input_value!(false),
+            graphql::input_value!("12"),
+            graphql::input_value!("12S"),
+            graphql::input_value!("P0"),
+            graphql::input_value!("PT"),
+            graphql::input_value!("PTS"),
+            graphql::input_value!("1996-12-19"),
+            graphql::input_value!("1996-12-19T14:23:43"),
+            graphql::input_value!("1996-12-19T14:23:43Z"),
+            graphql::input_value!("i'm not even a duration"),
+            graphql::input_value!(2.32),
+            graphql::input_value!(1),
+            graphql::input_value!(null),
+            graphql::input_value!(false),
         ] {
             let input: InputValue = input;
             let parsed = Duration::from_input_value(&input);
@@ -1177,9 +1177,9 @@ mod duration_test {
                     .minutes(1)
                     .seconds(1)
                     .milliseconds(100),
-                graphql_input_value!("P1Y1M1DT1H1M1.1S"),
+                graphql::input_value!("P1Y1M1DT1H1M1.1S"),
             ),
-            ((-5).days(), graphql_input_value!("-P5D")),
+            ((-5).days(), graphql::input_value!("-P5D")),
         ] {
             let actual: InputValue = val.to_input_value();
 
@@ -1192,7 +1192,7 @@ mod duration_test {
 mod time_zone_or_utc_offset_test {
     use jiff::tz;
 
-    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql};
 
     use super::TimeZoneOrUtcOffset;
 
@@ -1224,7 +1224,7 @@ mod time_zone_or_utc_offset_test {
                 TimeZoneOrUtcOffset::try_from(tz::TimeZone::fixed(tz::offset(-9))).unwrap(),
             ),
         ] {
-            let input: InputValue = graphql_input_value!((raw));
+            let input: InputValue = graphql::input_value!((raw));
             let parsed = TimeZoneOrUtcOffset::from_input_value(&input);
 
             assert!(
@@ -1239,15 +1239,15 @@ mod time_zone_or_utc_offset_test {
     #[test]
     fn fails_on_invalid_input() {
         for input in [
-            graphql_input_value!("Abc/Xyz"),
-            graphql_input_value!("8086"),
-            graphql_input_value!("AbcXyz"),
-            graphql_input_value!("Z"),
-            graphql_input_value!("i'm not even a time zone"),
-            graphql_input_value!(2.32),
-            graphql_input_value!(1),
-            graphql_input_value!(null),
-            graphql_input_value!(false),
+            graphql::input_value!("Abc/Xyz"),
+            graphql::input_value!("8086"),
+            graphql::input_value!("AbcXyz"),
+            graphql::input_value!("Z"),
+            graphql::input_value!("i'm not even a time zone"),
+            graphql::input_value!(2.32),
+            graphql::input_value!(1),
+            graphql::input_value!(null),
+            graphql::input_value!(false),
         ] {
             let input: InputValue = input;
             let parsed = TimeZoneOrUtcOffset::from_input_value(&input);
@@ -1261,40 +1261,40 @@ mod time_zone_or_utc_offset_test {
         for (val, expected) in [
             (
                 TimeZoneOrUtcOffset::get("Europe/London").unwrap(),
-                graphql_input_value!("Europe/London"),
+                graphql::input_value!("Europe/London"),
             ),
             (
                 TimeZoneOrUtcOffset::get("Etc/GMT-3").unwrap(),
-                graphql_input_value!("Etc/GMT-3"),
+                graphql::input_value!("Etc/GMT-3"),
             ),
             (
                 TimeZoneOrUtcOffset::get("etc/gmt+11").unwrap(),
-                graphql_input_value!("Etc/GMT+11"),
+                graphql::input_value!("Etc/GMT+11"),
             ),
             (
                 TimeZoneOrUtcOffset::get("Factory").unwrap(),
-                graphql_input_value!("Factory"),
+                graphql::input_value!("Factory"),
             ),
             (
                 TimeZoneOrUtcOffset::get("zulu").unwrap(),
-                graphql_input_value!("Zulu"),
+                graphql::input_value!("Zulu"),
             ),
             (
                 TimeZoneOrUtcOffset::fixed(tz::offset(0)),
-                graphql_input_value!("UTC"),
+                graphql::input_value!("UTC"),
             ),
             (
                 TimeZoneOrUtcOffset::get("UTC").unwrap(),
-                graphql_input_value!("UTC"),
+                graphql::input_value!("UTC"),
             ),
-            (TimeZoneOrUtcOffset::UTC, graphql_input_value!("UTC")),
+            (TimeZoneOrUtcOffset::UTC, graphql::input_value!("UTC")),
             (
                 TimeZoneOrUtcOffset::fixed(tz::offset(2)),
-                graphql_input_value!("+02:00"),
+                graphql::input_value!("+02:00"),
             ),
             (
                 TimeZoneOrUtcOffset::fixed(tz::offset(-11)),
-                graphql_input_value!("-11:00"),
+                graphql::input_value!("-11:00"),
             ),
         ] {
             let actual: InputValue = val.to_input_value();
@@ -1308,7 +1308,7 @@ mod time_zone_or_utc_offset_test {
 mod time_zone_test {
     use jiff::tz;
 
-    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql};
 
     use super::TimeZone;
 
@@ -1340,7 +1340,7 @@ mod time_zone_test {
                 TimeZone::try_from(tz::TimeZone::get("UTC").unwrap()).unwrap(),
             ),
         ] {
-            let input: InputValue = graphql_input_value!((raw));
+            let input: InputValue = graphql::input_value!((raw));
             let parsed = TimeZone::from_input_value(&input);
 
             assert!(
@@ -1355,17 +1355,17 @@ mod time_zone_test {
     #[test]
     fn fails_on_invalid_input() {
         for input in [
-            graphql_input_value!("Abc/Xyz"),
-            graphql_input_value!("8086"),
-            graphql_input_value!("AbcXyz"),
-            graphql_input_value!("-02:00"),
-            graphql_input_value!("+11:00"),
-            graphql_input_value!("Z"),
-            graphql_input_value!("i'm not even a time zone"),
-            graphql_input_value!(2.32),
-            graphql_input_value!(1),
-            graphql_input_value!(null),
-            graphql_input_value!(false),
+            graphql::input_value!("Abc/Xyz"),
+            graphql::input_value!("8086"),
+            graphql::input_value!("AbcXyz"),
+            graphql::input_value!("-02:00"),
+            graphql::input_value!("+11:00"),
+            graphql::input_value!("Z"),
+            graphql::input_value!("i'm not even a time zone"),
+            graphql::input_value!(2.32),
+            graphql::input_value!(1),
+            graphql::input_value!(null),
+            graphql::input_value!(false),
         ] {
             let input: InputValue = input;
             let parsed = TimeZone::from_input_value(&input);
@@ -1379,35 +1379,35 @@ mod time_zone_test {
         for (val, expected) in [
             (
                 TimeZone::try_from(tz::TimeZone::get("Europe/London").unwrap()).unwrap(),
-                graphql_input_value!("Europe/London"),
+                graphql::input_value!("Europe/London"),
             ),
             (
                 TimeZone::try_from(tz::TimeZone::get("Etc/GMT-3").unwrap()).unwrap(),
-                graphql_input_value!("Etc/GMT-3"),
+                graphql::input_value!("Etc/GMT-3"),
             ),
             (
                 TimeZone::try_from(tz::TimeZone::get("etc/gmt+11").unwrap()).unwrap(),
-                graphql_input_value!("Etc/GMT+11"),
+                graphql::input_value!("Etc/GMT+11"),
             ),
             (
                 TimeZone::try_from(tz::TimeZone::get("Factory").unwrap()).unwrap(),
-                graphql_input_value!("Factory"),
+                graphql::input_value!("Factory"),
             ),
             (
                 TimeZone::try_from(tz::TimeZone::get("zulu").unwrap()).unwrap(),
-                graphql_input_value!("Zulu"),
+                graphql::input_value!("Zulu"),
             ),
             (
                 TimeZone::try_from(tz::TimeZone::fixed(tz::offset(0))).unwrap(),
-                graphql_input_value!("UTC"),
+                graphql::input_value!("UTC"),
             ),
             (
                 TimeZone::try_from(tz::TimeZone::get("UTC").unwrap()).unwrap(),
-                graphql_input_value!("UTC"),
+                graphql::input_value!("UTC"),
             ),
             (
                 TimeZone::try_from(tz::TimeZone::UTC).unwrap(),
-                graphql_input_value!("UTC"),
+                graphql::input_value!("UTC"),
             ),
         ] {
             let actual: InputValue = val.to_input_value();
@@ -1421,7 +1421,7 @@ mod time_zone_test {
 mod utc_offset_test {
     use jiff::tz;
 
-    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql_input_value};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql};
 
     use super::UtcOffset;
 
@@ -1432,7 +1432,7 @@ mod utc_offset_test {
             ("+03:00", tz::offset(3)),
             ("-09:00", tz::offset(-9)),
         ] {
-            let input: InputValue = graphql_input_value!((raw));
+            let input: InputValue = graphql::input_value!((raw));
             let parsed = UtcOffset::from_input_value(&input);
 
             assert!(
@@ -1447,16 +1447,16 @@ mod utc_offset_test {
     #[test]
     fn fails_on_invalid_input() {
         for input in [
-            graphql_input_value!("Europe/London"),
-            graphql_input_value!("Abc/Xyz"),
-            graphql_input_value!("8086"),
-            graphql_input_value!("AbcXyz"),
-            graphql_input_value!("Z"),
-            graphql_input_value!("i'm not even a time zone"),
-            graphql_input_value!(2.32),
-            graphql_input_value!(1),
-            graphql_input_value!(null),
-            graphql_input_value!(false),
+            graphql::input_value!("Europe/London"),
+            graphql::input_value!("Abc/Xyz"),
+            graphql::input_value!("8086"),
+            graphql::input_value!("AbcXyz"),
+            graphql::input_value!("Z"),
+            graphql::input_value!("i'm not even a time zone"),
+            graphql::input_value!(2.32),
+            graphql::input_value!(1),
+            graphql::input_value!(null),
+            graphql::input_value!(false),
         ] {
             let input: InputValue = input;
             let parsed = UtcOffset::from_input_value(&input);
@@ -1468,9 +1468,9 @@ mod utc_offset_test {
     #[test]
     fn formats_correctly() {
         for (val, expected) in [
-            (tz::offset(0), graphql_input_value!("+00:00")),
-            (tz::offset(2), graphql_input_value!("+02:00")),
-            (tz::offset(-11), graphql_input_value!("-11:00")),
+            (tz::offset(0), graphql::input_value!("+00:00")),
+            (tz::offset(2), graphql::input_value!("+02:00")),
+            (tz::offset(-11), graphql::input_value!("-11:00")),
         ] {
             let actual: InputValue = val.to_input_value();
 
@@ -1484,7 +1484,7 @@ mod integration_test {
     use jiff::{ToSpan as _, civil, tz};
 
     use crate::{
-        execute, graphql_object, graphql_value, graphql_vars,
+        execute, graphql, graphql_object,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
     };
@@ -1561,9 +1561,9 @@ mod integration_test {
         );
 
         assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            execute(DOC, None, &schema, &graphql::vars! {}, &()).await,
             Ok((
-                graphql_value!({
+                graphql::value!({
                     "localDate": "2015-03-14",
                     "localTime": "16:07:08",
                     "localDateTime": "2016-07-08T09:10:11",

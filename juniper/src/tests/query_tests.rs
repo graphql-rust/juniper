@@ -1,5 +1,5 @@
 use crate::{
-    graphql_value, graphql_vars,
+    graphql,
     schema::model::RootNode,
     tests::fixtures::starwars::schema::{Database, Query},
     types::scalars::{EmptyMutation, EmptySubscription},
@@ -20,8 +20,8 @@ async fn test_hero_name() {
     );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &graphql_vars! {}, &database).await,
-        Ok((graphql_value!({"hero": {"name": "R2-D2"}}), vec![])),
+        crate::execute(doc, None, &schema, &graphql::vars! {}, &database).await,
+        Ok((graphql::value!({"hero": {"name": "R2-D2"}}), vec![])),
     );
 }
 
@@ -41,9 +41,9 @@ async fn test_hero_field_order() {
         }
     }"#;
     assert_eq!(
-        crate::execute(doc, None, &schema, &graphql_vars! {}, &database).await,
+        crate::execute(doc, None, &schema, &graphql::vars! {}, &database).await,
         Ok((
-            graphql_value!({"hero": {"id": "2001", "name": "R2-D2"}}),
+            graphql::value!({"hero": {"id": "2001", "name": "R2-D2"}}),
             vec![],
         )),
     );
@@ -55,9 +55,9 @@ async fn test_hero_field_order() {
         }
     }"#;
     assert_eq!(
-        crate::execute(doc_reversed, None, &schema, &graphql_vars! {}, &database).await,
+        crate::execute(doc_reversed, None, &schema, &graphql::vars! {}, &database).await,
         Ok((
-            graphql_value!({"hero": {"name": "R2-D2", "id": "2001"}}),
+            graphql::value!({"hero": {"name": "R2-D2", "id": "2001"}}),
             vec![],
         )),
     );
@@ -82,9 +82,9 @@ async fn test_hero_name_and_friends() {
     );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &graphql_vars! {}, &database).await,
+        crate::execute(doc, None, &schema, &graphql::vars! {}, &database).await,
         Ok((
-            graphql_value!({"hero": {
+            graphql::value!({"hero": {
                 "id": "2001",
                 "name": "R2-D2",
                 "friends": [
@@ -121,9 +121,9 @@ async fn test_hero_name_and_friends_and_friends_of_friends() {
     );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &graphql_vars! {}, &database).await,
+        crate::execute(doc, None, &schema, &graphql::vars! {}, &database).await,
         Ok((
-            graphql_value!({"hero": {
+            graphql::value!({"hero": {
                 "id": "2001",
                 "name": "R2-D2",
                 "friends": [{
@@ -170,9 +170,9 @@ async fn test_query_name() {
     );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &graphql_vars! {}, &database).await,
+        crate::execute(doc, None, &schema, &graphql::vars! {}, &database).await,
         Ok((
-            graphql_value!({"human": {"name": "Luke Skywalker"}}),
+            graphql::value!({"human": {"name": "Luke Skywalker"}}),
             vec![],
         )),
     );
@@ -189,8 +189,11 @@ async fn test_query_alias_single() {
     );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &graphql_vars! {}, &database).await,
-        Ok((graphql_value!({"luke": {"name": "Luke Skywalker"}}), vec![])),
+        crate::execute(doc, None, &schema, &graphql::vars! {}, &database).await,
+        Ok((
+            graphql::value!({"luke": {"name": "Luke Skywalker"}}),
+            vec![]
+        )),
     );
 }
 
@@ -208,9 +211,9 @@ async fn test_query_alias_multiple() {
     );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &graphql_vars! {}, &database).await,
+        crate::execute(doc, None, &schema, &graphql::vars! {}, &database).await,
         Ok((
-            graphql_value!({
+            graphql::value!({
                 "luke": {"name": "Luke Skywalker"},
                 "leia": {"name": "Leia Organa"},
             }),
@@ -239,9 +242,9 @@ async fn test_query_alias_multiple_with_fragment() {
     );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &graphql_vars! {}, &database).await,
+        crate::execute(doc, None, &schema, &graphql::vars! {}, &database).await,
         Ok((
-            graphql_value!({
+            graphql::value!({
                 "luke": {"name": "Luke Skywalker", "homePlanet": "Tatooine"},
                 "leia": {"name": "Leia Organa", "homePlanet": "Alderaan"},
             }),
@@ -259,12 +262,12 @@ async fn test_query_name_variable() {
         EmptyMutation::<Database>::new(),
         EmptySubscription::<Database>::new(),
     );
-    let vars = graphql_vars! {"someId": "1000"};
+    let vars = graphql::vars! {"someId": "1000"};
 
     assert_eq!(
         crate::execute(doc, None, &schema, &vars, &database).await,
         Ok((
-            graphql_value!({"human": {"name": "Luke Skywalker"}}),
+            graphql::value!({"human": {"name": "Luke Skywalker"}}),
             vec![],
         )),
     );
@@ -279,11 +282,11 @@ async fn test_query_name_invalid_variable() {
         EmptyMutation::<Database>::new(),
         EmptySubscription::<Database>::new(),
     );
-    let vars = graphql_vars! {"someId": "some invalid id"};
+    let vars = graphql::vars! {"someId": "some invalid id"};
 
     assert_eq!(
         crate::execute(doc, None, &schema, &vars, &database).await,
-        Ok((graphql_value!({ "human": null }), vec![])),
+        Ok((graphql::value!({ "human": null }), vec![])),
     );
 }
 
@@ -298,9 +301,9 @@ async fn test_query_friends_names() {
     );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &graphql_vars! {}, &database).await,
+        crate::execute(doc, None, &schema, &graphql::vars! {}, &database).await,
         Ok((
-            graphql_value!({"human": {
+            graphql::value!({"human": {
                 "friends": [
                     {"name": "Han Solo"},
                     {"name": "Leia Organa"},
@@ -333,9 +336,9 @@ async fn test_query_inline_fragments_droid() {
     );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &graphql_vars! {}, &database).await,
+        crate::execute(doc, None, &schema, &graphql::vars! {}, &database).await,
         Ok((
-            graphql_value!({"hero": {
+            graphql::value!({"hero": {
                 "__typename": "Droid",
                 "name": "R2-D2",
                 "primaryFunction": "Astromech",
@@ -361,9 +364,9 @@ async fn test_query_inline_fragments_human() {
     );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &graphql_vars! {}, &database).await,
+        crate::execute(doc, None, &schema, &graphql::vars! {}, &database).await,
         Ok((
-            graphql_value!({"hero": {
+            graphql::value!({"hero": {
                 "__typename": "Human",
                 "name": "Luke Skywalker",
             }}),
@@ -387,8 +390,8 @@ async fn test_object_typename() {
     );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &graphql_vars! {}, &database).await,
-        Ok((graphql_value!({"human": {"__typename": "Human"}}), vec![])),
+        crate::execute(doc, None, &schema, &graphql::vars! {}, &database).await,
+        Ok((graphql::value!({"human": {"__typename": "Human"}}), vec![])),
     );
 }
 
@@ -411,9 +414,9 @@ async fn interface_inline_fragment_friends() {
     );
 
     assert_eq!(
-        crate::execute(doc, None, &schema, &graphql_vars! {}, &database).await,
+        crate::execute(doc, None, &schema, &graphql::vars! {}, &database).await,
         Ok((
-            graphql_value!({"human": {
+            graphql::value!({"human": {
                 "friends": [
                     {"name": "Luke Skywalker", "homePlanet": "Tatooine"},
                     {"name": "Leia Organa", "homePlanet": "Alderaan"},
