@@ -308,64 +308,64 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::graphql_value;
+    use crate::graphql;
 
     use super::Value;
 
     #[test]
     fn display_null() {
-        let s: Value = graphql_value!(null);
+        let s: Value = graphql::value!(null);
         assert_eq!(s.to_string(), "null");
     }
 
     #[test]
     fn display_int() {
-        let s: Value = graphql_value!(123);
+        let s: Value = graphql::value!(123);
         assert_eq!(s.to_string(), "123");
     }
 
     #[test]
     fn display_float() {
-        let s: Value = graphql_value!(123.456);
+        let s: Value = graphql::value!(123.456);
         assert_eq!(s.to_string(), "123.456");
     }
 
     #[test]
     fn display_string() {
-        let s: Value = graphql_value!("foo");
+        let s: Value = graphql::value!("foo");
         assert_eq!(s.to_string(), "\"foo\"");
     }
 
     #[test]
     fn display_bool() {
-        let s: Value = graphql_value!(false);
+        let s: Value = graphql::value!(false);
         assert_eq!(s.to_string(), "false");
 
-        let s: Value = graphql_value!(true);
+        let s: Value = graphql::value!(true);
         assert_eq!(s.to_string(), "true");
     }
 
     #[test]
     fn display_list() {
-        let s: Value = graphql_value!([1, null, "foo"]);
+        let s: Value = graphql::value!([1, null, "foo"]);
         assert_eq!(s.to_string(), "[1, null, \"foo\"]");
     }
 
     #[test]
     fn display_list_one_element() {
-        let s: Value = graphql_value!([1]);
+        let s: Value = graphql::value!([1]);
         assert_eq!(s.to_string(), "[1]");
     }
 
     #[test]
     fn display_list_empty() {
-        let s: Value = graphql_value!([]);
+        let s: Value = graphql::value!([]);
         assert_eq!(s.to_string(), "[]");
     }
 
     #[test]
     fn display_object() {
-        let s: Value = graphql_value!({
+        let s: Value = graphql::value!({
             "int": 1,
             "null": null,
             "string": "foo",
@@ -378,7 +378,7 @@ mod tests {
 
     #[test]
     fn display_object_one_field() {
-        let s: Value = graphql_value!({
+        let s: Value = graphql::value!({
             "int": 1,
         });
         assert_eq!(s.to_string(), r#"{"int": 1}"#);
@@ -386,7 +386,7 @@ mod tests {
 
     #[test]
     fn display_object_empty() {
-        let s: Value = graphql_value!({});
+        let s: Value = graphql::value!({});
         assert_eq!(s.to_string(), r#"{}"#);
     }
 }

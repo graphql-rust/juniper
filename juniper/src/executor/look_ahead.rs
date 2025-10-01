@@ -810,7 +810,7 @@ mod tests {
 
     use crate::{
         ast::{Document, OwnedDocument},
-        graphql_vars,
+        graphql,
         parser::UnlocatedParseResult,
         schema::model::SchemaType,
         validation::test_harness::{MutationRoot, QueryRoot, SubscriptionRoot},
@@ -941,7 +941,7 @@ mod tests {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = graphql_vars! {};
+            let vars = graphql::vars! {};
             let look_ahead = selection_look_ahead(&op.item.selection_set[0], &vars, &fragments);
 
             let expected = LookAheadDebug {
@@ -993,7 +993,7 @@ mod tests {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = graphql_vars! {};
+            let vars = graphql::vars! {};
             let look_ahead = selection_look_ahead(&op.item.selection_set[0], &vars, &fragments);
 
             let expected = LookAheadDebug {
@@ -1063,7 +1063,7 @@ mod tests {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = graphql_vars! {};
+            let vars = graphql::vars! {};
             let look_ahead = selection_look_ahead(&op.item.selection_set[0], &vars, &fragments);
 
             let expected = LookAheadDebug {
@@ -1114,7 +1114,7 @@ mod tests {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = graphql_vars! {"episode": JEDI};
+            let vars = graphql::vars! {"episode": JEDI};
             let look_ahead = selection_look_ahead(&op.item.selection_set[0], &vars, &fragments);
 
             let expected = LookAheadDebug {
@@ -1161,7 +1161,7 @@ mod tests {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = graphql_vars! {};
+            let vars = graphql::vars! {};
             let look_ahead = selection_look_ahead(&op.item.selection_set[0], &vars, &fragments);
 
             let expected = LookAheadDebug {
@@ -1204,7 +1204,7 @@ mod tests {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = graphql_vars! {};
+            let vars = graphql::vars! {};
             let look_ahead = selection_look_ahead(&op.item.selection_set[0], &vars, &fragments);
 
             let expected = LookAheadDebug {
@@ -1261,7 +1261,7 @@ mod tests {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = graphql_vars! {};
+            let vars = graphql::vars! {};
             let look_ahead = selection_look_ahead(&op.item.selection_set[0], &vars, &fragments);
 
             let expected = LookAheadDebug {
@@ -1314,7 +1314,7 @@ mod tests {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = graphql_vars! {};
+            let vars = graphql::vars! {};
             let look_ahead = selection_look_ahead(&op.item.selection_set[0], &vars, &fragments);
 
             let expected = LookAheadDebug {
@@ -1371,7 +1371,7 @@ mod tests {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = graphql_vars! {};
+            let vars = graphql::vars! {};
             let look_ahead = selection_look_ahead(&op.item.selection_set[0], &vars, &fragments);
 
             let expected = LookAheadDebug {
@@ -1439,7 +1439,7 @@ mod tests {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = graphql_vars! {
+            let vars = graphql::vars! {
                 "id": 42,
                 "withFriends": true,
             };
@@ -1569,7 +1569,7 @@ mod tests {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = graphql_vars! {};
+            let vars = graphql::vars! {};
             let look_ahead = selection_look_ahead(&op.item.selection_set[0], &vars, &fragments);
 
             let expected = LookAheadDebug {
@@ -1623,7 +1623,7 @@ mod tests {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = graphql_vars! {};
+            let vars = graphql::vars! {};
             let look_ahead = selection_look_ahead(&op.item.selection_set[0], &vars, &fragments);
 
             let id = look_ahead.children().select("id").unwrap();
@@ -1694,7 +1694,7 @@ mod tests {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = graphql_vars! {};
+            let vars = graphql::vars! {};
             let look_ahead = selection_look_ahead(&op.item.selection_set[0], &vars, &fragments);
 
             let expected = LookAheadDebug {
@@ -1742,7 +1742,7 @@ mod tests {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = graphql_vars! {};
+            let vars = graphql::vars! {};
             let look_ahead = selection_look_ahead(&op.item.selection_set[0], &vars, &fragments);
 
             assert_eq!(look_ahead.field_original_name(), "hero");
@@ -1842,7 +1842,7 @@ mod tests {
         let fragments = extract_fragments(&docs);
 
         if let crate::ast::Definition::Operation(ref op) = docs[0] {
-            let vars = graphql_vars! {};
+            let vars = graphql::vars! {};
             let look_ahead = selection_look_ahead(&op.item.selection_set[0], &vars, &fragments);
 
             let mut children = look_ahead.children_for_explicit_type("Human").into_iter();

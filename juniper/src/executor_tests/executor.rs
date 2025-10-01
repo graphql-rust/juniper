@@ -1,6 +1,6 @@
 mod field_execution {
     use crate::{
-        graphql_object, graphql_value, graphql_vars,
+        graphql, graphql_object,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
     };
@@ -88,7 +88,7 @@ mod field_execution {
                 e
             }
         ";
-        let vars = graphql_vars! {"size": 100};
+        let vars = graphql::vars! {"size": 100};
 
         let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
             .await
@@ -100,7 +100,7 @@ mod field_execution {
 
         assert_eq!(
             result,
-            graphql_value!({
+            graphql::value!({
                 "a": "Apple",
                 "b": "Banana",
                 "x": "Cookie",
@@ -131,7 +131,7 @@ mod field_execution {
 
 mod merge_parallel_fragments {
     use crate::{
-        graphql_object, graphql_value, graphql_vars,
+        graphql, graphql_object,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
     };
@@ -172,7 +172,7 @@ mod merge_parallel_fragments {
                 deep { c, deeper: deep { c } }
             }
         ";
-        let vars = graphql_vars! {};
+        let vars = graphql::vars! {};
 
         let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
             .await
@@ -184,7 +184,7 @@ mod merge_parallel_fragments {
 
         assert_eq!(
             result,
-            graphql_value!({
+            graphql::value!({
                 "a": "Apple",
                 "b": "Banana",
                 "deep": {
@@ -203,7 +203,7 @@ mod merge_parallel_fragments {
 
 mod merge_parallel_inline_fragments {
     use crate::{
-        graphql_object, graphql_value, graphql_vars,
+        graphql, graphql_object,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
     };
@@ -280,7 +280,7 @@ mod merge_parallel_inline_fragments {
                 c
             }
         ";
-        let vars = graphql_vars! {};
+        let vars = graphql::vars! {};
 
         let (result, errs) = crate::execute(doc, None, &schema, &vars, &())
             .await
@@ -292,7 +292,7 @@ mod merge_parallel_inline_fragments {
 
         assert_eq!(
             result,
-            graphql_value!({
+            graphql::value!({
                 "a": "Apple",
                 "b": "Banana",
                 "deep": {
@@ -319,7 +319,7 @@ mod merge_parallel_inline_fragments {
 mod threads_context_correctly {
     use crate::{
         executor::Context,
-        graphql_object, graphql_value, graphql_vars,
+        graphql, graphql_object,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
     };
@@ -347,7 +347,7 @@ mod threads_context_correctly {
             EmptySubscription::<TestContext>::new(),
         );
         let doc = r"{ a }";
-        let vars = graphql_vars! {};
+        let vars = graphql::vars! {};
 
         let (result, errs) = crate::execute(
             doc,
@@ -365,7 +365,7 @@ mod threads_context_correctly {
 
         println!("Result: {result:#?}");
 
-        assert_eq!(result, graphql_value!({"a": "Context value"}));
+        assert_eq!(result, graphql::value!({"a": "Context value"}));
     }
 }
 
@@ -375,7 +375,7 @@ mod dynamic_context_switching {
     use crate::{
         Executor, ScalarValue,
         executor::{Context, ExecutionError, FieldError, FieldResult},
-        graphql_object, graphql_value, graphql_vars,
+        graphql, graphql_object,
         parser::SourcePosition,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
@@ -445,7 +445,7 @@ mod dynamic_context_switching {
             EmptySubscription::<OuterContext>::new(),
         );
         let doc = r"{ first: itemOpt(key: 0) { value }, missing: itemOpt(key: 2) { value } }";
-        let vars = graphql_vars! {};
+        let vars = graphql::vars! {};
 
         let ctx = OuterContext {
             items: vec![
@@ -476,7 +476,7 @@ mod dynamic_context_switching {
 
         assert_eq!(
             result,
-            graphql_value!({
+            graphql::value!({
                 "first": {"value": "First value"},
                 "missing": null,
             }),
@@ -493,7 +493,7 @@ mod dynamic_context_switching {
         let doc = r"{
             first: itemRes(key: 0) { value }
         }";
-        let vars = graphql_vars! {};
+        let vars = graphql::vars! {};
 
         let ctx = OuterContext {
             items: vec![
@@ -522,7 +522,7 @@ mod dynamic_context_switching {
 
         println!("Result: {result:#?}");
 
-        assert_eq!(result, graphql_value!({"first": {"value": "First value"}}));
+        assert_eq!(result, graphql::value!({"first": {"value": "First value"}}));
     }
 
     #[tokio::test]
@@ -535,7 +535,7 @@ mod dynamic_context_switching {
         let doc = r"{
             missing: itemRes(key: 2) { value }
         }";
-        let vars = graphql_vars! {};
+        let vars = graphql::vars! {};
 
         let ctx = OuterContext {
             items: vec![
@@ -565,13 +565,13 @@ mod dynamic_context_switching {
             vec![ExecutionError::new(
                 SourcePosition::new(14, 1, 12),
                 &["missing"],
-                FieldError::new("Could not find key 2", graphql_value!(null)),
+                FieldError::new("Could not find key 2", graphql::value!(null)),
             )],
         );
 
         println!("Result: {result:#?}");
 
-        assert_eq!(result, graphql_value!(null));
+        assert_eq!(result, graphql::value!(null));
     }
 
     #[tokio::test]
@@ -586,7 +586,7 @@ mod dynamic_context_switching {
             missing: itemResOpt(key: 2) { value }
             tooLarge: itemResOpt(key: 200) { value }
         }";
-        let vars = graphql_vars! {};
+        let vars = graphql::vars! {};
 
         let ctx = OuterContext {
             items: vec![
@@ -616,7 +616,7 @@ mod dynamic_context_switching {
             [ExecutionError::new(
                 SourcePosition::new(112, 3, 12),
                 &["tooLarge"],
-                FieldError::new("Key too large: 200", graphql_value!(null)),
+                FieldError::new("Key too large: 200", graphql::value!(null)),
             )],
         );
 
@@ -624,7 +624,7 @@ mod dynamic_context_switching {
 
         assert_eq!(
             result,
-            graphql_value!({
+            graphql::value!({
                 "first": {"value": "First value"},
                 "missing": null,
                 "tooLarge": null,
@@ -640,7 +640,7 @@ mod dynamic_context_switching {
             EmptySubscription::<OuterContext>::new(),
         );
         let doc = r"{ first: itemAlways(key: 0) { value } }";
-        let vars = graphql_vars! {};
+        let vars = graphql::vars! {};
 
         let ctx = OuterContext {
             items: vec![
@@ -669,14 +669,14 @@ mod dynamic_context_switching {
 
         println!("Result: {result:#?}");
 
-        assert_eq!(result, graphql_value!({"first": {"value": "First value"}}));
+        assert_eq!(result, graphql::value!({"first": {"value": "First value"}}));
     }
 }
 
 mod propagates_errors_to_nullable_fields {
     use crate::{
         executor::{ExecutionError, FieldError, FieldResult, IntoFieldError},
-        graphql_object, graphql_value, graphql_vars,
+        graphql, graphql_object,
         parser::SourcePosition,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
@@ -697,7 +697,7 @@ mod propagates_errors_to_nullable_fields {
         fn into_field_error(self) -> FieldError<S> {
             match self {
                 CustomError::NotFound => {
-                    let v: Value<S> = graphql_value!({
+                    let v: Value<S> = graphql::value!({
                         "type": "NOT_FOUND"
                     });
                     FieldError::new("Not Found", v)
@@ -752,17 +752,17 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ inner { nullableErrorField } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
             assert_eq!(
                 result,
-                graphql_value!({"inner": {"nullableErrorField": null}}),
+                graphql::value!({"inner": {"nullableErrorField": null}}),
             );
 
             assert_eq!(
@@ -770,7 +770,7 @@ mod propagates_errors_to_nullable_fields {
                 vec![ExecutionError::new(
                     SourcePosition::new(10, 0, 10),
                     &["inner", "nullableErrorField"],
-                    FieldError::new("Error for nullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -785,17 +785,17 @@ mod propagates_errors_to_nullable_fields {
         ";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
             assert_eq!(
                 result,
-                graphql_value!({"inner": {"nullableErrorField": null}}),
+                graphql::value!({"inner": {"nullableErrorField": null}}),
             );
 
             assert_eq!(
@@ -803,7 +803,7 @@ mod propagates_errors_to_nullable_fields {
                 vec![ExecutionError::new(
                     SourcePosition::new(72, 2, 37),
                     &["inner", "nullableErrorField"],
-                    FieldError::new("Error for nullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -815,17 +815,17 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ inner { ...{ nullableErrorField } } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
             assert_eq!(
                 result,
-                graphql_value!({"inner": {"nullableErrorField": null}}),
+                graphql::value!({"inner": {"nullableErrorField": null}}),
             );
 
             assert_eq!(
@@ -833,7 +833,7 @@ mod propagates_errors_to_nullable_fields {
                 vec![ExecutionError::new(
                     SourcePosition::new(15, 0, 15),
                     &["inner", "nullableErrorField"],
-                    FieldError::new("Error for nullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -845,17 +845,17 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ inner { ...on Inner { nullableErrorField } } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
             assert_eq!(
                 result,
-                graphql_value!({"inner": {"nullableErrorField": null}}),
+                graphql::value!({"inner": {"nullableErrorField": null}}),
             );
 
             assert_eq!(
@@ -863,7 +863,7 @@ mod propagates_errors_to_nullable_fields {
                 vec![ExecutionError::new(
                     SourcePosition::new(24, 0, 24),
                     &["inner", "nullableErrorField"],
-                    FieldError::new("Error for nullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -875,22 +875,22 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ inner { nonNullableErrorField } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
-            assert_eq!(result, graphql_value!(null));
+            assert_eq!(result, graphql::value!(null));
 
             assert_eq!(
                 errs,
                 vec![ExecutionError::new(
                     SourcePosition::new(10, 0, 10),
                     &["inner", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -905,22 +905,22 @@ mod propagates_errors_to_nullable_fields {
         ";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
-            assert_eq!(result, graphql_value!(null));
+            assert_eq!(result, graphql::value!(null));
 
             assert_eq!(
                 errs,
                 vec![ExecutionError::new(
                     SourcePosition::new(72, 2, 37),
                     &["inner", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -932,22 +932,22 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ inner { ...{ nonNullableErrorField } } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
-            assert_eq!(result, graphql_value!(null));
+            assert_eq!(result, graphql::value!(null));
 
             assert_eq!(
                 errs,
                 vec![ExecutionError::new(
                     SourcePosition::new(15, 0, 15),
                     &["inner", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -959,22 +959,22 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ inner { ...on Inner { nonNullableErrorField } } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
-            assert_eq!(result, graphql_value!(null));
+            assert_eq!(result, graphql::value!(null));
 
             assert_eq!(
                 errs,
                 vec![ExecutionError::new(
                     SourcePosition::new(24, 0, 24),
                     &["inner", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -986,22 +986,22 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ inner { customErrorField } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
-            assert_eq!(result, graphql_value!(null));
+            assert_eq!(result, graphql::value!(null));
 
             assert_eq!(
                 errs,
                 vec![ExecutionError::new(
                     SourcePosition::new(10, 0, 10),
                     &["inner", "customErrorField"],
-                    FieldError::new("Not Found", graphql_value!({"type": "NOT_FOUND"})),
+                    FieldError::new("Not Found", graphql::value!({"type": "NOT_FOUND"})),
                 )],
             );
         }
@@ -1013,22 +1013,22 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ inner { nullableField { nonNullableErrorField } } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
-            assert_eq!(result, graphql_value!({"inner": {"nullableField": null}}),);
+            assert_eq!(result, graphql::value!({"inner": {"nullableField": null}}),);
 
             assert_eq!(
                 errs,
                 vec![ExecutionError::new(
                     SourcePosition::new(26, 0, 26),
                     &["inner", "nullableField", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -1043,22 +1043,22 @@ mod propagates_errors_to_nullable_fields {
         ";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
-            assert_eq!(result, graphql_value!({"inner": {"nullableField": null}}),);
+            assert_eq!(result, graphql::value!({"inner": {"nullableField": null}}),);
 
             assert_eq!(
                 errs,
                 vec![ExecutionError::new(
                     SourcePosition::new(90, 2, 37),
                     &["inner", "nullableField", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -1070,22 +1070,22 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ inner { nullableField { ...{ nonNullableErrorField } } } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
-            assert_eq!(result, graphql_value!({"inner": {"nullableField": null}}),);
+            assert_eq!(result, graphql::value!({"inner": {"nullableField": null}}),);
 
             assert_eq!(
                 errs,
                 vec![ExecutionError::new(
                     SourcePosition::new(31, 0, 31),
                     &["inner", "nullableField", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -1097,22 +1097,22 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ inner { nullableField { ...on Inner { nonNullableErrorField } } } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
-            assert_eq!(result, graphql_value!({"inner": {"nullableField": null}}),);
+            assert_eq!(result, graphql::value!({"inner": {"nullableField": null}}),);
 
             assert_eq!(
                 errs,
                 vec![ExecutionError::new(
                     SourcePosition::new(40, 0, 40),
                     &["inner", "nullableField", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -1127,22 +1127,22 @@ mod propagates_errors_to_nullable_fields {
         ";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
-            assert_eq!(result, graphql_value!({"inner": {"nullableField": null}}),);
+            assert_eq!(result, graphql::value!({"inner": {"nullableField": null}}),);
 
             assert_eq!(
                 errs,
                 vec![ExecutionError::new(
                     SourcePosition::new(88, 2, 53),
                     &["inner", "nullableField", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -1154,22 +1154,22 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ inner { ...{ nullableField { nonNullableErrorField } } } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
-            assert_eq!(result, graphql_value!({"inner": {"nullableField": null}}),);
+            assert_eq!(result, graphql::value!({"inner": {"nullableField": null}}),);
 
             assert_eq!(
                 errs,
                 vec![ExecutionError::new(
                     SourcePosition::new(31, 0, 31),
                     &["inner", "nullableField", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -1181,22 +1181,22 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ inner { ...on Inner { nullableField { nonNullableErrorField } } } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
-            assert_eq!(result, graphql_value!({"inner": {"nullableField": null}}),);
+            assert_eq!(result, graphql::value!({"inner": {"nullableField": null}}),);
 
             assert_eq!(
                 errs,
                 vec![ExecutionError::new(
                     SourcePosition::new(40, 0, 40),
                     &["inner", "nullableField", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -1208,22 +1208,22 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ inner { nonNullableField { nonNullableErrorField } } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
-            assert_eq!(result, graphql_value!(null));
+            assert_eq!(result, graphql::value!(null));
 
             assert_eq!(
                 errs,
                 vec![ExecutionError::new(
                     SourcePosition::new(29, 0, 29),
                     &["inner", "nonNullableField", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -1238,22 +1238,22 @@ mod propagates_errors_to_nullable_fields {
         ";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
-            assert_eq!(result, graphql_value!(null));
+            assert_eq!(result, graphql::value!(null));
 
             assert_eq!(
                 errs,
                 vec![ExecutionError::new(
                     SourcePosition::new(93, 2, 37),
                     &["inner", "nonNullableField", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -1265,22 +1265,22 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ inner { nonNullableField { ...{ nonNullableErrorField } } } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
-            assert_eq!(result, graphql_value!(null));
+            assert_eq!(result, graphql::value!(null));
 
             assert_eq!(
                 errs,
                 vec![ExecutionError::new(
                     SourcePosition::new(34, 0, 34),
                     &["inner", "nonNullableField", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -1292,22 +1292,22 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ inner { nonNullableField { ...on Inner { nonNullableErrorField } } } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
-            assert_eq!(result, graphql_value!(null));
+            assert_eq!(result, graphql::value!(null));
 
             assert_eq!(
                 errs,
                 vec![ExecutionError::new(
                     SourcePosition::new(43, 0, 43),
                     &["inner", "nonNullableField", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -1322,22 +1322,22 @@ mod propagates_errors_to_nullable_fields {
         ";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
-            assert_eq!(result, graphql_value!(null));
+            assert_eq!(result, graphql::value!(null));
 
             assert_eq!(
                 errs,
                 vec![ExecutionError::new(
                     SourcePosition::new(91, 2, 56),
                     &["inner", "nonNullableField", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -1349,22 +1349,22 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ inner { ...{ nonNullableField { nonNullableErrorField } } } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
-            assert_eq!(result, graphql_value!(null));
+            assert_eq!(result, graphql::value!(null));
 
             assert_eq!(
                 errs,
                 vec![ExecutionError::new(
                     SourcePosition::new(34, 0, 34),
                     &["inner", "nonNullableField", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -1376,22 +1376,22 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ inner { ...on Inner { nonNullableField { nonNullableErrorField } } } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
-            assert_eq!(result, graphql_value!(null));
+            assert_eq!(result, graphql::value!(null));
 
             assert_eq!(
                 errs,
                 vec![ExecutionError::new(
                     SourcePosition::new(43, 0, 43),
                     &["inner", "nonNullableField", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -1403,17 +1403,17 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ inner { nonNullableField { nullableErrorField } } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
             assert_eq!(
                 result,
-                graphql_value!({"inner": {"nonNullableField": {"nullableErrorField": null}}}),
+                graphql::value!({"inner": {"nonNullableField": {"nullableErrorField": null}}}),
             );
 
             assert_eq!(
@@ -1421,7 +1421,7 @@ mod propagates_errors_to_nullable_fields {
                 vec![ExecutionError::new(
                     SourcePosition::new(29, 0, 29),
                     &["inner", "nonNullableField", "nullableErrorField"],
-                    FieldError::new("Error for nullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -1436,17 +1436,17 @@ mod propagates_errors_to_nullable_fields {
         ";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
             assert_eq!(
                 result,
-                graphql_value!({"inner": {"nonNullableField": {"nullableErrorField": null}}}),
+                graphql::value!({"inner": {"nonNullableField": {"nullableErrorField": null}}}),
             );
 
             assert_eq!(
@@ -1454,7 +1454,7 @@ mod propagates_errors_to_nullable_fields {
                 vec![ExecutionError::new(
                     SourcePosition::new(91, 2, 56),
                     &["inner", "nonNullableField", "nullableErrorField"],
-                    FieldError::new("Error for nullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -1466,17 +1466,17 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ inner { ...{ nonNullableField { nullableErrorField } } } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
             assert_eq!(
                 result,
-                graphql_value!({"inner": {"nonNullableField": {"nullableErrorField": null}}}),
+                graphql::value!({"inner": {"nonNullableField": {"nullableErrorField": null}}}),
             );
 
             assert_eq!(
@@ -1484,7 +1484,7 @@ mod propagates_errors_to_nullable_fields {
                 vec![ExecutionError::new(
                     SourcePosition::new(34, 0, 34),
                     &["inner", "nonNullableField", "nullableErrorField"],
-                    FieldError::new("Error for nullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -1496,17 +1496,17 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ inner { ...on Inner { nonNullableField { nullableErrorField } } } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
             assert_eq!(
                 result,
-                graphql_value!({"inner": {"nonNullableField": {"nullableErrorField": null}}}),
+                graphql::value!({"inner": {"nonNullableField": {"nullableErrorField": null}}}),
             );
 
             assert_eq!(
@@ -1514,7 +1514,7 @@ mod propagates_errors_to_nullable_fields {
                 vec![ExecutionError::new(
                     SourcePosition::new(43, 0, 43),
                     &["inner", "nonNullableField", "nullableErrorField"],
-                    FieldError::new("Error for nullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -1529,17 +1529,17 @@ mod propagates_errors_to_nullable_fields {
         ";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
             assert_eq!(
                 result,
-                graphql_value!({"inner": {"nonNullableField": {"nullableErrorField": null}}}),
+                graphql::value!({"inner": {"nonNullableField": {"nullableErrorField": null}}}),
             );
 
             assert_eq!(
@@ -1547,7 +1547,7 @@ mod propagates_errors_to_nullable_fields {
                 vec![ExecutionError::new(
                     SourcePosition::new(93, 2, 37),
                     &["inner", "nonNullableField", "nullableErrorField"],
-                    FieldError::new("Error for nullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -1559,17 +1559,17 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ inner { nonNullableField { ...{ nullableErrorField } } } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
             assert_eq!(
                 result,
-                graphql_value!({"inner": {"nonNullableField": {"nullableErrorField": null}}}),
+                graphql::value!({"inner": {"nonNullableField": {"nullableErrorField": null}}}),
             );
 
             assert_eq!(
@@ -1577,7 +1577,7 @@ mod propagates_errors_to_nullable_fields {
                 vec![ExecutionError::new(
                     SourcePosition::new(34, 0, 34),
                     &["inner", "nonNullableField", "nullableErrorField"],
-                    FieldError::new("Error for nullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -1589,17 +1589,17 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ inner { nonNullableField { ...on Inner { nullableErrorField } } } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
             assert_eq!(
                 result,
-                graphql_value!({"inner": {"nonNullableField": {"nullableErrorField": null}}}),
+                graphql::value!({"inner": {"nonNullableField": {"nullableErrorField": null}}}),
             );
 
             assert_eq!(
@@ -1607,7 +1607,7 @@ mod propagates_errors_to_nullable_fields {
                 vec![ExecutionError::new(
                     SourcePosition::new(43, 0, 43),
                     &["inner", "nonNullableField", "nullableErrorField"],
-                    FieldError::new("Error for nullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -1619,22 +1619,22 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ inners { nonNullableErrorField } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
-            assert_eq!(result, graphql_value!(null));
+            assert_eq!(result, graphql::value!(null));
 
             assert_eq!(
                 errs,
                 vec![ExecutionError::new(
                     SourcePosition::new(11, 0, 11),
                     &["inners", "nonNullableErrorField"],
-                    FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                    FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                 )],
             );
         }
@@ -1646,17 +1646,17 @@ mod propagates_errors_to_nullable_fields {
         let doc = r"{ nullableInners { nonNullableErrorField } }";
 
         for (result, errs) in [
-            crate::execute(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute(doc, None, &schema(), &graphql::vars! {}, &())
                 .await
                 .expect("async execution failed"),
-            crate::execute_sync(doc, None, &schema(), &graphql_vars! {}, &())
+            crate::execute_sync(doc, None, &schema(), &graphql::vars! {}, &())
                 .expect("sync execution failed"),
         ] {
             println!("Result: {result:#?}");
 
             assert_eq!(
                 result,
-                graphql_value!({"nullableInners": [null, null, null, null, null]}),
+                graphql::value!({"nullableInners": [null, null, null, null, null]}),
             );
 
             assert_eq!(
@@ -1665,27 +1665,27 @@ mod propagates_errors_to_nullable_fields {
                     ExecutionError::new(
                         SourcePosition::new(19, 0, 19),
                         &["nullableInners", "nonNullableErrorField"],
-                        FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                        FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                     ),
                     ExecutionError::new(
                         SourcePosition::new(19, 0, 19),
                         &["nullableInners", "nonNullableErrorField"],
-                        FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                        FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                     ),
                     ExecutionError::new(
                         SourcePosition::new(19, 0, 19),
                         &["nullableInners", "nonNullableErrorField"],
-                        FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                        FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                     ),
                     ExecutionError::new(
                         SourcePosition::new(19, 0, 19),
                         &["nullableInners", "nonNullableErrorField"],
-                        FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                        FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                     ),
                     ExecutionError::new(
                         SourcePosition::new(19, 0, 19),
                         &["nullableInners", "nonNullableErrorField"],
-                        FieldError::new("Error for nonNullableErrorField", graphql_value!(null)),
+                        FieldError::new("Error for nonNullableErrorField", graphql::value!(null)),
                     ),
                 ],
             );
@@ -1695,7 +1695,7 @@ mod propagates_errors_to_nullable_fields {
 
 mod named_operations {
     use crate::{
-        GraphQLError, graphql_object, graphql_value, graphql_vars,
+        GraphQLError, graphql, graphql_object,
         schema::model::RootNode,
         types::scalars::{EmptyMutation, EmptySubscription},
     };
@@ -1718,14 +1718,14 @@ mod named_operations {
             EmptySubscription::<()>::new(),
         );
         let doc = r"{ a }";
-        let vars = graphql_vars! {};
+        let vars = graphql::vars! {};
 
         let (res, errs) = crate::execute(doc, None, &schema, &vars, &())
             .await
             .expect("Execution failed");
 
         assert_eq!(errs, []);
-        assert_eq!(res, graphql_value!({"a": "b"}));
+        assert_eq!(res, graphql::value!({"a": "b"}));
     }
 
     #[tokio::test]
@@ -1736,14 +1736,14 @@ mod named_operations {
             EmptySubscription::<()>::new(),
         );
         let doc = r"query Example { a }";
-        let vars = graphql_vars! {};
+        let vars = graphql::vars! {};
 
         let (res, errs) = crate::execute(doc, None, &schema, &vars, &())
             .await
             .expect("Execution failed");
 
         assert_eq!(errs, []);
-        assert_eq!(res, graphql_value!({"a": "b"}));
+        assert_eq!(res, graphql::value!({"a": "b"}));
     }
 
     #[tokio::test]
@@ -1755,14 +1755,14 @@ mod named_operations {
         );
         let doc =
             r"query Example($p: String!) { first: a(p: $p) } query OtherExample { second: a }";
-        let vars = graphql_vars! {};
+        let vars = graphql::vars! {};
 
         let (res, errs) = crate::execute(doc, Some("OtherExample"), &schema, &vars, &())
             .await
             .expect("Execution failed");
 
         assert_eq!(errs, []);
-        assert_eq!(res, graphql_value!({"second": "b"}));
+        assert_eq!(res, graphql::value!({"second": "b"}));
     }
 
     #[tokio::test]
@@ -1773,7 +1773,7 @@ mod named_operations {
             EmptySubscription::<()>::new(),
         );
         let doc = r"query Example { first: a } query OtherExample { second: a }";
-        let vars = graphql_vars! {};
+        let vars = graphql::vars! {};
 
         let err = crate::execute(doc, None, &schema, &vars, &())
             .await
@@ -1790,7 +1790,7 @@ mod named_operations {
             EmptySubscription::<()>::new(),
         );
         let doc = r"query Example { first: a } query OtherExample { second: a }";
-        let vars = graphql_vars! {};
+        let vars = graphql::vars! {};
 
         let err = crate::execute(doc, Some("UnknownExample"), &schema, &vars, &())
             .await

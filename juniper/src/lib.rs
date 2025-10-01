@@ -36,6 +36,8 @@ pub use juniper_codegen::{
 pub mod macros;
 mod ast;
 pub mod executor;
+#[cfg(test)]
+pub(crate) mod graphql;
 mod introspection;
 pub mod parser;
 pub(crate) mod schema;

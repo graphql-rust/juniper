@@ -347,7 +347,7 @@ impl<'de> Deserialize<'de> for DefaultScalarValue {
 mod tests {
     use serde_json::{from_str, to_string};
 
-    use crate::{DefaultScalarValue, FieldError, InputValue, graphql_input_value, graphql_value};
+    use crate::{DefaultScalarValue, FieldError, InputValue, graphql};
 
     use super::{ExecutionError, GraphQLError};
 
@@ -355,7 +355,7 @@ mod tests {
     fn int() {
         assert_eq!(
             from_str::<InputValue>("1235").unwrap(),
-            graphql_input_value!(1235),
+            graphql::input_value!(1235),
         );
     }
 
@@ -363,12 +363,12 @@ mod tests {
     fn float() {
         assert_eq!(
             from_str::<InputValue>("2.0").unwrap(),
-            graphql_input_value!(2.0),
+            graphql::input_value!(2.0),
         );
         // large value without a decimal part is also float
         assert_eq!(
             from_str::<InputValue>("123567890123").unwrap(),
-            graphql_input_value!(123_567_890_123.0),
+            graphql::input_value!(123_567_890_123.0),
         );
     }
 
@@ -384,7 +384,7 @@ mod tests {
     fn error_extensions() {
         assert_eq!(
             to_string(&ExecutionError::at_origin(
-                FieldError::<DefaultScalarValue>::new("foo error", graphql_value!({"foo": "bar"})),
+                FieldError::<DefaultScalarValue>::new("foo error", graphql::value!({"foo": "bar"})),
             ))
             .unwrap(),
             r#"{"message":"foo error","locations":[{"line":1,"column":1}],"path":[],"extensions":{"foo":"bar"}}"#,

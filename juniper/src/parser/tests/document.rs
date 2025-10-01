@@ -1,6 +1,6 @@
 use crate::{
     ast::{Arguments, Definition, Field, Operation, OperationType, OwnedDocument, Selection},
-    graphql_input_value,
+    graphql,
     parser::{ParseError, SourcePosition, Spanning, Token, document::parse_document_source},
     schema::model::SchemaType,
     types::scalars::{EmptyMutation, EmptySubscription},
@@ -71,7 +71,7 @@ fn simple_ast() {
                                     Spanning::start_end(
                                         &SourcePosition::new(27, 1, 25),
                                         &SourcePosition::new(28, 1, 26),
-                                        graphql_input_value!(4),
+                                        graphql::input_value!(4),
                                     ),
                                 )],
                             },

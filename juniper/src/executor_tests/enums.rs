@@ -1,7 +1,7 @@
 use crate::{
     GraphQLEnum,
     executor::Variables,
-    graphql_value, graphql_vars,
+    graphql,
     parser::SourcePosition,
     schema::model::RootNode,
     types::scalars::{EmptyMutation, EmptySubscription},
@@ -64,7 +64,7 @@ async fn accepts_enum_literal() {
     run_query("{ toString(color: RED) }", |result| {
         assert_eq!(
             result.get_field_value("toString"),
-            Some(&graphql_value!("Color::Red")),
+            Some(&graphql::value!("Color::Red")),
         );
     })
     .await;
@@ -75,7 +75,7 @@ async fn serializes_as_output() {
     run_query("{ aColor }", |result| {
         assert_eq!(
             result.get_field_value("aColor"),
-            Some(&graphql_value!("RED")),
+            Some(&graphql::value!("RED")),
         );
     })
     .await;
@@ -90,7 +90,7 @@ async fn does_not_accept_string_literals() {
     );
 
     let query = r#"{ toString(color: "RED") }"#;
-    let vars = graphql_vars! {};
+    let vars = graphql::vars! {};
 
     let error = crate::execute(query, None, &schema, &vars, &())
         .await
@@ -110,11 +110,11 @@ async fn does_not_accept_string_literals() {
 async fn accepts_strings_in_variables() {
     run_variable_query(
         "query q($color: Color!) { toString(color: $color) }",
-        graphql_vars! {"color": "RED"},
+        graphql::vars! {"color": "RED"},
         |result| {
             assert_eq!(
                 result.get_field_value("toString"),
-                Some(&graphql_value!("Color::Red")),
+                Some(&graphql::value!("Color::Red")),
             );
         },
     )
@@ -130,7 +130,7 @@ async fn does_not_accept_incorrect_enum_name_in_variables() {
     );
 
     let query = r#"query q($color: Color!) { toString(color: $color) }"#;
-    let vars = graphql_vars! {"color": "BLURPLE"};
+    let vars = graphql::vars! {"color": "BLURPLE"};
 
     let error = crate::execute(query, None, &schema, &vars, &())
         .await
@@ -155,7 +155,7 @@ async fn does_not_accept_incorrect_type_in_variables() {
     );
 
     let query = r#"query q($color: Color!) { toString(color: $color) }"#;
-    let vars = graphql_vars! {"color": 123};
+    let vars = graphql::vars! {"color": 123};
 
     let error = crate::execute(query, None, &schema, &vars, &())
         .await

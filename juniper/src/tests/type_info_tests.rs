@@ -3,7 +3,7 @@ use indexmap::IndexMap;
 
 use crate::{
     executor::{ExecutionResult, Executor, Registry},
-    graphql_value, graphql_vars,
+    graphql,
     schema::{meta::MetaType, model::RootNode},
     types::{
         base::{Arguments, GraphQLType, GraphQLValue},
@@ -92,9 +92,9 @@ fn test_node() {
     );
 
     assert_eq!(
-        crate::execute_sync(doc, None, &schema, &graphql_vars! {}, &()),
+        crate::execute_sync(doc, None, &schema, &graphql::vars! {}, &()),
         Ok((
-            graphql_value!({
+            graphql::value!({
                 "foo": "1",
                 "bar": "2",
                 "baz": "3",
