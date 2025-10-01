@@ -1,12 +1,13 @@
-use crate::ast::{
-    Arguments, Definition, Directive, Field, Fragment, FragmentSpread, InlineFragment, InputValue,
-    Operation, OperationType, OwnedDocument, Selection, Type, VariableDefinition,
-    VariableDefinitions,
-};
+use std::borrow::Cow;
 
 use crate::{
+    ast::{
+        Arguments, Definition, Directive, Field, Fragment, FragmentSpread, InlineFragment,
+        InputValue, Operation, OperationType, OwnedDocument, Selection, Type, VariableDefinition,
+        VariableDefinitions,
+    },
     parser::{
-        Lexer, OptionParseResult, ParseError, ParseResult, Parser, Spanning, Token,
+        Lexer, OptionParseResult, ParseError, ParseResult, Parser, ScalarToken, Spanning, Token,
         UnlocatedParseResult, value::parse_value_literal,
     },
     schema::{
@@ -54,18 +55,25 @@ fn parse_definition<'a, S>(
 where
     S: ScalarValue,
 {
-    match parser.peek().item {
+    let description = parse_description(parser)?;
+
+    let mut def = match parser.peek().item {
+        // Descriptions are not permitted on query shorthand.
+        // See: https://spec.graphql.org/September2025#sel-GAFTRJABAByBz7P
+        Token::CurlyOpen if description.is_some() => {
+            return Err(parser.next_token()?.map(ParseError::unexpected_token));
+        }
         Token::CurlyOpen
         | Token::Name("query")
         | Token::Name("mutation")
-        | Token::Name("subscription") => Ok(Definition::Operation(parse_operation_definition(
-            parser, schema,
-        )?)),
-        Token::Name("fragment") => Ok(Definition::Fragment(parse_fragment_definition(
-            parser, schema,
-        )?)),
-        _ => Err(parser.next_token()?.map(ParseError::unexpected_token)),
-    }
+        | Token::Name("subscription") => {
+            Definition::Operation(parse_operation_definition(parser, schema)?)
+        }
+        Token::Name("fragment") => Definition::Fragment(parse_fragment_definition(parser, schema)?),
+        _ => return Err(parser.next_token()?.map(ParseError::unexpected_token)),
+    };
+    def.set_description(description);
+    Ok(def)
 }
 
 fn parse_operation_definition<'a, S>(
@@ -85,6 +93,7 @@ where
             Operation {
                 operation_type: OperationType::Query,
                 name: None,
+                description: None,
                 variable_definitions: None,
                 directives: None,
                 selection_set: selection_set.item,
@@ -115,6 +124,7 @@ where
             Operation {
                 operation_type: operation_type.item,
                 name,
+                description: None,
                 variable_definitions,
                 directives: directives.map(|s| s.item),
                 selection_set: selection_set.item,
@@ -158,6 +168,7 @@ where
         &selection_set.span.end,
         Fragment {
             name,
+            description: None,
             type_condition: type_cond,
             directives: directives.map(|s| s.item),
             selection_set: selection_set.item,
@@ -458,6 +469,21 @@ where
             },
         ),
     ))
+}
+
+fn parse_description<'a>(parser: &mut Parser<'a>) -> OptionParseResult<Cow<'a, str>> {
+    if !matches!(parser.peek().item, Token::Scalar(ScalarToken::String(_))) {
+        Ok(None)
+    } else {
+        let token = parser.next_token()?;
+        let Token::Scalar(ScalarToken::String(lit)) = token.item else {
+            unreachable!("already checked to be `ScalarToken::String`")
+        };
+        Ok(Some(Spanning::new(
+            token.span,
+            lit.parse().map_err(|e| Spanning::new(token.span, e))?,
+        )))
+    }
 }
 
 fn parse_directives<'a, S>(
