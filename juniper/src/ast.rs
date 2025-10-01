@@ -323,6 +323,12 @@ pub struct VariablesDefinition<'a, S> {
     pub items: Vec<(Spanning<&'a str>, VariableDefinition<'a, S>)>,
 }
 
+impl<'a, S> VariablesDefinition<'a, S> {
+    pub fn iter(&self) -> slice::Iter<'_, (Spanning<&'a str>, VariableDefinition<'a, S>)> {
+        self.items.iter()
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Field<'a, S> {
     pub alias: Option<Spanning<&'a str>>,
@@ -821,12 +827,6 @@ impl<'a, S> Arguments<'a, S> {
             .filter(|&(k, _)| k.item == key)
             .map(|(_, v)| v)
             .next()
-    }
-}
-
-impl<'a, S> VariablesDefinition<'a, S> {
-    pub fn iter(&self) -> slice::Iter<'_, (Spanning<&'a str>, VariableDefinition<'a, S>)> {
-        self.items.iter()
     }
 }
 

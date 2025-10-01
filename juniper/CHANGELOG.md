@@ -16,6 +16,8 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - Made `includeDeprecated` argument of `__Type.fields`, `__Type.enumValues`, `__Type.inputFields`, `__Field.args` and `__Directive.args` fields non-`Null`. ([#1348], [graphql/graphql-spec#1142])
     - Made `@deprecated(reason:)` argument non-`Null`. ([#1348], [graphql/graphql-spec#1040])
     - Added `description` field to `ast::Operation`, `ast::Fragment` and `ast::VariableDefinition`. ([#1349], [graphql/graphql-spec#1170])
+    - Renamed `ast::VariableDefinitions` to `ast::VariablesDefinition`: ([#1353], [graphql/graphql-spec#916])
+        - Renamed `ast::Operation::variable_definitions` field to `variables_definition`.
 - Changed `ScalarToken::String` to contain raw quoted and escaped `StringLiteral` (was unquoted but escaped string before). ([#1349])
 - Added `LexerError::UnterminatedBlockString` variant. ([#1349])
 
@@ -51,11 +53,13 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1347]: /../../issues/1347
 [#1348]: /../../pull/1348
 [#1349]: /../../pull/1349
+[#1353]: /../../pull/1353
 [graphql/graphql-spec#525]: https://github.com/graphql/graphql-spec/pull/525
 [graphql/graphql-spec#687]: https://github.com/graphql/graphql-spec/issues/687
 [graphql/graphql-spec#805]: https://github.com/graphql/graphql-spec/pull/805
 [graphql/graphql-spec#825]: https://github.com/graphql/graphql-spec/pull/825
 [graphql/graphql-spec#849]: https://github.com/graphql/graphql-spec/pull/849
+[graphql/graphql-spec#916]: https://github.com/graphql/graphql-spec/pull/916
 [graphql/graphql-spec#1040]: https://github.com/graphql/graphql-spec/pull/1040
 [graphql/graphql-spec#1142]: https://github.com/graphql/graphql-spec/pull/1142
 [graphql/graphql-spec#1170]: https://github.com/graphql/graphql-spec/pull/1170
