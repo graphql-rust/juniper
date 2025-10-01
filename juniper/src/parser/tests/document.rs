@@ -127,9 +127,12 @@ fn description() {
             r#"
                 "Some description with \u90AB symbol"
                 query SomeOperation(
-                  #"ID you should provide"
+                  "ID you should provide and \u{90AB} symbol"
                   $id: String
-                  #"Switch for experiment ...."
+                  """
+                  Switch for experiment ....
+                  Multiline
+                  """
                   $enableBaz: Boolean = false
                 ) {
                   foo(id: $id) {
@@ -152,7 +155,7 @@ fn description() {
         vec![
             ast::Definition::Operation(Spanning::start_end(
                 &SourcePosition::new(71, 2, 16),
-                &SourcePosition::new(479, 14, 17),
+                &SourcePosition::new(567, 17, 17),
                 ast::Operation {
                     operation_type: ast::OperationType::Query,
                     name: Some(Spanning::start_end(
@@ -167,19 +170,26 @@ fn description() {
                     )),
                     variable_definitions: Some(Spanning::start_end(
                         &SourcePosition::new(90, 2, 35),
-                        &SourcePosition::new(276, 7, 17),
+                        &SourcePosition::new(364, 10, 17),
                         ast::VariableDefinitions {
                             items: vec![
                                 (
                                     Spanning::start_end(
-                                        &SourcePosition::new(153, 4, 18),
-                                        &SourcePosition::new(156, 4, 21),
+                                        &SourcePosition::new(172, 4, 18),
+                                        &SourcePosition::new(175, 4, 21),
                                         "id",
                                     ),
                                     ast::VariableDefinition {
+                                        description: Some(Spanning::start_end(
+                                            &SourcePosition::new(110, 3, 18),
+                                            &SourcePosition::new(153, 3, 61),
+                                            Cow::Owned(
+                                                "ID you should provide and \u{90AB} symbol".into(),
+                                            ),
+                                        )),
                                         var_type: Spanning::start_end(
-                                            &SourcePosition::new(158, 4, 23),
-                                            &SourcePosition::new(164, 4, 29),
+                                            &SourcePosition::new(177, 4, 23),
+                                            &SourcePosition::new(183, 4, 29),
                                             ast::Type::nullable("String"),
                                         ),
                                         default_value: None,
@@ -188,19 +198,24 @@ fn description() {
                                 ),
                                 (
                                     Spanning::start_end(
-                                        &SourcePosition::new(231, 6, 18),
-                                        &SourcePosition::new(241, 6, 28),
+                                        &SourcePosition::new(319, 9, 18),
+                                        &SourcePosition::new(329, 9, 28),
                                         "enableBaz",
                                     ),
                                     ast::VariableDefinition {
+                                        description: Some(Spanning::start_end(
+                                            &SourcePosition::new(202, 5, 18),
+                                            &SourcePosition::new(300, 8, 21),
+                                            Cow::Borrowed("Switch for experiment ....\nMultiline"),
+                                        )),
                                         var_type: Spanning::start_end(
-                                            &SourcePosition::new(243, 6, 30),
-                                            &SourcePosition::new(250, 6, 37),
+                                            &SourcePosition::new(331, 9, 30),
+                                            &SourcePosition::new(338, 9, 37),
                                             ast::Type::nullable("Boolean"),
                                         ),
                                         default_value: Some(Spanning::start_end(
-                                            &SourcePosition::new(253, 6, 40),
-                                            &SourcePosition::new(258, 6, 45),
+                                            &SourcePosition::new(341, 9, 40),
+                                            &SourcePosition::new(346, 9, 45),
                                             graphql::input_value!(false),
                                         )),
                                         directives: None,
@@ -211,28 +226,28 @@ fn description() {
                     )),
                     directives: None,
                     selection_set: vec![ast::Selection::Field(Spanning::start_end(
-                        &SourcePosition::new(297, 8, 18),
-                        &SourcePosition::new(461, 13, 19),
+                        &SourcePosition::new(385, 11, 18),
+                        &SourcePosition::new(549, 16, 19),
                         ast::Field {
                             alias: None,
                             name: Spanning::start_end(
-                                &SourcePosition::new(297, 8, 18),
-                                &SourcePosition::new(300, 8, 21),
+                                &SourcePosition::new(385, 11, 18),
+                                &SourcePosition::new(388, 11, 21),
                                 "foo",
                             ),
                             arguments: Some(Spanning::start_end(
-                                &SourcePosition::new(300, 8, 21),
-                                &SourcePosition::new(309, 8, 30),
+                                &SourcePosition::new(388, 11, 21),
+                                &SourcePosition::new(397, 11, 30),
                                 ast::Arguments {
                                     items: vec![(
                                         Spanning::start_end(
-                                            &SourcePosition::new(301, 8, 22),
-                                            &SourcePosition::new(303, 8, 24),
+                                            &SourcePosition::new(389, 11, 22),
+                                            &SourcePosition::new(391, 11, 24),
                                             "id",
                                         ),
                                         Spanning::start_end(
-                                            &SourcePosition::new(305, 8, 26),
-                                            &SourcePosition::new(308, 8, 29),
+                                            &SourcePosition::new(393, 11, 26),
+                                            &SourcePosition::new(396, 11, 29),
                                             graphql::input_value!(@id),
                                         ),
                                     )],
@@ -241,13 +256,13 @@ fn description() {
                             directives: None,
                             selection_set: Some(vec![
                                 ast::Selection::Field(Spanning::start_end(
-                                    &SourcePosition::new(332, 9, 20),
-                                    &SourcePosition::new(335, 9, 23),
+                                    &SourcePosition::new(420, 12, 20),
+                                    &SourcePosition::new(423, 12, 23),
                                     ast::Field {
                                         alias: None,
                                         name: Spanning::start_end(
-                                            &SourcePosition::new(332, 9, 20),
-                                            &SourcePosition::new(335, 9, 23),
+                                            &SourcePosition::new(420, 12, 20),
+                                            &SourcePosition::new(423, 12, 23),
                                             "bar",
                                         ),
                                         arguments: None,
@@ -256,38 +271,38 @@ fn description() {
                                     },
                                 )),
                                 ast::Selection::Field(Spanning::start_end(
-                                    &SourcePosition::new(356, 10, 20),
-                                    &SourcePosition::new(441, 12, 21),
+                                    &SourcePosition::new(444, 13, 20),
+                                    &SourcePosition::new(529, 15, 21),
                                     ast::Field {
                                         alias: None,
                                         name: Spanning::start_end(
-                                            &SourcePosition::new(356, 10, 20),
-                                            &SourcePosition::new(359, 10, 23),
+                                            &SourcePosition::new(444, 13, 20),
+                                            &SourcePosition::new(447, 13, 23),
                                             "baz",
                                         ),
                                         arguments: None,
                                         directives: Some(vec![Spanning::start_end(
-                                            &SourcePosition::new(360, 10, 24),
-                                            &SourcePosition::new(384, 10, 48),
+                                            &SourcePosition::new(448, 13, 24),
+                                            &SourcePosition::new(472, 13, 48),
                                             ast::Directive {
                                                 name: Spanning::start_end(
-                                                    &SourcePosition::new(361, 10, 25),
-                                                    &SourcePosition::new(368, 10, 32),
+                                                    &SourcePosition::new(449, 13, 25),
+                                                    &SourcePosition::new(456, 13, 32),
                                                     "include",
                                                 ),
                                                 arguments: Some(Spanning::start_end(
-                                                    &SourcePosition::new(368, 10, 32),
-                                                    &SourcePosition::new(384, 10, 48),
+                                                    &SourcePosition::new(456, 13, 32),
+                                                    &SourcePosition::new(472, 13, 48),
                                                     ast::Arguments {
                                                         items: vec![(
                                                             Spanning::start_end(
-                                                                &SourcePosition::new(369, 10, 33),
-                                                                &SourcePosition::new(371, 10, 35),
+                                                                &SourcePosition::new(457, 13, 33),
+                                                                &SourcePosition::new(459, 13, 35),
                                                                 "if",
                                                             ),
                                                             Spanning::start_end(
-                                                                &SourcePosition::new(373, 10, 37),
-                                                                &SourcePosition::new(383, 10, 47),
+                                                                &SourcePosition::new(461, 13, 37),
+                                                                &SourcePosition::new(471, 13, 47),
                                                                 graphql::input_value!(@enableBaz),
                                                             ),
                                                         )],
@@ -297,12 +312,12 @@ fn description() {
                                         )]),
                                         selection_set: Some(vec![ast::Selection::FragmentSpread(
                                             Spanning::start_end(
-                                                &SourcePosition::new(409, 11, 22),
-                                                &SourcePosition::new(419, 11, 32),
+                                                &SourcePosition::new(497, 14, 22),
+                                                &SourcePosition::new(507, 14, 32),
                                                 ast::FragmentSpread {
                                                     name: Spanning::start_end(
-                                                        &SourcePosition::new(412, 11, 25),
-                                                        &SourcePosition::new(419, 11, 32),
+                                                        &SourcePosition::new(500, 14, 25),
+                                                        &SourcePosition::new(507, 14, 32),
                                                         "BazInfo",
                                                     ),
                                                     directives: None,
@@ -317,33 +332,33 @@ fn description() {
                 },
             )),
             ast::Definition::Fragment(Spanning::start_end(
-                &SourcePosition::new(607, 20, 16),
-                &SourcePosition::new(679, 22, 17),
+                &SourcePosition::new(695, 23, 16),
+                &SourcePosition::new(767, 25, 17),
                 ast::Fragment {
                     name: Spanning::start_end(
-                        &SourcePosition::new(616, 20, 25),
-                        &SourcePosition::new(623, 20, 32),
+                        &SourcePosition::new(704, 23, 25),
+                        &SourcePosition::new(711, 23, 32),
                         "BazInfo",
                     ),
                     description: Some(Spanning::start_end(
-                        &SourcePosition::new(497, 16, 16),
-                        &SourcePosition::new(590, 19, 19),
+                        &SourcePosition::new(585, 19, 16),
+                        &SourcePosition::new(678, 22, 19),
                         Cow::Borrowed("Some block description here\nMultiline"),
                     )),
                     type_condition: Spanning::start_end(
-                        &SourcePosition::new(627, 20, 36),
-                        &SourcePosition::new(630, 20, 39),
+                        &SourcePosition::new(715, 23, 36),
+                        &SourcePosition::new(718, 23, 39),
                         "Baz",
                     ),
                     directives: None,
                     selection_set: vec![ast::Selection::Field(Spanning::start_end(
-                        &SourcePosition::new(653, 21, 20),
-                        &SourcePosition::new(661, 21, 28),
+                        &SourcePosition::new(741, 24, 20),
+                        &SourcePosition::new(749, 24, 28),
                         ast::Field {
                             alias: None,
                             name: Spanning::start_end(
-                                &SourcePosition::new(653, 21, 20),
-                                &SourcePosition::new(661, 21, 28),
+                                &SourcePosition::new(741, 24, 20),
+                                &SourcePosition::new(749, 24, 28),
                                 "whatever",
                             ),
                             arguments: None,

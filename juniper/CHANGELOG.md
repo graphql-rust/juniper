@@ -16,7 +16,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - Made `includeDeprecated` argument of `__Type.fields`, `__Type.enumValues`, `__Type.inputFields`, `__Field.args` and `__Directive.args` fields non-`Null`. ([#1348], [graphql/graphql-spec#1142])
     - Made `@deprecated(reason:)` argument non-`Null`. ([#1348], [graphql/graphql-spec#1040])
 - Changed `ScalarToken::String` to contain raw quoted and escaped `StringLiteral` (was unquoted but escaped string before). ([#1349])
-    - Added `description` field to `ast::Operation` and `ast::Fragment` field. ([#1349], [graphql/graphql-spec#1170])
+    - Added `description` field to `ast::Operation`, `ast::Fragment` and `ast::VariableDefinition`. ([#1349], [graphql/graphql-spec#1170])
 - Added `LexerError::UnterminatedBlockString` variant. ([#1349])
 
 ### Added
@@ -33,7 +33,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
         - `schema::meta::Argument::deprecation_status` field.
     - Support for variable-length escaped Unicode characters (e.g. `\u{110000}`) in strings. ([#1349], [graphql/graphql-spec#849], [graphql/graphql-spec#687])
     - Full Unicode range support. ([#1349], [graphql/graphql-spec#849], [graphql/graphql-spec#687])
-    - Support parsing descriptions on fragments. ([#1349], [graphql/graphql-spec#1170])
+    - Support parsing descriptions on operations, fragments and variable definitions. ([#1349], [graphql/graphql-spec#1170])
 - Support for [block strings][0180-1]. ([#1349])
 
 ### Changed

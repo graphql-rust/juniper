@@ -440,6 +440,8 @@ fn parse_variable_definition<'a, S>(
 where
     S: ScalarValue,
 {
+    let description = parse_description(parser)?;
+
     let start_pos = parser.expect(&Token::Dollar)?.span.start;
     let var_name = parser.expect_name()?;
     parser.expect(&Token::Colon)?;
@@ -463,6 +465,7 @@ where
         (
             Spanning::start_end(&start_pos, &var_name.span.end, var_name.item),
             VariableDefinition {
+                description,
                 var_type,
                 default_value,
                 directives: directives.map(|s| s.item),
