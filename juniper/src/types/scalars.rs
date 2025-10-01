@@ -1,4 +1,4 @@
-use std::{char, marker::PhantomData, rc::Rc, thread::JoinHandle};
+use std::{marker::PhantomData, rc::Rc, thread::JoinHandle};
 
 use derive_more::with_trait::{Deref, Display, From, Into};
 use serde::{Deserialize, Serialize};
@@ -9,7 +9,7 @@ use crate::{
     executor::{ExecutionResult, Executor, Registry},
     graphql_scalar,
     macros::reflect,
-    parser::{LexerError, ParseError, ScalarToken, Token},
+    parser::{ParseError, ScalarToken, Token},
     schema::meta::MetaType,
     types::{
         async_await::GraphQLValueAsync,
@@ -81,107 +81,14 @@ mod impl_string_scalar {
     }
 
     pub(super) fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
-        if let ScalarToken::String(value) = value {
-            let mut ret = String::with_capacity(value.len());
-            let mut char_iter = value.chars();
-            while let Some(ch) = char_iter.next() {
-                match ch {
-                    '\\' => match char_iter.next() {
-                        Some('"') => {
-                            ret.push('"');
-                        }
-                        Some('/') => {
-                            ret.push('/');
-                        }
-                        Some('n') => {
-                            ret.push('\n');
-                        }
-                        Some('r') => {
-                            ret.push('\r');
-                        }
-                        Some('t') => {
-                            ret.push('\t');
-                        }
-                        Some('\\') => {
-                            ret.push('\\');
-                        }
-                        Some('f') => {
-                            ret.push('\u{000c}');
-                        }
-                        Some('b') => {
-                            ret.push('\u{0008}');
-                        }
-                        Some('u') => {
-                            ret.push(parse_unicode_codepoint(&mut char_iter)?);
-                        }
-                        Some(s) => {
-                            return Err(ParseError::LexerError(LexerError::UnknownEscapeSequence(
-                                format!("\\{s}"),
-                            )));
-                        }
-                        None => return Err(ParseError::LexerError(LexerError::UnterminatedString)),
-                    },
-                    ch => {
-                        ret.push(ch);
-                    }
-                }
-            }
-            Ok(ret.into())
+        if let ScalarToken::String(lit) = value {
+            let parsed = lit.parse()?;
+            // TODO: Allow cheaper from `Cow<'_, str>` conversions for `ScalarValue`.
+            Ok(parsed.into_owned().into())
         } else {
             Err(ParseError::unexpected_token(Token::Scalar(value)))
         }
     }
-}
-
-fn parse_unicode_codepoint<I>(char_iter: &mut I) -> Result<char, ParseError>
-where
-    I: Iterator<Item = char>,
-{
-    let escaped_code_point = char_iter
-        .next()
-        .ok_or_else(|| {
-            ParseError::LexerError(LexerError::UnknownEscapeSequence(String::from("\\u")))
-        })
-        .and_then(|c1| {
-            char_iter
-                .next()
-                .map(|c2| format!("{c1}{c2}"))
-                .ok_or_else(|| {
-                    ParseError::LexerError(LexerError::UnknownEscapeSequence(format!("\\u{c1}")))
-                })
-        })
-        .and_then(|mut s| {
-            char_iter
-                .next()
-                .ok_or_else(|| {
-                    ParseError::LexerError(LexerError::UnknownEscapeSequence(format!("\\u{s}")))
-                })
-                .map(|c2| {
-                    s.push(c2);
-                    s
-                })
-        })
-        .and_then(|mut s| {
-            char_iter
-                .next()
-                .ok_or_else(|| {
-                    ParseError::LexerError(LexerError::UnknownEscapeSequence(format!("\\u{s}")))
-                })
-                .map(|c2| {
-                    s.push(c2);
-                    s
-                })
-        })?;
-    let code_point = u32::from_str_radix(&escaped_code_point, 16).map_err(|_| {
-        ParseError::LexerError(LexerError::UnknownEscapeSequence(format!(
-            "\\u{escaped_code_point}",
-        )))
-    })?;
-    char::from_u32(code_point).ok_or_else(|| {
-        ParseError::LexerError(LexerError::UnknownEscapeSequence(format!(
-            "\\u{escaped_code_point}",
-        )))
-    })
 }
 
 #[graphql_scalar]
@@ -537,7 +444,7 @@ impl<T> Default for EmptySubscription<T> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        parser::ScalarToken,
+        parser::{ScalarToken, StringLiteral},
         value::{DefaultScalarValue, ParseScalarValue, ScalarValue as _},
     };
 
@@ -571,24 +478,152 @@ mod tests {
 
     #[test]
     fn parse_strings() {
-        fn parse_string(s: &str, expected: &str) {
-            let s =
-                <String as ParseScalarValue<DefaultScalarValue>>::from_str(ScalarToken::String(s));
-            assert!(s.is_ok(), "A parsing error occurred: {s:?}");
-            let s: Option<String> = s.unwrap().try_to().ok();
-            assert!(s.is_some(), "No string returned");
+        for (input, expected) in [
+            (r#""simple""#, "simple"),
+            (r#"" white space ""#, " white space "),
+            (r#""quote \"""#, r#"quote ""#),
+            (r#""escaped \n\r\b\t\f""#, "escaped \n\r\u{0008}\t\u{000c}"),
+            (r#""slashes \\ \/""#, r"slashes \ /"),
+            (
+                r#""unicode \u1234\u5678\u90AB\uCDEF""#,
+                "unicode \u{1234}\u{5678}\u{90ab}\u{cdef}",
+            ),
+            (
+                r#""string with unicode escape outside BMP \u{1F600}""#,
+                "string with unicode escape outside BMP \u{1F600}",
+            ),
+            (
+                r#""string with minimal unicode escape \u{0}""#,
+                "string with minimal unicode escape \u{0}",
+            ),
+            (
+                r#""string with maximal unicode escape \u{10FFFF}""#,
+                "string with maximal unicode escape \u{10FFFF}",
+            ),
+            (
+                r#""string with maximal minimal unicode escape \u{000000}""#,
+                "string with maximal minimal unicode escape \u{000000}",
+            ),
+            (
+                r#""string with unicode surrogate pair escape \uD83D\uDE00""#,
+                "string with unicode surrogate pair escape \u{1f600}",
+            ),
+            (
+                r#""string with minimal surrogate pair escape \uD800\uDC00""#,
+                "string with minimal surrogate pair escape \u{10000}",
+            ),
+            (
+                r#""string with maximal surrogate pair escape \uDBFF\uDFFF""#,
+                "string with maximal surrogate pair escape \u{10FFFF}",
+            ),
+        ] {
+            let res = <String as ParseScalarValue<DefaultScalarValue>>::from_str(
+                ScalarToken::String(StringLiteral::Quoted(input)),
+            );
+            assert!(res.is_ok(), "parsing error occurred: {}", res.unwrap_err());
+
+            let s: Option<String> = res.unwrap().try_to().ok();
+            assert!(s.is_some(), "no string returned");
             assert_eq!(s.unwrap(), expected);
         }
+    }
 
-        parse_string("simple", "simple");
-        parse_string(" white space ", " white space ");
-        parse_string(r#"quote \""#, "quote \"");
-        parse_string(r"escaped \n\r\b\t\f", "escaped \n\r\u{0008}\t\u{000c}");
-        parse_string(r"slashes \\ \/", "slashes \\ /");
-        parse_string(
-            r"unicode \u1234\u5678\u90AB\uCDEF",
-            "unicode \u{1234}\u{5678}\u{90ab}\u{cdef}",
-        );
+    #[test]
+    fn parse_block_strings() {
+        for (input, expected) in [
+            (r#""""""""#, ""),
+            (r#""""simple""""#, "simple"),
+            (r#"""" white space """"#, " white space "),
+            (r#""""contains " quote""""#, r#"contains " quote"#),
+            (
+                r#""""contains \""" triple quote""""#,
+                r#"contains """ triple quote"#,
+            ),
+            (
+                r#""""contains \"" double quote""""#,
+                r#"contains \"" double quote"#,
+            ),
+            (
+                r#""""contains \\""" triple quote""""#,
+                r#"contains \""" triple quote"#,
+            ),
+            (r#""""\"""quote" """"#, r#""""quote" "#),
+            (r#""""multi\nline""""#, r"multi\nline"),
+            (
+                r#""""multi\rline\r\nnormalized""""#,
+                r"multi\rline\r\nnormalized",
+            ),
+            (
+                r#""""unescaped \\n\\r\\b\\t\\f\\u1234""""#,
+                r"unescaped \\n\\r\\b\\t\\f\\u1234",
+            ),
+            (
+                r#""""unescaped unicode outside BMP \u{1f600}""""#,
+                r"unescaped unicode outside BMP \u{1f600}",
+            ),
+            (r#""""slashes \\\\ \\/""""#, r"slashes \\\\ \\/"),
+            (
+                r#""""
+
+        spans
+          multiple
+            lines
+
+        """"#,
+                "spans\n  multiple\n    lines",
+            ),
+            // removes uniform indentation
+            (
+                r#""""
+    Hello,
+      World!
+
+    Yours,
+      GraphQL.""""#,
+                "Hello,\n  World!\n\nYours,\n  GraphQL.",
+            ),
+            // removes empty leading and trailing lines
+            (
+                r#""""
+
+    Hello,
+      World!
+
+    Yours,
+      GraphQL.
+
+        """"#,
+                "Hello,\n  World!\n\nYours,\n  GraphQL.",
+            ),
+            // retains indentation from first line
+            (
+                r#""""    Hello,
+      World!
+
+    Yours,
+      GraphQL.""""#,
+                "    Hello,\n  World!\n\nYours,\n  GraphQL.",
+            ),
+            // does not alter trailing spaces
+            (
+                r#""""
+    Hello,
+      World!
+
+    Yours,
+      GraphQL.   """"#,
+                "Hello,\n  World!\n\nYours,\n  GraphQL.   ",
+            ),
+        ] {
+            let res = <String as ParseScalarValue<DefaultScalarValue>>::from_str(
+                ScalarToken::String(StringLiteral::Block(input)),
+            );
+            assert!(res.is_ok(), "parsing error occurred: {}", res.unwrap_err());
+
+            let s: Option<String> = res.unwrap().try_to().ok();
+            assert!(s.is_some(), "no string returned");
+            assert_eq!(s.unwrap(), expected);
+        }
     }
 
     #[test]
