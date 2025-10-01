@@ -1,7 +1,7 @@
 use crate::{
     ast::{
         Arguments, BorrowedType, Definition, Directive, Document, Field, Fragment, FragmentSpread,
-        InlineFragment, InputValue, Operation, OperationType, Selection, VariableDefinitions,
+        InlineFragment, InputValue, Operation, OperationType, Selection, VariablesDefinition,
     },
     parser::Spanning,
     schema::meta::Argument,
@@ -109,7 +109,7 @@ where
 {
     match *def {
         Definition::Operation(ref op) => {
-            visit_variable_definitions(v, ctx, &op.item.variable_definitions);
+            visit_variables_definition(v, ctx, &op.item.variables_definition);
             visit_directives(v, ctx, &op.item.directives);
             visit_selection_set(v, ctx, &op.item.selection_set);
         }
@@ -120,10 +120,10 @@ where
     }
 }
 
-fn visit_variable_definitions<'a, S, V>(
+fn visit_variables_definition<'a, S, V>(
     v: &mut V,
     ctx: &mut ValidatorContext<'a, S>,
-    defs: &'a Option<Spanning<VariableDefinitions<S>>>,
+    defs: &'a Option<Spanning<VariablesDefinition<S>>>,
 ) where
     S: ScalarValue,
     V: Visitor<'a, S>,

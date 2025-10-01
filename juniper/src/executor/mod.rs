@@ -820,7 +820,7 @@ where
         };
     }
 
-    let default_variable_values = operation.item.variable_definitions.as_ref().map(|defs| {
+    let default_variable_values = operation.item.variables_definition.as_ref().map(|defs| {
         defs.item
             .items
             .iter()
@@ -918,7 +918,7 @@ where
         };
     }
 
-    let default_variable_values = operation.item.variable_definitions.as_ref().map(|defs| {
+    let default_variable_values = operation.item.variables_definition.as_ref().map(|defs| {
         defs.item
             .items
             .iter()
@@ -1065,7 +1065,7 @@ where
         }
     }
 
-    let default_variable_values = operation.item.variable_definitions.as_ref().map(|defs| {
+    let default_variable_values = operation.item.variables_definition.as_ref().map(|defs| {
         defs.item
             .items
             .iter()

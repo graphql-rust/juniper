@@ -319,7 +319,7 @@ pub struct Arguments<'a, S> {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct VariableDefinitions<'a, S> {
+pub struct VariablesDefinition<'a, S> {
     pub items: Vec<(Spanning<&'a str>, VariableDefinition<'a, S>)>,
 }
 
@@ -388,7 +388,7 @@ pub struct Operation<'a, S> {
     pub description: Option<Spanning<Cow<'a, str>>>,
     pub operation_type: OperationType,
     pub name: Option<Spanning<&'a str>>,
-    pub variable_definitions: Option<Spanning<VariableDefinitions<'a, S>>>,
+    pub variables_definition: Option<Spanning<VariablesDefinition<'a, S>>>,
     pub directives: Option<Vec<Spanning<Directive<'a, S>>>>,
     pub selection_set: Vec<Selection<'a, S>>,
 }
@@ -824,7 +824,7 @@ impl<'a, S> Arguments<'a, S> {
     }
 }
 
-impl<'a, S> VariableDefinitions<'a, S> {
+impl<'a, S> VariablesDefinition<'a, S> {
     pub fn iter(&self) -> slice::Iter<'_, (Spanning<&'a str>, VariableDefinition<'a, S>)> {
         self.items.iter()
     }
