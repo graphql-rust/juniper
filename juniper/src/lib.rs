@@ -99,7 +99,7 @@ pub use crate::{
     parser::{ParseError, ScalarToken, Span, Spanning, StringLiteral},
     schema::{
         meta,
-        model::{RootNode, SchemaType},
+        model::{RootNode, SchemaType, DirectiveType, DirectiveLocation},
     },
     types::{
         async_await::{GraphQLTypeAsync, GraphQLValueAsync},

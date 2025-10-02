@@ -42,7 +42,7 @@ pub(crate) fn schema_introspection_result() -> Value {
             {
               "kind": "ENUM",
               "name": "__DirectiveLocation",
-              "description": null,
+              "description": "Represents the valid locations where a GraphQL directive can be used.",
               "specifiedByURL": null,
               "isOneOf": null,
               "fields": null,
@@ -51,115 +51,115 @@ pub(crate) fn schema_introspection_result() -> Value {
               "enumValues": [
                 {
                   "name": "QUERY",
-                  "description": null,
+                  "description": "Location adjacent to a query operation.",
                   "isDeprecated": false,
                   "deprecationReason": null
                 },
                 {
                   "name": "MUTATION",
-                  "description": null,
+                  "description": "Location adjacent to a mutation operation.",
                   "isDeprecated": false,
                   "deprecationReason": null
                 },
                 {
                   "name": "SUBSCRIPTION",
-                  "description": null,
+                  "description": "Location adjacent to a subscription operation.",
                   "isDeprecated": false,
                   "deprecationReason": null
                 },
                 {
                   "name": "FIELD",
-                  "description": null,
+                  "description": "Location adjacent to a field.",
                   "isDeprecated": false,
                   "deprecationReason": null
                 },
                 {
                   "name": "FRAGMENT_DEFINITION",
-                  "description": null,
+                  "description": "Location adjacent to a fragment definition.",
                   "isDeprecated": false,
                   "deprecationReason": null
                 },
                 {
                   "name": "FRAGMENT_SPREAD",
-                  "description": null,
+                  "description": "Location adjacent to a fragment spread.",
                   "isDeprecated": false,
                   "deprecationReason": null
                 },
                 {
                   "name": "INLINE_FRAGMENT",
-                  "description": null,
+                  "description": "Location adjacent to an inline fragment.",
                   "isDeprecated": false,
                   "deprecationReason": null
                 },
                 {
                   "name": "VARIABLE_DEFINITION",
-                  "description": null,
+                  "description": "Location adjacent to a variable definition.",
                   "isDeprecated": false,
                   "deprecationReason": null
                 },
                 {
                   "name": "SCHEMA",
-                  "description": null,
+                  "description": "Location adjacent to a schema definition.",
                   "isDeprecated": false,
                   "deprecationReason": null
                 },
                 {
                   "name": "SCALAR",
-                  "description": null,
+                  "description": "Location adjacent to a scalar definition.",
                   "isDeprecated": false,
                   "deprecationReason": null
                 },
                 {
                   "name": "OBJECT",
-                  "description": null,
+                  "description": "Location adjacent to an object type definition.",
                   "isDeprecated": false,
                   "deprecationReason": null
                 },
                 {
                   "name": "FIELD_DEFINITION",
-                  "description": null,
+                  "description": "Location adjacent to a field definition.",
                   "isDeprecated": false,
                   "deprecationReason": null
                 },
                 {
                   "name": "ARGUMENT_DEFINITION",
-                  "description": null,
+                  "description": "Location adjacent to an argument definition.",
                   "isDeprecated": false,
                   "deprecationReason": null
                 },
                 {
                   "name": "INTERFACE",
-                  "description": null,
+                  "description": "Location adjacent to an interface definition.",
                   "isDeprecated": false,
                   "deprecationReason": null
                 },
                 {
                   "name": "UNION",
-                  "description": null,
+                  "description": "Location adjacent to a union definition.",
                   "isDeprecated": false,
                   "deprecationReason": null
                 },
                 {
                   "name": "ENUM",
-                  "description": null,
+                  "description": "Location adjacent to an enum definition.",
                   "isDeprecated": false,
                   "deprecationReason": null
                 },
                 {
                   "name": "ENUM_VALUE",
-                  "description": null,
+                  "description": "Location adjacent to an enum value definition.",
                   "isDeprecated": false,
                   "deprecationReason": null
                 },
                 {
                   "name": "INPUT_OBJECT",
-                  "description": null,
+                  "description": "Location adjacent to an input object definition.",
                   "isDeprecated": false,
                   "deprecationReason": null
                 },
                 {
                   "name": "INPUT_FIELD_DEFINITION",
-                  "description": null,
+                  "description": "Location adjacent to an input field definition.",
                   "isDeprecated": false,
                   "deprecationReason": null
                 }
