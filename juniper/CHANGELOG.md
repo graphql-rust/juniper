@@ -36,6 +36,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - Support for variable-length escaped Unicode characters (e.g. `\u{110000}`) in strings. ([#1349], [graphql/graphql-spec#849], [graphql/graphql-spec#687])
     - Full Unicode range support. ([#1349], [graphql/graphql-spec#849], [graphql/graphql-spec#687])
     - Support parsing descriptions on operations, fragments and variable definitions. ([#1349], [graphql/graphql-spec#1170])
+    - ???
 - Support for [block strings][0180-1]. ([#1349])
 
 ### Changed
