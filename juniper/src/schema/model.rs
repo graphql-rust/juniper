@@ -250,14 +250,16 @@ impl<S> SchemaType<S> {
 
         registry.get_type::<SchemaType<S>>(&());
 
-        let include_directive = DirectiveType::new_include(&mut registry);
-        let skip_directive = DirectiveType::new_skip(&mut registry);
         let deprecated_directive = DirectiveType::new_deprecated(&mut registry);
+        let include_directive = DirectiveType::new_include(&mut registry);
+        let one_of_directive = DirectiveType::new_one_of();
+        let skip_directive = DirectiveType::new_skip(&mut registry);
         let specified_by_directive = DirectiveType::new_specified_by(&mut registry);
         directives.insert(include_directive.name.clone(), include_directive);
         directives.insert(skip_directive.name.clone(), skip_directive);
         directives.insert(deprecated_directive.name.clone(), deprecated_directive);
         directives.insert(specified_by_directive.name.clone(), specified_by_directive);
+        directives.insert(one_of_directive.name.clone(), one_of_directive);
 
         let mut meta_fields = vec![
             registry.field::<SchemaType<S>>(arcstr::literal!("__schema"), &()),
@@ -585,38 +587,6 @@ impl<S> DirectiveType<S> {
         }
     }
 
-    fn new_include(registry: &mut Registry<S>) -> Self
-    where
-        S: ScalarValue,
-    {
-        Self::new(
-            arcstr::literal!("include"),
-            &[
-                DirectiveLocation::Field,
-                DirectiveLocation::FragmentSpread,
-                DirectiveLocation::InlineFragment,
-            ],
-            &[registry.arg::<bool>(arcstr::literal!("if"), &())],
-            false,
-        )
-    }
-
-    fn new_skip(registry: &mut Registry<S>) -> Self
-    where
-        S: ScalarValue,
-    {
-        Self::new(
-            arcstr::literal!("skip"),
-            &[
-                DirectiveLocation::Field,
-                DirectiveLocation::FragmentSpread,
-                DirectiveLocation::InlineFragment,
-            ],
-            &[registry.arg::<bool>(arcstr::literal!("if"), &())],
-            false,
-        )
-    }
-
     fn new_deprecated(registry: &mut Registry<S>) -> Self
     where
         S: ScalarValue,
@@ -634,6 +604,50 @@ impl<S> DirectiveType<S> {
                 &"No longer supported".into(),
                 &(),
             )],
+            false,
+        )
+    }
+
+    fn new_include(registry: &mut Registry<S>) -> Self
+    where
+        S: ScalarValue,
+    {
+        Self::new(
+            arcstr::literal!("include"),
+            &[
+                DirectiveLocation::Field,
+                DirectiveLocation::FragmentSpread,
+                DirectiveLocation::InlineFragment,
+            ],
+            &[registry.arg::<bool>(arcstr::literal!("if"), &())],
+            false,
+        )
+    }
+
+    fn new_one_of() -> Self
+    where
+        S: ScalarValue,
+    {
+        Self::new(
+            arcstr::literal!("oneOf"),
+            &[DirectiveLocation::InputObject],
+            &[],
+            false,
+        )
+    }
+
+    fn new_skip(registry: &mut Registry<S>) -> Self
+    where
+        S: ScalarValue,
+    {
+        Self::new(
+            arcstr::literal!("skip"),
+            &[
+                DirectiveLocation::Field,
+                DirectiveLocation::FragmentSpread,
+                DirectiveLocation::InlineFragment,
+            ],
+            &[registry.arg::<bool>(arcstr::literal!("if"), &())],
             false,
         )
     }

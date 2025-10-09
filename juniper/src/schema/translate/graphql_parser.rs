@@ -83,7 +83,9 @@ impl GraphQLParserTranslator {
             default_value: default_value
                 .as_ref()
                 .map(|x| GraphQLParserTranslator::translate_value(x)),
-            directives: generate_directives(deprecation_status),
+            directives: deprecation_directive(deprecation_status)
+                .map(|d| vec![d])
+                .unwrap_or_default(),
         }
     }
 
@@ -159,7 +161,7 @@ impl GraphQLParserTranslator {
                 name: name.as_str().into(),
                 directives: specified_by_url
                     .as_deref()
-                    .map(|url| vec![specified_by_url_to_directive(url)])
+                    .map(|url| vec![specified_by_url_directive(url)])
                     .unwrap_or_default(),
             }),
             meta::MetaType::Enum(meta::EnumMeta {
@@ -209,12 +211,15 @@ impl GraphQLParserTranslator {
                 name,
                 description,
                 input_fields,
+                is_one_of,
                 try_parse_fn: _,
             }) => schema::TypeDefinition::InputObject(schema::InputObjectType {
                 position: Pos::default(),
                 description: description.as_deref().map(Into::into),
                 name: name.as_str().into(),
-                directives: vec![],
+                directives: is_one_of
+                    .then(|| vec![one_of_directive()])
+                    .unwrap_or_default(),
                 fields: input_fields
                     .iter()
                     .filter(|x| !x.is_builtin())
@@ -255,7 +260,9 @@ impl GraphQLParserTranslator {
             position: Pos::default(),
             name: name.as_str().into(),
             description: description.as_deref().map(Into::into),
-            directives: generate_directives(deprecation_status),
+            directives: deprecation_directive(deprecation_status)
+                .map(|d| vec![d])
+                .unwrap_or_default(),
         }
     }
 
@@ -275,7 +282,9 @@ impl GraphQLParserTranslator {
             position: Pos::default(),
             name: name.as_str().into(),
             description: description.as_deref().map(Into::into),
-            directives: generate_directives(deprecation_status),
+            directives: deprecation_directive(deprecation_status)
+                .map(|d| vec![d])
+                .unwrap_or_default(),
             field_type: GraphQLParserTranslator::translate_type(field_type),
             arguments: arguments
                 .as_ref()
@@ -290,7 +299,11 @@ impl GraphQLParserTranslator {
     }
 }
 
-fn deprecation_to_directive<'a, T>(
+/// Forms a [`@deprecated(reason:)`] [`schema::Directive`] out of the provided
+/// [`meta::DeprecationStatus`].
+///
+/// [`@deprecated(reason:)`]: https://spec.graphql.org/September2025#sec--deprecated
+fn deprecation_directive<'a, T>(
     status: &meta::DeprecationStatus,
 ) -> Option<schema::Directive<'a, T>>
 where
@@ -309,8 +322,24 @@ where
     }
 }
 
-/// Returns the `@specifiedBy(url:)` [`schema::Directive`] for the provided `url`.
-fn specified_by_url_to_directive<'a, T>(url: &str) -> schema::Directive<'a, T>
+/// Forms a [`@oneOf`] [`schema::Directive`].
+///
+/// [`@oneOf`]: https://spec.graphql.org/September2025#sec--oneOf
+fn one_of_directive<'a, T>() -> schema::Directive<'a, T>
+where
+    T: schema::Text<'a>,
+{
+    schema::Directive {
+        position: Pos::default(),
+        name: "oneOf".into(),
+        arguments: vec![],
+    }
+}
+
+/// Forms a `@specifiedBy(url:)` [`schema::Directive`] out of the provided `url`.
+///
+/// [`@specifiedBy(url:)`]: https://spec.graphql.org/September2025#sec--specifiedBy
+fn specified_by_url_directive<'a, T>(url: &str) -> schema::Directive<'a, T>
 where
     T: schema::Text<'a>,
 {
@@ -319,18 +348,6 @@ where
         name: "specifiedBy".into(),
         arguments: vec![("url".into(), schema::Value::String(url.into()))],
     }
-}
-
-// Right now the only directive supported is `@deprecated`.
-// `@skip` and `@include` are dealt with elsewhere.
-// https://spec.graphql.org/October2021#sec-Type-System.Directives.Built-in-Directives
-fn generate_directives<'a, T>(status: &meta::DeprecationStatus) -> Vec<schema::Directive<'a, T>>
-where
-    T: schema::Text<'a>,
-{
-    deprecation_to_directive(status)
-        .map(|d| vec![d])
-        .unwrap_or_default()
 }
 
 /// Sorts the provided [`schema::Document`] in the "type-then-name" manner.
