@@ -25,6 +25,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 - [September 2025] GraphQL spec: ([#1347])
     - `@oneOf` input objects: ([#1354], [graphql/graphql-spec#825])
+        - `@oneOf` built-in directive.
         - `__Type.isOneOf` field. ([#1348])
         - `schema::meta::InputObjectMeta::is_one_of` field.
     - `SCHEMA`, `OBJECT`, `ARGUMENT_DEFINITION`, `INTERFACE`, `UNION`, `ENUM`, `INPUT_OBJECT` and `INPUT_FIELD_DEFINITION` values to `__DirectiveLocation` enum. ([#1348])
