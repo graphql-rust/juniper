@@ -51,6 +51,7 @@ mod trivial {
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 kind
+                isOneOf
             }
         }"#;
 
@@ -58,7 +59,10 @@ mod trivial {
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"kind": "INPUT_OBJECT"}}), vec![])),
+            Ok((
+                graphql_value!({"__type": {"kind": "INPUT_OBJECT", "isOneOf": false}}),
+                vec![],
+            )),
         );
     }
 
@@ -119,20 +123,17 @@ mod trivial {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"__type": {"inputFields": [
-                    {
-                        "name": "x",
-                        "description": null,
-                        "type": {"ofType": {"name": "Float"}},
-                        "defaultValue": null,
-                    },
-                    {
-                        "name": "y",
-                        "description": null,
-                        "type": {"ofType": {"name": "Float"}},
-                        "defaultValue": null,
-                    },
-                ]}}),
+                graphql_value!({"__type": {"inputFields": [{
+                    "name": "x",
+                    "description": null,
+                    "type": {"ofType": {"name": "Float"}},
+                    "defaultValue": null,
+                }, {
+                    "name": "y",
+                    "description": null,
+                    "type": {"ofType": {"name": "Float"}},
+                    "defaultValue": null,
+                }]}}),
                 vec![],
             )),
         );
@@ -226,6 +227,7 @@ mod default_value {
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 kind
+                isOneOf
             }
         }"#;
 
@@ -233,7 +235,10 @@ mod default_value {
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"kind": "INPUT_OBJECT"}}), vec![])),
+            Ok((
+                graphql_value!({"__type": {"kind": "INPUT_OBJECT", "isOneOf": false}}),
+                vec![],
+            )),
         );
     }
 
@@ -362,6 +367,7 @@ mod default_nullable_value {
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 kind
+                isOneOf
             }
         }"#;
 
@@ -369,7 +375,10 @@ mod default_nullable_value {
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"kind": "INPUT_OBJECT"}}), vec![])),
+            Ok((
+                graphql_value!({"__type": {"kind": "INPUT_OBJECT", "isOneOf": false}}),
+                vec![],
+            )),
         );
     }
 
@@ -397,20 +406,17 @@ mod default_nullable_value {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"__type": {"inputFields": [
-                    {
-                        "name": "x",
-                        "description": null,
-                        "type": {"name": "Float", "ofType": null},
-                        "defaultValue": "10",
-                    },
-                    {
-                        "name": "y",
-                        "description": null,
-                        "type": {"name": "Float", "ofType": null},
-                        "defaultValue": "10",
-                    },
-                ]}}),
+                graphql_value!({"__type": {"inputFields": [{
+                    "name": "x",
+                    "description": null,
+                    "type": {"name": "Float", "ofType": null},
+                    "defaultValue": "10",
+                }, {
+                   "name": "y",
+                   "description": null,
+                   "type": {"name": "Float", "ofType": null},
+                   "defaultValue": "10",
+                }]}}),
                 vec![],
             )),
         );
@@ -467,6 +473,7 @@ mod ignored_field {
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 kind
+                isOneOf
             }
         }"#;
 
@@ -474,7 +481,10 @@ mod ignored_field {
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"kind": "INPUT_OBJECT"}}), vec![])),
+            Ok((
+                graphql_value!({"__type": {"kind": "INPUT_OBJECT", "isOneOf": false}}),
+                vec![],
+            )),
         );
     }
 
@@ -535,20 +545,17 @@ mod ignored_field {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"__type": {"inputFields": [
-                    {
-                        "name": "x",
-                        "description": null,
-                        "type": {"ofType": {"name": "Float"}},
-                        "defaultValue": null,
-                    },
-                    {
-                        "name": "y",
-                        "description": null,
-                        "type": {"ofType": {"name": "Float"}},
-                        "defaultValue": null,
-                    },
-                ]}}),
+                graphql_value!({"__type": {"inputFields": [{
+                    "name": "x",
+                    "description": null,
+                    "type": {"name": "Float", "ofType": null},
+                    "defaultValue": null,
+                }, {
+                   "name": "y",
+                   "description": null,
+                   "type": {"name": "Float", "ofType": null},
+                   "defaultValue": null,
+                }]}}),
                 vec![],
             )),
         );
@@ -598,6 +605,7 @@ mod description_from_doc_comment {
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 kind
+                isOneOf
             }
         }"#;
 
@@ -605,7 +613,10 @@ mod description_from_doc_comment {
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"kind": "INPUT_OBJECT"}}), vec![])),
+            Ok((
+                graphql_value!({"__type": {"kind": "INPUT_OBJECT", "isOneOf": false}}),
+                vec![],
+            )),
         );
     }
 
@@ -671,20 +682,17 @@ mod description_from_doc_comment {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"__type": {"inputFields": [
-                    {
-                        "name": "x",
-                        "description": "Abscissa value.",
-                        "type": {"ofType": {"name": "Float"}},
-                        "defaultValue": null,
-                    },
-                    {
-                        "name": "yCoord",
-                        "description": "Ordinate value.",
-                        "type": {"ofType": {"name": "Float"}},
-                        "defaultValue": null,
-                    },
-                ]}}),
+                graphql_value!({"__type": {"inputFields": [{
+                    "name": "x",
+                    "description": "Abscissa value.",
+                    "type": {"ofType": {"name": "Float"}},
+                    "defaultValue": null,
+                }, {
+                    "name": "yCoord",
+                    "description": "Ordinate value.",
+                    "type": {"ofType": {"name": "Float"}},
+                    "defaultValue": null,
+                }]}}),
                 vec![],
             )),
         );
@@ -736,6 +744,7 @@ mod description_from_graphql_attr {
         const DOC: &str = r#"{
             __type(name: "Point") {
                 kind
+                isOneOf
             }
         }"#;
 
@@ -743,7 +752,10 @@ mod description_from_graphql_attr {
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"kind": "INPUT_OBJECT"}}), vec![])),
+            Ok((
+                graphql_value!({"__type": {"kind": "INPUT_OBJECT", "isOneOf": false}}),
+                vec![],
+            )),
         );
     }
 
@@ -809,20 +821,17 @@ mod description_from_graphql_attr {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"__type": {"inputFields": [
-                    {
-                        "name": "x",
-                        "description": "Abscissa value.",
-                        "type": {"ofType": {"name": "Float"}},
-                        "defaultValue": null,
-                    },
-                    {
-                        "name": "y",
-                        "description": "Ordinate value.",
-                        "type": {"ofType": {"name": "Float"}},
-                        "defaultValue": null,
-                    },
-                ]}}),
+                graphql_value!({"__type": {"inputFields": [{
+                    "name": "x",
+                    "description": "Abscissa value.",
+                    "type": {"ofType": {"name": "Float"}},
+                    "defaultValue": null,
+                }, {
+                    "name": "y",
+                    "description": "Ordinate value.",
+                    "type": {"ofType": {"name": "Float"}},
+                    "defaultValue": null,
+                }]}}),
                 vec![],
             )),
         );
@@ -874,6 +883,7 @@ mod deprecation_from_graphql_attr {
         const DOC: &str = r#"{
             __type(name: "Point") {
                 kind
+                isOneOf
             }
         }"#;
 
@@ -881,7 +891,10 @@ mod deprecation_from_graphql_attr {
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"kind": "INPUT_OBJECT"}}), vec![])),
+            Ok((
+                graphql_value!({"__type": {"kind": "INPUT_OBJECT", "isOneOf": false}}),
+                vec![],
+            )),
         );
     }
 
@@ -1023,6 +1036,7 @@ mod deprecation_from_rust_attr {
         const DOC: &str = r#"{
             __type(name: "Point") {
                 kind
+                isOneOf
             }
         }"#;
 
@@ -1030,7 +1044,10 @@ mod deprecation_from_rust_attr {
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"kind": "INPUT_OBJECT"}}), vec![])),
+            Ok((
+                graphql_value!({"__type": {"kind": "INPUT_OBJECT", "isOneOf": false}}),
+                vec![],
+            )),
         );
     }
 
@@ -1167,6 +1184,7 @@ mod renamed_all_fields {
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 kind
+                isOneOf
             }
         }"#;
 
@@ -1174,7 +1192,10 @@ mod renamed_all_fields {
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"kind": "INPUT_OBJECT"}}), vec![])),
+            Ok((
+                graphql_value!({"__type": {"kind": "INPUT_OBJECT", "isOneOf": false}}),
+                vec![],
+            )),
         );
     }
 
@@ -1201,20 +1222,17 @@ mod renamed_all_fields {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"__type": {"inputFields": [
-                    {
-                        "name": "x_coord",
-                        "description": null,
-                        "type": {"ofType": {"name": "Float"}},
-                        "defaultValue": null,
-                    },
-                    {
-                        "name": "y",
-                        "description": null,
-                        "type": {"ofType": {"name": "Float"}},
-                        "defaultValue": null,
-                    },
-                ]}}),
+                graphql_value!({"__type": {"inputFields": [{
+                    "name": "x_coord",
+                    "description": null,
+                    "type": {"ofType": {"name": "Float"}},
+                    "defaultValue": null,
+                }, {
+                    "name": "y",
+                    "description": null,
+                    "type": {"ofType": {"name": "Float"}},
+                    "defaultValue": null,
+                }]}}),
                 vec![],
             )),
         );

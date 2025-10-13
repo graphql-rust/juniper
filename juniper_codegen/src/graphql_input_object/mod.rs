@@ -656,7 +656,7 @@ impl Definition {
 
             quote! {
                 match (#( obj.get(#fields_names), )*) {
-                    #( #arms )
+                    #( #arms )*
                     _ => return Err(::juniper::FieldError::<#scalar>::from(
                         "Exactly one key must be specified",
                     )),

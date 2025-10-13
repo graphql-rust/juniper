@@ -161,7 +161,10 @@ fn parse_enum_variant(
     let name = field_attr
         .name
         .map_or_else(
-            || renaming.apply(&ident.unraw().to_string()),
+            || {
+                let name = rename::Policy::SnakeCase.apply(&ident.unraw().to_string());
+                renaming.apply(&name)
+            },
             SpanContainer::into_inner,
         )
         .into_boxed_str();
