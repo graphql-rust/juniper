@@ -417,6 +417,12 @@ struct Definition {
     /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
     /// [1]: https://spec.graphql.org/October2021#InputFieldsDefinition
     fields: Vec<FieldDefinition>,
+
+    /// Indicator whether this [GraphQL input object][0] is [`@oneOf`].
+    ///
+    /// [`@oneOf`]: https://spec.graphql.org/September2025#oneof-input-object
+    /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
+    is_one_of: bool,
 }
 
 impl ToTokens for Definition {

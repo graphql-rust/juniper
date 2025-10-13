@@ -13,39 +13,47 @@ use super::{ContainerAttr, Definition, FieldAttr, FieldDefinition};
 /// [`diagnostic::Scope`] of errors for `#[derive(GraphQLInputObject)]` macro.
 const ERR: diagnostic::Scope = diagnostic::Scope::InputObjectDerive;
 
-/// Expands `#[derive(GraphQLInputObject)]` macro into generated code.
+/// Expands `#[derive(GraphQLInputObject)]` macro placed on a struct or an enum.
 pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
     let ast = syn::parse2::<syn::DeriveInput>(input)?;
     let attr = ContainerAttr::from_attrs("graphql", &ast.attrs)?;
-
-    let syn::Data::Struct(data) = &ast.data else {
-        return Err(ERR.custom_error(ast.span(), "can only be derived on structs"));
-    };
 
     let renaming = attr
         .rename_fields
         .map(SpanContainer::into_inner)
         .unwrap_or(rename::Policy::CamelCase);
-
     let is_internal = attr.is_internal;
-    let fields = data
-        .fields
-        .iter()
-        .filter_map(|f| parse_field(f, renaming, is_internal))
-        .collect::<Vec<_>>();
+    let (fields, fields_span) = match &ast.data {
+        syn::Data::Struct(data) => {
+            let fields = data
+                .fields
+                .iter()
+                .filter_map(|f| parse_struct_field(f, renaming, is_internal))
+                .collect::<Vec<_>>();
+            (fields, data.fields.span())
+        }
+        syn::Data::Enum(data) => {
+            let fields = data
+                .variants
+                .iter()
+                .filter_map(|v| parse_enum_variant(v, renaming, is_internal))
+                .collect::<Vec<_>>();
+            (fields, data.variants.span())
+        }
+        syn::Data::Union(_) => {
+            return Err(ERR.custom_error(ast.span(), "cannot be derived on unions"));
+        }
+    };
 
     diagnostic::abort_if_dirty();
 
     if !fields.iter().any(|f| !f.ignored) {
-        return Err(ERR.custom_error(data.fields.span(), "expected at least 1 non-ignored field"));
+        return Err(ERR.custom_error(fields_span, "expected at least 1 non-ignored field"));
     }
 
     let unique_fields = fields.iter().map(|v| &v.name).collect::<HashSet<_>>();
     if unique_fields.len() != fields.len() {
-        return Err(ERR.custom_error(
-            data.fields.span(),
-            "expected all fields to have unique names",
-        ));
+        return Err(ERR.custom_error(fields_span, "expected all fields to have unique names"));
     }
 
     let name = attr
@@ -79,15 +87,16 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
         context,
         scalar,
         fields,
+        is_one_of: matches!(ast.data, syn::Data::Enum(_)),
     };
 
     Ok(definition.into_token_stream())
 }
 
-/// Parses a [`FieldDefinition`] from the given struct field definition.
+/// Parses a [`FieldDefinition`] from the provided struct field definition.
 ///
 /// Returns [`None`] if the parsing fails.
-fn parse_field(
+fn parse_struct_field(
     f: &syn::Field,
     renaming: rename::Policy,
     is_internal: bool,
@@ -120,8 +129,58 @@ fn parse_field(
     })
 }
 
-/// Emits "expected named struct field" [`syn::Error`] pointing to the given
-/// `span`.
+/// Parses a [`FieldDefinition`] from the provided enum variant definition.
+///
+/// Returns [`None`] if the parsing fails.
+fn parse_enum_variant(
+    v: &syn::Variant,
+    renaming: rename::Policy,
+    is_internal: bool,
+) -> Option<FieldDefinition> {
+    if v.fields.len() != 1 || !matches!(v.fields, syn::Fields::Unnamed(_)) {
+        ERR.emit_custom(
+            v.fields.span(),
+            "enum variant must have exactly 1 unnamed field to represent `@oneOf` input object \
+             field",
+        );
+    }
+
+    let field_attr = FieldAttr::from_attrs("graphql", &v.attrs)
+        .map_err(diagnostic::emit_error)
+        .ok()?;
+
+    if let Some(default) = &field_attr.default {
+        ERR.emit_custom(
+            default.span_ident(),
+            "field of `@oneOf` input object cannot have default value",
+        );
+    }
+
+    let ident = &v.ident;
+
+    let name = field_attr
+        .name
+        .map_or_else(
+            || renaming.apply(&ident.unraw().to_string()),
+            SpanContainer::into_inner,
+        )
+        .into_boxed_str();
+    if !is_internal && name.starts_with("__") {
+        ERR.no_double_underscore(v.span());
+    }
+
+    Some(FieldDefinition {
+        ident: ident.clone(),
+        ty: v.fields.iter().next().unwrap().ty.clone(),
+        default: None,
+        name,
+        description: field_attr.description.map(SpanContainer::into_inner),
+        deprecated: field_attr.deprecated.map(SpanContainer::into_inner),
+        ignored: field_attr.ignore.is_some(),
+    })
+}
+
+/// Emits "expected named struct field" [`syn::Error`] pointing to the provided `span`.
 pub(crate) fn err_unnamed_field<T, S: Spanned>(span: &S) -> Option<T> {
     ERR.emit_custom(span.span(), "expected named struct field");
     None
