@@ -169,9 +169,11 @@ fn parse_enum_variant(
         ERR.no_double_underscore(v.span());
     }
 
+    let field_ty = v.fields.iter().next().unwrap().ty.clone();
+
     Some(FieldDefinition {
         ident: ident.clone(),
-        ty: v.fields.iter().next().unwrap().ty.clone(),
+        ty: parse_quote! { ::core::option::Option<#field_ty> },
         default: None,
         name,
         description: field_attr.description.map(SpanContainer::into_inner),

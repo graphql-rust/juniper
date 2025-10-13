@@ -633,7 +633,7 @@ impl Definition {
 
         let ignored = self.has_ignored_variants.then(|| {
             quote! {
-                _ => ::core::panic!("Cannot resolve ignored enum variant"),
+                _ => ::core::panic!("cannot resolve ignored enum variant"),
             }
         });
 

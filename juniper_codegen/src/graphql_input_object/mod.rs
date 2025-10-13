@@ -6,6 +6,7 @@ pub(crate) mod derive;
 
 use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote, quote_spanned};
+use std::iter;
 use syn::{
     ext::IdentExt as _,
     parse::{Parse, ParseStream},
@@ -505,6 +506,8 @@ impl Definition {
 
         let description = &self.description;
 
+        let one_of = self.is_one_of.then(|| quote! { .one_of() });
+
         let fields = self.fields.iter().filter_map(|f| {
             let ty = &f.ty;
             let name = &f.name;
@@ -546,6 +549,7 @@ impl Definition {
                     registry
                         .build_input_object_type::<#ident #ty_generics>(info, &fields)
                         #description
+                        #one_of
                         .into_meta()
                 }
             }
@@ -623,49 +627,87 @@ impl Definition {
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
-        let fields = self.fields.iter().map(|f| {
-            let ident = &f.ident;
+        let body = if self.is_one_of {
+            let variants = self
+                .fields
+                .iter()
+                .filter(|f| !f.ignored)
+                .collect::<Vec<_>>();
+            let fields_names = variants.iter().map(|f| &f.name);
 
-            let construct = if f.ignored {
-                f.default.as_ref().map_or_else(
-                    || {
-                        let expr = default::Value::default();
-                        quote! { #expr }
-                    },
-                    |expr| quote! { #expr },
-                )
-            } else {
-                let name = &f.name;
+            let some_pat = quote! { ::core::option::Option::Some(v) };
+            let none_pat = quote! { ::core::option::Option::None };
 
-                let fallback = f.default.as_ref().map_or_else(
-                    || {
-                        quote! {
-                            ::juniper::FromInputValue::<#scalar>::from_implicit_null()
-                                .map_err(::juniper::IntoFieldError::into_field_error)?
-                        }
-                    },
-                    |expr| quote! { #expr },
-                );
+            let arms = variants.iter().enumerate().map(|(n, v)| {
+                let variant_ident = &v.ident;
+
+                let pre_none_pats = iter::repeat(&none_pat).take(n);
+                let post_none_pats = iter::repeat(&none_pat).take(variants.len() - n - 1);
 
                 quote! {
-                    match obj.get(#name) {
-                        ::core::option::Option::Some(v) => {
+                    (#( #pre_none_pats, )* #some_pat, #( #post_none_pats, )*) => {
+                        Self::#variant_ident(
                             ::juniper::FromInputValue::<#scalar>::from_input_value(v)
                                 .map_err(::juniper::IntoFieldError::into_field_error)?
-                        }
-                        ::core::option::Option::None => { #fallback }
+                        )
                     }
                 }
-            };
+            });
 
-            quote! { #ident: { #construct }, }
-        });
+            quote! {
+                match (#( obj.get(#fields_names), )*) {
+                    #( #arms )
+                    _ => return Err(::juniper::FieldError::<#scalar>::from(
+                        "Exactly one key must be specified",
+                    )),
+                }
+            }
+        } else {
+            let fields = self.fields.iter().map(|f| {
+                let ident = &f.ident;
+
+                let construct = if f.ignored {
+                    f.default.as_ref().map_or_else(
+                        || {
+                            let expr = default::Value::default();
+                            quote! { #expr }
+                        },
+                        |expr| quote! { #expr },
+                    )
+                } else {
+                    let name = &f.name;
+
+                    let fallback = f.default.as_ref().map_or_else(
+                        || {
+                            quote! {
+                                ::juniper::FromInputValue::<#scalar>::from_implicit_null()
+                                    .map_err(::juniper::IntoFieldError::into_field_error)?
+                            }
+                        },
+                        |expr| quote! { #expr },
+                    );
+
+                    quote! {
+                        match obj.get(#name) {
+                            ::core::option::Option::Some(v) => {
+                                ::juniper::FromInputValue::<#scalar>::from_input_value(v)
+                                    .map_err(::juniper::IntoFieldError::into_field_error)?
+                            }
+                            ::core::option::Option::None => { #fallback }
+                        }
+                    }
+                };
+
+                quote! { #ident: #construct, }
+            });
+
+            quote! { Self { #( #fields )* } }
+        };
 
         quote! {
             #[automatically_derived]
-            impl #impl_generics ::juniper::FromInputValue<#scalar>
-                for #ident #ty_generics
-                #where_clause
+            impl #impl_generics ::juniper::FromInputValue<#scalar> for #ident #ty_generics
+                 #where_clause
             {
                 type Error = ::juniper::FieldError<#scalar>;
 
@@ -678,9 +720,7 @@ impl Definition {
                             ::std::format!("Expected input object, found: {}", value))
                         )?;
 
-                    ::core::result::Result::Ok(#ident {
-                        #( #fields )*
-                    })
+                    ::core::result::Result::Ok(#body)
                 }
             }
         }
@@ -700,36 +740,43 @@ impl Definition {
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
-        let fields = self.fields.iter().filter_map(|f| {
+        let fields = self.fields.iter().filter(|&f| !f.ignored).map(|f| {
             let ident = &f.ident;
             let name = &f.name;
 
-            (!f.ignored).then(|| {
+            let value_expr = if self.is_one_of {
                 quote! {
-                    (#name, ::juniper::ToInputValue::to_input_value(&self.#ident))
+                    if let Self::#ident(v) = self {
+                        ::core::option::Option::Some(v)
+                    } else {
+                        ::core::option::Option::None
+                    }
                 }
-            })
+            } else {
+                quote! { self.#ident }
+            };
+
+            quote! {
+                (#name, ::juniper::ToInputValue::to_input_value(&#value_expr))
+            }
         });
 
         quote! {
             #[automatically_derived]
-            impl #impl_generics ::juniper::ToInputValue<#scalar>
-                for #ident #ty_generics
-                #where_clause
+            impl #impl_generics ::juniper::ToInputValue<#scalar> for #ident #ty_generics
+                 #where_clause
             {
                 fn to_input_value(&self) -> ::juniper::InputValue<#scalar> {
                     ::juniper::InputValue::object(
-                        #[allow(deprecated)]
-                        ::std::array::IntoIter::new([#( #fields ),*])
-                            .collect()
+                        ::core::iter::IntoIterator::into_iter([#( #fields ),*]).collect()
                     )
                 }
             }
         }
     }
 
-    /// Returns generated code implementing [`BaseType`], [`BaseSubTypes`] and
-    /// [`WrappedType`] traits for this [GraphQL input object][0].
+    /// Returns generated code implementing [`BaseType`], [`BaseSubTypes`] and [`WrappedType`]
+    /// traits for this [GraphQL input object][0].
     ///
     /// [`BaseSubTypes`]: juniper::macros::reflect::BaseSubTypes
     /// [`BaseType`]: juniper::macros::reflect::BaseType
@@ -745,7 +792,7 @@ impl Definition {
         let (impl_generics, _, where_clause) = generics.split_for_impl();
         let (_, ty_generics, _) = self.generics.split_for_impl();
 
-        let fields = self.fields.iter().filter(|f| !f.ignored).map(|f| &f.name);
+        let fields_names = self.fields.iter().filter(|f| !f.ignored).map(|f| &f.name);
 
         quote! {
             #[automatically_derived]
@@ -778,7 +825,7 @@ impl Definition {
                 for #ident #ty_generics
                 #where_clause
             {
-                const NAMES: ::juniper::macros::reflect::Names = &[#(#fields),*];
+                const NAMES: ::juniper::macros::reflect::Names = &[#(#fields_names),*];
             }
         }
     }
