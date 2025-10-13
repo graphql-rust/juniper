@@ -126,17 +126,17 @@ where
             }
         },
         TypeType::Concrete(t) => {
-            // Even though InputValue::String can be parsed into an enum, they
-            // are not valid as enum *literals* in a GraphQL query.
+            // Even though `InputValue::String` can be parsed into an enum, they are not valid as
+            // enum *literals* in a GraphQL query.
             if let (&InputValue::Scalar(_), Some(&MetaType::Enum(EnumMeta { .. }))) =
                 (arg_value, arg_type.to_concrete())
             {
                 return Some(error::enum_value(arg_value, arg_type));
             }
 
-            match *arg_value {
+            match arg_value {
                 InputValue::Null | InputValue::Variable(_) => None,
-                ref v @ InputValue::Scalar(_) | ref v @ InputValue::Enum(_) => {
+                v @ InputValue::Scalar(_) | v @ InputValue::Enum(_) => {
                     if let Some(parse_fn) = t.input_value_parse_fn() {
                         if parse_fn(v).is_ok() {
                             None
@@ -148,11 +148,17 @@ where
                     }
                 }
                 InputValue::List(_) => Some("Input lists are not literals".to_owned()),
-                InputValue::Object(ref obj) => {
+                InputValue::Object(obj) => {
                     if let MetaType::InputObject(InputObjectMeta {
-                        ref input_fields, ..
-                    }) = *t
+                        input_fields,
+                        is_one_of,
+                        ..
+                    }) = t
                     {
+                        if *is_one_of && obj.len() != 1 {
+                            return Some("Exactly one key must be specified".into());
+                        }
+
                         let mut remaining_required_fields = input_fields
                             .iter()
                             .filter_map(|f| {
@@ -176,14 +182,12 @@ where
                             return error_message;
                         }
 
-                        if remaining_required_fields.is_empty() {
-                            None
-                        } else {
+                        (!remaining_required_fields.is_empty()).then(|| {
                             let missing_fields = remaining_required_fields
                                 .into_iter()
                                 .format_with(", ", |s, f| f(&format_args!("\"{s}\"")));
-                            Some(error::missing_fields(arg_type, missing_fields))
-                        }
+                            error::missing_fields(arg_type, missing_fields)
+                        })
                     } else {
                         Some(error::not_input_object(arg_type))
                     }
