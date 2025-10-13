@@ -155,8 +155,17 @@ where
                         ..
                     }) = t
                     {
-                        if *is_one_of && obj.len() != 1 {
-                            return Some("Exactly one key must be specified".into());
+                        if *is_one_of {
+                            if obj.len() != 1 {
+                                return Some("Exactly one key must be specified".into());
+                            } else if let Some((name, _)) =
+                                obj.iter().find(|(_, val)| val.item.is_null())
+                            {
+                                return Some(format!(
+                                    "Value for member field \"{}\" must be specified",
+                                    name.item,
+                                ));
+                            }
                         }
 
                         let mut remaining_required_fields = input_fields

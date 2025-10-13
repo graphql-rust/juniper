@@ -56,7 +56,7 @@ mod trivial {
     }
 
     #[tokio::test]
-    async fn errs_on_multiple_keys() {
+    async fn errs_on_multiple_multiple() {
         // language=GraphQL
         const DOC: &str = r#"{
             userInfo(by: {id: "123", username: "John"})
@@ -68,6 +68,45 @@ mod trivial {
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Err(RuleError::new(
                 "Invalid value for argument \"by\", reason: Exactly one key must be specified",
+                &[SourcePosition::new(27, 1, 25)],
+            )
+            .into()),
+        );
+    }
+
+    #[tokio::test]
+    async fn errs_on_no_fields() {
+        // language=GraphQL
+        const DOC: &str = r#"{
+            userInfo(by: {})
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Err(RuleError::new(
+                "Invalid value for argument \"by\", reason: Exactly one key must be specified",
+                &[SourcePosition::new(27, 1, 25)],
+            )
+            .into()),
+        );
+    }
+
+    #[tokio::test]
+    async fn errs_on_null_field() {
+        // language=GraphQL
+        const DOC: &str = r#"{
+            userInfo(by: {id: null})
+        }"#;
+
+        let schema = schema(QueryRoot);
+
+        assert_eq!(
+            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
+            Err(RuleError::new(
+                "Invalid value for argument \"by\", reason: \
+                 Value for member field \"id\" must be specified",
                 &[SourcePosition::new(27, 1, 25)],
             )
             .into()),
