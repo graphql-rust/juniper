@@ -162,7 +162,11 @@ fn parse_enum_variant(
         .name
         .map_or_else(
             || {
-                let name = rename::Policy::SnakeCase.apply(&ident.unraw().to_string());
+                let mut name = ident.unraw().to_string();
+                if renaming != rename::Policy::None {
+                    // Make naming similar to struct fields before applying further renaming.
+                    name = rename::Policy::SnakeCase.apply(&ident.unraw().to_string());
+                }
                 renaming.apply(&name)
             },
             SpanContainer::into_inner,
