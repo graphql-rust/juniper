@@ -439,6 +439,9 @@ mod date_scalar {
 | [`chrono::NaiveDateTime`]   | [`LocalDateTime`]     | [`chrono`]       |
 | [`chrono::DateTime`]        | [`DateTime`]          | [`chrono`]       |
 | [`chrono_tz::Tz`]           | [`TimeZone`]          | [`chrono-tz`]    |
+| [`ruint::aliases::U256`]    | [`U256`]              | [`ruint`]        |
+| [`ruint::aliases::U128`]    | [`U128`]              | [`ruint`]        |
+| [`ruint::aliases::U64`]     | [`U64`]               | [`ruint`]        |
 | [`rust_decimal::Decimal`]   | `Decimal`             | [`rust_decimal`] |
 | [`jiff::civil::Date`]       | [`LocalDate`]         | [`jiff`]         |
 | [`jiff::civil::Time`]       | [`LocalTime`]         | [`jiff`]         |
@@ -472,6 +475,10 @@ mod date_scalar {
 [`chrono::NaiveTime`]: https://docs.rs/chrono/latest/chrono/naive/struct.NaiveTime.html
 [`chrono-tz`]: https://docs.rs/chrono-tz
 [`chrono_tz::Tz`]: https://docs.rs/chrono-tz/latest/chrono_tz/enum.Tz.html
+[`ruint`]: https://docs.rs/ruint
+[`ruint::aliases::U256`]: https://docs.rs/ruint/latest/ruint/aliases/type.U256.html
+[`ruint::aliases::U128`]: https://docs.rs/ruint/latest/ruint/aliases/type.U128.html
+[`ruint::aliases::U64`]: https://docs.rs/ruint/latest/ruint/aliases/type.U64.html
 [`DateTime`]: https://graphql-scalars.dev/docs/scalars/date-time
 [`Duration`]: https://graphql-scalars.dev/docs/scalars/duration
 [`ID`]: https://spec.graphql.org/October2021#sec-ID

@@ -35,6 +35,7 @@ chrono-tz = ["dep:chrono-tz", "dep:regex"]
 expose-test-schema = ["dep:anyhow", "dep:serde_json"]
 jiff = ["dep:jiff"]
 js = ["chrono?/wasmbind", "time?/wasm-bindgen", "uuid?/js"]
+ruint = ["dep:ruint"]
 rust_decimal = ["dep:rust_decimal"]
 schema-language = ["dep:graphql-parser", "dep:void"]
 time = ["dep:time"]
@@ -60,6 +61,7 @@ itertools = "0.14"
 jiff = { version = "0.2", features = ["std"], default-features = false, optional = true }
 juniper_codegen = { version = "0.17.0", path = "../juniper_codegen" }
 ref-cast = "1.0"
+ruint = { version = "1.17.0", features = ["serde"], optional = true }
 rust_decimal = { version = "1.20", default-features = false, optional = true }
 ryu = { version = "1.0", optional = true }
 serde = { version = "1.0.122", features = ["derive"] }
