@@ -8,58 +8,85 @@
 //! | [`U128`]       | `U128`         |
 //! | [`U64`]        | `U64`          |
 //!
+//! # Custom type
+//!
+//! Any custom variation of the [`ruint::Uint`] type could be made into a [GraphQL scalar][0] by
+//! reusing the [`integrations::ruint::uint_scalar`] module.
+//!
+//! However, to satisfy [orphan rules], a local [`ScalarValue`] implementation should be provided:
+//! ```rust
+//! # use derive_more::{Display, From, TryInto};
+//! # use juniper::{ScalarValue, graphql_scalar};
+//! # use serde::{Deserialize, Serialize};
+//! #
+//! #[derive(Clone, Debug, Deserialize, Display, From, PartialEq, ScalarValue, Serialize, TryInto)]
+//! #[serde(untagged)]
+//! enum CustomScalarValue {
+//!     #[value(to_float, to_int)]
+//!     Int(i32),
+//!     #[value(to_float)]
+//!     Float(f64),
+//!     #[value(as_str, to_string)]
+//!     String(String),
+//!     #[value(to_bool)]
+//!     Boolean(bool),
+//! }
+//!
+//! #[graphql_scalar]
+//! #[graphql(
+//!     with = juniper::integrations::ruint::uint_scalar,
+//!     specified_by_url = "https://docs.rs/ruint",
+//!     scalar = CustomScalarValue,
+//! )]
+//! type U512 = ruint::Uint<512, 8>;
+//! ```
+//!
+//! [`ScalarValue`]: trait@crate::ScalarValue
 //! [`U256`]: ruint::aliases::U256
 //! [`U128`]: ruint::aliases::U128
 //! [`U64`]: ruint::aliases::U64
+//! [orphan rules]: https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules
+//! [0]: https://spec.graphql.org/October2021#sec-Scalars
 
 use crate::graphql_scalar;
 
-/// Uint type using const generics.
+/// Unsigned integer type representing the ring of numbers modulo 2<sup>64</sup>.
 ///
-/// Always serializes as `String` in decimal notation.
-/// May be deserialized from `i32` and `String` with
-/// standard Rust syntax for decimal, hexadecimal, binary and octal
-/// notation using prefixes 0x, 0b and 0o.
+/// Always serializes as `String` in decimal notation. But may be deserialized both from `Int` and
+/// `String` values with standard Rust syntax for decimal, hexadecimal, binary and octal notation
+/// using prefixes `0x`, `0b` and `0o`.
 ///
-/// Confusingly empty strings get parsed as 0
-/// https://github.com/recmo/uint/issues/348
+/// See also [`ruint`] crate for details.
+///
+/// [`ruint`]: https://docs.rs/ruint
 #[graphql_scalar]
-#[graphql(
-    with = uint_scalar,
-    specified_by_url = "https://docs.rs/ruint",
-)]
+#[graphql(with = uint_scalar, specified_by_url = "https://docs.rs/ruint")]
 pub type U64 = ruint::aliases::U64;
 
-/// Uint type using const generics.
+/// Unsigned integer type representing the ring of numbers modulo 2<sup>128</sup>.
 ///
-/// Always serializes as `String` in decimal notation.
-/// May be deserialized from `i32` and `String` with
-/// standard Rust syntax for decimal, hexadecimal, binary and octal
-/// notation using prefixes 0x, 0b and 0o.
+/// Always serializes as `String` in decimal notation. But may be deserialized both from `Int` and
+/// `String` values with standard Rust syntax for decimal, hexadecimal, binary and octal notation
+/// using prefixes `0x`, `0b` and `0o`.
 ///
-/// Confusingly empty strings get parsed as 0
-/// https://github.com/recmo/uint/issues/348
+/// See also [`ruint`] crate for details.
+///
+/// [`ruint`]: https://docs.rs/ruint
 #[graphql_scalar]
-#[graphql(
-    with = uint_scalar,
-    specified_by_url = "https://docs.rs/ruint",
-)]
+#[graphql(with = uint_scalar, specified_by_url = "https://docs.rs/ruint")]
 pub type U128 = ruint::aliases::U128;
 
-/// Uint type using const generics.
+/// Unsigned integer type representing the ring of numbers modulo 2<sup>256</sup>.
 ///
-/// Always serializes as `String` in decimal notation.
-/// May be deserialized from `i32` and `String` with
-/// standard Rust syntax for decimal, hexadecimal, binary and octal
-/// notation using prefixes 0x, 0b and 0o.
+/// Always serializes as `String` in decimal notation. But may be deserialized both from `Int` and
+/// `String` values with standard Rust syntax for decimal, hexadecimal, binary and octal notation
+/// using prefixes `0x`, `0b` and `0o`.
 ///
-/// Confusingly empty strings get parsed as 0
-/// https://github.com/recmo/uint/issues/348
+/// See also [`ruint`] crate for details.
+///
+/// [`ruint`]: https://docs.rs/ruint
 #[graphql_scalar]
-#[graphql(
-    with = uint_scalar,
-    specified_by_url = "https://docs.rs/ruint",
-)]
+#[graphql(with = uint_scalar, specified_by_url = "https://docs.rs/ruint")]
 pub type U256 = ruint::aliases::U256;
 
 pub mod uint_scalar {
@@ -94,6 +121,14 @@ pub mod uint_scalar {
             )
             .into());
         };
+        // TODO: Remove once recmo/uint#348 is resolved and released:
+        //       https://github.com/recmo/uint/issues/348
+        if s.is_empty() {
+            return Err(format!(
+                "Failed to parse `ruint::Uint<{B}, {L}>` from `String`: cannot be empty",
+            )
+            .into());
+        }
         s.parse().map_err(|e| {
             format!("Failed to parse `ruint::Uint<{B}, {L}>` from `String`: {e}").into()
         })
@@ -204,6 +239,7 @@ mod test {
     #[test]
     fn fails_on_invalid_input() {
         for input in [
+            graphql::input_value!(""),
             graphql::input_value!("0,0"),
             graphql::input_value!("12,"),
             graphql::input_value!("1996-12-19T14:23:43"),
