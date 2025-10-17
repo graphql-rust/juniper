@@ -137,7 +137,7 @@ use self::common::diagnostic::{self, ResultExt as _};
 ///
 /// #[derive(GraphQLInputObject)]
 /// enum UserBy { // `@oneOF` input objects are defined as `enum`s.
-///     Id(ID),       // Every `enum` variant declares a `null`able input object field,
+///     Id(ID),       // Every `enum` variant declares a `Null`able input object field,
 ///     Name(String), // so there is no need to use `Option<String>` explicitly.
 /// }
 /// ```
@@ -202,7 +202,7 @@ use self::common::diagnostic::{self, ResultExt as _};
 ///     // If no explicit deprecation reason is provided,
 ///     // then the default "No longer supported" one is used.
 ///     #[deprecated]
-///     Date(String), // has no description in GraphQL schema
+///     Bio(String), // has no description in GraphQL schema
 /// }
 /// ```
 ///
@@ -354,7 +354,7 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 ///
 /// However, if you need for some reason another naming convention, it's
 /// possible to do so by using the `rename_all` attribute's argument. At the
-/// moment, it supports the following policies only: `SCREAMING_SNAKE_CASE`,
+/// moment, it supports the following policies only: `SCREAMING_SNAKE_CASE`, `snake_case`,
 /// `camelCase`, `none` (disables any renaming).
 ///
 /// ```rust
@@ -1246,7 +1246,7 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 ///
 /// However, if you need for some reason apply another naming convention, it's
 /// possible to do by using `rename_all` attribute's argument. At the moment it
-/// supports the following policies only: `SCREAMING_SNAKE_CASE`, `camelCase`,
+/// supports the following policies only: `SCREAMING_SNAKE_CASE`, `snake_case`, `camelCase`,
 /// `none` (disables any renaming).
 ///
 /// ```rust
@@ -1563,7 +1563,7 @@ pub fn derive_interface(body: TokenStream) -> TokenStream {
 ///
 /// However, if you need for some reason apply another naming convention, it's
 /// possible to do by using `rename_all` attribute's argument. At the moment it
-/// supports the following policies only: `SCREAMING_SNAKE_CASE`, `camelCase`,
+/// supports the following policies only: `SCREAMING_SNAKE_CASE`, `snake_case`, `camelCase`,
 /// `none` (disables any renaming).
 ///
 /// ```
@@ -1794,7 +1794,7 @@ pub fn derive_object(body: TokenStream) -> TokenStream {
 ///
 /// However, if you need for some reason apply another naming convention, it's
 /// possible to do by using `rename_all` attribute's argument. At the moment it
-/// supports the following policies only: `SCREAMING_SNAKE_CASE`, `camelCase`,
+/// supports the following policies only: `SCREAMING_SNAKE_CASE`, `snake_case`, `camelCase`,
 /// `none` (disables any renaming).
 ///
 /// ```
