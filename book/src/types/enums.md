@@ -70,7 +70,7 @@ enum Episode {
 #
 # fn main() {}
 ```
-> **TIP**: Supported policies are: `SCREAMING_SNAKE_CASE`, `camelCase` and `none` (disables any renaming).
+> **TIP**: Supported policies are: `SCREAMING_SNAKE_CASE`, `snake_case`, `camelCase` and `none` (disables any renaming).
 
 
 ### Documentation and deprecation

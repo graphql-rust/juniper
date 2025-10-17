@@ -17,6 +17,9 @@ pub(crate) enum Policy {
     /// Rename in `camelCase` style.
     CamelCase,
 
+    /// Rename in `snake_case` style.
+    SnakeCase,
+
     /// Rename in `SCREAMING_SNAKE_CASE` style.
     ScreamingSnakeCase,
 }
@@ -27,7 +30,8 @@ impl Policy {
         match self {
             Self::None => name.into(),
             Self::CamelCase => to_camel_case(name),
-            Self::ScreamingSnakeCase => to_upper_snake_case(name),
+            Self::SnakeCase => to_snake_case(name, false),
+            Self::ScreamingSnakeCase => to_snake_case(name, true),
         }
     }
 }
@@ -39,6 +43,7 @@ impl FromStr for Policy {
         match rule {
             "none" => Ok(Self::None),
             "camelCase" => Ok(Self::CamelCase),
+            "snake_case" => Ok(Self::SnakeCase),
             "SCREAMING_SNAKE_CASE" => Ok(Self::ScreamingSnakeCase),
             _ => Err(()),
         }
@@ -97,9 +102,9 @@ fn to_camel_case(s: &str) -> String {
     dest
 }
 
-fn to_upper_snake_case(s: &str) -> String {
+fn to_snake_case(s: &str, upper: bool) -> String {
     let mut last_lower = false;
-    let mut upper = String::new();
+    let mut out = String::new();
     for c in s.chars() {
         if c == '_' {
             last_lower = false;
@@ -107,16 +112,22 @@ fn to_upper_snake_case(s: &str) -> String {
             last_lower = true;
         } else if c.is_uppercase() {
             if last_lower {
-                upper.push('_');
+                out.push('_');
             }
             last_lower = false;
         }
 
-        for u in c.to_uppercase() {
-            upper.push(u);
+        if upper {
+            for u in c.to_uppercase() {
+                out.push(u);
+            }
+        } else {
+            for u in c.to_lowercase() {
+                out.push(u);
+            }
         }
     }
-    upper
+    out
 }
 
 #[cfg(test)]
@@ -124,7 +135,7 @@ mod to_camel_case_tests {
     use super::to_camel_case;
 
     #[test]
-    fn converts_correctly() {
+    fn camel() {
         for (input, expected) in [
             ("test", "test"),
             ("_test", "test"),
@@ -143,11 +154,11 @@ mod to_camel_case_tests {
 }
 
 #[cfg(test)]
-mod to_upper_snake_case_tests {
-    use super::to_upper_snake_case;
+mod to_snake_case_tests {
+    use super::to_snake_case;
 
     #[test]
-    fn converts_correctly() {
+    fn upper() {
         for (input, expected) in [
             ("abc", "ABC"),
             ("a_bc", "A_BC"),
@@ -158,7 +169,23 @@ mod to_upper_snake_case_tests {
             ("someINpuT", "SOME_INPU_T"),
             ("some_INpuT", "SOME_INPU_T"),
         ] {
-            assert_eq!(to_upper_snake_case(input), expected);
+            assert_eq!(to_snake_case(input, true), expected);
+        }
+    }
+
+    #[test]
+    fn lower() {
+        for (input, expected) in [
+            ("abc", "abc"),
+            ("a_bc", "a_bc"),
+            ("ABC", "abc"),
+            ("A_BC", "a_bc"),
+            ("SomeInput", "some_input"),
+            ("someInput", "some_input"),
+            ("someINpuT", "some_inpu_t"),
+            ("some_INpuT", "some_inpu_t"),
+        ] {
+            assert_eq!(to_snake_case(input, false), expected);
         }
     }
 }

@@ -1537,6 +1537,15 @@ pub(crate) fn schema_introspection_result() -> Value {
               ]
             },
             {
+              "name": "oneOf",
+              "description": null,
+              "isRepeatable": false,
+              "locations": [
+                "INPUT_OBJECT"
+              ],
+              "args": []
+            },
+            {
               "name": "skip",
               "description": null,
               "isRepeatable": false,
@@ -3013,6 +3022,14 @@ pub(crate) fn schema_introspection_result_without_descriptions() -> Value {
                   "deprecationReason": null
                 }
               ]
+            },
+            {
+              "name": "oneOf",
+              "isRepeatable": false,
+              "locations": [
+                "INPUT_OBJECT"
+              ],
+              "args": []
             },
             {
               "name": "skip",

@@ -1,5 +1,5 @@
 error: GraphQL input object expected at least 1 non-ignored field
- --> fail/input-object/derive_no_fields.rs:4:15
+ --> fail/input_object/struct/derive_no_fields.rs:4:15
   |
 4 | struct Object {}
   |               ^^

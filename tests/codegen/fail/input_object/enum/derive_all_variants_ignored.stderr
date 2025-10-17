@@ -1,0 +1,5 @@
+error: GraphQL input object expected at least 1 non-ignored field
+ --> fail/input_object/enum/derive_all_variants_ignored.rs:5:5
+  |
+5 |     #[graphql(ignore)]
+  |     ^

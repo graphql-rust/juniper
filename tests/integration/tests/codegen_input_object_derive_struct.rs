@@ -51,6 +51,7 @@ mod trivial {
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 kind
+                isOneOf
             }
         }"#;
 
@@ -58,7 +59,10 @@ mod trivial {
 
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"kind": "INPUT_OBJECT"}}), vec![])),
+            Ok((
+                graphql_value!({"__type": {"kind": "INPUT_OBJECT", "isOneOf": false}}),
+                vec![],
+            )),
         );
     }
 
@@ -119,20 +123,17 @@ mod trivial {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"__type": {"inputFields": [
-                    {
-                        "name": "x",
-                        "description": null,
-                        "type": {"ofType": {"name": "Float"}},
-                        "defaultValue": null,
-                    },
-                    {
-                        "name": "y",
-                        "description": null,
-                        "type": {"ofType": {"name": "Float"}},
-                        "defaultValue": null,
-                    },
-                ]}}),
+                graphql_value!({"__type": {"inputFields": [{
+                    "name": "x",
+                    "description": null,
+                    "type": {"ofType": {"name": "Float"}},
+                    "defaultValue": null,
+                }, {
+                    "name": "y",
+                    "description": null,
+                    "type": {"ofType": {"name": "Float"}},
+                    "defaultValue": null,
+                }]}}),
                 vec![],
             )),
         );
@@ -195,7 +196,8 @@ mod default_value {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Err(RuleError::new(
-                "Invalid value for argument \"point\", reason: Error on \"Point2D\" field \"y\": \
+                "Invalid value for argument \"point\", reason: \
+                 Error on \"Point2D\" field \"y\": \
                  \"null\" specified for not nullable type \"Float!\"",
                 &[SourcePosition::new(11, 0, 11)],
             )
@@ -217,23 +219,6 @@ mod default_value {
                 &[SourcePosition::new(8, 0, 8)],
             )
             .into()),
-        );
-    }
-
-    #[tokio::test]
-    async fn is_graphql_input_object() {
-        // language=GraphQL
-        const DOC: &str = r#"{
-            __type(name: "Point2D") {
-                kind
-            }
-        }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"kind": "INPUT_OBJECT"}}), vec![])),
         );
     }
 
@@ -357,23 +342,6 @@ mod default_nullable_value {
     }
 
     #[tokio::test]
-    async fn is_graphql_input_object() {
-        // language=GraphQL
-        const DOC: &str = r#"{
-            __type(name: "Point2D") {
-                kind
-            }
-        }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"kind": "INPUT_OBJECT"}}), vec![])),
-        );
-    }
-
-    #[tokio::test]
     async fn has_input_fields() {
         // language=GraphQL
         const DOC: &str = r#"{
@@ -397,20 +365,17 @@ mod default_nullable_value {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"__type": {"inputFields": [
-                    {
-                        "name": "x",
-                        "description": null,
-                        "type": {"name": "Float", "ofType": null},
-                        "defaultValue": "10",
-                    },
-                    {
-                        "name": "y",
-                        "description": null,
-                        "type": {"name": "Float", "ofType": null},
-                        "defaultValue": "10",
-                    },
-                ]}}),
+                graphql_value!({"__type": {"inputFields": [{
+                    "name": "x",
+                    "description": null,
+                    "type": {"name": "Float", "ofType": null},
+                    "defaultValue": "10",
+                }, {
+                   "name": "y",
+                   "description": null,
+                   "type": {"name": "Float", "ofType": null},
+                   "defaultValue": "10",
+                }]}}),
                 vec![],
             )),
         );
@@ -462,57 +427,6 @@ mod ignored_field {
     }
 
     #[tokio::test]
-    async fn is_graphql_input_object() {
-        // language=GraphQL
-        const DOC: &str = r#"{
-            __type(name: "Point2D") {
-                kind
-            }
-        }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"kind": "INPUT_OBJECT"}}), vec![])),
-        );
-    }
-
-    #[tokio::test]
-    async fn uses_type_name() {
-        // language=GraphQL
-        const DOC: &str = r#"{
-            __type(name: "Point2D") {
-                name
-            }
-        }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"name": "Point2D"}}), vec![])),
-        );
-    }
-
-    #[tokio::test]
-    async fn has_no_description() {
-        // language=GraphQL
-        const DOC: &str = r#"{
-            __type(name: "Point2D") {
-                description
-            }
-        }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"description": null}}), vec![])),
-        );
-    }
-
-    #[tokio::test]
     async fn has_input_fields() {
         // language=GraphQL
         const DOC: &str = r#"{
@@ -520,12 +434,6 @@ mod ignored_field {
                 inputFields {
                     name
                     description
-                    type {
-                        ofType {
-                            name
-                        }
-                    }
-                    defaultValue
                 }
             }
         }"#;
@@ -535,20 +443,13 @@ mod ignored_field {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"__type": {"inputFields": [
-                    {
-                        "name": "x",
-                        "description": null,
-                        "type": {"ofType": {"name": "Float"}},
-                        "defaultValue": null,
-                    },
-                    {
-                        "name": "y",
-                        "description": null,
-                        "type": {"ofType": {"name": "Float"}},
-                        "defaultValue": null,
-                    },
-                ]}}),
+                graphql_value!({"__type": {"inputFields": [{
+                    "name": "x",
+                    "description": null,
+                }, {
+                   "name": "y",
+                   "description": null,
+                }]}}),
                 vec![],
             )),
         );
@@ -593,40 +494,6 @@ mod description_from_doc_comment {
     }
 
     #[tokio::test]
-    async fn is_graphql_input_object() {
-        // language=GraphQL
-        const DOC: &str = r#"{
-            __type(name: "Point2D") {
-                kind
-            }
-        }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"kind": "INPUT_OBJECT"}}), vec![])),
-        );
-    }
-
-    #[tokio::test]
-    async fn uses_type_name() {
-        // language=GraphQL
-        const DOC: &str = r#"{
-            __type(name: "Point2D") {
-                name
-            }
-        }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"name": "Point2D"}}), vec![])),
-        );
-    }
-
-    #[tokio::test]
     async fn has_description() {
         // language=GraphQL
         const DOC: &str = r#"{
@@ -649,19 +516,13 @@ mod description_from_doc_comment {
     }
 
     #[tokio::test]
-    async fn has_input_fields() {
+    async fn has_input_fields_descriptions() {
         // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 inputFields {
                     name
                     description
-                    type {
-                        ofType {
-                            name
-                        }
-                    }
-                    defaultValue
                 }
             }
         }"#;
@@ -671,27 +532,20 @@ mod description_from_doc_comment {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"__type": {"inputFields": [
-                    {
-                        "name": "x",
-                        "description": "Abscissa value.",
-                        "type": {"ofType": {"name": "Float"}},
-                        "defaultValue": null,
-                    },
-                    {
-                        "name": "yCoord",
-                        "description": "Ordinate value.",
-                        "type": {"ofType": {"name": "Float"}},
-                        "defaultValue": null,
-                    },
-                ]}}),
+                graphql_value!({"__type": {"inputFields": [{
+                    "name": "x",
+                    "description": "Abscissa value.",
+                }, {
+                    "name": "yCoord",
+                    "description": "Ordinate value.",
+                }]}}),
                 vec![],
             )),
         );
     }
 }
 
-mod description_from_graphql_attr {
+mod description_and_name_from_graphql_attr {
     use super::*;
 
     /// Ignored doc.
@@ -731,44 +585,11 @@ mod description_from_graphql_attr {
     }
 
     #[tokio::test]
-    async fn is_graphql_input_object() {
-        // language=GraphQL
-        const DOC: &str = r#"{
-            __type(name: "Point") {
-                kind
-            }
-        }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"kind": "INPUT_OBJECT"}}), vec![])),
-        );
-    }
-
-    #[tokio::test]
-    async fn uses_type_name() {
+    async fn has_description_and_name() {
         // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point") {
                 name
-            }
-        }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"name": "Point"}}), vec![])),
-        );
-    }
-
-    #[tokio::test]
-    async fn has_description() {
-        // language=GraphQL
-        const DOC: &str = r#"{
-            __type(name: "Point") {
                 description
             }
         }"#;
@@ -779,27 +600,22 @@ mod description_from_graphql_attr {
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {
+                    "name": "Point",
                     "description": "Point in a Cartesian system.",
                 }}),
-                vec![]
+                vec![],
             )),
         );
     }
 
     #[tokio::test]
-    async fn has_input_fields() {
+    async fn has_input_fields_descriptions_and_names() {
         // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point") {
                 inputFields {
                     name
                     description
-                    type {
-                        ofType {
-                            name
-                        }
-                    }
-                    defaultValue
                 }
             }
         }"#;
@@ -809,20 +625,13 @@ mod description_from_graphql_attr {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
-                graphql_value!({"__type": {"inputFields": [
-                    {
-                        "name": "x",
-                        "description": "Abscissa value.",
-                        "type": {"ofType": {"name": "Float"}},
-                        "defaultValue": null,
-                    },
-                    {
-                        "name": "y",
-                        "description": "Ordinate value.",
-                        "type": {"ofType": {"name": "Float"}},
-                        "defaultValue": null,
-                    },
-                ]}}),
+                graphql_value!({"__type": {"inputFields": [{
+                    "name": "x",
+                    "description": "Abscissa value.",
+                }, {
+                    "name": "y",
+                    "description": "Ordinate value.",
+                }]}}),
                 vec![],
             )),
         );
@@ -865,59 +674,6 @@ mod deprecation_from_graphql_attr {
         assert_eq!(
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((graphql_value!({"x": 10.0}), vec![])),
-        );
-    }
-
-    #[tokio::test]
-    async fn is_graphql_input_object() {
-        // language=GraphQL
-        const DOC: &str = r#"{
-            __type(name: "Point") {
-                kind
-            }
-        }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"kind": "INPUT_OBJECT"}}), vec![])),
-        );
-    }
-
-    #[tokio::test]
-    async fn has_input_fields() {
-        // language=GraphQL
-        const DOC: &str = r#"{
-            __type(name: "Point") {
-                inputFields {
-                    name
-                    type {
-                        ofType {
-                            name
-                        }
-                    }
-                    defaultValue
-                }
-            }
-        }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((
-                graphql_value!({"__type": {"inputFields": [{
-                    "name": "x",
-                    "type": {"ofType": {"name": "Float"}},
-                    "defaultValue": null,
-                }, {
-                    "name": "y",
-                    "type": {"ofType": {"name": "Float"}},
-                    "defaultValue": null,
-                }]}}),
-                vec![],
-            )),
         );
     }
 
@@ -1018,59 +774,6 @@ mod deprecation_from_rust_attr {
     }
 
     #[tokio::test]
-    async fn is_graphql_input_object() {
-        // language=GraphQL
-        const DOC: &str = r#"{
-            __type(name: "Point") {
-                kind
-            }
-        }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"kind": "INPUT_OBJECT"}}), vec![])),
-        );
-    }
-
-    #[tokio::test]
-    async fn has_input_fields() {
-        // language=GraphQL
-        const DOC: &str = r#"{
-            __type(name: "Point") {
-                inputFields {
-                    name
-                    type {
-                        ofType {
-                            name
-                        }
-                    }
-                    defaultValue
-                }
-            }
-        }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((
-                graphql_value!({"__type": {"inputFields": [{
-                    "name": "x",
-                    "type": {"ofType": {"name": "Float"}},
-                    "defaultValue": null,
-                }, {
-                    "name": "y",
-                    "type": {"ofType": {"name": "Float"}},
-                    "defaultValue": null,
-                }]}}),
-                vec![],
-            )),
-        );
-    }
-
-    #[tokio::test]
     async fn deprecates_fields() {
         // language=GraphQL
         const DOC: &str = r#"{
@@ -1162,36 +865,12 @@ mod renamed_all_fields {
     }
 
     #[tokio::test]
-    async fn is_graphql_input_object() {
-        // language=GraphQL
-        const DOC: &str = r#"{
-            __type(name: "Point2D") {
-                kind
-            }
-        }"#;
-
-        let schema = schema(QueryRoot);
-
-        assert_eq!(
-            execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
-            Ok((graphql_value!({"__type": {"kind": "INPUT_OBJECT"}}), vec![])),
-        );
-    }
-
-    #[tokio::test]
     async fn has_input_fields() {
         // language=GraphQL
         const DOC: &str = r#"{
             __type(name: "Point2D") {
                 inputFields {
                     name
-                    description
-                    type {
-                        ofType {
-                            name
-                        }
-                    }
-                    defaultValue
                 }
             }
         }"#;
@@ -1202,18 +881,8 @@ mod renamed_all_fields {
             execute(DOC, None, &schema, &graphql_vars! {}, &()).await,
             Ok((
                 graphql_value!({"__type": {"inputFields": [
-                    {
-                        "name": "x_coord",
-                        "description": null,
-                        "type": {"ofType": {"name": "Float"}},
-                        "defaultValue": null,
-                    },
-                    {
-                        "name": "y",
-                        "description": null,
-                        "type": {"ofType": {"name": "Float"}},
-                        "defaultValue": null,
-                    },
+                    {"name": "x_coord"},
+                    {"name": "y"},
                 ]}}),
                 vec![],
             )),

@@ -14,7 +14,7 @@ In [Juniper], defining a [GraphQL input object][0] is quite straightforward and 
 #[derive(GraphQLInputObject)]
 struct Coordinate {
     latitude: f64,
-    longitude: f64
+    longitude: f64,
 }
 
 struct Root;
@@ -32,18 +32,39 @@ impl Root {
 # fn main() {}
 ```
 
+[`@oneOf`] [input objects][0] could be defined by using the [`#[derive(GraphQLInputObject)]` attribute][2] on a [Rust enum][enum]:
+```rust
+# #![expect(unused_variables, reason = "example")]
+# extern crate juniper;
+# use juniper::{GraphQLInputObject, ID};
+#
+#[derive(GraphQLInputObject)]
+enum UserBy {
+    Id(ID),       // Every `enum` variant declares a `Null`able input object field,
+    Name(String), // so there is no need to use `Option<String>` explicitly.
+}
+#
+# fn main() {}
+```
+
 
 ### Renaming
 
-Just as with [defining GraphQL objects](objects/index.md#renaming), by default [struct] fields are converted from [Rust]'s standard `snake_case` naming convention into [GraphQL]'s `camelCase` convention:
+Just as with [defining GraphQL objects](objects/index.md#renaming), by default [struct] fields (or [enum] variants) are converted from [Rust]'s standard naming convention into [GraphQL]'s `camelCase` convention:
 ```rust
 # extern crate juniper;
-# use juniper::GraphQLInputObject;
+# use juniper::{GraphQLInputObject, ID};
 #
 #[derive(GraphQLInputObject)]
 struct Person {
     first_name: String, // exposed as `firstName` in GraphQL schema
     last_name: String,  // exposed as `lastName` in GraphQL schema
+}
+
+#[derive(GraphQLInputObject)]
+enum UserBy {
+    Id(ID),       // exposed as `id` in GraphQL schema
+    Name(String), // exposed as `name` in GraphQL schema
 }
 #
 # fn main() {}
@@ -52,7 +73,7 @@ struct Person {
 We can override the name by using the `#[graphql(name = "...")]` attribute:
 ```rust
 # extern crate juniper;
-# use juniper::GraphQLInputObject;
+# use juniper::{GraphQLInputObject, ID};
 #
 #[derive(GraphQLInputObject)]
 #[graphql(name = "WebPerson")] // now exposed as `WebPerson` in GraphQL schema
@@ -62,6 +83,14 @@ struct Person {
     #[graphql(name = "websiteURL")]
     website_url: Option<String>, // now exposed as `websiteURL` in GraphQL schema
 }
+
+#[derive(GraphQLInputObject)]
+#[graphql(name = "By")] // now exposed as `By` in GraphQL schema
+enum UserBy {
+    #[graphql(name = "ID")]
+    Id(ID),       // now exposed as `ID` in GraphQL schema
+    Name(String), 
+}
 #
 # fn main() {}
 ```
@@ -69,7 +98,7 @@ struct Person {
 Or provide a different renaming policy for all the [struct] fields:
 ```rust
 # extern crate juniper;
-# use juniper::GraphQLInputObject;
+# use juniper::{GraphQLInputObject, ID};
 #
 #[derive(GraphQLInputObject)]
 #[graphql(rename_all = "none")] // disables any renaming
@@ -78,10 +107,17 @@ struct Person {
     age: i32,
     website_url: Option<String>, // exposed as `website_url` in GraphQL schema
 }
+
+#[derive(GraphQLInputObject)]
+#[graphql(rename_all = "none")] // disables any renaming
+enum UserBy {
+    Id(ID),       // exposed as `Id` in GraphQL schema
+    Name(String), // exposed as `Name` in GraphQL schema
+}
 #
 # fn main() {}
 ```
-> **TIP**: Supported policies are: `SCREAMING_SNAKE_CASE`, `camelCase` and `none` (disables any renaming).
+> **TIP**: Supported policies are: `SCREAMING_SNAKE_CASE`, `snake_case`, `camelCase` and `none` (disables any renaming).
 
 
 ### Documentation and deprecation
@@ -89,7 +125,7 @@ struct Person {
 Similarly, [GraphQL input fields][1] may also be [documented][7] and [deprecated][9] via `#[graphql(description = "...")]` and `#[graphql(deprecated = "...")]`/[`#[deprecated]`][13] attributes:
 ```rust
 # extern crate juniper;
-# use juniper::GraphQLInputObject;
+# use juniper::{GraphQLInputObject, ID};
 #
 /// This doc comment is visible only in Rust API docs.
 #[derive(GraphQLInputObject)]
@@ -112,6 +148,28 @@ struct Person {
     #[deprecated]
     another: Option<f64>, // has no description in GraphQL schema
 }
+
+/// This doc comment is visible only in Rust API docs.
+#[derive(GraphQLInputObject)]
+#[graphql(description = "This description is visible only in GraphQL schema.")]
+enum UserBy {
+    /// This doc comment is visible only in Rust API docs.
+    #[graphql(desc = "This description is visible only in GraphQL schema.")]
+    //        ^^^^ shortcut for a `description` argument
+    Id(ID),
+
+    /// This doc comment is visible in both Rust API docs and GraphQL schema 
+    /// descriptions.
+    // `enum` variants represent `Null`able input fields already, so can be naturally
+    // deprecated without any default values.
+    #[graphql(deprecated = "Just because.")]
+    Name(String),
+
+    // If no explicit deprecation reason is provided,
+    // then the default "No longer supported" one is used.
+    #[deprecated]
+    Bio(String), // has no description in GraphQL schema
+}
 #
 # fn main() {}
 ```
@@ -120,11 +178,11 @@ struct Person {
 
 ### Ignoring
 
-By default, all [struct] fields are included into the generated [GraphQL input object][0] type. To prevent inclusion of a specific field annotate it with the `#[graphql(ignore)]` attribute:
+By default, all [struct] fields (or [enum] variants) are included into the generated [GraphQL input object][0] type. To prevent inclusion of a specific field/variant annotate it with the `#[graphql(ignore)]` attribute:
 > **WARNING**: Ignored fields must either implement `Default` or be annotated with the `#[graphql(default = <expression>)]` argument.
 ```rust
 # extern crate juniper;
-# use juniper::GraphQLInputObject;
+# use juniper::{GraphQLInputObject, ID};
 #
 enum System {
     Cartesian,
@@ -146,6 +204,15 @@ struct Point2D {
     //        ^^^^ alternative naming, up to your preference
     shift: f64, 
 }
+
+#[derive(GraphQLInputObject)]
+enum UserBy {
+    Id(ID),
+    // Ignored `enum` variants naturally doesn't require `Default` implementation or
+    // `default` value being specified, as they're just never constructed from an input.
+    #[graphql(ignore)]
+    Name(String),
+}
 #
 # fn main() {}
 ```
@@ -154,6 +221,9 @@ struct Point2D {
 
 
 
+
+[`@oneOf`]: https://spec.graphql.org/September2025#sec--oneOf
+[enum]: https://doc.rust-lang.org/stable/reference/items/enumerations.html
 [GraphQL]: https://graphql.org
 [Juniper]: https://docs.rs/juniper
 [Rust]: https://www.rust-lang.org
