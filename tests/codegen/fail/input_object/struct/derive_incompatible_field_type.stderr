@@ -1,5 +1,5 @@
 error[E0277]: the trait bound `ObjectA: IsInputType<__S>` is not satisfied
-  --> fail/input-object/derive_incompatible_field_type.rs:10:12
+  --> fail/input_object/struct/derive_incompatible_field_type.rs:10:12
    |
 10 |     field: ObjectA,
    |            ^^^^^^^ the trait `IsInputType<__S>` is not implemented for `ObjectA`
@@ -16,7 +16,7 @@ error[E0277]: the trait bound `ObjectA: IsInputType<__S>` is not satisfied
            and $N others
 
 error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
-  --> fail/input-object/derive_incompatible_field_type.rs:10:12
+  --> fail/input_object/struct/derive_incompatible_field_type.rs:10:12
    |
  8 | #[derive(GraphQLInputObject)]
    |          ------------------ required by a bound introduced by this call
@@ -44,7 +44,7 @@ note: required by a bound in `Registry::<S>::arg`
    |                             ^^^^^^^^^^^^^^^^^ required by this bound in `Registry::<S>::arg`
 
 error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
- --> fail/input-object/derive_incompatible_field_type.rs:8:10
+ --> fail/input_object/struct/derive_incompatible_field_type.rs:8:10
   |
 8 | #[derive(GraphQLInputObject)]
   |          ^^^^^^^^^^^^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjectA`
@@ -62,7 +62,7 @@ error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
   = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `ObjectA: ToInputValue<_>` is not satisfied
- --> fail/input-object/derive_incompatible_field_type.rs:8:10
+ --> fail/input_object/struct/derive_incompatible_field_type.rs:8:10
   |
 8 | #[derive(GraphQLInputObject)]
   |          ^^^^^^^^^^^^^^^^^^ the trait `ToInputValue<_>` is not implemented for `ObjectA`

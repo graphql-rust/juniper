@@ -138,6 +138,7 @@ endif
 
 book.build:
 	mdbook build book/ $(if $(call eq,$(out),),,-d $(out))
+	rm -rf $(or $(out),book/_rendered)/lib.rs
 
 
 # Spellcheck Book.

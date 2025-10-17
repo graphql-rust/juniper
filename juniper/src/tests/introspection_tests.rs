@@ -1,18 +1,18 @@
 use std::collections::HashSet;
 
-use pretty_assertions::assert_eq;
-
 use super::schema_introspection::*;
 use crate::{
-    ScalarValue as _, graphql,
+    ScalarValue as _, Value, graphql,
     introspection::IntrospectionFormat,
     schema::model::RootNode,
     tests::fixtures::starwars::schema::{Database, Query},
     types::scalars::{EmptyMutation, EmptySubscription},
 };
+use pretty_assertions::assert_eq;
 
 #[tokio::test]
 async fn test_introspection_query_type_name() {
+    // language=GraphQL
     let doc = r#"
         query IntrospectionQueryTypeQuery {
           __schema {
@@ -46,6 +46,7 @@ async fn test_introspection_query_type_name() {
 
 #[tokio::test]
 async fn test_introspection_type_name() {
+    // language=GraphQL
     let doc = r#"
         query IntrospectionQueryTypeQuery {
           __type(name: "Droid") {
@@ -74,6 +75,7 @@ async fn test_introspection_type_name() {
 
 #[tokio::test]
 async fn test_introspection_specific_object_type_name_and_kind() {
+    // language=GraphQL
     let doc = r#"
         query IntrospectionDroidKindQuery {
           __type(name: "Droid") {
@@ -105,6 +107,7 @@ async fn test_introspection_specific_object_type_name_and_kind() {
 
 #[tokio::test]
 async fn test_introspection_specific_interface_type_name_and_kind() {
+    // language=GraphQL
     let doc = r#"
         query IntrospectionDroidKindQuery {
           __type(name: "Character") {
@@ -136,6 +139,7 @@ async fn test_introspection_specific_interface_type_name_and_kind() {
 
 #[tokio::test]
 async fn test_introspection_documentation() {
+    // language=GraphQL
     let doc = r#"
         query IntrospectionDroidDescriptionQuery {
           __type(name: "Droid") {
@@ -167,6 +171,7 @@ async fn test_introspection_documentation() {
 
 #[tokio::test]
 async fn test_introspection_directives() {
+    // language=GraphQL
     let q = r#"
         query IntrospectionQuery {
           __schema {
@@ -189,7 +194,7 @@ async fn test_introspection_directives() {
         .await
         .unwrap();
 
-    let expected = graphql_value!({
+    let expected: Value = graphql_value!({
         "__schema": {
             "directives": [
                 {
@@ -210,6 +215,12 @@ async fn test_introspection_directives() {
                     ],
                 },
                 {
+                    "name": "oneOf",
+                    "locations": [
+                        "INPUT_OBJECT",
+                    ],
+                },
+                {
                     "name": "skip",
                     "locations": [
                         "FIELD",
@@ -227,11 +238,15 @@ async fn test_introspection_directives() {
         },
     });
 
-    assert_eq!(result, (expected, vec![]));
+    assert_eq!(
+        serde_json::to_string_pretty(&result.0).unwrap(),
+        serde_json::to_string_pretty(&expected).unwrap(),
+    );
 }
 
 #[tokio::test]
 async fn test_introspection_possible_types() {
+    // language=GraphQL
     let doc = r#"
         query IntrospectionDroidDescriptionQuery {
           __type(name: "Character") {

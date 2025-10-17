@@ -24,7 +24,11 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 ### Added
 
 - [September 2025] GraphQL spec: ([#1347])
-    - `__Type.isOneOf` field. ([#1348], [graphql/graphql-spec#825])
+    - `@oneOf` input objects: ([#1354], [#1062], [#1055], [graphql/graphql-spec#825])
+        - `@oneOf` built-in directive.
+        - `__Type.isOneOf` field. ([#1348])
+        - `schema::meta::InputObjectMeta::is_one_of` field.
+        - `enum`s support to `#[derive(GraphQLInputObject)]` macro.
     - `SCHEMA`, `OBJECT`, `ARGUMENT_DEFINITION`, `INTERFACE`, `UNION`, `ENUM`, `INPUT_OBJECT` and `INPUT_FIELD_DEFINITION` values to `__DirectiveLocation` enum. ([#1348])
     - Arguments and input object fields deprecation: ([#1348], [#864], [graphql/graphql-spec#525], [graphql/graphql-spec#805])
         - Placing `#[graphql(deprecated)]` and `#[deprecated]` attributes on struct fields in `#[derive(GraphQLInputObject)]` macro.
@@ -37,6 +41,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - Full Unicode range support. ([#1349], [graphql/graphql-spec#849], [graphql/graphql-spec#687])
     - Support parsing descriptions on operations, fragments and variable definitions. ([#1349], [graphql/graphql-spec#1170])
 - Support for [block strings][0180-1]. ([#1349])
+- Support of `#[graphql(rename_all = "snake_case")]` attribute in macros. ([#1354])
 
 ### Changed
 
@@ -50,10 +55,13 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Incorrect double escaping in `ScalarToken::String` `Display`ing. ([#1349])
 
 [#864]: /../../issues/864
+[#1055]: /../../issues/1055
+[#1062]: /../../issues/1062
 [#1347]: /../../issues/1347
 [#1348]: /../../pull/1348
 [#1349]: /../../pull/1349
 [#1353]: /../../pull/1353
+[#1354]: /../../pull/1354
 [graphql/graphql-spec#525]: https://github.com/graphql/graphql-spec/pull/525
 [graphql/graphql-spec#687]: https://github.com/graphql/graphql-spec/issues/687
 [graphql/graphql-spec#805]: https://github.com/graphql/graphql-spec/pull/805

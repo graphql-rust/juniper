@@ -116,40 +116,46 @@ use proc_macro::TokenStream;
 
 use self::common::diagnostic::{self, ResultExt as _};
 
-/// `#[derive(GraphQLInputObject)]` macro for deriving a
-/// [GraphQL input object][0] implementation for a Rust struct. Each
-/// non-ignored field type must itself be [GraphQL input object][0] or a
-/// [GraphQL scalar][2].
+/// `#[derive(GraphQLInputObject)]` macro for deriving a [GraphQL input object][0] implementation
+/// for a Rust struct.
 ///
-/// The `#[graphql]` helper attribute is used for configuring the derived
-/// implementation. Specifying multiple `#[graphql]` attributes on the same
-/// definition is totally okay. They all will be treated as a single attribute.
+/// Each non-ignored field type must itself be either a [GraphQL input object][0] or a
+/// [GraphQL scalar][2]. [`@oneOf`] [input objects][0] are supported by deriving on a Rust enum.
+///
+/// The `#[graphql]` helper attribute is used for configuring the derived implementation. Specifying
+/// multiple `#[graphql]` attributes on the same definition is totally okay. They all will be
+/// treated as a single attribute.
 ///
 /// ```rust
-/// use juniper::GraphQLInputObject;
+/// # use juniper::{GraphQLInputObject, ID};
 ///
 /// #[derive(GraphQLInputObject)]
 /// struct Point2D {
 ///     x: f64,
 ///     y: f64,
 /// }
+///
+/// #[derive(GraphQLInputObject)]
+/// enum UserBy { // `@oneOF` input objects are defined as `enum`s.
+///     Id(ID),       // Every `enum` variant declares a `Null`able input object field,
+///     Name(String), // so there is no need to use `Option<String>` explicitly.
+/// }
 /// ```
 ///
 /// # Custom name, description and deprecation
 ///
-/// The name of a [GraphQL input object][0] or its [fields][1] may be overridden
-/// with the `name` attribute's argument. By default, a type name or a struct
-/// field name is used in a `camelCase`.
+/// The name of a [GraphQL input object][0] or its [fields][1] may be overridden with the `name`
+/// attribute's argument. By default, a type name or a struct field (or enum variant) name is used
+/// in a `camelCase`.
 ///
-/// The description of a [GraphQL input object][0] or its [fields][1] may be
-/// specified either with the `description`/`desc` attribute's argument, or with
-/// a regular Rust doc comment.
+/// The description of a [GraphQL input object][0] or its [fields][1] may be specified either with
+/// the `description`/`desc` attribute's argument, or with a regular Rust doc comment.
 ///
 /// [GraphQL input object fields][1] may be deprecated by specifying the `deprecated` attribute's
 /// argument, or with the regular Rust `#[deprecated]` attribute.
 ///
 /// ```rust
-/// # use juniper::GraphQLInputObject;
+/// # use juniper::{GraphQLInputObject, ID};
 /// #
 /// #[derive(GraphQLInputObject)]
 /// #[graphql(
@@ -174,22 +180,44 @@ use self::common::diagnostic::{self, ResultExt as _};
 ///     #[deprecated]
 ///     z: Option<f64>, // has no description in GraphQL schema
 /// }
+///
+/// #[derive(GraphQLInputObject)]
+/// #[graphql(
+///     // Rename the type for GraphQL by specifying the name here.
+///     name = "By",
+///     // You may also specify a description here.
+///     // If present, doc comments will be ignored.
+///     desc = "Selector for searching `User`s.",
+/// )]
+/// enum UserBy {
+///     /// ID for exact `User` search.
+///     Id(ID),
+///
+///     #[graphql(name = "username", desc = "Name for fuzzy search.")]
+///     // `enum` variants cannot use `default` attribute's argument,
+///     // as it's meaningless for `@oneOf` input objects.
+///     #[graphql(deprecated = "Obsolete")]
+///     Name(String),
+///
+///     // If no explicit deprecation reason is provided,
+///     // then the default "No longer supported" one is used.
+///     #[deprecated]
+///     Bio(String), // has no description in GraphQL schema
+/// }
 /// ```
 ///
 /// # Renaming policy
 ///
-/// By default, all [GraphQL input object fields][1] are renamed in a
-/// `camelCase` manner (so a `y_coord` Rust struct field becomes a
-/// `yCoord` [value][1] in GraphQL schema, and so on). This complies with
-/// default GraphQL naming conventions as [demonstrated in spec][0].
+/// By default, all [GraphQL input object fields][1] are renamed in a `camelCase` manner (so, a
+/// `y_coord` Rust struct field becomes a `yCoord` [input field][1] in GraphQL schema, and so on).
+/// This complies with the default GraphQL naming conventions as [demonstrated in spec][0].
 ///
-/// However, if you need for some reason another naming convention, it's
-/// possible to do so by using the `rename_all` attribute's argument. At the
-/// moment, it supports the following policies only: `SCREAMING_SNAKE_CASE`,
-/// `camelCase`, `none` (disables any renaming).
+/// However, if you need for some reason another naming convention, it's possible to do so by using
+/// the `rename_all` attribute's argument. At the moment, it supports the following policies only:
+/// `SCREAMING_SNAKE_CASE`, `snake_case`, `camelCase`, `none` (disables any renaming).
 ///
 /// ```rust
-/// # use juniper::GraphQLInputObject;
+/// # use juniper::{GraphQLInputObject, ID};
 /// #
 /// #[derive(GraphQLInputObject)]
 /// #[graphql(rename_all = "none")] // disables renaming
@@ -197,16 +225,23 @@ use self::common::diagnostic::{self, ResultExt as _};
 ///     x: f64,
 ///     y_coord: f64, // will be `y_coord` instead of `yCoord` in GraphQL schema
 /// }
+///
+/// #[derive(GraphQLInputObject)]
+/// #[graphql(rename_all = "none")] // disables renaming
+/// enum UserBy {
+///     Id(ID),       // will be `Id` instead of `id` in GraphQL schema
+///     Name(String), // will be `Name` instead of `name` in GraphQL schema
+/// }
 /// ```
 ///
 /// # Ignoring fields
 ///
-/// To omit exposing a Rust field in a GraphQL schema, use the `ignore`
-/// attribute's argument directly on that field. Ignored fields must implement
-/// [`Default`] or have the `default = <expression>` attribute's argument.
+/// To omit exposing a Rust struct field (or an enum variant) in a GraphQL schema, use the `ignore`
+/// attribute's argument directly on it. Ignored struct fields must implement [`Default`] or have
+/// the `default = <expression>` attribute's argument.
 ///
 /// ```rust
-/// # use juniper::GraphQLInputObject;
+/// # use juniper::{GraphQLInputObject, ID};
 /// #
 /// enum System {
 ///     Cartesian,
@@ -228,8 +263,18 @@ use self::common::diagnostic::{self, ResultExt as _};
 ///     //        ^^^^ alternative naming, up to your preference
 ///     shift: f64,
 /// }
+///
+/// #[derive(GraphQLInputObject)]
+/// enum UserBy {
+///     Id(ID),
+///     // Ignored `enum` variants naturally doesn't require `Default` implementation or
+///     // `default` value being specified, as they're just never constructed from an input.
+///     #[graphql(ignore)]
+///     Name(String),
+/// }
 /// ```
 ///
+/// [`@oneOf`]: https://spec.graphql.org/September2025#sec--oneOf
 /// [`ScalarValue`]: juniper::ScalarValue
 /// [0]: https://spec.graphql.org/October2021#sec-Input-Objects
 /// [1]: https://spec.graphql.org/October2021#InputFieldsDefinition
@@ -309,7 +354,7 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 ///
 /// However, if you need for some reason another naming convention, it's
 /// possible to do so by using the `rename_all` attribute's argument. At the
-/// moment, it supports the following policies only: `SCREAMING_SNAKE_CASE`,
+/// moment, it supports the following policies only: `SCREAMING_SNAKE_CASE`, `snake_case`,
 /// `camelCase`, `none` (disables any renaming).
 ///
 /// ```rust
@@ -1201,7 +1246,7 @@ pub fn derive_scalar_value(input: TokenStream) -> TokenStream {
 ///
 /// However, if you need for some reason apply another naming convention, it's
 /// possible to do by using `rename_all` attribute's argument. At the moment it
-/// supports the following policies only: `SCREAMING_SNAKE_CASE`, `camelCase`,
+/// supports the following policies only: `SCREAMING_SNAKE_CASE`, `snake_case`, `camelCase`,
 /// `none` (disables any renaming).
 ///
 /// ```rust
@@ -1518,7 +1563,7 @@ pub fn derive_interface(body: TokenStream) -> TokenStream {
 ///
 /// However, if you need for some reason apply another naming convention, it's
 /// possible to do by using `rename_all` attribute's argument. At the moment it
-/// supports the following policies only: `SCREAMING_SNAKE_CASE`, `camelCase`,
+/// supports the following policies only: `SCREAMING_SNAKE_CASE`, `snake_case`, `camelCase`,
 /// `none` (disables any renaming).
 ///
 /// ```
@@ -1749,7 +1794,7 @@ pub fn derive_object(body: TokenStream) -> TokenStream {
 ///
 /// However, if you need for some reason apply another naming convention, it's
 /// possible to do by using `rename_all` attribute's argument. At the moment it
-/// supports the following policies only: `SCREAMING_SNAKE_CASE`, `camelCase`,
+/// supports the following policies only: `SCREAMING_SNAKE_CASE`, `snake_case`, `camelCase`,
 /// `none` (disables any renaming).
 ///
 /// ```

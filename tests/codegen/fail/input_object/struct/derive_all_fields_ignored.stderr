@@ -1,0 +1,9 @@
+error: GraphQL input object expected at least 1 non-ignored field
+ --> fail/input_object/struct/derive_all_fields_ignored.rs:4:15
+  |
+4 |   struct Object {
+  |  _______________^
+5 | |     #[graphql(ignore)]
+6 | |     field: String,
+7 | | }
+  | |_^

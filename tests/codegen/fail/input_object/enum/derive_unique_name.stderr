@@ -1,0 +1,5 @@
+error: GraphQL input object expected all fields to have unique names
+ --> fail/input_object/enum/derive_unique_name.rs:5:5
+  |
+5 |     Test(String),
+  |     ^^^^

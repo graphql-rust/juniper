@@ -375,8 +375,7 @@ impl<'a, S: ScalarValue + 'a> TypeType<'a, S> {
     fn is_one_of(&self) -> Option<bool> {
         match self {
             Self::Concrete(t) => match t {
-                // TODO: Implement once `@oneOf` is implemented for input objects.
-                MetaType::InputObject(InputObjectMeta { .. }) => Some(false),
+                MetaType::InputObject(InputObjectMeta { is_one_of, .. }) => Some(*is_one_of),
                 MetaType::Enum(..)
                 | MetaType::Interface(..)
                 | MetaType::List(..)

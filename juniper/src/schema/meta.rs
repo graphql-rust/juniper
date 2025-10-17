@@ -348,6 +348,8 @@ pub struct InputObjectMeta<S> {
     pub description: Option<ArcStr>,
     #[doc(hidden)]
     pub input_fields: Vec<Argument<S>>,
+    #[doc(hidden)]
+    pub is_one_of: bool,
     #[debug(ignore)]
     pub(crate) try_parse_fn: InputValueParseFn<S>,
 }
@@ -364,6 +366,7 @@ impl<S> InputObjectMeta<S> {
             name: name.into(),
             description: None,
             input_fields: input_fields.to_vec(),
+            is_one_of: false,
             try_parse_fn: try_parse_fn::<S, T>,
         }
     }
@@ -374,6 +377,15 @@ impl<S> InputObjectMeta<S> {
     #[must_use]
     pub fn description(mut self, description: impl Into<ArcStr>) -> Self {
         self.description = Some(description.into());
+        self
+    }
+
+    /// Marks this [`InputObjectMeta`] type as [`@oneOf`].
+    ///
+    /// [`@oneOf`]: https://spec.graphql.org/September2025#sec--oneOf
+    #[must_use]
+    pub fn one_of(mut self) -> Self {
+        self.is_one_of = true;
         self
     }
 
