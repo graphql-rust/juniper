@@ -527,7 +527,7 @@ struct Person {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
-<p><strong>TIP</strong>: Supported policies are: <code>SCREAMING_SNAKE_CASE</code>, <code>camelCase</code> and <code>none</code> (disables any renaming).</p>
+<p><strong>TIP</strong>: Supported policies are: <code>SCREAMING_SNAKE_CASE</code>, <code>snake_case</code>, <code>camelCase</code> and <code>none</code> (disables any renaming).</p>
 </blockquote>
 <h3 id="deprecation"><a class="header" href="#deprecation">Deprecation</a></h3>
 <p>To <a href="https://spec.graphql.org/October2021#sec--deprecated">deprecate</a> a <a href="https://spec.graphql.org/October2021#sec-Objects">GraphQL object</a> field, either the <code>#[graphql(deprecated = "...")]</code> attribute, or <a href="https://doc.rust-lang.org/reference/attributes/diagnostics.html#the-deprecated-attribute">Rust's <code>#[deprecated]</code> attribute</a>, should be used:</p>
@@ -688,7 +688,7 @@ impl Person {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
-<p><strong>TIP</strong>: Supported policies are: <code>SCREAMING_SNAKE_CASE</code>, <code>camelCase</code> and <code>none</code> (disables any renaming).</p>
+<p><strong>TIP</strong>: Supported policies are: <code>SCREAMING_SNAKE_CASE</code>, <code>snake_case</code>, <code>camelCase</code> and <code>none</code> (disables any renaming).</p>
 </blockquote>
 <h3 id="documentation-and-deprecation"><a class="header" href="#documentation-and-deprecation">Documentation and deprecation</a></h3>
 <p>Similarly, <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL fields</a> (and their <a href="https://spec.graphql.org/October2021#sec-Language.Arguments">arguments</a>) may also be <a href="https://spec.graphql.org/October2021#sec-Descriptions">documented</a> and <a href="https://spec.graphql.org/October2021#sec--deprecated">deprecated</a> via <code>#[graphql(description = "...")]</code> and <code>#[graphql(deprecated = "...")]</code>/<a href="https://doc.rust-lang.org/reference/attributes/diagnostics.html#the-deprecated-attribute"><code>#[deprecated]</code></a> attributes:</p>
@@ -1693,7 +1693,7 @@ trait Person {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
-<p><strong>TIP</strong>: Supported policies are: <code>SCREAMING_SNAKE_CASE</code>, <code>camelCase</code> and <code>none</code> (disables any renaming).</p>
+<p><strong>TIP</strong>: Supported policies are: <code>SCREAMING_SNAKE_CASE</code>, <code>snake_case</code>, <code>camelCase</code> and <code>none</code> (disables any renaming).</p>
 </blockquote>
 <h3 id="documentation-and-deprecation-1"><a class="header" href="#documentation-and-deprecation-1">Documentation and deprecation</a></h3>
 <p>Similarly, <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL fields</a> (and their <a href="https://spec.graphql.org/October2021#sec-Language.Arguments">arguments</a>) of <a href="https://spec.graphql.org/October2021#sec-Interfaces">interfaces</a> may also be <a href="https://spec.graphql.org/October2021#sec-Descriptions">documented</a> and <a href="https://spec.graphql.org/October2021#sec--deprecated">deprecated</a> via <code>#[graphql(description = "...")]</code> and <code>#[graphql(deprecated = "...")]</code>/<a href="https://doc.rust-lang.org/reference/attributes/diagnostics.html#the-deprecated-attribute"><code>#[deprecated]</code></a> attributes:</p>
@@ -1966,7 +1966,7 @@ enum Episode {
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
-<p><strong>TIP</strong>: Supported policies are: <code>SCREAMING_SNAKE_CASE</code>, <code>camelCase</code> and <code>none</code> (disables any renaming).</p>
+<p><strong>TIP</strong>: Supported policies are: <code>SCREAMING_SNAKE_CASE</code>, <code>snake_case</code>, <code>camelCase</code> and <code>none</code> (disables any renaming).</p>
 </blockquote>
 <h3 id="documentation-and-deprecation-2"><a class="header" href="#documentation-and-deprecation-2">Documentation and deprecation</a></h3>
 <p>Just like when <a href="types/objects/index.html#documentation">defining GraphQL objects</a>, the <a href="https://spec.graphql.org/October2021#sec-Enums">GraphQL enum</a> type and its values could be <a href="https://spec.graphql.org/October2021#sec-Descriptions">documented</a> and <a href="https://spec.graphql.org/October2021#sec--deprecated">deprecated</a> via <code>#[graphql(description = "...")]</code> and <code>#[graphql(deprecated = "...")]</code>/<a href="https://doc.rust-lang.org/reference/attributes/diagnostics.html#the-deprecated-attribute"><code>#[deprecated]</code></a> attributes:</p>
@@ -2035,7 +2035,7 @@ enum Episode&lt;T&gt; {
 </span>#[derive(GraphQLInputObject)]
 struct Coordinate {
     latitude: f64,
-    longitude: f64
+    longitude: f64,
 }
 
 struct Root;
@@ -2051,21 +2051,39 @@ impl Root {
 }
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
+<p><a href="https://spec.graphql.org/September2025#sec--oneOf"><code>@oneOf</code></a> <a href="https://spec.graphql.org/October2021#sec-Input-Objects">input objects</a> could be defined by using the <a href="https://docs.rs/juniper/0.17.0/juniper/derive.GraphQLInputObject.html"><code>#[derive(GraphQLInputObject)]</code> attribute</a> on a <a href="https://doc.rust-lang.org/stable/reference/items/enumerations.html">Rust enum</a>:</p>
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![expect(unused_variables, reason = "example")]
+</span><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{GraphQLInputObject, ID};
+</span><span class="boring">
+</span>#[derive(GraphQLInputObject)]
+enum UserBy {
+    Id(ID),       // Every `enum` variant declares a `Null`able input object field,
+    Name(String), // so there is no need to use `Option&lt;String&gt;` explicitly.
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre></pre>
 <h3 id="renaming-5"><a class="header" href="#renaming-5">Renaming</a></h3>
-<p>Just as with <a href="types/objects/index.html#renaming">defining GraphQL objects</a>, by default <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a> fields are converted from <a href="https://www.rust-lang.org">Rust</a>'s standard <code>snake_case</code> naming convention into <a href="https://graphql.org">GraphQL</a>'s <code>camelCase</code> convention:</p>
+<p>Just as with <a href="types/objects/index.html#renaming">defining GraphQL objects</a>, by default <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a> fields (or <a href="https://doc.rust-lang.org/stable/reference/items/enumerations.html">enum</a> variants) are converted from <a href="https://www.rust-lang.org">Rust</a>'s standard naming convention into <a href="https://graphql.org">GraphQL</a>'s <code>camelCase</code> convention:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
-</span><span class="boring">use juniper::GraphQLInputObject;
+</span><span class="boring">use juniper::{GraphQLInputObject, ID};
 </span><span class="boring">
 </span>#[derive(GraphQLInputObject)]
 struct Person {
     first_name: String, // exposed as `firstName` in GraphQL schema
     last_name: String,  // exposed as `lastName` in GraphQL schema
 }
+
+#[derive(GraphQLInputObject)]
+enum UserBy {
+    Id(ID),       // exposed as `id` in GraphQL schema
+    Name(String), // exposed as `name` in GraphQL schema
+}
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>We can override the name by using the <code>#[graphql(name = "...")]</code> attribute:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
-</span><span class="boring">use juniper::GraphQLInputObject;
+</span><span class="boring">use juniper::{GraphQLInputObject, ID};
 </span><span class="boring">
 </span>#[derive(GraphQLInputObject)]
 #[graphql(name = "WebPerson")] // now exposed as `WebPerson` in GraphQL schema
@@ -2075,11 +2093,19 @@ struct Person {
     #[graphql(name = "websiteURL")]
     website_url: Option&lt;String&gt;, // now exposed as `websiteURL` in GraphQL schema
 }
+
+#[derive(GraphQLInputObject)]
+#[graphql(name = "By")] // now exposed as `By` in GraphQL schema
+enum UserBy {
+    #[graphql(name = "ID")]
+    Id(ID),       // now exposed as `ID` in GraphQL schema
+    Name(String), 
+}
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <p>Or provide a different renaming policy for all the <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a> fields:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
-</span><span class="boring">use juniper::GraphQLInputObject;
+</span><span class="boring">use juniper::{GraphQLInputObject, ID};
 </span><span class="boring">
 </span>#[derive(GraphQLInputObject)]
 #[graphql(rename_all = "none")] // disables any renaming
@@ -2088,15 +2114,22 @@ struct Person {
     age: i32,
     website_url: Option&lt;String&gt;, // exposed as `website_url` in GraphQL schema
 }
+
+#[derive(GraphQLInputObject)]
+#[graphql(rename_all = "none")] // disables any renaming
+enum UserBy {
+    Id(ID),       // exposed as `Id` in GraphQL schema
+    Name(String), // exposed as `Name` in GraphQL schema
+}
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
-<p><strong>TIP</strong>: Supported policies are: <code>SCREAMING_SNAKE_CASE</code>, <code>camelCase</code> and <code>none</code> (disables any renaming).</p>
+<p><strong>TIP</strong>: Supported policies are: <code>SCREAMING_SNAKE_CASE</code>, <code>snake_case</code>, <code>camelCase</code> and <code>none</code> (disables any renaming).</p>
 </blockquote>
 <h3 id="documentation-and-deprecation-3"><a class="header" href="#documentation-and-deprecation-3">Documentation and deprecation</a></h3>
 <p>Similarly, <a href="https://spec.graphql.org/October2021#InputFieldsDefinition">GraphQL input fields</a> may also be <a href="https://spec.graphql.org/October2021#sec-Descriptions">documented</a> and <a href="https://spec.graphql.org/October2021#sec--deprecated">deprecated</a> via <code>#[graphql(description = "...")]</code> and <code>#[graphql(deprecated = "...")]</code>/<a href="https://doc.rust-lang.org/reference/attributes/diagnostics.html#the-deprecated-attribute"><code>#[deprecated]</code></a> attributes:</p>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
-</span><span class="boring">use juniper::GraphQLInputObject;
+</span><span class="boring">use juniper::{GraphQLInputObject, ID};
 </span><span class="boring">
 </span>/// This doc comment is visible only in Rust API docs.
 #[derive(GraphQLInputObject)]
@@ -2119,18 +2152,40 @@ struct Person {
     #[deprecated]
     another: Option&lt;f64&gt;, // has no description in GraphQL schema
 }
+
+/// This doc comment is visible only in Rust API docs.
+#[derive(GraphQLInputObject)]
+#[graphql(description = "This description is visible only in GraphQL schema.")]
+enum UserBy {
+    /// This doc comment is visible only in Rust API docs.
+    #[graphql(desc = "This description is visible only in GraphQL schema.")]
+    //        ^^^^ shortcut for a `description` argument
+    Id(ID),
+
+    /// This doc comment is visible in both Rust API docs and GraphQL schema 
+    /// descriptions.
+    // `enum` variants represent `Null`able input fields already, so can be naturally
+    // deprecated without any default values.
+    #[graphql(deprecated = "Just because.")]
+    Name(String),
+
+    // If no explicit deprecation reason is provided,
+    // then the default "No longer supported" one is used.
+    #[deprecated]
+    Bio(String), // has no description in GraphQL schema
+}
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
 <blockquote>
 <p><strong>NOTE</strong>: Only <a href="https://spec.graphql.org/October2021#sec-Input-Objects">GraphQL input object</a>/<a href="https://spec.graphql.org/October2021#sec-Objects">object</a>/<a href="https://spec.graphql.org/October2021#sec-Interfaces">interface</a> fields, <a href="https://spec.graphql.org/October2021#sec-Language.Arguments">arguments</a> and <a href="https://spec.graphql.org/October2021#sec-Enums">GraphQL enum</a> values can be <a href="https://spec.graphql.org/October2021#sec--deprecated">deprecated</a>.</p>
 </blockquote>
 <h3 id="ignoring-5"><a class="header" href="#ignoring-5">Ignoring</a></h3>
-<p>By default, all <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a> fields are included into the generated <a href="https://spec.graphql.org/October2021#sec-Input-Objects">GraphQL input object</a> type. To prevent inclusion of a specific field annotate it with the <code>#[graphql(ignore)]</code> attribute:</p>
+<p>By default, all <a href="https://doc.rust-lang.org/reference/items/structs.html">struct</a> fields (or <a href="https://doc.rust-lang.org/stable/reference/items/enumerations.html">enum</a> variants) are included into the generated <a href="https://spec.graphql.org/October2021#sec-Input-Objects">GraphQL input object</a> type. To prevent inclusion of a specific field/variant annotate it with the <code>#[graphql(ignore)]</code> attribute:</p>
 <blockquote>
 <p><strong>WARNING</strong>: Ignored fields must either implement <code>Default</code> or be annotated with the <code>#[graphql(default = &lt;expression&gt;)]</code> argument.</p>
 </blockquote>
 <pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
-</span><span class="boring">use juniper::GraphQLInputObject;
+</span><span class="boring">use juniper::{GraphQLInputObject, ID};
 </span><span class="boring">
 </span>enum System {
     Cartesian,
@@ -2151,6 +2206,15 @@ struct Point2D {
     #[graphql(skip)]
     //        ^^^^ alternative naming, up to your preference
     shift: f64, 
+}
+
+#[derive(GraphQLInputObject)]
+enum UserBy {
+    Id(ID),
+    // Ignored `enum` variants naturally doesn't require `Default` implementation or
+    // `default` value being specified, as they're just never constructed from an input.
+    #[graphql(ignore)]
+    Name(String),
 }
 <span class="boring">
 </span><span class="boring">fn main() {}</span></code></pre></pre>
@@ -2538,6 +2602,12 @@ mod date_scalar {
 <tr><td><a href="https://docs.rs/chrono/latest/chrono/naive/struct.NaiveDateTime.html"><code>chrono::NaiveDateTime</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/local-date-time"><code>LocalDateTime</code></a></td><td><a href="https://docs.rs/chrono"><code>chrono</code></a></td></tr>
 <tr><td><a href="https://docs.rs/chrono/latest/chrono/struct.DateTime.html"><code>chrono::DateTime</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/date-time"><code>DateTime</code></a></td><td><a href="https://docs.rs/chrono"><code>chrono</code></a></td></tr>
 <tr><td><a href="https://docs.rs/chrono-tz/latest/chrono_tz/enum.Tz.html"><code>chrono_tz::Tz</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/time-zone"><code>TimeZone</code></a></td><td><a href="https://docs.rs/chrono-tz"><code>chrono-tz</code></a></td></tr>
+<tr><td><a href="https://docs.rs/ruint/latest/ruint/aliases/type.U8.html"><code>ruint::aliases::U8</code></a></td><td><code>U8</code></td><td><a href="https://docs.rs/ruint"><code>ruint</code></a></td></tr>
+<tr><td><a href="https://docs.rs/ruint/latest/ruint/aliases/type.U16.html"><code>ruint::aliases::U16</code></a></td><td><code>U16</code></td><td><a href="https://docs.rs/ruint"><code>ruint</code></a></td></tr>
+<tr><td><a href="https://docs.rs/ruint/latest/ruint/aliases/type.U32.html"><code>ruint::aliases::U32</code></a></td><td><code>U32</code></td><td><a href="https://docs.rs/ruint"><code>ruint</code></a></td></tr>
+<tr><td><a href="https://docs.rs/ruint/latest/ruint/aliases/type.U64.html"><code>ruint::aliases::U64</code></a></td><td><code>U64</code></td><td><a href="https://docs.rs/ruint"><code>ruint</code></a></td></tr>
+<tr><td><a href="https://docs.rs/ruint/latest/ruint/aliases/type.U128.html"><code>ruint::aliases::U128</code></a></td><td><code>U128</code></td><td><a href="https://docs.rs/ruint"><code>ruint</code></a></td></tr>
+<tr><td><a href="https://docs.rs/ruint/latest/ruint/aliases/type.U256.html"><code>ruint::aliases::U256</code></a></td><td><code>U256</code></td><td><a href="https://docs.rs/ruint"><code>ruint</code></a></td></tr>
 <tr><td><a href="https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html"><code>rust_decimal::Decimal</code></a></td><td><code>Decimal</code></td><td><a href="https://docs.rs/rust_decimal"><code>rust_decimal</code></a></td></tr>
 <tr><td><a href="https://docs.rs/jiff/latest/jiff/civil/struct.Date.html"><code>jiff::civil::Date</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/local-date"><code>LocalDate</code></a></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
 <tr><td><a href="https://docs.rs/jiff/latest/jiff/civil/struct.Time.html"><code>jiff::civil::Time</code></a></td><td><a href="https://graphql-scalars.dev/docs/scalars/local-time"><code>LocalTime</code></a></td><td><a href="https://docs.rs/jiff"><code>jiff</code></a></td></tr>
