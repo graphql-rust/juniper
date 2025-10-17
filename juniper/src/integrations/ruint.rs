@@ -12,7 +12,7 @@
 //! [`U128`]: ruint::aliases::U128
 //! [`U64`]: ruint::aliases::U64
 
-use crate::{ScalarValue, graphql_scalar};
+use crate::graphql_scalar;
 
 /// Uint type using const generics.
 ///
@@ -25,9 +25,7 @@ use crate::{ScalarValue, graphql_scalar};
 /// https://github.com/recmo/uint/issues/348
 #[graphql_scalar]
 #[graphql(
-    with = ruint_scalar,
-    to_output_with = ScalarValue::from_displayable,
-    parse_token(i32, String),
+    with = uint_scalar,
     specified_by_url = "https://docs.rs/ruint",
 )]
 pub type U64 = ruint::aliases::U64;
@@ -43,9 +41,7 @@ pub type U64 = ruint::aliases::U64;
 /// https://github.com/recmo/uint/issues/348
 #[graphql_scalar]
 #[graphql(
-    with = ruint_scalar,
-    to_output_with = ScalarValue::from_displayable,
-    parse_token(i32, String),
+    with = uint_scalar,
     specified_by_url = "https://docs.rs/ruint",
 )]
 pub type U128 = ruint::aliases::U128;
@@ -61,55 +57,88 @@ pub type U128 = ruint::aliases::U128;
 /// https://github.com/recmo/uint/issues/348
 #[graphql_scalar]
 #[graphql(
-    with = ruint_scalar,
-    to_output_with = ScalarValue::from_displayable,
-    parse_token(i32, String),
+    with = uint_scalar,
     specified_by_url = "https://docs.rs/ruint",
 )]
 pub type U256 = ruint::aliases::U256;
 
-mod ruint_scalar {
-    use std::str::FromStr;
+pub mod uint_scalar {
+    //! [GraphQL scalar][0] implementation for [`ruint::Uint`] type, suitable for specifying into
+    //! the `with` argument of the `#[graphql_scalar]`][1] macro.
+    //!
+    //! [0]: https://spec.graphql.org/October2021#sec-Scalars
+    //! [1]: macro@crate::graphql_scalar
 
-    use crate::{Scalar, ScalarValue};
+    use crate::{ParseScalarResult, ParseScalarValue, Scalar, ScalarToken, ScalarValue};
 
-    pub(super) fn from_input<const B: usize, const L: usize>(
-        v: &Scalar<impl ScalarValue>,
+    /// Parses an arbitrary [`ruint::Uint`] value from the provided [`ScalarValue`].
+    ///
+    /// Expects either `String` or `Int` GraphQL scalars as input, with standard Rust syntax for
+    /// decimal, hexadecimal, binary and octal notation using prefixes `0x`, `0b` and `0o`.
+    ///
+    /// # Errors
+    ///
+    /// If the [`ruint::Uint`] value cannot be parsed from the provided [`ScalarValue`].
+    pub fn from_input<const B: usize, const L: usize>(
+        value: &Scalar<impl ScalarValue>,
     ) -> Result<ruint::Uint<B, L>, Box<str>> {
-        if let Some(int) = v.try_to_int() {
-            return ruint::Uint::try_from(int)
-                .map_err(|e| format!("Failt to parse `Uint<{B},{L}>`: {e}").into());
+        if let Some(int) = value.try_to_int() {
+            return ruint::Uint::try_from(int).map_err(|e| {
+                format!("Failed to parse `ruint::Uint<{B}, {L}>` from `Int`: {e}").into()
+            });
         }
 
-        let Some(str) = v.try_as_str() else {
-            return Err(
-                format!("Failt to parse `Uint<{B},{L}>`: input is not `String` or `Int`").into(),
-            );
+        let Some(s) = value.try_as_str() else {
+            return Err(format!(
+                "Failed to parse `ruint::Uint<{B}, {L}>`: input is neither `String` nor `Int`"
+            )
+            .into());
         };
+        s.parse().map_err(|e| {
+            format!("Failed to parse `ruint::Uint<{B}, {L}>` from `String`: {e}").into()
+        })
+    }
 
-        ruint::Uint::from_str(str)
-            .map_err(|e| format!("Failt to parse `Uint<{B},{L}>`: {e}").into())
+    // ERGONOMICS: This method is intentionally placed here to allow omitting specifying another
+    //             `to_output_with = ScalarValue::from_displayable` macro argument in the user code
+    //             once the `with = juniper::integrations::ruint::uint_scalar` is specified already.
+    /// Converts the provided arbitrary [`ruint::Uint`] value into a [`ScalarValue`].
+    ///
+    /// Always serializes as GraphQL `String` in decimal notation.
+    pub fn to_output<const B: usize, const L: usize, S: ScalarValue>(int: &ruint::Uint<B, L>) -> S {
+        S::from_displayable(int)
+    }
+
+    // ERGONOMICS: This method is intentionally placed here to allow omitting specifying another
+    //             `parse_token(i32, String)` macro argument in the user code once the
+    //             `with = juniper::integrations::ruint::uint_scalar` is specified already.
+    /// Parses a [`ScalarValue`] from the provided [`ScalarToken`] as the [`ruint::Uint`] requires.
+    ///
+    /// # Errors
+    ///
+    /// If the provided [`ScalarToken`] represents neither `String` nor `Int` GraphQL scalar.
+    pub fn parse_token<S: ScalarValue>(token: ScalarToken<'_>) -> ParseScalarResult<S> {
+        <String as ParseScalarValue<S>>::from_str(token)
+            .or_else(|_| <i32 as ParseScalarValue<S>>::from_str(token))
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::{
-        FromInputValue as _, InputValue, ToInputValue as _, graphql,
-        integrations::ruint::{U64, U128, U256},
-    };
+    use super::{U64, U128, U256};
+    use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql};
 
     #[test]
     fn parses_correct_input_256() {
         for (input, expected) in [
-            (graphql::input_value!(0), ruint::aliases::U256::ZERO),
-            (graphql::input_value!(123), ruint::aliases::U256::from(123)),
-            (graphql::input_value!("0"), ruint::aliases::U256::ZERO),
-            (graphql::input_value!("42"), ruint::aliases::U256::from(42)),
-            (graphql::input_value!("0o10"), ruint::aliases::U256::from(8)),
+            (graphql::input_value!(0), U256::ZERO),
+            (graphql::input_value!(123), U256::from(123)),
+            (graphql::input_value!("0"), U256::ZERO),
+            (graphql::input_value!("42"), U256::from(42)),
+            (graphql::input_value!("0o10"), U256::from(8)),
             (
                 graphql::input_value!("0xdeadbeef"),
-                ruint::aliases::U256::from(3735928559u64),
+                U256::from(3735928559u64),
             ),
         ] {
             let input: InputValue = input;
@@ -120,7 +149,6 @@ mod test {
                 "failed to parse `{input:?}`: {:?}",
                 parsed.unwrap_err(),
             );
-
             assert_eq!(parsed.unwrap(), expected, "input: {input:?}");
         }
     }
@@ -128,13 +156,13 @@ mod test {
     #[test]
     fn parses_correct_input_128() {
         for (input, expected) in [
-            (graphql::input_value!(0), ruint::aliases::U128::ZERO),
-            (graphql::input_value!(123), ruint::aliases::U128::from(123)),
-            (graphql::input_value!("0"), ruint::aliases::U128::ZERO),
-            (graphql::input_value!("42"), ruint::aliases::U128::from(42)),
+            (graphql::input_value!(0), U128::ZERO),
+            (graphql::input_value!(123), U128::from(123)),
+            (graphql::input_value!("0"), U128::ZERO),
+            (graphql::input_value!("42"), U128::from(42)),
             (
                 graphql::input_value!("0xdeadbeef"),
-                ruint::aliases::U128::from(3735928559u64),
+                U128::from(3735928559u64),
             ),
         ] {
             let input: InputValue = input;
@@ -145,7 +173,6 @@ mod test {
                 "failed to parse `{input:?}`: {:?}",
                 parsed.unwrap_err(),
             );
-
             assert_eq!(parsed.unwrap(), expected, "input: {input:?}");
         }
     }
@@ -153,13 +180,13 @@ mod test {
     #[test]
     fn parses_correct_input_64() {
         for (input, expected) in [
-            (graphql::input_value!(0), ruint::aliases::U64::ZERO),
-            (graphql::input_value!(123), ruint::aliases::U64::from(123)),
-            (graphql::input_value!("0"), ruint::aliases::U64::ZERO),
-            (graphql::input_value!("42"), ruint::aliases::U64::from(42)),
+            (graphql::input_value!(0), U64::ZERO),
+            (graphql::input_value!(123), U64::from(123)),
+            (graphql::input_value!("0"), U64::ZERO),
+            (graphql::input_value!("42"), U64::from(42)),
             (
                 graphql::input_value!("0xdeadbeef"),
-                ruint::aliases::U64::from(3735928559u64),
+                U64::from(3735928559u64),
             ),
         ] {
             let input: InputValue = input;
@@ -170,7 +197,6 @@ mod test {
                 "failed to parse `{input:?}`: {:?}",
                 parsed.unwrap_err(),
             );
-
             assert_eq!(parsed.unwrap(), expected, "input: {input:?}");
         }
     }
@@ -192,7 +218,7 @@ mod test {
             assert!(
                 parsed.is_err(),
                 "allows input: {input:?} {}",
-                parsed.unwrap()
+                parsed.unwrap(),
             );
         }
     }
