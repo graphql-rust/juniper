@@ -12,6 +12,8 @@ pub mod chrono;
 pub mod chrono_tz;
 #[cfg(feature = "jiff")]
 pub mod jiff;
+#[cfg(feature = "ruint")]
+pub mod ruint;
 #[cfg(feature = "rust_decimal")]
 pub mod rust_decimal;
 #[doc(hidden)]
