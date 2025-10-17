@@ -42,6 +42,14 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - Support parsing descriptions on operations, fragments and variable definitions. ([#1349], [graphql/graphql-spec#1170])
 - Support for [block strings][0180-1]. ([#1349])
 - Support of `#[graphql(rename_all = "snake_case")]` attribute in macros. ([#1354])
+- [`ruint` crate] integration behind `ruint` [Cargo feature]: ([#1355], [#1350])
+    - `ruint::aliases::U8` as `U8` scalar.
+    - `ruint::aliases::U16` as `U16` scalar.
+    - `ruint::aliases::U32` as `U32` scalar.
+    - `ruint::aliases::U64` as `U64` scalar.
+    - `ruint::aliases::U128` as `U128` scalar.
+    - `ruint::aliases::U256` as `U256` scalar.
+    - `integrations::ruint::unit_scalar` module for declaring custom-sized `ruint::Unit` scalars.
 
 ### Changed
 
@@ -60,8 +68,10 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1347]: /../../issues/1347
 [#1348]: /../../pull/1348
 [#1349]: /../../pull/1349
+[#1350]: /../../issues/1350
 [#1353]: /../../pull/1353
 [#1354]: /../../pull/1354
+[#1355]: /../../pull/1355
 [graphql/graphql-spec#525]: https://github.com/graphql/graphql-spec/pull/525
 [graphql/graphql-spec#687]: https://github.com/graphql/graphql-spec/issues/687
 [graphql/graphql-spec#805]: https://github.com/graphql/graphql-spec/pull/805
