@@ -641,8 +641,8 @@ impl Definition {
             let arms = variants.iter().enumerate().map(|(n, v)| {
                 let variant_ident = &v.ident;
 
-                let pre_none_pats = iter::repeat(&none_pat).take(n);
-                let post_none_pats = iter::repeat(&none_pat).take(variants.len() - n - 1);
+                let pre_none_pats = iter::repeat_n(&none_pat, n);
+                let post_none_pats = iter::repeat_n(&none_pat, variants.len() - n - 1);
 
                 quote! {
                     (#( #pre_none_pats, )* #some_pat, #( #post_none_pats, )*) => {
