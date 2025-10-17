@@ -1,0 +1,7 @@
+error: GraphQL input object expected at least 1 non-ignored field
+ --> fail/input_object/enum/derive_no_fields.rs:3:10
+  |
+3 | #[derive(GraphQLInputObject)]
+  |          ^^^^^^^^^^^^^^^^^^
+  |
+  = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)

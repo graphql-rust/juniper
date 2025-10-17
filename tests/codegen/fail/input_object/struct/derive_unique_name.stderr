@@ -1,5 +1,5 @@
 error: GraphQL input object expected all fields to have unique names
- --> fail/input-object/derive_unique_name.rs:4:15
+ --> fail/input_object/struct/derive_unique_name.rs:4:15
   |
 4 |   struct Object {
   |  _______________^

@@ -149,10 +149,16 @@ fn parse_enum_variant(
         .map_err(diagnostic::emit_error)
         .ok()?;
 
+    let ignored = field_attr.ignore.is_some();
     if let Some(default) = &field_attr.default {
         ERR.emit_custom(
             default.span_ident(),
-            "field of `@oneOf` input object cannot have default value",
+            if ignored {
+                "`default` attribute argument has no meaning for ignored variants, as they are \
+                 never constructed"
+            } else {
+                "field cannot have default value in `@oneOf` input object"
+            },
         );
     }
 
@@ -185,7 +191,7 @@ fn parse_enum_variant(
         name,
         description: field_attr.description.map(SpanContainer::into_inner),
         deprecated: field_attr.deprecated.map(SpanContainer::into_inner),
-        ignored: field_attr.ignore.is_some(),
+        ignored,
     })
 }
 

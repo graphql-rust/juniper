@@ -1,0 +1,5 @@
+error: GraphQL input object cannot be derived on unions
+ --> fail/input_object/derive_wrong_item.rs:4:1
+  |
+4 | union Test { id: i32 }
+  | ^^^^^

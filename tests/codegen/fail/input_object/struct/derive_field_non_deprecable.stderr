@@ -1,5 +1,5 @@
 error[E0080]: evaluation panicked: field `test` of `Object` input object cannot be deprecated, because its type `String!` is neither `Null`able nor the default field value is specified
- --> fail/input-object/derive_field_non_deprecable.rs:6:11
+ --> fail/input_object/struct/derive_field_non_deprecable.rs:6:11
   |
 6 |     test: String,
   |           ^^^^^^ evaluation of `<Object as juniper::marker::IsInputType<__S>>::mark::_` failed here
@@ -7,7 +7,7 @@ error[E0080]: evaluation panicked: field `test` of `Object` input object cannot 
   = note: this error originates in the macro `$crate::panic::panic_2021` which comes from the expansion of the macro `::juniper::assert_input_field_deprecable` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation panicked: field `other` of `Object` input object cannot be deprecated, because its type `Int!` is neither `Null`able nor the default field value is specified
- --> fail/input-object/derive_field_non_deprecable.rs:8:12
+ --> fail/input_object/struct/derive_field_non_deprecable.rs:8:12
   |
 8 |     other: i32,
   |            ^^^ evaluation of `<Object as juniper::marker::IsInputType<__S>>::mark::_` failed here
