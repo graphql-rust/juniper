@@ -4,11 +4,14 @@
 //!
 //! | Rust type      | GraphQL scalar |
 //! |----------------|----------------|
-//! | [`U256`]       | `U256`         |
-//! | [`U128`]       | `U128`         |
+//! | [`U8`]         | `U8`           |
+//! | [`U16`]        | `U16`          |
+//! | [`U32`]        | `U32`          |
 //! | [`U64`]        | `U64`          |
+//! | [`U128`]       | `U128`         |
+//! | [`U256`]       | `U256`         |
 //!
-//! # Custom type
+//! # Custom-sized type
 //!
 //! Any custom variation of the [`ruint::Uint`] type could be made into a [GraphQL scalar][0] by
 //! reusing the [`integrations::ruint::uint_scalar`] module.
@@ -49,6 +52,45 @@
 //! [0]: https://spec.graphql.org/October2021#sec-Scalars
 
 use crate::graphql_scalar;
+
+/// Unsigned integer type representing the ring of numbers modulo 2<sup>8</sup>.
+///
+/// Always serializes as `String` in decimal notation. But may be deserialized both from `Int` and
+/// `String` values with standard Rust syntax for decimal, hexadecimal, binary and octal notation
+/// using prefixes `0x`, `0b` and `0o`.
+///
+/// See also [`ruint`] crate for details.
+///
+/// [`ruint`]: https://docs.rs/ruint
+#[graphql_scalar]
+#[graphql(with = uint_scalar, specified_by_url = "https://docs.rs/ruint")]
+pub type U8 = ruint::aliases::U8;
+
+/// Unsigned integer type representing the ring of numbers modulo 2<sup>16</sup>.
+///
+/// Always serializes as `String` in decimal notation. But may be deserialized both from `Int` and
+/// `String` values with standard Rust syntax for decimal, hexadecimal, binary and octal notation
+/// using prefixes `0x`, `0b` and `0o`.
+///
+/// See also [`ruint`] crate for details.
+///
+/// [`ruint`]: https://docs.rs/ruint
+#[graphql_scalar]
+#[graphql(with = uint_scalar, specified_by_url = "https://docs.rs/ruint")]
+pub type U16 = ruint::aliases::U16;
+
+/// Unsigned integer type representing the ring of numbers modulo 2<sup>32</sup>.
+///
+/// Always serializes as `String` in decimal notation. But may be deserialized both from `Int` and
+/// `String` values with standard Rust syntax for decimal, hexadecimal, binary and octal notation
+/// using prefixes `0x`, `0b` and `0o`.
+///
+/// See also [`ruint`] crate for details.
+///
+/// [`ruint`]: https://docs.rs/ruint
+#[graphql_scalar]
+#[graphql(with = uint_scalar, specified_by_url = "https://docs.rs/ruint")]
+pub type U32 = ruint::aliases::U32;
 
 /// Unsigned integer type representing the ring of numbers modulo 2<sup>64</sup>.
 ///
@@ -160,24 +202,89 @@ pub mod uint_scalar {
 
 #[cfg(test)]
 mod test {
-    use super::{U64, U128, U256};
+    use super::{U8, U16, U32, U64, U128, U256};
     use crate::{FromInputValue as _, InputValue, ToInputValue as _, graphql};
 
     #[test]
-    fn parses_correct_input_256() {
+    fn parses_correct_input_8() {
         for (input, expected) in [
-            (graphql::input_value!(0), U256::ZERO),
-            (graphql::input_value!(123), U256::from(123)),
-            (graphql::input_value!("0"), U256::ZERO),
-            (graphql::input_value!("42"), U256::from(42)),
-            (graphql::input_value!("0o10"), U256::from(8)),
+            (graphql::input_value!(0), U8::ZERO),
+            (graphql::input_value!(123), U8::from(123)),
+            (graphql::input_value!("0"), U8::ZERO),
+            (graphql::input_value!("42"), U8::from(42)),
+            (graphql::input_value!("0xbe"), U8::from(0xbe)),
+        ] {
+            let input: InputValue = input;
+            let parsed = U8::from_input_value(&input);
+
+            assert!(
+                parsed.is_ok(),
+                "failed to parse `{input:?}`: {:?}",
+                parsed.unwrap_err(),
+            );
+            assert_eq!(parsed.unwrap(), expected, "input: {input:?}");
+        }
+    }
+
+    #[test]
+    fn parses_correct_input_16() {
+        for (input, expected) in [
+            (graphql::input_value!(0), U16::ZERO),
+            (graphql::input_value!(123), U16::from(123)),
+            (graphql::input_value!("0"), U16::ZERO),
+            (graphql::input_value!("42"), U16::from(42)),
+            (graphql::input_value!("0xbeef"), U16::from(0xbeef)),
+        ] {
+            let input: InputValue = input;
+            let parsed = U16::from_input_value(&input);
+
+            assert!(
+                parsed.is_ok(),
+                "failed to parse `{input:?}`: {:?}",
+                parsed.unwrap_err(),
+            );
+            assert_eq!(parsed.unwrap(), expected, "input: {input:?}");
+        }
+    }
+
+    #[test]
+    fn parses_correct_input_32() {
+        for (input, expected) in [
+            (graphql::input_value!(0), U32::ZERO),
+            (graphql::input_value!(123), U32::from(123)),
+            (graphql::input_value!("0"), U32::ZERO),
+            (graphql::input_value!("42"), U32::from(42)),
             (
                 graphql::input_value!("0xdeadbeef"),
-                U256::from(3735928559u64),
+                U32::from(3735928559u32),
             ),
         ] {
             let input: InputValue = input;
-            let parsed = U256::from_input_value(&input);
+            let parsed = U32::from_input_value(&input);
+
+            assert!(
+                parsed.is_ok(),
+                "failed to parse `{input:?}`: {:?}",
+                parsed.unwrap_err(),
+            );
+            assert_eq!(parsed.unwrap(), expected, "input: {input:?}");
+        }
+    }
+
+    #[test]
+    fn parses_correct_input_64() {
+        for (input, expected) in [
+            (graphql::input_value!(0), U64::ZERO),
+            (graphql::input_value!(123), U64::from(123)),
+            (graphql::input_value!("0"), U64::ZERO),
+            (graphql::input_value!("42"), U64::from(42)),
+            (
+                graphql::input_value!("0xdeadbeef"),
+                U64::from(3735928559u64),
+            ),
+        ] {
+            let input: InputValue = input;
+            let parsed = U64::from_input_value(&input);
 
             assert!(
                 parsed.is_ok(),
@@ -213,19 +320,20 @@ mod test {
     }
 
     #[test]
-    fn parses_correct_input_64() {
+    fn parses_correct_input_256() {
         for (input, expected) in [
-            (graphql::input_value!(0), U64::ZERO),
-            (graphql::input_value!(123), U64::from(123)),
-            (graphql::input_value!("0"), U64::ZERO),
-            (graphql::input_value!("42"), U64::from(42)),
+            (graphql::input_value!(0), U256::ZERO),
+            (graphql::input_value!(123), U256::from(123)),
+            (graphql::input_value!("0"), U256::ZERO),
+            (graphql::input_value!("42"), U256::from(42)),
+            (graphql::input_value!("0o10"), U256::from(8)),
             (
                 graphql::input_value!("0xdeadbeef"),
-                U64::from(3735928559u64),
+                U256::from(3735928559u64),
             ),
         ] {
             let input: InputValue = input;
-            let parsed = U64::from_input_value(&input);
+            let parsed = U256::from_input_value(&input);
 
             assert!(
                 parsed.is_ok(),
