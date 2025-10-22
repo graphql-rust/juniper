@@ -36,7 +36,12 @@ where
             variables,
         } = get_req;
         let variables = variables.map(|s| serde_json::from_str(&s).unwrap());
-        Self::new(query, operation_name, variables)
+        Self {
+            query,
+            operation_name,
+            variables,
+            extensions: None,
+        }
     }
 }
 
@@ -117,9 +122,12 @@ where
         }
         "application/graphql" => {
             let body = String::from_request(&req, &mut payload.into_inner()).await?;
-            Ok(GraphQLBatchRequest::Single(GraphQLRequest::new(
-                body, None, None,
-            )))
+            Ok(GraphQLBatchRequest::Single(GraphQLRequest {
+                query: body,
+                operation_name: None,
+                variables: None,
+                extensions: None,
+            }))
         }
         _ => Err(JsonPayloadError::ContentType),
     }?;

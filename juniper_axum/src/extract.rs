@@ -130,9 +130,12 @@ where
                 String::from_request(req, state)
                     .await
                     .map(|body| {
-                        Self(GraphQLBatchRequest::Single(GraphQLRequest::new(
-                            body, None, None,
-                        )))
+                        Self(GraphQLBatchRequest::Single(GraphQLRequest {
+                            query: body,
+                            operation_name: None,
+                            variables: None,
+                            extensions: None,
+                        }))
                     })
                     .map_err(|_| (StatusCode::BAD_REQUEST, "Not valid UTF-8 body").into_response())
             }
@@ -170,11 +173,12 @@ impl<S: ScalarValue> TryFrom<GetRequest> for GraphQLRequest<S> {
             operation_name,
             variables,
         } = req;
-        Ok(Self::new(
+        Ok(Self {
             query,
             operation_name,
-            variables.map(|v| serde_json::from_str(&v)).transpose()?,
-        ))
+            variables: variables.map(|v| serde_json::from_str(&v)).transpose()?,
+            extensions: None,
+        })
     }
 }
 
@@ -198,11 +202,12 @@ mod juniper_request_tests {
         .body(Body::empty())
         .unwrap_or_else(|e| panic!("cannot build `Request`: {e}"));
 
-        let expected = JuniperRequest(GraphQLBatchRequest::Single(GraphQLRequest::new(
-            "{ add(a: 2, b: 3) }".into(),
-            None,
-            None,
-        )));
+        let expected = JuniperRequest(GraphQLBatchRequest::Single(GraphQLRequest {
+            query: "{ add(a: 2, b: 3) }".into(),
+            operation_name: None,
+            variables: None,
+            extensions: None,
+        }));
 
         assert_eq!(do_from_request(req).await, expected);
     }
@@ -219,11 +224,13 @@ mod juniper_request_tests {
         .body(Body::empty())
         .unwrap_or_else(|e| panic!("cannot build `Request`: {e}"));
 
-        let expected = JuniperRequest(GraphQLBatchRequest::Single(GraphQLRequest::new(
-            "query($id: String!) { human(id: $id) { id, name, appearsIn, homePlanet } }".into(),
-            None,
-            Some(graphql_input_value!({"id": "1000"})),
-        )));
+        let expected = JuniperRequest(GraphQLBatchRequest::Single(GraphQLRequest {
+            query: "query($id: String!) { human(id: $id) { id, name, appearsIn, homePlanet } }"
+                .into(),
+            operation_name: None,
+            variables: None,
+            extensions: None,
+        }));
 
         assert_eq!(do_from_request(req).await, expected);
     }
@@ -235,11 +242,12 @@ mod juniper_request_tests {
             .body(Body::from(r#"{"query": "{ add(a: 2, b: 3) }"}"#))
             .unwrap_or_else(|e| panic!("cannot build `Request`: {e}"));
 
-        let expected = JuniperRequest(GraphQLBatchRequest::Single(GraphQLRequest::new(
-            "{ add(a: 2, b: 3) }".to_string(),
-            None,
-            None,
-        )));
+        let expected = JuniperRequest(GraphQLBatchRequest::Single(GraphQLRequest {
+            query: "{ add(a: 2, b: 3) }".to_string(),
+            operation_name: None,
+            variables: None,
+            extensions: None,
+        }));
 
         assert_eq!(do_from_request(req).await, expected);
     }
@@ -251,11 +259,12 @@ mod juniper_request_tests {
             .body(Body::from(r#"{"query": "{ add(a: 2, b: 3) }"}"#))
             .unwrap_or_else(|e| panic!("cannot build `Request`: {e}"));
 
-        let expected = JuniperRequest(GraphQLBatchRequest::Single(GraphQLRequest::new(
-            "{ add(a: 2, b: 3) }".to_string(),
-            None,
-            None,
-        )));
+        let expected = JuniperRequest(GraphQLBatchRequest::Single(GraphQLRequest {
+            query: "{ add(a: 2, b: 3) }".into(),
+            operation_name: None,
+            variables: None,
+            extensions: None,
+        }));
 
         assert_eq!(do_from_request(req).await, expected);
     }
@@ -267,11 +276,12 @@ mod juniper_request_tests {
             .body(Body::from(r#"{ add(a: 2, b: 3) }"#))
             .unwrap_or_else(|e| panic!("cannot build `Request`: {e}"));
 
-        let expected = JuniperRequest(GraphQLBatchRequest::Single(GraphQLRequest::new(
-            "{ add(a: 2, b: 3) }".to_string(),
-            None,
-            None,
-        )));
+        let expected = JuniperRequest(GraphQLBatchRequest::Single(GraphQLRequest {
+            query: "{ add(a: 2, b: 3) }".to_string(),
+            operation_name: None,
+            variables: None,
+            extensions: None,
+        }));
 
         assert_eq!(do_from_request(req).await, expected);
     }
@@ -283,11 +293,12 @@ mod juniper_request_tests {
             .body(Body::from(r#"{ add(a: 2, b: 3) }"#))
             .unwrap_or_else(|e| panic!("cannot build `Request`: {e}"));
 
-        let expected = JuniperRequest(GraphQLBatchRequest::Single(GraphQLRequest::new(
-            "{ add(a: 2, b: 3) }".to_string(),
-            None,
-            None,
-        )));
+        let expected = JuniperRequest(GraphQLBatchRequest::Single(GraphQLRequest {
+            query: "{ add(a: 2, b: 3) }".to_string(),
+            operation_name: None,
+            variables: None,
+            extensions: None,
+        }));
 
         assert_eq!(do_from_request(req).await, expected);
     }

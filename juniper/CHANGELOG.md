@@ -22,6 +22,9 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - Added `Ext` type parameter to `http::GraphQLRequest` and `http::GraphQLBatchRequest` defaulting to `Variables`. ([#1356], [graphql/graphql-spec#976])
 - Changed `ScalarToken::String` to contain raw quoted and escaped `StringLiteral` (was unquoted but escaped string before). ([#1349])
 - Added `LexerError::UnterminatedBlockString` variant. ([#1349])
+- `http::GraphQLRequest`:
+    - Removed `new()` constructor in favor of constructing it directly. ([#1356])
+    - Removed deprecated `operation_name()` method in favor of direct `operation_name` field. ([#1356])
 
 ### Added
 

@@ -24,6 +24,8 @@ use crate::{
 /// For GET, you will need to parse the query string and extract "query",
 /// "operationName", and "variables" manually.
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+// Should be specified as top-level, otherwise `serde` infers incorrect `Ext: Default` bound.
+#[serde(bound(deserialize = "Ext: Deserialize<'de>"))]
 pub struct GraphQLRequest<S = DefaultScalarValue, Ext = Variables<S>>
 where
     S: ScalarValue,
@@ -43,22 +45,17 @@ where
     ))]
     pub variables: Option<InputValue<S>>,
 
-    /// Optional implementation-specific additional information.
-    #[serde(default)]
-    pub extensions: Ext,
+    /// Optional implementation-specific additional information (as per [spec]).
+    ///
+    /// [spec]: https://spec.graphql.org/September2025#sel-FANHLBBgBBvC0vW
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub extensions: Option<Ext>,
 }
 
 impl<S, Ext> GraphQLRequest<S, Ext>
 where
     S: ScalarValue,
 {
-    // TODO: Remove in 0.17 `juniper` version.
-    /// Returns the `operation_name` associated with this request.
-    #[deprecated(since = "0.16.0", note = "Use the direct field access instead.")]
-    pub fn operation_name(&self) -> Option<&str> {
-        self.operation_name.as_deref()
-    }
-
     /// Returns operation [`Variables`] defined withing this request.
     pub fn variables(&self) -> Variables<S> {
         self.variables
@@ -68,23 +65,6 @@ where
                     .map(|o| o.into_iter().map(|(k, v)| (k.into(), v.clone())).collect())
             })
             .unwrap_or_default()
-    }
-
-    /// Construct a new GraphQL request from parts
-    pub fn new(
-        query: String,
-        operation_name: Option<String>,
-        variables: Option<InputValue<S>>,
-    ) -> Self
-    where
-        Ext: Default,
-    {
-        Self {
-            query,
-            operation_name,
-            variables,
-            extensions: Ext::default(),
-        }
     }
 
     /// Execute a GraphQL request synchronously using the specified schema and context
