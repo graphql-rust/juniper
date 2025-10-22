@@ -18,6 +18,8 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - Added `description` field to `ast::Operation`, `ast::Fragment` and `ast::VariableDefinition`. ([#1349], [graphql/graphql-spec#1170])
     - Renamed `ast::VariableDefinitions` to `ast::VariablesDefinition`: ([#1353], [graphql/graphql-spec#916])
         - Renamed `ast::Operation::variable_definitions` field to `variables_definition`.
+    - Added `extenstions` field to `http::GraphQLRequest`. ([#1356], [graphql/graphql-spec#976])
+    - Added `Ext` type parameter to `http::GraphQLRequest` and `http::GraphQLBatchRequest` defaulting to `Variables`. ([#1356], [graphql/graphql-spec#976])
 - Changed `ScalarToken::String` to contain raw quoted and escaped `StringLiteral` (was unquoted but escaped string before). ([#1349])
 - Added `LexerError::UnterminatedBlockString` variant. ([#1349])
 
@@ -72,12 +74,14 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1353]: /../../pull/1353
 [#1354]: /../../pull/1354
 [#1355]: /../../pull/1355
+[#1356]: /../../pull/1356
 [graphql/graphql-spec#525]: https://github.com/graphql/graphql-spec/pull/525
 [graphql/graphql-spec#687]: https://github.com/graphql/graphql-spec/issues/687
 [graphql/graphql-spec#805]: https://github.com/graphql/graphql-spec/pull/805
 [graphql/graphql-spec#825]: https://github.com/graphql/graphql-spec/pull/825
 [graphql/graphql-spec#849]: https://github.com/graphql/graphql-spec/pull/849
 [graphql/graphql-spec#916]: https://github.com/graphql/graphql-spec/pull/916
+[graphql/graphql-spec#976]: https://github.com/graphql/graphql-spec/pull/976
 [graphql/graphql-spec#1040]: https://github.com/graphql/graphql-spec/pull/1040
 [graphql/graphql-spec#1142]: https://github.com/graphql/graphql-spec/pull/1142
 [graphql/graphql-spec#1170]: https://github.com/graphql/graphql-spec/pull/1170

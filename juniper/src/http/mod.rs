@@ -48,7 +48,7 @@ where
     pub extensions: Ext,
 }
 
-impl<S> GraphQLRequest<S>
+impl<S, Ext> GraphQLRequest<S, Ext>
 where
     S: ScalarValue,
 {
@@ -75,12 +75,15 @@ where
         query: String,
         operation_name: Option<String>,
         variables: Option<InputValue<S>>,
-    ) -> Self {
+    ) -> Self
+    where
+        Ext: Default,
+    {
         Self {
             query,
             operation_name,
             variables,
-            extensions: Default::default(),
+            extensions: Ext::default(),
         }
     }
 
@@ -170,7 +173,7 @@ where
     }
 }
 
-impl<S> GraphQLBatchRequest<S>
+impl<S, Ext> GraphQLBatchRequest<S, Ext>
 where
     S: ScalarValue,
 {
@@ -239,7 +242,6 @@ where
         }
     }
 }
-
 
 /// Resolve a GraphQL subscription into `Value<ValuesStream<S>` using the
 /// specified schema and context.
