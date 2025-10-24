@@ -354,7 +354,12 @@ where
 
         match ctx.errors.is_empty() {
             true => Ok(GraphQLRequest(GraphQLBatchRequest::Single(
-                http::GraphQLRequest::new(ctx.query.unwrap(), ctx.operation_name, ctx.variables),
+                http::GraphQLRequest {
+                    query: ctx.query.unwrap(),
+                    operation_name: ctx.operation_name,
+                    variables: ctx.variables,
+                    extensions: None,
+                },
             ))),
             false => Err(ctx.errors),
         }
@@ -402,7 +407,12 @@ where
                     Err(e) => return Outcome::Error((Status::BadRequest, e.to_string())),
                 }
             } else {
-                GraphQLBatchRequest::Single(http::GraphQLRequest::new(body, None, None))
+                GraphQLBatchRequest::Single(http::GraphQLRequest {
+                    query: body,
+                    operation_name: None,
+                    variables: None,
+                    extensions: None,
+                })
             }))
         })
         .await
@@ -538,9 +548,12 @@ mod fromform_tests {
         assert!(result.is_ok());
 
         let variables = ::serde_json::from_str::<InputValue>(r#"{"foo":"bar"}"#).unwrap();
-        let expected = GraphQLRequest(http::GraphQLBatchRequest::Single(
-            http::GraphQLRequest::new("test".into(), None, Some(variables)),
-        ));
+        let expected = GraphQLRequest(http::GraphQLBatchRequest::Single(http::GraphQLRequest {
+            query: "test".into(),
+            operation_name: None,
+            variables: Some(variables),
+            extensions: None,
+        }));
 
         assert_eq!(result.unwrap(), expected);
     }
@@ -551,9 +564,12 @@ mod fromform_tests {
             r#"query=test&variables={"foo":"x%20y%26%3F+z"}"#,
         ));
         let variables = ::serde_json::from_str::<InputValue>(r#"{"foo":"x y&? z"}"#).unwrap();
-        let expected = GraphQLRequest(http::GraphQLBatchRequest::Single(
-            http::GraphQLRequest::new("test".into(), None, Some(variables)),
-        ));
+        let expected = GraphQLRequest(http::GraphQLBatchRequest::Single(http::GraphQLRequest {
+            query: "test".into(),
+            operation_name: None,
+            variables: Some(variables),
+            extensions: None,
+        }));
 
         assert_eq!(result.unwrap(), expected);
     }
@@ -566,9 +582,12 @@ mod fromform_tests {
 
         assert!(result.is_ok());
 
-        let expected = GraphQLRequest(http::GraphQLBatchRequest::Single(
-            http::GraphQLRequest::new("%foo bar baz&?".into(), Some("test".into()), None),
-        ));
+        let expected = GraphQLRequest(http::GraphQLBatchRequest::Single(http::GraphQLRequest {
+            query: "%foo bar baz&?".into(),
+            operation_name: "test".into(),
+            variables: None,
+            extensions: None,
+        }));
 
         assert_eq!(result.unwrap(), expected);
     }

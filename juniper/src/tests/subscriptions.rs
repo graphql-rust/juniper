@@ -94,7 +94,12 @@ fn create_and_execute(
     ),
     Vec<ExecutionError<DefaultScalarValue>>,
 > {
-    let request = GraphQLRequest::new(query, None, None);
+    let request = GraphQLRequest {
+        query,
+        operation_name: None,
+        variables: None,
+        extensions: None,
+    };
 
     let root_node = Schema::new(MyQuery, EmptyMutation::new(), MySubscription);
 
