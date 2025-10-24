@@ -9,6 +9,7 @@ use serde::{
 };
 
 use crate::{
+    Context,
     FieldError, GraphQLError, GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync, RootNode,
     Value, Variables,
     ast::InputValue,
@@ -74,21 +75,22 @@ where
     pub fn execute_sync<QueryT, MutationT, SubscriptionT>(
         &self,
         root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
-        context: &QueryT::Context,
+        mut context: QueryT::Context,
     ) -> GraphQLResponse<S>
     where
         S: ScalarValue,
-        QueryT: GraphQLType<S>,
+        QueryT: GraphQLType<S, Context: Context>,
         MutationT: GraphQLType<S, Context = QueryT::Context>,
         SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
+        Ext: 'static,
     {
-        GraphQLResponse(crate::execute_sync(
-            &self.query,
-            self.operation_name.as_deref(),
-            root_node,
-            &self.variables(),
-            context,
-        ))
+        let op = self.operation_name.as_deref();
+        let vars = &self.variables();
+        if let Some(ext) = self.extensions.as_ref() {
+            context.consume_request_extensions(ext)
+        }
+        let res = crate::execute_sync(&self.query, op, root_node, vars, &context);
+        GraphQLResponse(res)
     }
 
     /// Execute a GraphQL request using the specified schema and context
@@ -98,21 +100,21 @@ where
     pub async fn execute<'a, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
-        context: &'a QueryT::Context,
+        mut context: QueryT::Context,
     ) -> GraphQLResponse<S>
     where
-        QueryT: GraphQLTypeAsync<S>,
-        QueryT::TypeInfo: Sync,
-        QueryT::Context: Sync,
-        MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
-        MutationT::TypeInfo: Sync,
-        SubscriptionT: GraphQLType<S, Context = QueryT::Context> + Sync,
-        SubscriptionT::TypeInfo: Sync,
         S: ScalarValue + Send + Sync,
+        QueryT: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Context + Sync>,
+        MutationT: GraphQLTypeAsync<S, TypeInfo: Sync, Context = QueryT::Context>,
+        SubscriptionT: GraphQLType<S, TypeInfo: Sync, Context = QueryT::Context> + Sync,
+        Ext: 'static,
     {
         let op = self.operation_name.as_deref();
         let vars = &self.variables();
-        let res = crate::execute(&self.query, op, root_node, vars, context).await;
+        if let Some(ext) = self.extensions.as_ref() {
+            context.consume_request_extensions(ext)
+        }
+        let res = crate::execute(&self.query, op, root_node, vars, &context).await;
         GraphQLResponse(res)
     }
 }
@@ -163,18 +165,19 @@ where
     pub fn execute_sync<'a, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
-        context: &QueryT::Context,
+        context: QueryT::Context,
     ) -> GraphQLBatchResponse<S>
     where
-        QueryT: GraphQLType<S>,
+        QueryT: GraphQLType<S, Context: Context + Clone>,
         MutationT: GraphQLType<S, Context = QueryT::Context>,
         SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
+        Ext: 'static,
     {
         match self {
             Self::Single(req) => GraphQLBatchResponse::Single(req.execute_sync(root_node, context)),
             Self::Batch(reqs) => GraphQLBatchResponse::Batch(
                 reqs.iter()
-                    .map(|req| req.execute_sync(root_node, context))
+                    .map(|req| req.execute_sync(root_node, context.clone()))
                     .collect(),
             ),
         }
@@ -187,17 +190,14 @@ where
     pub async fn execute<'a, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
-        context: &'a QueryT::Context,
+        context: QueryT::Context,
     ) -> GraphQLBatchResponse<S>
     where
-        QueryT: GraphQLTypeAsync<S>,
-        QueryT::TypeInfo: Sync,
-        QueryT::Context: Sync,
-        MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
-        MutationT::TypeInfo: Sync,
-        SubscriptionT: GraphQLSubscriptionType<S, Context = QueryT::Context>,
-        SubscriptionT::TypeInfo: Sync,
         S: Send + Sync,
+        QueryT: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Context + Clone + Sync>,
+        MutationT: GraphQLTypeAsync<S, TypeInfo: Sync, Context = QueryT::Context>,
+        SubscriptionT: GraphQLSubscriptionType<S, TypeInfo: Sync, Context = QueryT::Context>,
+        Ext: 'static,
     {
         match self {
             Self::Single(req) => {
@@ -206,7 +206,7 @@ where
             }
             Self::Batch(reqs) => {
                 let resps = futures::future::join_all(
-                    reqs.iter().map(|req| req.execute(root_node, context)),
+                    reqs.iter().map(|req| req.execute(root_node, context.clone())),
                 )
                 .await;
                 GraphQLBatchResponse::Batch(resps)

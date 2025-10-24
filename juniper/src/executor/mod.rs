@@ -396,7 +396,95 @@ pub trait FromContext<T> {
 }
 
 /// Marker trait for types that can act as context objects for `GraphQL` types.
-pub trait Context {}
+pub trait Context {
+    /// Consumes the provided [request `extensions`][0] into this [`Context`].
+    ///
+    /// # Implementation
+    ///
+    /// Default implementation does nothing.
+    ///
+    /// This method should be implemented if a [`Context`] implementation wants to be populated with
+    /// [request `extensions`][0]. Since [request `extensions`][0] could be modeled as an arbitrary
+    /// type, the implementation should downcast to the desired type before use.
+    ///
+    /// ```rust
+    /// # use juniper::{
+    /// #     Context, DefaultScalarValue, EmptyMutation, EmptySubscription, RootNode,
+    /// #     graphql_object, graphql_value, http::GraphQLRequest,
+    /// # };
+    /// # use serde::{Deserialize, Serialize};
+    /// # use serde_json::json;
+    /// #
+    /// #[derive(Deserialize, Serialize)]
+    /// #[serde(rename_all = "camelCase")]
+    /// struct CustomExtensions {
+    ///     persisted_query: PersistedQueryExtensions,
+    /// }
+    ///
+    /// #[derive(Deserialize, Serialize)]
+    /// #[serde(rename_all = "camelCase")]
+    /// struct PersistedQueryExtensions {
+    ///     sha256_hash: Box<str>,
+    /// }
+    ///
+    /// type CustomGraphQLRequest<S = DefaultScalarValue> = GraphQLRequest<S, CustomExtensions>;
+    ///
+    /// #[derive(Default)]
+    /// struct CustomContext {
+    ///     persisted_query_sha256_hash: Option<Box<str>>,
+    /// }
+    ///
+    /// impl Context for CustomContext {
+    ///     fn consume_request_extensions<T: 'static>(&mut self, extensions: &T) {
+    ///         use juniper::AnyExt as _; // allows downcasting directly on types without `dyn`
+    ///
+    ///         if let Some(ext) = extensions.downcast_ref::<CustomExtensions>() {
+    ///             self.persisted_query_sha256_hash =
+    ///                 Some(ext.persisted_query.sha256_hash.clone());
+    ///         }
+    ///     }
+    /// }
+    ///
+    /// struct Query;
+    ///
+    /// #[graphql_object]
+    /// impl Query {
+    ///     fn is_persisted_query(context: &CustomContext) -> bool {
+    ///         context.persisted_query_sha256_hash.is_some()
+    ///     }
+    /// }
+    /// #
+    /// # type Schema = RootNode<
+    /// #     Query, EmptyMutation<CustomContext>, EmptySubscription<CustomContext>,
+    /// # >;
+    /// #
+    /// # #[tokio::main]
+    /// # async fn main() {
+    /// #     let request: CustomGraphQLRequest = serde_json::from_value(json!({
+    /// #         "query": "{ isPersistedQuery }",
+    /// #         "extensions": {
+    /// #             "persistedQuery": {
+    /// #                 "sha256Hash":
+    /// #                     "c205cf782b5c43c3fc67b5233445b78fbea47b99a0302cf31bda2a8e2162e1e6",
+    /// #             },
+    /// #         },
+    /// #     })).unwrap();
+    /// #     let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
+    /// #     let context = CustomContext::default();
+    /// #
+    /// #     assert_eq!(
+    /// #         request.execute(&schema, context).await.into_result(),
+    /// #         Ok((graphql_value!({"isPersistedQuery": true}), vec![])),
+    /// #     );
+    /// # }
+    /// ```
+    ///
+    /// [0]: https://spec.graphql.org/September2025#sel-FANHLBBgBBvC0vW
+    fn consume_request_extensions<T: 'static>(&mut self, extensions: &T) {
+        _ = extensions;
+    }
+
+}
 
 impl<C: Context> Context for &C {}
 
