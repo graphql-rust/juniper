@@ -3,18 +3,113 @@
 #![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
 #![cfg_attr(test, expect(unused_crate_dependencies, reason = "examples"))]
 
+use std::marker::PhantomData;
+
 use actix_web::{
     Error, FromRequest, HttpMessage, HttpRequest, HttpResponse, error::JsonPayloadError,
     http::Method, web,
 };
 use juniper::{
-    ScalarValue,
+    Context, DefaultScalarValue, GraphQLSubscriptionType, GraphQLTypeAsync, ScalarValue,
     http::{
         GraphQLBatchRequest, GraphQLRequest, graphiql::graphiql_source,
         playground::playground_source,
     },
 };
-use serde::Deserialize;
+use serde::{Deserialize, de::DeserializeOwned};
+
+pub type GraphQL = GraphQLWith;
+
+pub struct GraphQLWith<S = DefaultScalarValue, RequestExtensions = juniper::Variables<S>>(
+    PhantomData<(S, RequestExtensions)>,
+);
+
+impl<S, RequestExtensions> GraphQLWith<S, RequestExtensions>
+where
+    S: ScalarValue + Send + Sync,
+    RequestExtensions: DeserializeOwned + 'static,
+{
+    pub async fn handler<Query, Mutation, Subscription>(
+        schema: &juniper::RootNode<Query, Mutation, Subscription, S>,
+        context: Query::Context,
+        req: HttpRequest,
+        payload: web::Payload,
+    ) -> Result<HttpResponse, Error>
+    where
+        Query: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Context + Clone + Sync>,
+        Mutation: GraphQLTypeAsync<S, TypeInfo: Sync, Context = Query::Context>,
+        Subscription: GraphQLSubscriptionType<S, TypeInfo: Sync, Context = Query::Context>,
+        S: ScalarValue + Send + Sync,
+    {
+        match *req.method() {
+            Method::POST => post_graphql_handler(schema, context, req, payload).await,
+            Method::GET => get_graphql_handler(schema, context, req).await,
+            _ => Err(actix_web::error::UrlGenerationError::ResourceNotFound.into()),
+        }
+    }
+
+    pub async fn get_handler<Query, Mutation, Subscription>(
+        schema: &juniper::RootNode<Query, Mutation, Subscription, S>,
+        context: Query::Context,
+        req: HttpRequest,
+    ) -> Result<HttpResponse, Error>
+    where
+        Query: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Context + Sync>,
+        Mutation: GraphQLTypeAsync<S, TypeInfo: Sync, Context = Query::Context>,
+        Subscription: GraphQLSubscriptionType<S, TypeInfo: Sync, Context = Query::Context>,
+    {
+        let get_req = web::Query::<GetGraphQLRequest>::from_query(req.query_string())?;
+        let req = GraphQLRequest::<S, RequestExtensions>::try_from(get_req.into_inner())?;
+        let gql_response = req.execute(schema, context).await;
+        let body_response = serde_json::to_string(&gql_response)?;
+        let mut response = match gql_response.is_ok() {
+            true => HttpResponse::Ok(),
+            false => HttpResponse::BadRequest(),
+        };
+        Ok(response
+            .content_type("application/json")
+            .body(body_response))
+    }
+
+    pub async fn post_handler<Query, Mutation, Subscription>(
+        schema: &juniper::RootNode<Query, Mutation, Subscription, S>,
+        context: Query::Context,
+        req: HttpRequest,
+        payload: web::Payload,
+    ) -> Result<HttpResponse, Error>
+    where
+        Query: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Context + Clone + Sync>,
+        Mutation: GraphQLTypeAsync<S, TypeInfo: Sync, Context = Query::Context>,
+        Subscription: GraphQLSubscriptionType<S, TypeInfo: Sync, Context = Query::Context>,
+    {
+        let req = match req.content_type() {
+            "application/json" => {
+                let body = String::from_request(&req, &mut payload.into_inner()).await?;
+                serde_json::from_str::<GraphQLBatchRequest<S, RequestExtensions>>(&body)
+                    .map_err(JsonPayloadError::Deserialize)
+            }
+            "application/graphql" => {
+                let body = String::from_request(&req, &mut payload.into_inner()).await?;
+                Ok(GraphQLBatchRequest::<S, RequestExtensions>::Single(
+                    GraphQLRequest {
+                        query: body,
+                        operation_name: None,
+                        variables: None,
+                        extensions: None,
+                    },
+                ))
+            }
+            _ => Err(JsonPayloadError::ContentType),
+        }?;
+        let gql_batch_response = req.execute(schema, context).await;
+        let gql_response = serde_json::to_string(&gql_batch_response)?;
+        let mut response = match gql_batch_response.is_ok() {
+            true => HttpResponse::Ok(),
+            false => HttpResponse::BadRequest(),
+        };
+        Ok(response.content_type("application/json").body(gql_response))
+    }
+}
 
 #[derive(Deserialize, Clone, PartialEq, Debug)]
 #[serde(deny_unknown_fields)]
@@ -23,134 +118,103 @@ struct GetGraphQLRequest {
     #[serde(rename = "operationName")]
     operation_name: Option<String>,
     variables: Option<String>,
+    #[serde(default)]
+    extensions: Option<String>,
 }
 
-impl<S> From<GetGraphQLRequest> for GraphQLRequest<S>
+impl<S, Ext> TryFrom<GetGraphQLRequest> for GraphQLRequest<S, Ext>
 where
     S: ScalarValue,
+    Ext: DeserializeOwned,
 {
-    fn from(get_req: GetGraphQLRequest) -> Self {
+    type Error = JsonPayloadError;
+
+    fn try_from(value: GetGraphQLRequest) -> Result<Self, Self::Error> {
         let GetGraphQLRequest {
             query,
             operation_name,
             variables,
-        } = get_req;
-        let variables = variables.map(|s| serde_json::from_str(&s).unwrap());
-        Self {
+            extensions,
+        } = value;
+        Ok(Self {
             query,
             operation_name,
-            variables,
-            extensions: None,
-        }
+            variables: variables
+                .as_deref()
+                .map(serde_json::from_str)
+                .transpose()
+                .map_err(JsonPayloadError::Deserialize)?,
+            extensions: extensions
+                .as_deref()
+                .map(serde_json::from_str)
+                .transpose()
+                .map_err(JsonPayloadError::Deserialize)?,
+        })
     }
 }
 
 /// Actix Web GraphQL Handler for GET and POST requests
-pub async fn graphql_handler<Query, Mutation, Subscription, CtxT, S>(
+pub async fn graphql_handler<Query, Mutation, Subscription, S>(
     schema: &juniper::RootNode<Query, Mutation, Subscription, S>,
-    context: &CtxT,
+    context: Query::Context,
     req: HttpRequest,
-    payload: actix_web::web::Payload,
+    payload: web::Payload,
 ) -> Result<HttpResponse, Error>
 where
-    Query: juniper::GraphQLTypeAsync<S, Context = CtxT>,
-    Query::TypeInfo: Sync,
-    Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT>,
-    Mutation::TypeInfo: Sync,
-    Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT>,
-    Subscription::TypeInfo: Sync,
-    CtxT: Sync,
+    Query: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Context + Clone + Sync>,
+    Mutation: GraphQLTypeAsync<S, TypeInfo: Sync, Context = Query::Context>,
+    Subscription: GraphQLSubscriptionType<S, TypeInfo: Sync, Context = Query::Context>,
     S: ScalarValue + Send + Sync,
 {
-    match *req.method() {
-        Method::POST => post_graphql_handler(schema, context, req, payload).await,
-        Method::GET => get_graphql_handler(schema, context, req).await,
-        _ => Err(actix_web::error::UrlGenerationError::ResourceNotFound.into()),
-    }
+    GraphQLWith::<S>::handler(schema, context, req, payload).await
 }
+
 /// Actix GraphQL Handler for GET requests
-pub async fn get_graphql_handler<Query, Mutation, Subscription, CtxT, S>(
+pub async fn get_graphql_handler<Query, Mutation, Subscription, S>(
     schema: &juniper::RootNode<Query, Mutation, Subscription, S>,
-    context: &CtxT,
+    context: Query::Context,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error>
 where
-    Query: juniper::GraphQLTypeAsync<S, Context = CtxT>,
-    Query::TypeInfo: Sync,
-    Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT>,
-    Mutation::TypeInfo: Sync,
-    Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT>,
-    Subscription::TypeInfo: Sync,
-    CtxT: Sync,
+    Query: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Context + Sync>,
+    Mutation: GraphQLTypeAsync<S, TypeInfo: Sync, Context = Query::Context>,
+    Subscription: GraphQLSubscriptionType<S, TypeInfo: Sync, Context = Query::Context>,
     S: ScalarValue + Send + Sync,
 {
-    let get_req = web::Query::<GetGraphQLRequest>::from_query(req.query_string())?;
-    let req = GraphQLRequest::from(get_req.into_inner());
-    let gql_response = req.execute(schema, context).await;
-    let body_response = serde_json::to_string(&gql_response)?;
-    let mut response = match gql_response.is_ok() {
-        true => HttpResponse::Ok(),
-        false => HttpResponse::BadRequest(),
-    };
-    Ok(response
-        .content_type("application/json")
-        .body(body_response))
+    GraphQLWith::<S>::get_handler(schema, context, req).await
 }
 
 /// Actix GraphQL Handler for POST requests
-pub async fn post_graphql_handler<Query, Mutation, Subscription, CtxT, S>(
+pub async fn post_graphql_handler<Query, Mutation, Subscription, S>(
     schema: &juniper::RootNode<Query, Mutation, Subscription, S>,
-    context: &CtxT,
+    context: Query::Context,
     req: HttpRequest,
-    payload: actix_web::web::Payload,
+    payload: web::Payload,
 ) -> Result<HttpResponse, Error>
 where
-    Query: juniper::GraphQLTypeAsync<S, Context = CtxT>,
-    Query::TypeInfo: Sync,
-    Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT>,
-    Mutation::TypeInfo: Sync,
-    Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT>,
-    Subscription::TypeInfo: Sync,
-    CtxT: Sync,
+    Query: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Context + Clone + Sync>,
+    Mutation: GraphQLTypeAsync<S, TypeInfo: Sync, Context = Query::Context>,
+    Subscription: GraphQLSubscriptionType<S, TypeInfo: Sync, Context = Query::Context>,
     S: ScalarValue + Send + Sync,
 {
-    let req = match req.content_type() {
-        "application/json" => {
-            let body = String::from_request(&req, &mut payload.into_inner()).await?;
-            serde_json::from_str::<GraphQLBatchRequest<S>>(&body)
-                .map_err(JsonPayloadError::Deserialize)
-        }
-        "application/graphql" => {
-            let body = String::from_request(&req, &mut payload.into_inner()).await?;
-            Ok(GraphQLBatchRequest::Single(GraphQLRequest {
-                query: body,
-                operation_name: None,
-                variables: None,
-                extensions: None,
-            }))
-        }
-        _ => Err(JsonPayloadError::ContentType),
-    }?;
-    let gql_batch_response = req.execute(schema, context).await;
-    let gql_response = serde_json::to_string(&gql_batch_response)?;
-    let mut response = match gql_batch_response.is_ok() {
-        true => HttpResponse::Ok(),
-        false => HttpResponse::BadRequest(),
-    };
-    Ok(response.content_type("application/json").body(gql_response))
+    GraphQLWith::<S>::post_handler(schema, context, req, payload).await
 }
 
-/// Create a handler that replies with an HTML page containing GraphiQL. This does not handle routing, so you can mount it on any endpoint
+/// Creates a handler that replies with an HTML page containing [GraphiQL].
 ///
-/// For example:
+/// This does not handle routing, so you can mount it on any endpoint.
 ///
-/// ```
+/// # Example
+///
+/// ```rust
 /// # use juniper_actix::graphiql_handler;
 /// # use actix_web::{web, App};
 ///
 /// let app = App::new()
-///          .route("/", web::get().to(|| graphiql_handler("/graphql", Some("/graphql/subscriptions"))));
+///     .route("/", web::get().to(|| graphiql_handler("/graphql", Some("/graphql/subscriptions"))));
 /// ```
+///
+/// [GraphiQL]: https://github.com/graphql/graphiql
 pub async fn graphiql_handler(
     graphql_endpoint_url: &str,
     subscriptions_endpoint_url: Option<&'static str>,
@@ -161,7 +225,11 @@ pub async fn graphiql_handler(
         .body(html))
 }
 
-/// Create a handler that replies with an HTML page containing GraphQL Playground. This does not handle routing, so you cant mount it on any endpoint.
+/// Create a handler that replies with an HTML page containing [GraphQL Playground].
+///
+/// This does not handle routing, so you cant mount it on any endpoint.
+///
+/// [GraphQL Playground]: https://github.com/prisma/graphql-playground
 pub async fn playground_handler(
     graphql_endpoint_url: &str,
     subscriptions_endpoint_url: Option<&'static str>,
@@ -177,6 +245,7 @@ pub async fn playground_handler(
 pub mod subscriptions {
     use std::{pin::pin, sync::Arc};
 
+    use crate::GraphQLWith;
     use actix_web::{
         HttpRequest, HttpResponse,
         http::header::{HeaderName, HeaderValue},
@@ -185,7 +254,220 @@ pub mod subscriptions {
     use derive_more::with_trait::{Display, Error as StdError};
     use futures::{SinkExt as _, StreamExt as _, future};
     use juniper::{GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue};
-    use juniper_graphql_ws::{ArcSchema, Init, graphql_transport_ws, graphql_ws};
+    use juniper_graphql_ws::{ArcSchema, Init, Schema, graphql_transport_ws, graphql_ws};
+
+    impl<S, RequestExtensions> GraphQLWith<S, RequestExtensions>
+    where
+        S: ScalarValue + Send + Sync + 'static,
+    {
+        /// Serves by auto-selecting between the
+        /// [legacy `graphql-ws` GraphQL over WebSocket Protocol][old] and the
+        /// [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new], based on the
+        /// `Sec-Websocket-Protocol` HTTP header value.
+        ///
+        /// The `schema` argument is your [`juniper`] schema.
+        ///
+        /// The `init` argument is used to provide the custom [`juniper::Context`] and additional
+        /// configuration for connections. This can be a [`juniper_graphql_ws::ConnectionConfig`] if
+        /// the context and configuration are already known, or it can be a closure that gets
+        /// executed asynchronously whenever a client sends the subscription initialization message.
+        /// Using a closure allows to perform an authentication based on the parameters provided by
+        /// a client.
+        ///
+        /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
+        /// [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
+        pub async fn auto_ws_handler<Query, Mutation, Subscription, I>(
+            req: HttpRequest,
+            stream: web::Payload,
+            schema: Arc<RootNode<Query, Mutation, Subscription, S>>,
+            init: I,
+        ) -> Result<HttpResponse, actix_web::Error>
+        where
+            Query: GraphQLTypeAsync<S, TypeInfo: Send + Sync, Context: Unpin + Send + Sync + 'static>
+                + Send
+                + 'static,
+            Mutation: GraphQLTypeAsync<S, TypeInfo: Send + Sync, Context = Query::Context>
+                + Send
+                + 'static,
+            Subscription: GraphQLSubscriptionType<S, TypeInfo: Send + Sync, Context = Query::Context>
+                + Send
+                + 'static,
+            I: Init<S, Query::Context> + Send,
+        {
+            if req
+                .headers()
+                .get("sec-websocket-protocol")
+                .map(AsRef::as_ref)
+                == Some("graphql-ws".as_bytes())
+            {
+                graphql_ws_handler(req, stream, schema, init).await
+            } else {
+                graphql_transport_ws_handler(req, stream, schema, init).await
+            }
+        }
+
+        /// Serves the [legacy `graphql-ws` GraphQL over WebSocket Protocol][old].
+        ///
+        /// The `init` argument is used to provide the context and additional configuration for
+        /// connections. This can be a [`juniper_graphql_ws::ConnectionConfig`] if the context and
+        /// configuration are already known, or it can be a closure that gets executed
+        /// asynchronously when the client sends the `GQL_CONNECTION_INIT` message. Using a closure
+        /// allows to perform an authentication based on the parameters provided by a client.
+        ///
+        /// > __WARNING__: This protocol has been deprecated in favor of the
+        /// >              [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new], which
+        /// >              is provided by the [`transport_ws_handler()`] method.
+        ///
+        /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
+        /// [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
+        /// [`transport_ws_handler()`]: Self::transport_ws_handler
+        pub async fn ws_handler<Query, Mutation, Subscription, I>(
+            req: HttpRequest,
+            stream: web::Payload,
+            schema: Arc<RootNode<Query, Mutation, Subscription, S>>,
+            init: I,
+        ) -> Result<HttpResponse, actix_web::Error>
+        where
+            Query: GraphQLTypeAsync<S, TypeInfo: Send + Sync, Context: Unpin + Send + Sync + 'static>
+                + Send
+                + 'static,
+            Mutation: GraphQLTypeAsync<S, TypeInfo: Send + Sync, Context = Query::Context>
+                + Send
+                + 'static,
+            Subscription: GraphQLSubscriptionType<S, TypeInfo: Send + Sync, Context = Query::Context>
+                + Send
+                + 'static,
+            I: Init<S, Query::Context> + Send,
+        {
+            let (mut resp, mut ws_tx, ws_rx) = actix_ws::handle(&req, stream)?;
+            let (s_tx, mut s_rx) = graphql_ws::Connection::new(ArcSchema(schema), init).split();
+
+            actix_web::rt::spawn(async move {
+                let input = ws_rx
+                    .map(|r| r.map(Message))
+                    .forward(s_tx.sink_map_err(|e| match e {}));
+                let output = pin!(async move {
+                    while let Some(msg) = s_rx.next().await {
+                        match serde_json::to_string(&msg) {
+                            Ok(m) => {
+                                if ws_tx.text(m).await.is_err() {
+                                    return;
+                                }
+                            }
+                            Err(e) => {
+                                _ = ws_tx
+                                    .close(Some(actix_ws::CloseReason {
+                                        code: actix_ws::CloseCode::Error,
+                                        description: Some(format!(
+                                            "error serializing response: {e}"
+                                        )),
+                                    }))
+                                    .await;
+                                return;
+                            }
+                        }
+                    }
+                    _ = ws_tx
+                        .close(Some((actix_ws::CloseCode::Normal, "Normal Closure").into()))
+                        .await;
+                });
+
+                // No errors can be returned here, so ignoring is OK.
+                _ = future::select(input, output).await;
+            });
+
+            resp.headers_mut().insert(
+                HeaderName::from_static("sec-websocket-protocol"),
+                HeaderValue::from_static("graphql-ws"),
+            );
+            Ok(resp)
+        }
+
+        /// Serves the [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new].
+        ///
+        /// The `init` argument is used to provide the context and additional configuration for
+        /// connections. This can be a [`juniper_graphql_ws::ConnectionConfig`] if the context and
+        /// configuration are already known, or it can be a closure that gets executed
+        /// asynchronously when the client sends the `ConnectionInit` message. Using a closure
+        /// allows to perform an authentication based on the parameters provided by a client.
+        ///
+        /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
+        pub async fn transport_ws_handler<Query, Mutation, Subscription, I>(
+            req: HttpRequest,
+            stream: web::Payload,
+            schema: Arc<RootNode<Query, Mutation, Subscription, S>>,
+            init: I,
+        ) -> Result<HttpResponse, actix_web::Error>
+        where
+            Query: GraphQLTypeAsync<S, TypeInfo: Send + Sync, Context: Unpin + Send + Sync + 'static>
+                + Send
+                + 'static,
+            Mutation: GraphQLTypeAsync<S, TypeInfo: Send + Sync, Context = Query::Context>
+                + Send
+                + 'static,
+            Subscription: GraphQLSubscriptionType<S, TypeInfo: Send + Sync, Context = Query::Context>
+                + Send
+                + 'static,
+            I: Init<S, Query::Context> + Send,
+        {
+            let (mut resp, mut ws_tx, ws_rx) = actix_ws::handle(&req, stream)?;
+            let (s_tx, mut s_rx) =
+                graphql_transport_ws::Connection::new(ArcSchema(schema), init).split();
+
+            actix_web::rt::spawn(async move {
+                let input = ws_rx
+                    .map(|r| r.map(Message))
+                    .forward(s_tx.sink_map_err(|e| match e {}));
+                let output = pin!(async move {
+                    while let Some(output) = s_rx.next().await {
+                        match output {
+                            graphql_transport_ws::Output::Message(msg) => {
+                                match serde_json::to_string(&msg) {
+                                    Ok(m) => {
+                                        if ws_tx.text(m).await.is_err() {
+                                            return;
+                                        }
+                                    }
+                                    Err(e) => {
+                                        _ = ws_tx
+                                            .close(Some(actix_ws::CloseReason {
+                                                code: actix_ws::CloseCode::Error,
+                                                description: Some(format!(
+                                                    "error serializing response: {e}",
+                                                )),
+                                            }))
+                                            .await;
+                                        return;
+                                    }
+                                }
+                            }
+                            graphql_transport_ws::Output::Close { code, message } => {
+                                _ = ws_tx
+                                    .close(Some(actix_ws::CloseReason {
+                                        code: code.into(),
+                                        description: Some(message),
+                                    }))
+                                    .await;
+                                return;
+                            }
+                        }
+                    }
+                    _ = ws_tx
+                        .close(Some((actix_ws::CloseCode::Normal, "Normal Closure").into()))
+                        .await;
+                });
+
+                // No errors can be returned here, so ignoring is OK.
+                _ = future::select(input, output).await;
+            });
+
+            resp.headers_mut().insert(
+                HeaderName::from_static("sec-websocket-protocol"),
+                HeaderValue::from_static("graphql-transport-ws"),
+            );
+            Ok(resp)
+        }
+    }
 
     /// Serves by auto-selecting between the
     /// [legacy `graphql-ws` GraphQL over WebSocket Protocol][old] and the
@@ -202,33 +484,25 @@ pub mod subscriptions {
     ///
     /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
     /// [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
-    pub async fn ws_handler<Query, Mutation, Subscription, CtxT, S, I>(
+    pub async fn ws_handler<Query, Mutation, Subscription, S, I>(
         req: HttpRequest,
         stream: web::Payload,
         schema: Arc<RootNode<Query, Mutation, Subscription, S>>,
         init: I,
     ) -> Result<HttpResponse, actix_web::Error>
     where
-        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
-        Query::TypeInfo: Send + Sync,
-        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
-        Mutation::TypeInfo: Send + Sync,
-        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
-        Subscription::TypeInfo: Send + Sync,
-        CtxT: Unpin + Send + Sync + 'static,
+        Query: GraphQLTypeAsync<S, TypeInfo: Send + Sync, Context: Unpin + Send + Sync + 'static>
+            + Send
+            + 'static,
+        Mutation:
+            GraphQLTypeAsync<S, TypeInfo: Send + Sync, Context = Query::Context> + Send + 'static,
+        Subscription: GraphQLSubscriptionType<S, TypeInfo: Send + Sync, Context = Query::Context>
+            + Send
+            + 'static,
         S: ScalarValue + Send + Sync + 'static,
-        I: Init<S, CtxT> + Send,
+        I: Init<S, Query::Context> + Send,
     {
-        if req
-            .headers()
-            .get("sec-websocket-protocol")
-            .map(AsRef::as_ref)
-            == Some("graphql-ws".as_bytes())
-        {
-            graphql_ws_handler(req, stream, schema, init).await
-        } else {
-            graphql_transport_ws_handler(req, stream, schema, init).await
-        }
+        GraphQLWith::<S>::auto_ws_handler(req, stream, schema, init).await
     }
 
     /// Serves the [legacy `graphql-ws` GraphQL over WebSocket Protocol][old].
@@ -245,63 +519,25 @@ pub mod subscriptions {
     ///
     /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
     /// [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
-    pub async fn graphql_ws_handler<Query, Mutation, Subscription, CtxT, S, I>(
+    pub async fn graphql_ws_handler<Query, Mutation, Subscription, S, I>(
         req: HttpRequest,
         stream: web::Payload,
         schema: Arc<RootNode<Query, Mutation, Subscription, S>>,
         init: I,
     ) -> Result<HttpResponse, actix_web::Error>
     where
-        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
-        Query::TypeInfo: Send + Sync,
-        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
-        Mutation::TypeInfo: Send + Sync,
-        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
-        Subscription::TypeInfo: Send + Sync,
-        CtxT: Unpin + Send + Sync + 'static,
+        Query: GraphQLTypeAsync<S, TypeInfo: Send + Sync, Context: Unpin + Send + Sync + 'static>
+            + Send
+            + 'static,
+        Mutation:
+            GraphQLTypeAsync<S, TypeInfo: Send + Sync, Context = Query::Context> + Send + 'static,
+        Subscription: GraphQLSubscriptionType<S, TypeInfo: Send + Sync, Context = Query::Context>
+            + Send
+            + 'static,
         S: ScalarValue + Send + Sync + 'static,
-        I: Init<S, CtxT> + Send,
+        I: Init<S, Query::Context> + Send,
     {
-        let (mut resp, mut ws_tx, ws_rx) = actix_ws::handle(&req, stream)?;
-        let (s_tx, mut s_rx) = graphql_ws::Connection::new(ArcSchema(schema), init).split();
-
-        actix_web::rt::spawn(async move {
-            let input = ws_rx
-                .map(|r| r.map(Message))
-                .forward(s_tx.sink_map_err(|e| match e {}));
-            let output = pin!(async move {
-                while let Some(msg) = s_rx.next().await {
-                    match serde_json::to_string(&msg) {
-                        Ok(m) => {
-                            if ws_tx.text(m).await.is_err() {
-                                return;
-                            }
-                        }
-                        Err(e) => {
-                            _ = ws_tx
-                                .close(Some(actix_ws::CloseReason {
-                                    code: actix_ws::CloseCode::Error,
-                                    description: Some(format!("error serializing response: {e}")),
-                                }))
-                                .await;
-                            return;
-                        }
-                    }
-                }
-                _ = ws_tx
-                    .close(Some((actix_ws::CloseCode::Normal, "Normal Closure").into()))
-                    .await;
-            });
-
-            // No errors can be returned here, so ignoring is OK.
-            _ = future::select(input, output).await;
-        });
-
-        resp.headers_mut().insert(
-            HeaderName::from_static("sec-websocket-protocol"),
-            HeaderValue::from_static("graphql-ws"),
-        );
-        Ok(resp)
+        GraphQLWith::<S>::ws_handler(req, stream, schema, init).await
     }
 
     /// Serves the [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new].
@@ -313,79 +549,25 @@ pub mod subscriptions {
     /// authentication based on the parameters provided by a client.
     ///
     /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
-    pub async fn graphql_transport_ws_handler<Query, Mutation, Subscription, CtxT, S, I>(
+    pub async fn graphql_transport_ws_handler<Query, Mutation, Subscription, S, I>(
         req: HttpRequest,
         stream: web::Payload,
         schema: Arc<RootNode<Query, Mutation, Subscription, S>>,
         init: I,
     ) -> Result<HttpResponse, actix_web::Error>
     where
-        Query: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
-        Query::TypeInfo: Send + Sync,
-        Mutation: GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
-        Mutation::TypeInfo: Send + Sync,
-        Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
-        Subscription::TypeInfo: Send + Sync,
-        CtxT: Unpin + Send + Sync + 'static,
+        Query: GraphQLTypeAsync<S, TypeInfo: Send + Sync, Context: Unpin + Send + Sync + 'static>
+            + Send
+            + 'static,
+        Mutation:
+            GraphQLTypeAsync<S, TypeInfo: Send + Sync, Context = Query::Context> + Send + 'static,
+        Subscription: GraphQLSubscriptionType<S, TypeInfo: Send + Sync, Context = Query::Context>
+            + Send
+            + 'static,
         S: ScalarValue + Send + Sync + 'static,
-        I: Init<S, CtxT> + Send,
+        I: Init<S, Query::Context> + Send,
     {
-        let (mut resp, mut ws_tx, ws_rx) = actix_ws::handle(&req, stream)?;
-        let (s_tx, mut s_rx) =
-            graphql_transport_ws::Connection::new(ArcSchema(schema), init).split();
-
-        actix_web::rt::spawn(async move {
-            let input = ws_rx
-                .map(|r| r.map(Message))
-                .forward(s_tx.sink_map_err(|e| match e {}));
-            let output = pin!(async move {
-                while let Some(output) = s_rx.next().await {
-                    match output {
-                        graphql_transport_ws::Output::Message(msg) => {
-                            match serde_json::to_string(&msg) {
-                                Ok(m) => {
-                                    if ws_tx.text(m).await.is_err() {
-                                        return;
-                                    }
-                                }
-                                Err(e) => {
-                                    _ = ws_tx
-                                        .close(Some(actix_ws::CloseReason {
-                                            code: actix_ws::CloseCode::Error,
-                                            description: Some(format!(
-                                                "error serializing response: {e}",
-                                            )),
-                                        }))
-                                        .await;
-                                    return;
-                                }
-                            }
-                        }
-                        graphql_transport_ws::Output::Close { code, message } => {
-                            _ = ws_tx
-                                .close(Some(actix_ws::CloseReason {
-                                    code: code.into(),
-                                    description: Some(message),
-                                }))
-                                .await;
-                            return;
-                        }
-                    }
-                }
-                _ = ws_tx
-                    .close(Some((actix_ws::CloseCode::Normal, "Normal Closure").into()))
-                    .await;
-            });
-
-            // No errors can be returned here, so ignoring is OK.
-            _ = future::select(input, output).await;
-        });
-
-        resp.headers_mut().insert(
-            HeaderName::from_static("sec-websocket-protocol"),
-            HeaderValue::from_static("graphql-transport-ws"),
-        );
-        Ok(resp)
+        GraphQLWith::<S>::transport_ws_handler(req, stream, schema, init).await
     }
 
     #[derive(Debug)]
@@ -444,21 +626,24 @@ mod tests {
 
     use actix_http::body::MessageBody;
     use actix_web::{
-        App,
+        App, Error, HttpRequest, HttpResponse,
         dev::ServiceResponse,
         http,
         http::header::{ACCEPT, CONTENT_TYPE},
         test::{self, TestRequest},
-        web::Data,
+        web,
     };
     use futures::future;
     use juniper::{
         EmptyMutation, EmptySubscription,
-        http::tests::{HttpIntegration, TestResponse, run_http_test_suite},
+        http::{
+            GraphQLBatchRequest,
+            tests::{HttpIntegration, TestResponse, run_http_test_suite},
+        },
         tests::fixtures::starwars::schema::{Database, Query},
     };
 
-    use super::*;
+    use super::{GraphQL, graphiql_handler, playground_handler};
 
     type Schema = juniper::RootNode<Query, EmptyMutation<Database>, EmptySubscription<Database>>;
 
@@ -476,11 +661,10 @@ mod tests {
 
     async fn index(
         req: HttpRequest,
-        payload: actix_web::web::Payload,
+        payload: web::Payload,
         schema: web::Data<Schema>,
     ) -> Result<HttpResponse, Error> {
-        let context = Database::new();
-        graphql_handler(&schema, &context, req, payload).await
+        GraphQL::handler(&schema, Database::new(), req, payload).await
     }
 
     #[actix_web::rt::test]
@@ -521,11 +705,11 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK);
         assert_eq!(
             resp.headers().get(CONTENT_TYPE).unwrap().to_str().unwrap(),
-            "text/html; charset=utf-8"
+            "text/html; charset=utf-8",
         );
         let body = take_response_body_string(resp).await;
         assert!(body.contains("const JUNIPER_URL = '/dogs-api/graphql';"));
-        assert!(body.contains("const JUNIPER_SUBSCRIPTIONS_URL = '/dogs-api/subscriptions';"))
+        assert!(body.contains("const JUNIPER_SUBSCRIPTIONS_URL = '/dogs-api/subscriptions';"));
     }
 
     #[actix_web::rt::test]
@@ -586,7 +770,7 @@ mod tests {
 
         let mut app = test::init_service(
             App::new()
-                .app_data(Data::new(schema))
+                .app_data(web::Data::new(schema))
                 .route("/", web::post().to(index)),
         )
         .await;
@@ -599,7 +783,7 @@ mod tests {
         );
         assert_eq!(
             take_response_body_string(resp).await,
-            r#"{"data":{"hero":{"name":"R2-D2"}}}"#
+            r#"{"data":{"hero":{"name":"R2-D2"}}}"#,
         );
     }
 
@@ -618,7 +802,7 @@ mod tests {
 
         let mut app = test::init_service(
             App::new()
-                .app_data(Data::new(schema))
+                .app_data(web::Data::new(schema))
                 .route("/", web::get().to(index)),
         )
         .await;
@@ -632,7 +816,7 @@ mod tests {
         );
         assert_eq!(
             take_response_body_string(resp).await,
-            r#"{"data":{"hero":{"name":"R2-D2"}}}"#
+            r#"{"data":{"hero":{"name":"R2-D2"}}}"#,
         );
     }
 
@@ -662,7 +846,7 @@ mod tests {
 
         let mut app = test::init_service(
             App::new()
-                .app_data(Data::new(schema))
+                .app_data(web::Data::new(schema))
                 .route("/", web::post().to(index)),
         )
         .await;
@@ -676,7 +860,7 @@ mod tests {
         );
         assert_eq!(
             take_response_body_string(resp).await,
-            r#"[{"data":{"hero":{"name":"R2-D2"}}},{"data":{"hero":{"id":"1000","name":"Luke Skywalker"}}}]"#
+            r#"[{"data":{"hero":{"name":"R2-D2"}}},{"data":{"hero":{"id":"1000","name":"Luke Skywalker"}}}]"#,
         );
     }
 
@@ -701,7 +885,7 @@ mod tests {
 
                 let mut app = test::init_service(
                     App::new()
-                        .app_data(Data::new(schema))
+                        .app_data(web::Data::new(schema))
                         .route("/", web::to(index)),
                 )
                 .await;

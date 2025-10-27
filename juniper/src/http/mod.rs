@@ -9,9 +9,8 @@ use serde::{
 };
 
 use crate::{
-    Context,
-    FieldError, GraphQLError, GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync, RootNode,
-    Value, Variables,
+    Context, FieldError, GraphQLError, GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync,
+    RootNode, Value, Variables,
     ast::InputValue,
     executor::{ExecutionError, ValuesStream},
     value::{DefaultScalarValue, ScalarValue},
@@ -206,7 +205,8 @@ where
             }
             Self::Batch(reqs) => {
                 let resps = futures::future::join_all(
-                    reqs.iter().map(|req| req.execute(root_node, context.clone())),
+                    reqs.iter()
+                        .map(|req| req.execute(root_node, context.clone())),
                 )
                 .await;
                 GraphQLBatchResponse::Batch(resps)

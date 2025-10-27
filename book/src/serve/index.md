@@ -54,7 +54,7 @@ In the [Juniper] ecosystem, both implementations are provided by the [`juniper_g
 [`subscriptions-transport-ws` npm package]: https://npmjs.com/package/subscriptions-transport-ws
 [`warp`]: https://docs.rs/warp
 [Apollo]: https://www.apollographql.com
-[GraphiQL]: https://github.com/graphql/graphiql
+§
 [GraphQL]: https://graphql.org
 [GraphQL Playground]: https://github.com/prisma/graphql-playground
 [HTTP]: https://en.wikipedia.org/wiki/HTTP

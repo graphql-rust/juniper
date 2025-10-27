@@ -395,7 +395,7 @@ pub trait FromContext<T> {
     fn from(value: &T) -> &Self;
 }
 
-/// Marker trait for types that can act as context objects for `GraphQL` types.
+/// Execution context for resolving GraphQL types.
 pub trait Context {
     /// Consumes the provided [request `extensions`][0] into this [`Context`].
     ///
@@ -483,7 +483,6 @@ pub trait Context {
     fn consume_request_extensions<T: 'static>(&mut self, extensions: &T) {
         _ = extensions;
     }
-
 }
 
 impl<C: Context> Context for &C {}
