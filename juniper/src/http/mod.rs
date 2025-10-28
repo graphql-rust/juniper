@@ -9,10 +9,10 @@ use serde::{
 };
 
 use crate::{
-    Context, FieldError, GraphQLError, GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync,
-    RootNode, Value, Variables,
+    FieldError, GraphQLError, GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync, RootNode,
+    Value, Variables,
     ast::InputValue,
-    executor::{ExecutionError, ValuesStream},
+    executor::{ExecutionError, Inject, ValuesStream},
     value::{DefaultScalarValue, ScalarValue},
 };
 
@@ -77,16 +77,14 @@ where
         mut context: QueryT::Context,
     ) -> GraphQLResponse<S>
     where
-        S: ScalarValue,
-        QueryT: GraphQLType<S, Context: Context>,
+        QueryT: GraphQLType<S, Context: Inject<Ext>>,
         MutationT: GraphQLType<S, Context = QueryT::Context>,
         SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
-        Ext: 'static,
     {
         let op = self.operation_name.as_deref();
         let vars = &self.variables();
-        if let Some(ext) = self.extensions.as_ref() {
-            context.consume_request_extensions(ext)
+        if let Some(extensions) = self.extensions.as_ref() {
+            context.inject(extensions);
         }
         let res = crate::execute_sync(&self.query, op, root_node, vars, &context);
         GraphQLResponse(res)
@@ -102,16 +100,15 @@ where
         mut context: QueryT::Context,
     ) -> GraphQLResponse<S>
     where
-        S: ScalarValue + Send + Sync,
-        QueryT: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Context + Sync>,
+        S: Send + Sync,
+        QueryT: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Inject<Ext> + Sync>,
         MutationT: GraphQLTypeAsync<S, TypeInfo: Sync, Context = QueryT::Context>,
         SubscriptionT: GraphQLType<S, TypeInfo: Sync, Context = QueryT::Context> + Sync,
-        Ext: 'static,
     {
         let op = self.operation_name.as_deref();
         let vars = &self.variables();
-        if let Some(ext) = self.extensions.as_ref() {
-            context.consume_request_extensions(ext)
+        if let Some(extensions) = self.extensions.as_ref() {
+            context.inject(extensions);
         }
         let res = crate::execute(&self.query, op, root_node, vars, &context).await;
         GraphQLResponse(res)
@@ -167,10 +164,9 @@ where
         context: QueryT::Context,
     ) -> GraphQLBatchResponse<S>
     where
-        QueryT: GraphQLType<S, Context: Context + Clone>,
+        QueryT: GraphQLType<S, Context: Inject<Ext> + Clone>,
         MutationT: GraphQLType<S, Context = QueryT::Context>,
         SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
-        Ext: 'static,
     {
         match self {
             Self::Single(req) => GraphQLBatchResponse::Single(req.execute_sync(root_node, context)),
@@ -193,10 +189,9 @@ where
     ) -> GraphQLBatchResponse<S>
     where
         S: Send + Sync,
-        QueryT: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Context + Clone + Sync>,
+        QueryT: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Inject<Ext> + Clone + Sync>,
         MutationT: GraphQLTypeAsync<S, TypeInfo: Sync, Context = QueryT::Context>,
         SubscriptionT: GraphQLSubscriptionType<S, TypeInfo: Sync, Context = QueryT::Context>,
-        Ext: 'static,
     {
         match self {
             Self::Single(req) => {
