@@ -460,7 +460,7 @@ impl<C: Context> Context for &C {}
 /// ```
 ///
 /// [0]: https://spec.graphql.org/September2025#sel-FANHLBBgBBvC0vW
-pub trait Inject<V = Variables> {
+pub trait Inject<V: ?Sized = Variables> {
     /// Injects the provided `value` into this [`Context`].
     ///
     /// Default implementation does nothing.
@@ -469,7 +469,7 @@ pub trait Inject<V = Variables> {
     }
 }
 
-impl<V> Inject<V> for () {}
+impl<V: ?Sized> Inject<V> for () {}
 
 /// Conversion trait for context types
 ///

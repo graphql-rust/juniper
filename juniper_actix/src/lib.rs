@@ -10,11 +10,12 @@ use actix_web::{
     http::Method, web,
 };
 use juniper::{
-    Context, DefaultScalarValue, GraphQLSubscriptionType, GraphQLTypeAsync, ScalarValue,
+    Inject, DefaultScalarValue, GraphQLSubscriptionType, GraphQLTypeAsync, ScalarValue,
     http::{
         GraphQLBatchRequest, GraphQLRequest, graphiql::graphiql_source,
         playground::playground_source,
     },
+    Variables
 };
 use serde::{Deserialize, de::DeserializeOwned};
 
@@ -24,10 +25,10 @@ pub struct GraphQLWith<S = DefaultScalarValue, RequestExtensions = juniper::Vari
     PhantomData<(S, RequestExtensions)>,
 );
 
-impl<S, RequestExtensions> GraphQLWith<S, RequestExtensions>
+impl<S, Extensions> GraphQLWith<S, Extensions>
 where
     S: ScalarValue + Send + Sync,
-    RequestExtensions: DeserializeOwned + 'static,
+    Extensions: DeserializeOwned,
 {
     pub async fn handler<Query, Mutation, Subscription>(
         schema: &juniper::RootNode<Query, Mutation, Subscription, S>,
@@ -36,14 +37,13 @@ where
         payload: web::Payload,
     ) -> Result<HttpResponse, Error>
     where
-        Query: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Context + Clone + Sync>,
+        Query: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Inject<Extensions> + Clone + Sync>,
         Mutation: GraphQLTypeAsync<S, TypeInfo: Sync, Context = Query::Context>,
         Subscription: GraphQLSubscriptionType<S, TypeInfo: Sync, Context = Query::Context>,
-        S: ScalarValue + Send + Sync,
     {
         match *req.method() {
-            Method::POST => post_graphql_handler(schema, context, req, payload).await,
-            Method::GET => get_graphql_handler(schema, context, req).await,
+            Method::POST => Self::post_handler(schema, context, req, payload).await,
+            Method::GET => Self::get_handler(schema, context, req).await,
             _ => Err(actix_web::error::UrlGenerationError::ResourceNotFound.into()),
         }
     }
@@ -54,12 +54,12 @@ where
         req: HttpRequest,
     ) -> Result<HttpResponse, Error>
     where
-        Query: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Context + Sync>,
+        Query: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Inject<Extensions> + Sync>,
         Mutation: GraphQLTypeAsync<S, TypeInfo: Sync, Context = Query::Context>,
         Subscription: GraphQLSubscriptionType<S, TypeInfo: Sync, Context = Query::Context>,
     {
         let get_req = web::Query::<GetGraphQLRequest>::from_query(req.query_string())?;
-        let req = GraphQLRequest::<S, RequestExtensions>::try_from(get_req.into_inner())?;
+        let req = GraphQLRequest::<S, Extensions>::try_from(get_req.into_inner())?;
         let gql_response = req.execute(schema, context).await;
         let body_response = serde_json::to_string(&gql_response)?;
         let mut response = match gql_response.is_ok() {
@@ -78,19 +78,19 @@ where
         payload: web::Payload,
     ) -> Result<HttpResponse, Error>
     where
-        Query: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Context + Clone + Sync>,
+        Query: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Inject<Extensions> + Clone + Sync>,
         Mutation: GraphQLTypeAsync<S, TypeInfo: Sync, Context = Query::Context>,
         Subscription: GraphQLSubscriptionType<S, TypeInfo: Sync, Context = Query::Context>,
     {
         let req = match req.content_type() {
             "application/json" => {
                 let body = String::from_request(&req, &mut payload.into_inner()).await?;
-                serde_json::from_str::<GraphQLBatchRequest<S, RequestExtensions>>(&body)
+                serde_json::from_str::<GraphQLBatchRequest<S, Extensions>>(&body)
                     .map_err(JsonPayloadError::Deserialize)
             }
             "application/graphql" => {
                 let body = String::from_request(&req, &mut payload.into_inner()).await?;
-                Ok(GraphQLBatchRequest::<S, RequestExtensions>::Single(
+                Ok(GraphQLBatchRequest::<S, Extensions>::Single(
                     GraphQLRequest {
                         query: body,
                         operation_name: None,
@@ -161,7 +161,7 @@ pub async fn graphql_handler<Query, Mutation, Subscription, S>(
     payload: web::Payload,
 ) -> Result<HttpResponse, Error>
 where
-    Query: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Context + Clone + Sync>,
+    Query: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Inject<Variables<S>> + Clone + Sync>,
     Mutation: GraphQLTypeAsync<S, TypeInfo: Sync, Context = Query::Context>,
     Subscription: GraphQLSubscriptionType<S, TypeInfo: Sync, Context = Query::Context>,
     S: ScalarValue + Send + Sync,
@@ -176,7 +176,7 @@ pub async fn get_graphql_handler<Query, Mutation, Subscription, S>(
     req: HttpRequest,
 ) -> Result<HttpResponse, Error>
 where
-    Query: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Context + Sync>,
+    Query: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Inject<Variables<S>> + Sync>,
     Mutation: GraphQLTypeAsync<S, TypeInfo: Sync, Context = Query::Context>,
     Subscription: GraphQLSubscriptionType<S, TypeInfo: Sync, Context = Query::Context>,
     S: ScalarValue + Send + Sync,
@@ -192,7 +192,7 @@ pub async fn post_graphql_handler<Query, Mutation, Subscription, S>(
     payload: web::Payload,
 ) -> Result<HttpResponse, Error>
 where
-    Query: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Context + Clone + Sync>,
+    Query: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Inject<Variables<S>> + Clone + Sync>,
     Mutation: GraphQLTypeAsync<S, TypeInfo: Sync, Context = Query::Context>,
     Subscription: GraphQLSubscriptionType<S, TypeInfo: Sync, Context = Query::Context>,
     S: ScalarValue + Send + Sync,
