@@ -8,7 +8,7 @@ updates:
 
   - package-ecosystem: github-actions
     directory: /
-    labels: ["enhancement", "github_actions", "k::dependencies"]
+    labels: ["enhancement", "github_actions", "k::dependencies", "k::toolchain"]
     schedule:
       interval: daily
 
