@@ -4,14 +4,19 @@ warning: unused variable: `obj`
 17 |     async fn id(&self, obj: ObjA) -> BoxStream<'static, &'static str> {
    |                        ^^^ help: if this is intentional, prefix it with an underscore: `_obj`
    |
-   = note: `#[warn(unused_variables)]` on by default
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
 
 error[E0277]: the trait bound `ObjA: IsInputType<__S>` is not satisfied
   --> fail/subscription/argument_non_input_type.rs:17:29
    |
 17 |     async fn id(&self, obj: ObjA) -> BoxStream<'static, &'static str> {
-   |                             ^^^^ the trait `IsInputType<__S>` is not implemented for `ObjA`
+   |                             ^^^^ unsatisfied trait bound
    |
+help: the trait `IsInputType<__S>` is not implemented for `ObjA`
+  --> fail/subscription/argument_non_input_type.rs:9:1
+   |
+ 9 | struct ObjA {
+   | ^^^^^^^^^^^
    = help: the following other types implement trait `IsInputType<S>`:
              `&T` implements `IsInputType<S>`
              `Arc<T>` implements `IsInputType<S>`
@@ -30,8 +35,13 @@ error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
    | ----------------------- required by a bound introduced by this call
 16 | impl ObjB {
 17 |     async fn id(&self, obj: ObjA) -> BoxStream<'static, &'static str> {
-   |                             ^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjA`
+   |                             ^^^^ unsatisfied trait bound
    |
+help: the trait `FromInputValue<__S>` is not implemented for `ObjA`
+  --> fail/subscription/argument_non_input_type.rs:9:1
+   |
+ 9 | struct ObjA {
+   | ^^^^^^^^^^^
    = help: the following other types implement trait `FromInputValue<S>`:
              `Arc<T>` implements `FromInputValue<S>`
              `ArcStr` implements `FromInputValue<__S>`
@@ -55,8 +65,13 @@ error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
   --> fail/subscription/argument_non_input_type.rs:15:1
    |
 15 | #[graphql_subscription]
-   | ^^^^^^^^^^^^^^^^^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjA`
+   | ^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
    |
+help: the trait `FromInputValue<__S>` is not implemented for `ObjA`
+  --> fail/subscription/argument_non_input_type.rs:9:1
+   |
+ 9 | struct ObjA {
+   | ^^^^^^^^^^^
    = help: the following other types implement trait `FromInputValue<S>`:
              `Arc<T>` implements `FromInputValue<S>`
              `ArcStr` implements `FromInputValue<__S>`
@@ -73,8 +88,13 @@ error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
   --> fail/subscription/argument_non_input_type.rs:17:29
    |
 17 |     async fn id(&self, obj: ObjA) -> BoxStream<'static, &'static str> {
-   |                             ^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjA`
+   |                             ^^^^ unsatisfied trait bound
    |
+help: the trait `FromInputValue<__S>` is not implemented for `ObjA`
+  --> fail/subscription/argument_non_input_type.rs:9:1
+   |
+ 9 | struct ObjA {
+   | ^^^^^^^^^^^
    = help: the following other types implement trait `FromInputValue<S>`:
              `Arc<T>` implements `FromInputValue<S>`
              `ArcStr` implements `FromInputValue<__S>`

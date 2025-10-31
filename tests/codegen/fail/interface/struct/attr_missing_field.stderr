@@ -34,7 +34,7 @@ error[E0277]: the trait bound `ObjA: reflect::Field<__S, 11301463986558097276003
   --> fail/interface/struct/attr_missing_field.rs:11:5
    |
 11 |     id: String,
-   |     ^^ the trait `reflect::Field<__S, 11301463986558097276003903130001171064>` is not implemented for `ObjA`
+   |     ^^ unsatisfied trait bound
    |
    = help: the trait `Field<__S, 11301463986558097276003903130001171064>` is not implemented for `ObjA`
            but trait `Field<__S, 140650918148392961738240285796466530725>` is implemented for it
@@ -51,7 +51,7 @@ error[E0277]: the trait bound `ObjA: AsyncField<__S, 113014639865580972760039031
   --> fail/interface/struct/attr_missing_field.rs:11:5
    |
 11 |     id: String,
-   |     ^^ the trait `AsyncField<__S, 11301463986558097276003903130001171064>` is not implemented for `ObjA`
+   |     ^^ unsatisfied trait bound
    |
    = help: the trait `AsyncField<__S, 11301463986558097276003903130001171064>` is not implemented for `ObjA`
            but trait `AsyncField<__S, 140650918148392961738240285796466530725>` is implemented for it

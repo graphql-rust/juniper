@@ -9,3 +9,9 @@ error: cannot find attribute `graphql` in this scope
   |
 6 | #[graphql(to_output_with = Scalar::to_output)]
   |   ^^^^^^^
+  |
+help: `graphql` is an attribute that can be used by the derive macros `GraphQLEnum`, `GraphQLInputObject`, `GraphQLInterface`, `GraphQLObject`, `GraphQLScalar` and `GraphQLUnion`, you might be missing a `derive` attribute
+  |
+7 + #[derive(GraphQLEnum, GraphQLInputObject, GraphQLInterface, GraphQLObject, GraphQLScalar, GraphQLUnion)]
+8 | type CustomScalar = Scalar;
+  |

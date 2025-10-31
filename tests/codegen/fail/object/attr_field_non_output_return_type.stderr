@@ -2,8 +2,13 @@ error[E0277]: the trait bound `ObjB: IsOutputType<__S>` is not satisfied
   --> fail/object/attr_field_non_output_return_type.rs:10:1
    |
 10 | #[graphql_object]
-   | ^^^^^^^^^^^^^^^^^ the trait `IsOutputType<__S>` is not implemented for `ObjB`
+   | ^^^^^^^^^^^^^^^^^ unsatisfied trait bound
    |
+help: the trait `IsOutputType<__S>` is not implemented for `ObjB`
+  --> fail/object/attr_field_non_output_return_type.rs:4:1
+   |
+ 4 | struct ObjB {
+   | ^^^^^^^^^^^
    = help: the following other types implement trait `IsOutputType<S>`:
              `&T` implements `IsOutputType<S>`
              `Arc<T>` implements `IsOutputType<S>`

@@ -12,4 +12,4 @@ error: cannot find attribute `graphql` in this scope
 5 |     #[graphql(with = something)]
   |       ^^^^^^^
   |
-  = note: `graphql` is an attribute that can be used by the derive macro `GraphQLObject`, you might be missing a `derive` attribute
+  = note: `graphql` is an attribute that can be used by the derive macros `GraphQLEnum`, `GraphQLInputObject`, `GraphQLInterface`, `GraphQLObject`, `GraphQLScalar` and `GraphQLUnion`, you might be missing a `derive` attribute

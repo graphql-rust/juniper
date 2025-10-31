@@ -2,8 +2,13 @@ error[E0277]: the trait bound `ObjA: IsInputType<__S>` is not satisfied
   --> fail/object/argument_non_input_type.rs:12:23
    |
 12 |     fn id(&self, obj: ObjA) -> &str {
-   |                       ^^^^ the trait `IsInputType<__S>` is not implemented for `ObjA`
+   |                       ^^^^ unsatisfied trait bound
    |
+help: the trait `IsInputType<__S>` is not implemented for `ObjA`
+  --> fail/object/argument_non_input_type.rs:4:1
+   |
+ 4 | struct ObjA {
+   | ^^^^^^^^^^^
    = help: the following other types implement trait `IsInputType<S>`:
              `&T` implements `IsInputType<S>`
              `Arc<T>` implements `IsInputType<S>`
@@ -22,8 +27,13 @@ error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
    | ----------------- required by a bound introduced by this call
 11 | impl ObjB {
 12 |     fn id(&self, obj: ObjA) -> &str {
-   |                       ^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjA`
+   |                       ^^^^ unsatisfied trait bound
    |
+help: the trait `FromInputValue<__S>` is not implemented for `ObjA`
+  --> fail/object/argument_non_input_type.rs:4:1
+   |
+ 4 | struct ObjA {
+   | ^^^^^^^^^^^
    = help: the following other types implement trait `FromInputValue<S>`:
              `Arc<T>` implements `FromInputValue<S>`
              `ArcStr` implements `FromInputValue<__S>`
@@ -47,8 +57,13 @@ error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
   --> fail/object/argument_non_input_type.rs:10:1
    |
 10 | #[graphql_object]
-   | ^^^^^^^^^^^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjA`
+   | ^^^^^^^^^^^^^^^^^ unsatisfied trait bound
    |
+help: the trait `FromInputValue<__S>` is not implemented for `ObjA`
+  --> fail/object/argument_non_input_type.rs:4:1
+   |
+ 4 | struct ObjA {
+   | ^^^^^^^^^^^
    = help: the following other types implement trait `FromInputValue<S>`:
              `Arc<T>` implements `FromInputValue<S>`
              `ArcStr` implements `FromInputValue<__S>`
@@ -65,8 +80,13 @@ error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
   --> fail/object/argument_non_input_type.rs:12:23
    |
 12 |     fn id(&self, obj: ObjA) -> &str {
-   |                       ^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjA`
+   |                       ^^^^ unsatisfied trait bound
    |
+help: the trait `FromInputValue<__S>` is not implemented for `ObjA`
+  --> fail/object/argument_non_input_type.rs:4:1
+   |
+ 4 | struct ObjA {
+   | ^^^^^^^^^^^
    = help: the following other types implement trait `FromInputValue<S>`:
              `Arc<T>` implements `FromInputValue<S>`
              `ArcStr` implements `FromInputValue<__S>`
@@ -84,4 +104,4 @@ warning: unused variable: `obj`
 12 |     fn id(&self, obj: ObjA) -> &str {
    |                  ^^^ help: if this is intentional, prefix it with an underscore: `_obj`
    |
-   = note: `#[warn(unused_variables)]` on by default
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default

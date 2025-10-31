@@ -2,8 +2,13 @@ error[E0277]: the trait bound `ObjectA: IsInputType<__S>` is not satisfied
  --> fail/input_object/enum/derive_incompatible_field_type.rs:8:10
   |
 8 | #[derive(GraphQLInputObject)]
-  |          ^^^^^^^^^^^^^^^^^^ the trait `IsInputType<__S>` is not implemented for `ObjectA`
+  |          ^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
   |
+help: the trait `IsInputType<__S>` is not implemented for `ObjectA`
+ --> fail/input_object/enum/derive_incompatible_field_type.rs:4:1
+  |
+4 | struct ObjectA {
+  | ^^^^^^^^^^^^^^
   = help: the following other types implement trait `IsInputType<S>`:
             `&T` implements `IsInputType<S>`
             `Arc<T>` implements `IsInputType<S>`
@@ -21,8 +26,13 @@ error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
  --> fail/input_object/enum/derive_incompatible_field_type.rs:8:10
   |
 8 | #[derive(GraphQLInputObject)]
-  |          ^^^^^^^^^^^^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjectA`
+  |          ^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
   |
+help: the trait `FromInputValue<__S>` is not implemented for `ObjectA`
+ --> fail/input_object/enum/derive_incompatible_field_type.rs:4:1
+  |
+4 | struct ObjectA {
+  | ^^^^^^^^^^^^^^
   = help: the following other types implement trait `FromInputValue<S>`:
             `Arc<T>` implements `FromInputValue<S>`
             `ArcStr` implements `FromInputValue<__S>`
@@ -48,8 +58,13 @@ error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
  --> fail/input_object/enum/derive_incompatible_field_type.rs:8:10
   |
 8 | #[derive(GraphQLInputObject)]
-  |          ^^^^^^^^^^^^^^^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjectA`
+  |          ^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
   |
+help: the trait `FromInputValue<__S>` is not implemented for `ObjectA`
+ --> fail/input_object/enum/derive_incompatible_field_type.rs:4:1
+  |
+4 | struct ObjectA {
+  | ^^^^^^^^^^^^^^
   = help: the following other types implement trait `FromInputValue<S>`:
             `Arc<T>` implements `FromInputValue<S>`
             `ArcStr` implements `FromInputValue<__S>`
@@ -66,8 +81,13 @@ error[E0277]: the trait bound `ObjectA: ToInputValue<_>` is not satisfied
  --> fail/input_object/enum/derive_incompatible_field_type.rs:8:10
   |
 8 | #[derive(GraphQLInputObject)]
-  |          ^^^^^^^^^^^^^^^^^^ the trait `ToInputValue<_>` is not implemented for `ObjectA`
+  |          ^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
   |
+help: the trait `ToInputValue<_>` is not implemented for `ObjectA`
+ --> fail/input_object/enum/derive_incompatible_field_type.rs:4:1
+  |
+4 | struct ObjectA {
+  | ^^^^^^^^^^^^^^
   = help: the following other types implement trait `ToInputValue<S>`:
             `&T` implements `ToInputValue<S>`
             `Arc<T>` implements `ToInputValue<S>`

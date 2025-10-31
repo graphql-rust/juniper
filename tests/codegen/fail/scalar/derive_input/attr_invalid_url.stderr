@@ -9,3 +9,9 @@ error: cannot find attribute `graphql` in this scope
   |
 4 | #[graphql(specified_by_url = "not an url", transparent)]
   |   ^^^^^^^
+  |
+help: `graphql` is an attribute that can be used by the derive macros `GraphQLEnum`, `GraphQLInputObject`, `GraphQLInterface`, `GraphQLObject`, `GraphQLScalar` and `GraphQLUnion`, you might be missing a `derive` attribute
+  |
+5 + #[derive(GraphQLEnum, GraphQLInputObject, GraphQLInterface, GraphQLObject, GraphQLScalar, GraphQLUnion)]
+6 | struct ScalarSpecifiedByUrl(i32);
+  |

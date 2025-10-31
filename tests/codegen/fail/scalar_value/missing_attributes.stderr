@@ -2,8 +2,13 @@ error[E0277]: the trait bound `for<'a> DefaultScalarValue: TryToPrimitive<'a, i3
  --> fail/scalar_value/missing_attributes.rs:6:10
   |
 6 | pub enum DefaultScalarValue {
-  |          ^^^^^^^^^^^^^^^^^^ the trait `for<'a> TryToPrimitive<'a, i32>` is not implemented for `DefaultScalarValue`
+  |          ^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
   |
+help: the trait `for<'a> TryToPrimitive<'a, i32>` is not implemented for `DefaultScalarValue`
+ --> fail/scalar_value/missing_attributes.rs:6:1
+  |
+6 | pub enum DefaultScalarValue {
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
   = help: the following other types implement trait `TryToPrimitive<'me, T>`:
             `DefaultScalarValue` implements `TryToPrimitive<'_, &str>`
             `DefaultScalarValue` implements `TryToPrimitive<'_, bool>`

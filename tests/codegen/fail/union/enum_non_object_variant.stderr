@@ -2,8 +2,13 @@ error[E0277]: the trait bound `Test: GraphQLObject<__S>` is not satisfied
   --> fail/union/enum_non_object_variant.rs:11:10
    |
 11 |     Test(Test),
-   |          ^^^^ the trait `GraphQLObject<__S>` is not implemented for `Test`
+   |          ^^^^ unsatisfied trait bound
    |
+help: the trait `GraphQLObject<__S>` is not implemented for `Test`
+  --> fail/union/enum_non_object_variant.rs:4:1
+   |
+ 4 | pub enum Test {
+   | ^^^^^^^^^^^^^
    = help: the following other types implement trait `GraphQLObject<S>`:
              `&T` implements `GraphQLObject<S>`
              `Arc<T>` implements `GraphQLObject<S>`

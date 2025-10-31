@@ -30,9 +30,10 @@ use crate::{
 ///
 /// In cases where you do not need to be able to distinguish between the two types of null, you
 /// should simply use `Option<T>`.
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Nullable<T> {
     /// No value
+    #[default]
     ImplicitNull,
 
     /// No value, explicitly specified to be null
@@ -40,14 +41,6 @@ pub enum Nullable<T> {
 
     /// Some value `T`
     Some(T),
-}
-
-// Implemented manually to omit redundant `T: Default` trait bound, imposed by
-// `#[derive(Default)]`.
-impl<T> Default for Nullable<T> {
-    fn default() -> Self {
-        Self::ImplicitNull
-    }
 }
 
 impl<T> Nullable<T> {

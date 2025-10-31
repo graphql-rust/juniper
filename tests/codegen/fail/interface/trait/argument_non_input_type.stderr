@@ -2,8 +2,13 @@ error[E0277]: the trait bound `ObjA: IsInputType<__S>` is not satisfied
   --> fail/interface/trait/argument_non_input_type.rs:10:23
    |
 10 |     fn id(&self, obj: ObjA) -> &str;
-   |                       ^^^^ the trait `IsInputType<__S>` is not implemented for `ObjA`
+   |                       ^^^^ unsatisfied trait bound
    |
+help: the trait `IsInputType<__S>` is not implemented for `ObjA`
+  --> fail/interface/trait/argument_non_input_type.rs:4:1
+   |
+ 4 | pub struct ObjA {
+   | ^^^^^^^^^^^^^^^
    = help: the following other types implement trait `IsInputType<S>`:
              `&T` implements `IsInputType<S>`
              `Arc<T>` implements `IsInputType<S>`
@@ -22,8 +27,13 @@ error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
    | -------------------- required by a bound introduced by this call
  9 | trait Character {
 10 |     fn id(&self, obj: ObjA) -> &str;
-   |                       ^^^^ the trait `FromInputValue<__S>` is not implemented for `ObjA`
+   |                       ^^^^ unsatisfied trait bound
    |
+help: the trait `FromInputValue<__S>` is not implemented for `ObjA`
+  --> fail/interface/trait/argument_non_input_type.rs:4:1
+   |
+ 4 | pub struct ObjA {
+   | ^^^^^^^^^^^^^^^
    = help: the following other types implement trait `FromInputValue<S>`:
              `Arc<T>` implements `FromInputValue<S>`
              `ArcStr` implements `FromInputValue<__S>`

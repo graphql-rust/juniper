@@ -5,14 +5,14 @@ error[E0277]: the trait bound `[bool; 2]: From<[bool; 3]>` is not satisfied
   | ^^^^^^^^^^^^^^^^^ the trait `From<[bool; 3]>` is not implemented for `[bool; 2]`
   |
   = help: the following other types implement trait `From<T>`:
-            `[T; 10]` implements `From<(T, T, T, T, T, T, T, T, T, T)>`
-            `[T; 11]` implements `From<(T, T, T, T, T, T, T, T, T, T, T)>`
-            `[T; 12]` implements `From<(T, T, T, T, T, T, T, T, T, T, T, T)>`
             `[T; 1]` implements `From<(T,)>`
             `[T; 2]` implements `From<(T, T)>`
             `[T; 3]` implements `From<(T, T, T)>`
             `[T; 4]` implements `From<(T, T, T, T)>`
             `[T; 5]` implements `From<(T, T, T, T, T)>`
+            `[T; 6]` implements `From<(T, T, T, T, T, T)>`
+            `[T; 7]` implements `From<(T, T, T, T, T, T, T)>`
+            `[T; 8]` implements `From<(T, T, T, T, T, T, T, T)>`
           and $N others
   = note: required for `[bool; 3]` to implement `Into<[bool; 2]>`
   = note: this error originates in the attribute macro `graphql_object` (in Nightly builds, run with -Z macro-backtrace for more info)
