@@ -89,7 +89,7 @@ pub use crate::{
         Selection, ToInputValue, Type,
     },
     executor::{
-        Applies, Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
+        Applies, Context, Inject, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
         FromContext, IntoFieldError, IntoResolvable, LookAheadArgument, LookAheadChildren,
         LookAheadList, LookAheadObject, LookAheadSelection, LookAheadValue, OwnedExecutor,
         Registry, ValuesStream, Variables,

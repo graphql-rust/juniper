@@ -9,7 +9,7 @@
 
 use std::{collections::HashMap, pin::Pin};
 
-use crate::{Context, GraphQLEnum, graphql_interface, graphql_object, graphql_subscription};
+use crate::{Context, Inject, GraphQLEnum, graphql_interface, graphql_object, graphql_subscription};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Query;
@@ -208,6 +208,8 @@ pub struct Database {
 }
 
 impl Context for Database {}
+
+impl<V> Inject<V> for Database {}
 
 impl Database {
     pub fn new() -> Database {

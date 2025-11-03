@@ -12,7 +12,7 @@ use crate::{
     FieldError, GraphQLError, GraphQLSubscriptionType, GraphQLType, GraphQLTypeAsync, RootNode,
     Value, Variables,
     ast::InputValue,
-    executor::{ExecutionError, ValuesStream},
+    executor::{ExecutionError, Inject, ValuesStream},
     value::{DefaultScalarValue, ScalarValue},
 };
 
@@ -24,7 +24,9 @@ use crate::{
 /// For GET, you will need to parse the query string and extract "query",
 /// "operationName", and "variables" manually.
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct GraphQLRequest<S = DefaultScalarValue>
+// Should be specified as top-level, otherwise `serde` infers incorrect `Ext: Default` bound.
+#[serde(bound(deserialize = "Ext: Deserialize<'de>"))]
+pub struct GraphQLRequest<S = DefaultScalarValue, Ext = Variables<S>>
 where
     S: ScalarValue,
 {
@@ -42,19 +44,18 @@ where
         serialize = "InputValue<S>: Serialize",
     ))]
     pub variables: Option<InputValue<S>>,
+
+    /// Optional implementation-specific additional information (as per [spec]).
+    ///
+    /// [spec]: https://spec.graphql.org/September2025#sel-FANHLBBgBBvC0vW
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub extensions: Option<Ext>,
 }
 
-impl<S> GraphQLRequest<S>
+impl<S, Ext> GraphQLRequest<S, Ext>
 where
     S: ScalarValue,
 {
-    // TODO: Remove in 0.17 `juniper` version.
-    /// Returns the `operation_name` associated with this request.
-    #[deprecated(since = "0.16.0", note = "Use the direct field access instead.")]
-    pub fn operation_name(&self) -> Option<&str> {
-        self.operation_name.as_deref()
-    }
-
     /// Returns operation [`Variables`] defined withing this request.
     pub fn variables(&self) -> Variables<S> {
         self.variables
@@ -66,19 +67,6 @@ where
             .unwrap_or_default()
     }
 
-    /// Construct a new GraphQL request from parts
-    pub fn new(
-        query: String,
-        operation_name: Option<String>,
-        variables: Option<InputValue<S>>,
-    ) -> Self {
-        Self {
-            query,
-            operation_name,
-            variables,
-        }
-    }
-
     /// Execute a GraphQL request synchronously using the specified schema and context
     ///
     /// This is a simple wrapper around the `execute_sync` function exposed at the
@@ -86,21 +74,20 @@ where
     pub fn execute_sync<QueryT, MutationT, SubscriptionT>(
         &self,
         root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
-        context: &QueryT::Context,
+        mut context: QueryT::Context,
     ) -> GraphQLResponse<S>
     where
-        S: ScalarValue,
-        QueryT: GraphQLType<S>,
+        QueryT: GraphQLType<S, Context: Inject<Ext>>,
         MutationT: GraphQLType<S, Context = QueryT::Context>,
         SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
     {
-        GraphQLResponse(crate::execute_sync(
-            &self.query,
-            self.operation_name.as_deref(),
-            root_node,
-            &self.variables(),
-            context,
-        ))
+        let op = self.operation_name.as_deref();
+        let vars = &self.variables();
+        if let Some(extensions) = self.extensions.as_ref() {
+            context.inject(extensions);
+        }
+        let res = crate::execute_sync(&self.query, op, root_node, vars, &context);
+        GraphQLResponse(res)
     }
 
     /// Execute a GraphQL request using the specified schema and context
@@ -110,22 +97,124 @@ where
     pub async fn execute<'a, QueryT, MutationT, SubscriptionT>(
         &'a self,
         root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
-        context: &'a QueryT::Context,
+        mut context: QueryT::Context,
     ) -> GraphQLResponse<S>
     where
-        QueryT: GraphQLTypeAsync<S>,
-        QueryT::TypeInfo: Sync,
-        QueryT::Context: Sync,
-        MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
-        MutationT::TypeInfo: Sync,
-        SubscriptionT: GraphQLType<S, Context = QueryT::Context> + Sync,
-        SubscriptionT::TypeInfo: Sync,
-        S: ScalarValue + Send + Sync,
+        S: Send + Sync,
+        QueryT: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Inject<Ext> + Sync>,
+        MutationT: GraphQLTypeAsync<S, TypeInfo: Sync, Context = QueryT::Context>,
+        SubscriptionT: GraphQLType<S, TypeInfo: Sync, Context = QueryT::Context> + Sync,
     {
         let op = self.operation_name.as_deref();
         let vars = &self.variables();
-        let res = crate::execute(&self.query, op, root_node, vars, context).await;
+        if let Some(extensions) = self.extensions.as_ref() {
+            context.inject(extensions);
+        }
+        let res = crate::execute(&self.query, op, root_node, vars, &context).await;
         GraphQLResponse(res)
+    }
+}
+
+/// Simple wrapper around GraphQLRequest to allow the handling of Batch requests.
+#[derive(Debug, Deserialize, PartialEq)]
+#[serde(untagged)]
+#[serde(bound = "GraphQLRequest<S, Ext>: Deserialize<'de>")]
+pub enum GraphQLBatchRequest<S = DefaultScalarValue, Ext = Variables<S>>
+where
+    S: ScalarValue,
+{
+    /// A single operation request.
+    Single(GraphQLRequest<S, Ext>),
+
+    /// A batch operation request.
+    ///
+    /// Empty batch is considered as invalid value, so cannot be deserialized.
+    #[serde(deserialize_with = "deserialize_non_empty_batch")]
+    Batch(Vec<GraphQLRequest<S, Ext>>),
+}
+
+fn deserialize_non_empty_batch<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+where
+    D: de::Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    use de::Error as _;
+
+    let v = Vec::<T>::deserialize(deserializer)?;
+    if v.is_empty() {
+        Err(D::Error::invalid_length(
+            0,
+            &"non-empty batch of GraphQL requests",
+        ))
+    } else {
+        Ok(v)
+    }
+}
+
+impl<S, Ext> GraphQLBatchRequest<S, Ext>
+where
+    S: ScalarValue,
+{
+    /// Execute a GraphQL batch request synchronously using the specified schema and context
+    ///
+    /// This is a simple wrapper around the `execute_sync` function exposed in GraphQLRequest.
+    pub fn execute_sync<'a, QueryT, MutationT, SubscriptionT>(
+        &'a self,
+        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
+        context: QueryT::Context,
+    ) -> GraphQLBatchResponse<S>
+    where
+        QueryT: GraphQLType<S, Context: Inject<Ext> + Clone>,
+        MutationT: GraphQLType<S, Context = QueryT::Context>,
+        SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
+    {
+        match self {
+            Self::Single(req) => GraphQLBatchResponse::Single(req.execute_sync(root_node, context)),
+            Self::Batch(reqs) => GraphQLBatchResponse::Batch(
+                reqs.iter()
+                    .map(|req| req.execute_sync(root_node, context.clone()))
+                    .collect(),
+            ),
+        }
+    }
+
+    /// Executes a GraphQL request using the specified schema and context
+    ///
+    /// This is a simple wrapper around the `execute` function exposed in
+    /// GraphQLRequest
+    pub async fn execute<'a, QueryT, MutationT, SubscriptionT>(
+        &'a self,
+        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
+        context: QueryT::Context,
+    ) -> GraphQLBatchResponse<S>
+    where
+        S: Send + Sync,
+        QueryT: GraphQLTypeAsync<S, TypeInfo: Sync, Context: Inject<Ext> + Clone + Sync>,
+        MutationT: GraphQLTypeAsync<S, TypeInfo: Sync, Context = QueryT::Context>,
+        SubscriptionT: GraphQLSubscriptionType<S, TypeInfo: Sync, Context = QueryT::Context>,
+    {
+        match self {
+            Self::Single(req) => {
+                let resp = req.execute(root_node, context).await;
+                GraphQLBatchResponse::Single(resp)
+            }
+            Self::Batch(reqs) => {
+                let resps = futures::future::join_all(
+                    reqs.iter()
+                        .map(|req| req.execute(root_node, context.clone())),
+                )
+                .await;
+                GraphQLBatchResponse::Batch(resps)
+            }
+        }
+    }
+
+    /// The operation names of the request.
+    pub fn operation_names(&self) -> Vec<Option<&str>> {
+        match self {
+            Self::Single(req) => vec![req.operation_name.as_deref()],
+            Self::Batch(reqs) => reqs.iter().map(|r| r.operation_name.as_deref()).collect(),
+        }
     }
 }
 
@@ -208,8 +297,8 @@ where
     where
         S: ser::Serializer,
     {
-        match self.0 {
-            Ok((ref res, ref err)) => {
+        match &self.0 {
+            Ok((res, err)) => {
                 let mut map = serializer.serialize_map(None)?;
 
                 map.serialize_key("data")?;
@@ -222,120 +311,12 @@ where
 
                 map.end()
             }
-            Err(ref err) => {
+            Err(err) => {
                 let mut map = serializer.serialize_map(Some(1))?;
                 map.serialize_key("errors")?;
                 map.serialize_value(err)?;
                 map.end()
             }
-        }
-    }
-}
-
-/// Simple wrapper around GraphQLRequest to allow the handling of Batch requests.
-#[derive(Debug, Deserialize, PartialEq)]
-#[serde(untagged)]
-#[serde(bound = "InputValue<S>: Deserialize<'de>")]
-pub enum GraphQLBatchRequest<S = DefaultScalarValue>
-where
-    S: ScalarValue,
-{
-    /// A single operation request.
-    Single(GraphQLRequest<S>),
-
-    /// A batch operation request.
-    ///
-    /// Empty batch is considered as invalid value, so cannot be deserialized.
-    #[serde(deserialize_with = "deserialize_non_empty_batch")]
-    Batch(Vec<GraphQLRequest<S>>),
-}
-
-fn deserialize_non_empty_batch<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
-where
-    D: de::Deserializer<'de>,
-    T: Deserialize<'de>,
-{
-    use de::Error as _;
-
-    let v = Vec::<T>::deserialize(deserializer)?;
-    if v.is_empty() {
-        Err(D::Error::invalid_length(
-            0,
-            &"non-empty batch of GraphQL requests",
-        ))
-    } else {
-        Ok(v)
-    }
-}
-
-impl<S> GraphQLBatchRequest<S>
-where
-    S: ScalarValue,
-{
-    /// Execute a GraphQL batch request synchronously using the specified schema and context
-    ///
-    /// This is a simple wrapper around the `execute_sync` function exposed in GraphQLRequest.
-    pub fn execute_sync<'a, QueryT, MutationT, SubscriptionT>(
-        &'a self,
-        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
-        context: &QueryT::Context,
-    ) -> GraphQLBatchResponse<S>
-    where
-        QueryT: GraphQLType<S>,
-        MutationT: GraphQLType<S, Context = QueryT::Context>,
-        SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
-    {
-        match *self {
-            Self::Single(ref req) => {
-                GraphQLBatchResponse::Single(req.execute_sync(root_node, context))
-            }
-            Self::Batch(ref reqs) => GraphQLBatchResponse::Batch(
-                reqs.iter()
-                    .map(|req| req.execute_sync(root_node, context))
-                    .collect(),
-            ),
-        }
-    }
-
-    /// Executes a GraphQL request using the specified schema and context
-    ///
-    /// This is a simple wrapper around the `execute` function exposed in
-    /// GraphQLRequest
-    pub async fn execute<'a, QueryT, MutationT, SubscriptionT>(
-        &'a self,
-        root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
-        context: &'a QueryT::Context,
-    ) -> GraphQLBatchResponse<S>
-    where
-        QueryT: GraphQLTypeAsync<S>,
-        QueryT::TypeInfo: Sync,
-        QueryT::Context: Sync,
-        MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
-        MutationT::TypeInfo: Sync,
-        SubscriptionT: GraphQLSubscriptionType<S, Context = QueryT::Context>,
-        SubscriptionT::TypeInfo: Sync,
-        S: Send + Sync,
-    {
-        match self {
-            Self::Single(req) => {
-                let resp = req.execute(root_node, context).await;
-                GraphQLBatchResponse::Single(resp)
-            }
-            Self::Batch(reqs) => {
-                let resps = futures::future::join_all(
-                    reqs.iter().map(|req| req.execute(root_node, context)),
-                )
-                .await;
-                GraphQLBatchResponse::Batch(resps)
-            }
-        }
-    }
-
-    /// The operation names of the request.
-    pub fn operation_names(&self) -> Vec<Option<&str>> {
-        match self {
-            Self::Single(req) => vec![req.operation_name.as_deref()],
-            Self::Batch(reqs) => reqs.iter().map(|r| r.operation_name.as_deref()).collect(),
         }
     }
 }

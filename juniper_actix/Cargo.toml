@@ -23,8 +23,8 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 subscriptions = [
-    "dep:actix-ws", 
-    "dep:derive_more", 
+    "dep:actix-ws",
+    "dep:derive_more",
     "dep:futures", 
     "dep:juniper_graphql_ws",
 ]
@@ -47,6 +47,7 @@ actix-test = "0.1"
 anyhow = "1.0.47"
 async-stream = "0.3"
 env_logger = "0.11"
+futures = "0.3"
 juniper = { version = "0.17", path = "../juniper", features = ["expose-test-schema"] }
 log = "0.4"
 rand = "0.9"

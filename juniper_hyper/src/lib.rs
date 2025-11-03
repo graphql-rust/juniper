@@ -138,9 +138,12 @@ where
     let query =
         String::from_utf8(chunk.to_bytes().into()).map_err(GraphQLRequestError::BodyUtf8)?;
 
-    Ok(GraphQLBatchRequest::Single(GraphQLRequest::new(
-        query, None, None,
-    )))
+    Ok(GraphQLBatchRequest::Single(GraphQLRequest {
+        query,
+        operation_name: None,
+        variables: None,
+        extensions: None,
+    }))
 }
 
 /// Generates a [`Response`] page containing [GraphiQL].
@@ -284,7 +287,12 @@ where
         }
     }
     match query {
-        Some(query) => Ok(JuniperGraphQLRequest::new(query, operation_name, variables)),
+        Some(query) => Ok(JuniperGraphQLRequest {
+            query,
+            operation_name,
+            variables,
+            extensions: None,
+        }),
         None => Err(GraphQLRequestError::Invalid(
             "'query' parameter is missing".into(),
         )),

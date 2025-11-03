@@ -305,7 +305,12 @@ where
         .and_then(async |body: Bytes| {
             let query = str::from_utf8(body.as_ref())
                 .map_err(|e| reject::custom(FilterError::NonUtf8Body(e)))?;
-            let req = GraphQLRequest::new(query.into(), None, None);
+            let req = GraphQLRequest {
+                query: query.into(),
+                operation_name: None,
+                variables: None,
+                extensions: None,
+            };
             Ok::<GraphQLBatchRequest<S>, Rejection>(GraphQLBatchRequest::Single(req))
         })
 }
@@ -319,15 +324,18 @@ where
     warp::get()
         .and(query::query())
         .and_then(async |mut qry: HashMap<String, String>| {
-            let req = GraphQLRequest::new(
-                qry.remove("query")
+            let req = GraphQLRequest {
+                query: qry
+                    .remove("query")
                     .ok_or_else(|| reject::custom(FilterError::MissingPathQuery))?,
-                qry.remove("operation_name"),
-                qry.remove("variables")
+                operation_name: qry.remove("operation_name"),
+                variables: qry
+                    .remove("variables")
                     .map(|vs| serde_json::from_str(&vs))
                     .transpose()
                     .map_err(|e| reject::custom(FilterError::InvalidPathVariables(e)))?,
-            );
+                extensions: todo!(),
+            };
             Ok::<GraphQLBatchRequest<S>, Rejection>(GraphQLBatchRequest::Single(req))
         })
 }

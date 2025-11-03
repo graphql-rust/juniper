@@ -6,17 +6,14 @@ use std::{pin::Pin, time::Duration};
 
 use actix_cors::Cors;
 use actix_web::{
-    App, Error, HttpRequest, HttpResponse, HttpServer, Responder,
-    http::header,
-    middleware,
-    web::{self, Data},
+    App, Error, HttpRequest, HttpResponse, HttpServer, Responder, http::header, middleware, web,
 };
 
 use juniper::{
     EmptyMutation, FieldError, GraphQLObject, RootNode, graphql_subscription, graphql_value,
     tests::fixtures::starwars::schema::{Database, Query},
 };
-use juniper_actix::{graphiql_handler, graphql_handler, playground_handler, subscriptions};
+use juniper_actix::{GraphQL, graphiql_handler, playground_handler, subscriptions};
 use juniper_graphql_ws::ConnectionConfig;
 
 type Schema = RootNode<Query, EmptyMutation<Database>, Subscription>;
@@ -36,10 +33,9 @@ async fn graphiql() -> Result<HttpResponse, Error> {
 async fn graphql(
     req: HttpRequest,
     payload: web::Payload,
-    schema: Data<Schema>,
+    schema: web::Data<Schema>,
 ) -> Result<HttpResponse, Error> {
-    let context = Database::new();
-    graphql_handler(&schema, &context, req, payload).await
+    GraphQL::handler(&schema, Database::new(), req, payload).await
 }
 
 async fn homepage() -> impl Responder {
@@ -127,7 +123,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
-            .app_data(Data::new(schema()))
+            .app_data(web::Data::new(schema()))
             .wrap(
                 Cors::default()
                     .allow_any_origin()
