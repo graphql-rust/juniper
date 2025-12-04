@@ -281,7 +281,22 @@ mod tests {
     }
 
     #[test]
-    fn int_into_non_null_int_with_default() {
+    fn int_into_non_null_int_with_arg_default() {
+        expect_passes_rule::<_, _, DefaultScalarValue>(
+            factory,
+            // language=GraphQL
+            r#"
+            query Query($intArg: Int) {
+                complicatedArgs {
+                    nonNullIntArgFieldWithDefault(nonNullIntArg: $intArg)
+                }
+            }
+            "#,
+        );
+    }
+
+    #[test]
+    fn int_into_non_null_int_with_var_default() {
         expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             // language=GraphQL
