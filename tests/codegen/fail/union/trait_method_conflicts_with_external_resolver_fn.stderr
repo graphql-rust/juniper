@@ -1,6 +1,7 @@
 error: GraphQL union trait method `a` conflicts with the external resolver function `some_fn` declared on the trait to resolve the variant type `Human`
        · note: https://spec.graphql.org/October2021#sec-Unions
        · note: use `#[graphql(ignore)]` attribute to ignore this trait method for union variants resolution
+
  --> fail/union/trait_method_conflicts_with_external_resolver_fn.rs:5:5
   |
 5 |     fn a(&self) -> Option<&Human>;

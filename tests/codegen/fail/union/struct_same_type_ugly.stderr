@@ -10,10 +10,10 @@ error[E0119]: conflicting implementations of trait `MutuallyExclusive` for type 
   = note: this error originates in the macro `::juniper::sa::assert_type_ne_all` which comes from the expansion of the derive macro `GraphQLUnion` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `std::string::String: GraphQLObject<__S>` is not satisfied
- --> fail/union/struct_same_type_ugly.rs:4:14
+ --> fail/union/struct_same_type_ugly.rs:5:14
   |
-4 | #[graphql(on String = Character::a)]
-  |              ^^^^^^ the trait `GraphQLObject<__S>` is not implemented for `std::string::String`
+5 | #[graphql(on std::string::String = Character::b)]
+  |              ^^^^^^^^^^^^^^^^^^^ the trait `GraphQLObject<__S>` is not implemented for `std::string::String`
   |
   = help: the following other types implement trait `GraphQLObject<S>`:
             `&T` implements `GraphQLObject<S>`
@@ -27,10 +27,10 @@ error[E0277]: the trait bound `std::string::String: GraphQLObject<__S>` is not s
             `juniper::schema::model::TypeType<'a, S>` implements `GraphQLObject<S>`
 
 error[E0277]: the trait bound `std::string::String: GraphQLObject<__S>` is not satisfied
- --> fail/union/struct_same_type_ugly.rs:5:14
+ --> fail/union/struct_same_type_ugly.rs:4:14
   |
-5 | #[graphql(on std::string::String = Character::b)]
-  |              ^^^^^^^^^^^^^^^^^^^ the trait `GraphQLObject<__S>` is not implemented for `std::string::String`
+4 | #[graphql(on String = Character::a)]
+  |              ^^^^^^ the trait `GraphQLObject<__S>` is not implemented for `std::string::String`
   |
   = help: the following other types implement trait `GraphQLObject<S>`:
             `&T` implements `GraphQLObject<S>`

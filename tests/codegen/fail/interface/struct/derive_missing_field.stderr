@@ -36,8 +36,13 @@ error[E0277]: the trait bound `ObjA: reflect::Field<__S, 11301463986558097276003
 12 |     id: String,
    |     ^^ unsatisfied trait bound
    |
-   = help: the trait `Field<__S, 11301463986558097276003903130001171064>` is not implemented for `ObjA`
-           but trait `Field<__S, 140650918148392961738240285796466530725>` is implemented for it
+help: the trait `Field<__S, 11301463986558097276003903130001171064>` is not implemented for `ObjA`
+      but trait `Field<__S, 140650918148392961738240285796466530725>` is implemented for it
+  --> fail/interface/struct/derive_missing_field.rs:3:10
+   |
+ 3 | #[derive(GraphQLObject)]
+   |          ^^^^^^^^^^^^^
+   = note: this error originates in the derive macro `GraphQLObject` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation panicked: Failed to implement interface `Character` on `ObjA`: field `id` isn't implemented on `ObjA`
   --> fail/interface/struct/derive_missing_field.rs:12:5
@@ -53,8 +58,13 @@ error[E0277]: the trait bound `ObjA: AsyncField<__S, 113014639865580972760039031
 12 |     id: String,
    |     ^^ unsatisfied trait bound
    |
-   = help: the trait `AsyncField<__S, 11301463986558097276003903130001171064>` is not implemented for `ObjA`
-           but trait `AsyncField<__S, 140650918148392961738240285796466530725>` is implemented for it
+help: the trait `AsyncField<__S, 11301463986558097276003903130001171064>` is not implemented for `ObjA`
+      but trait `AsyncField<__S, 140650918148392961738240285796466530725>` is implemented for it
+  --> fail/interface/struct/derive_missing_field.rs:3:10
+   |
+ 3 | #[derive(GraphQLObject)]
+   |          ^^^^^^^^^^^^^
+   = note: this error originates in the derive macro `GraphQLObject` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation panicked: Failed to implement interface `Character` on `ObjA`: field `id` isn't implemented on `ObjA`
   --> fail/interface/struct/derive_missing_field.rs:12:5

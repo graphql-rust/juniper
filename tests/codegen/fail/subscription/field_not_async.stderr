@@ -1,6 +1,7 @@
 error: GraphQL object synchronous resolvers are not supported
        · note: https://spec.graphql.org/October2021#sec-Objects
        · note: Specify that this function is async: `async fn foo()`
+
   --> fail/subscription/field_not_async.rs:12:5
    |
 12 |     fn id(&self) -> BoxStream<'static, bool> {

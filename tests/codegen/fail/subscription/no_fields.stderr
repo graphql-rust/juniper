@@ -1,5 +1,6 @@
 error: GraphQL object must have at least one field
        · note: https://spec.graphql.org/October2021#sec-Objects
+
  --> fail/subscription/no_fields.rs:6:6
   |
 6 | impl Obj {}

@@ -1,6 +1,7 @@
 error: GraphQL union cannot use #[graphql(with = ...)] attribute on a trait method
        · note: https://spec.graphql.org/October2021#sec-Unions
        · note: instead use #[graphql(ignore)] on the method with #[graphql_union(on ... = ...)] on the trait itself
+
  --> fail/union/trait_with_attr_on_method.rs:5:15
   |
 5 |     #[graphql(with = something)]

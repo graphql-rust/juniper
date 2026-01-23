@@ -1,5 +1,6 @@
 error: GraphQL object must have at least one field
        · note: https://spec.graphql.org/October2021#sec-Objects
+
  --> fail/object/derive_no_fields.rs:4:1
   |
 4 | struct Obj {}

@@ -1,5 +1,6 @@
 error: GraphQL input object `default` attribute argument has no meaning for ignored variants, as they are never constructed
        · note: https://spec.graphql.org/October2021#sec-Input-Objects
+
  --> fail/input_object/enum/derive_ignored_with_default_value.rs:6:23
   |
 6 |     #[graphql(ignore, default = "none")]
@@ -7,6 +8,7 @@ error: GraphQL input object `default` attribute argument has no meaning for igno
 
 error: GraphQL input object `default` attribute argument has no meaning for ignored variants, as they are never constructed
        · note: https://spec.graphql.org/October2021#sec-Input-Objects
+
  --> fail/input_object/enum/derive_ignored_with_default_value.rs:8:21
   |
 8 |     #[graphql(skip, default)]

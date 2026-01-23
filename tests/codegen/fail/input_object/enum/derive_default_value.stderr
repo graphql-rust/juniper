@@ -1,5 +1,6 @@
 error: GraphQL input object field cannot have default value in `@oneOf` input object
        · note: https://spec.graphql.org/October2021#sec-Input-Objects
+
  --> fail/input_object/enum/derive_default_value.rs:5:15
   |
 5 |     #[graphql(default)]

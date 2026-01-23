@@ -1,5 +1,6 @@
 error: GraphQL object must have a different name for each field
        · note: https://spec.graphql.org/October2021#sec-Objects
+
   --> fail/subscription/fields_duplicate.rs:11:6
    |
 11 | impl ObjA {

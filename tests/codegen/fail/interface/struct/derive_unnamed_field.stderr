@@ -1,5 +1,6 @@
 error: GraphQL interface expected named struct field
        · note: https://spec.graphql.org/October2021#sec-Interfaces
+
  --> fail/interface/struct/derive_unnamed_field.rs:4:18
   |
 4 | struct Character(i32);

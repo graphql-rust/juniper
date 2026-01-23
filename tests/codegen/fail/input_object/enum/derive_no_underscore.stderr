@@ -1,5 +1,6 @@
 error: All types and directives defined within a schema must not have a name which begins with `__` (two underscores), as this is used exclusively by GraphQL’s introspection system.
        · note: https://spec.graphql.org/October2021#sec-Schema
+
  --> fail/input_object/enum/derive_no_underscore.rs:5:5
   |
 5 |     #[graphql(name = "__test")]

@@ -9,9 +9,16 @@ help: the trait `FromContext<SubContext>` is not implemented for `CustomContext`
    |
 23 | pub struct CustomContext;
    | ^^^^^^^^^^^^^^^^^^^^^^^^
-   = help: the following other types implement trait `FromContext<T>`:
-             `()` implements `FromContext<T>`
-             `SubContext` implements `FromContext<CustomContext>`
+help: the following other types implement trait `FromContext<T>`
+  --> fail/union/trait_fail_infer_context.rs:29:1
+   |
+29 | impl FromContext<CustomContext> for SubContext {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `SubContext` implements `FromContext<CustomContext>`
+   |
+  ::: $WORKSPACE/juniper/src/executor/mod.rs
+   |
+   | impl<T> FromContext<T> for () {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `()` implements `FromContext<T>`
    = note: this error originates in the attribute macro `graphql_union` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0308]: mismatched types

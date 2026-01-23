@@ -1,5 +1,6 @@
 error: GraphQL union expects at least one union variant
        · note: https://spec.graphql.org/October2021#sec-Unions
+
  --> fail/union/enum_no_fields.rs:4:1
   |
 4 | enum Character {}

@@ -9,8 +9,14 @@ help: the trait `for<'a> TryToPrimitive<'a, i32>` is not implemented for `Defaul
   |
 6 | pub enum DefaultScalarValue {
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  = help: the following other types implement trait `TryToPrimitive<'me, T>`:
-            `DefaultScalarValue` implements `TryToPrimitive<'_, &str>`
-            `DefaultScalarValue` implements `TryToPrimitive<'_, bool>`
-            `DefaultScalarValue` implements `TryToPrimitive<'_, f64>`
-            `DefaultScalarValue` implements `TryToPrimitive<'_, std::string::String>`
+help: the following other types implement trait `TryToPrimitive<'me, T>`
+ --> fail/scalar_value/missing_attributes.rs:5:63
+  |
+5 | #[derive(Clone, Debug, Deserialize, Display, From, PartialEq, ScalarValue, Serialize, TryInto)]
+  |                                                               ^^^^^^^^^^^
+  |                                                               |
+  |                                                               `DefaultScalarValue` implements `TryToPrimitive<'_, &str>`
+  |                                                               `DefaultScalarValue` implements `TryToPrimitive<'_, bool>`
+  |                                                               `DefaultScalarValue` implements `TryToPrimitive<'_, f64>`
+  |                                                               `DefaultScalarValue` implements `TryToPrimitive<'_, std::string::String>`
+  = note: this error originates in the derive macro `ScalarValue` (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -1,5 +1,6 @@
 error: GraphQL union must have a different type for each union variant
        · note: https://spec.graphql.org/October2021#sec-Unions
+
  --> fail/union/trait_same_type_pretty.rs:4:1
   |
 4 | trait Character {

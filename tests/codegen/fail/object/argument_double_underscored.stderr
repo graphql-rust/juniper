@@ -1,5 +1,6 @@
 error: All types and directives defined within a schema must not have a name which begins with `__` (two underscores), as this is used exclusively by GraphQL’s introspection system.
        · note: https://spec.graphql.org/October2021#sec-Schema
+
  --> fail/object/argument_double_underscored.rs:7:18
   |
 7 |     fn id(&self, __num: i32) -> &str {
