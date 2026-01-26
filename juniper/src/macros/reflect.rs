@@ -414,24 +414,6 @@ pub const fn fnv1a128(str: Name) -> u128 {
     hash
 }
 
-/// Length __in bytes__ of the [`format_type!`] macro result.
-#[must_use]
-pub const fn type_len_with_wrapped_val(ty: Type, val: WrappedValue) -> usize {
-    let mut len = ty.len() + "!".len(); // Type!
-
-    let mut curr = val;
-    while curr % 10 != 0 {
-        match curr % 10 {
-            2 => len -= "!".len(),   // remove !
-            3 => len += "[]!".len(), // [Type]!
-            _ => {}
-        }
-        curr /= 10;
-    }
-
-    len
-}
-
 /// Checks whether the given GraphQL [object][1] represents a `subtype` of the
 /// given GraphQL `ty`pe, basing on the [`WrappedType`] encoding.
 ///
@@ -455,20 +437,6 @@ pub const fn can_be_subtype(ty: WrappedValue, subtype: WrappedValue) -> bool {
     } else {
         false
     }
-}
-
-/// Extracts an [`Argument`] from the provided [`Arguments`] by its [`Name`].
-#[must_use]
-pub const fn get_arg_by_name(args: Arguments, name: Name) -> Option<Argument> {
-    let mut i = 0;
-    while i < args.len() {
-        let arg = args[i];
-        if str_eq(arg.0, name) {
-            return Some(arg);
-        }
-        i += 1;
-    }
-    None
 }
 
 /// Checks whether the given `val` exists in the given `arr`.
@@ -524,11 +492,11 @@ macro_rules! assert_implemented_for {
                 );
                 if !is_present {
                     const MSG: &str = $crate::const_concat!(
-                        "Failed to implement interface `",
+                        "failed to implement interface `",
                         <$interfaces as $crate::macros::reflect::BaseType<$scalar>>::NAME,
                         "` on `",
                         <$implementor as $crate::macros::reflect::BaseType<$scalar>>::NAME,
-                        "`: missing implementer reference in interface's `for` attribute.",
+                        "`: missing implementer reference in interface's `for` attribute",
                     );
                     ::core::panic!("{}", MSG);
                 }
@@ -552,11 +520,11 @@ macro_rules! assert_interfaces_impls {
                 );
                 if !is_present {
                     const MSG: &str = $crate::const_concat!(
-                        "Failed to implement interface `",
+                        "failed to implement interface `",
                         <$interface as $crate::macros::reflect::BaseType<$scalar>>::NAME,
                         "` on `",
                         <$implementers as $crate::macros::reflect::BaseType<$scalar>>::NAME,
-                        "`: missing interface reference in implementer's `impl` attribute.",
+                        "`: missing interface reference in implementer's `impl` attribute",
                     );
                     ::core::panic!("{}", MSG);
                 }
@@ -580,7 +548,7 @@ macro_rules! assert_transitive_impls {
                 );
                 if !is_present {
                     const MSG: &str = $crate::const_concat!(
-                        "Failed to implement interface `",
+                        "failed to implement interface `",
                         <$interface as $crate::macros::reflect::BaseType<$scalar>>::NAME,
                         "` on `",
                         <$implementor as $crate::macros::reflect::BaseType<$scalar>>::NAME,
@@ -588,7 +556,7 @@ macro_rules! assert_transitive_impls {
                         <$transitive as $crate::macros::reflect::BaseType<$scalar>>::NAME,
                         "` on `",
                         <$implementor as $crate::macros::reflect::BaseType<$scalar>>::NAME,
-                        "`."
+                        "`"
                     );
                     ::core::panic!("{}", MSG);
                 }
@@ -637,56 +605,49 @@ macro_rules! assert_subtype {
             const IMPL_TY: $crate::macros::reflect::Type =
                 <$impl_ty as $crate::macros::reflect::BaseType<$scalar>>::NAME;
             const ERR_PREFIX: &str = $crate::const_concat!(
-                "Failed to implement interface `",
+                "failed to implement interface `",
                 BASE_TY,
                 "` on `",
                 IMPL_TY,
                 "`: ",
             );
 
-            const FIELD_NAME: $crate::macros::reflect::Name =
-                $field_name;
+            const FIELD_NAME: $crate::macros::reflect::Name = $field_name;
+            const FIELD_HASH: $crate::macros::reflect::FieldName =
+                $crate::macros::reflect::fnv1a128(FIELD_NAME);
+
+            $crate::assert_has_field!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX);
+            $crate::assert_has_field!(FIELD_NAME, $impl_ty, $scalar, ERR_PREFIX);
 
             const BASE_RETURN_WRAPPED_VAL: $crate::macros::reflect::WrappedValue =
                 <$base_ty as $crate::macros::reflect::FieldMeta<
-                    $scalar,
-                    { $crate::checked_hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
+                    $scalar, FIELD_HASH,
                 >>::WRAPPED_VALUE;
             const IMPL_RETURN_WRAPPED_VAL: $crate::macros::reflect::WrappedValue =
                 <$impl_ty as $crate::macros::reflect::FieldMeta<
-                    $scalar,
-                    { $crate::checked_hash!(FIELD_NAME, $impl_ty, $scalar, ERR_PREFIX) },
+                    $scalar, FIELD_HASH,
                 >>::WRAPPED_VALUE;
 
             const BASE_RETURN_TY: $crate::macros::reflect::Type =
-                <$base_ty as $crate::macros::reflect::FieldMeta<
-                    $scalar,
-                    { $crate::checked_hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
-                >>::TYPE;
+                <$base_ty as $crate::macros::reflect::FieldMeta<$scalar, FIELD_HASH>>::TYPE;
             const IMPL_RETURN_TY: $crate::macros::reflect::Type =
-                <$impl_ty as $crate::macros::reflect::FieldMeta<
-                    $scalar,
-                    { $crate::checked_hash!(FIELD_NAME, $impl_ty, $scalar, ERR_PREFIX) },
-                >>::TYPE;
+                <$impl_ty as $crate::macros::reflect::FieldMeta<$scalar, FIELD_HASH>>::TYPE;
 
             const BASE_RETURN_SUB_TYPES: $crate::macros::reflect::Types =
-                <$base_ty as $crate::macros::reflect::FieldMeta<
-                    $scalar,
-                    { $crate::checked_hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
-                >>::SUB_TYPES;
+                <$base_ty as $crate::macros::reflect::FieldMeta<$scalar, FIELD_HASH>>::SUB_TYPES;
 
             let is_subtype = $crate::macros::reflect::str_exists_in_arr(IMPL_RETURN_TY, BASE_RETURN_SUB_TYPES)
                 && $crate::macros::reflect::can_be_subtype(BASE_RETURN_WRAPPED_VAL, IMPL_RETURN_WRAPPED_VAL);
             if !is_subtype {
                 const MSG: &str = $crate::const_concat!(
                     ERR_PREFIX,
-                    "Field `",
+                    "field `",
                     FIELD_NAME,
                     "`: implementor is expected to return a subtype of interface's return object: `",
                     $crate::format_type!(IMPL_RETURN_TY, IMPL_RETURN_WRAPPED_VAL),
                     "` is not a subtype of `",
                     $crate::format_type!(BASE_RETURN_TY, BASE_RETURN_WRAPPED_VAL),
-                    "`.",
+                    "`",
                 );
                 ::core::panic!("{}", MSG);
             }
@@ -713,124 +674,46 @@ macro_rules! assert_field_args {
             const IMPL_NAME: &::core::primitive::str =
                 <$impl_ty as $crate::macros::reflect::BaseType<$scalar>>::NAME;
             const ERR_PREFIX: &::core::primitive::str = $crate::const_concat!(
-                "Failed to implement interface `",
+                "failed to implement interface `",
                 BASE_NAME,
                 "` on `",
                 IMPL_NAME,
                 "`: ",
             );
 
-            const FIELD_NAME: &::core::primitive::str = $field_name;
+            const FIELD_NAME: $crate::macros::reflect::Name = $field_name;
+            const FIELD_HASH: $crate::macros::reflect::FieldName =
+                $crate::macros::reflect::fnv1a128(FIELD_NAME);
 
             const BASE_ARGS: ::juniper::macros::reflect::Arguments =
                 <$base_ty as $crate::macros::reflect::FieldMeta<
                     $scalar,
-                    { $crate::checked_hash!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX) },
+                    {
+                        // DIAGNOSTICS: This check is done in the position for `const` parameter
+                        //              intentionally, to pop-up before any compiler's typechecking
+                        //              errors.
+                        $crate::assert_has_field!(FIELD_NAME, $base_ty, $scalar, ERR_PREFIX);
+                        FIELD_HASH
+                    },
                 >>::ARGUMENTS;
             const IMPL_ARGS: ::juniper::macros::reflect::Arguments =
                 <$impl_ty as $crate::macros::reflect::FieldMeta<
                     $scalar,
-                    { $crate::checked_hash!(FIELD_NAME, $impl_ty, $scalar, ERR_PREFIX) },
+                    {
+                        // DIAGNOSTICS: This check is done in the position for `const` parameter
+                        //              intentionally, to pop-up before any compiler's typechecking
+                        //              errors.
+                        $crate::assert_has_field!(FIELD_NAME, $impl_ty, $scalar, ERR_PREFIX);
+                        FIELD_HASH
+                    },
                 >>::ARGUMENTS;
 
-            struct Error {
-                cause: Cause,
-                base: ::juniper::macros::reflect::Argument,
-                implementation: ::juniper::macros::reflect::Argument,
-            }
-
-            enum Cause {
-                RequiredField,
-                AdditionalNonNullableField,
-                TypeMismatch,
-            }
-
-            const fn unwrap_error(v: ::core::result::Result<(), Error>) -> Error {
-                match v {
-                    // Unfortunately we can't use `unreachable!()` here, as this
-                    // branch will be executed either way.
-                    ::core::result::Result::Ok(()) => Error {
-                        cause: Cause::RequiredField,
-                        base: ("unreachable", "unreachable", 1),
-                        implementation: ("unreachable", "unreachable", 1),
-                    },
-                    ::core::result::Result::Err(err) => err,
-                }
-            }
-
-            const fn check() -> ::core::result::Result<(), Error> {
-                let mut base_i = 0;
-                while base_i < BASE_ARGS.len() {
-                    let (base_name, base_type, base_wrap_val) = BASE_ARGS[base_i];
-
-                    let mut impl_i = 0;
-                    let mut was_found = false;
-                    while impl_i < IMPL_ARGS.len() {
-                        let (impl_name, impl_type, impl_wrap_val) = IMPL_ARGS[impl_i];
-
-                        if $crate::macros::reflect::str_eq(base_name, impl_name) {
-                            if $crate::macros::reflect::str_eq(base_type, impl_type)
-                                && base_wrap_val == impl_wrap_val
-                            {
-                                was_found = true;
-                                break;
-                            } else {
-                                return Err(Error {
-                                    cause: Cause::TypeMismatch,
-                                    base: (base_name, base_type, base_wrap_val),
-                                    implementation: (impl_name, impl_type, impl_wrap_val),
-                                });
-                            }
-                        }
-
-                        impl_i += 1;
-                    }
-
-                    if !was_found {
-                        return Err(Error {
-                            cause: Cause::RequiredField,
-                            base: (base_name, base_type, base_wrap_val),
-                            implementation: (base_name, base_type, base_wrap_val),
-                        });
-                    }
-
-                    base_i += 1;
-                }
-
-                let mut impl_i = 0;
-                while impl_i < IMPL_ARGS.len() {
-                    let (impl_name, impl_type, impl_wrapped_val) = IMPL_ARGS[impl_i];
-                    impl_i += 1;
-
-                    if impl_wrapped_val % 10 == 2 {
-                        continue;
-                    }
-
-                    let mut base_i = 0;
-                    let mut was_found = false;
-                    while base_i < BASE_ARGS.len() {
-                        let (base_name, _, _) = BASE_ARGS[base_i];
-                        if $crate::macros::reflect::str_eq(base_name, impl_name) {
-                            was_found = true;
-                            break;
-                        }
-                        base_i += 1;
-                    }
-                    if !was_found {
-                        return ::core::result::Result::Err(Error {
-                            cause: Cause::AdditionalNonNullableField,
-                            base: (impl_name, impl_type, impl_wrapped_val),
-                            implementation: (impl_name, impl_type, impl_wrapped_val),
-                        });
-                    }
-                }
-
-                ::core::result::Result::Ok(())
-            }
-
-            const RES: ::core::result::Result<(), Error> = check();
+            const RES: ::core::result::Result<
+                (), $crate::macros::reflect::assert_field_args::Error,
+            > = $crate::macros::reflect::assert_field_args::check(BASE_ARGS, IMPL_ARGS);
             if RES.is_err() {
-                const ERROR: Error = unwrap_error(RES);
+                const ERROR: $crate::macros::reflect::assert_field_args::Error =
+                    $crate::macros::reflect::assert_field_args::unwrap_error(RES);
 
                 const BASE_ARG_NAME: &str = ERROR.base.0;
                 const IMPL_ARG_NAME: &str = ERROR.implementation.0;
@@ -840,42 +723,167 @@ macro_rules! assert_field_args {
                     $crate::format_type!(ERROR.implementation.1, ERROR.implementation.2);
 
                 const MSG: &::core::primitive::str = match ERROR.cause {
-                    Cause::TypeMismatch => {
+                    $crate::macros::reflect::assert_field_args::Cause::TypeMismatch => {
                         $crate::const_concat!(
-                            "Argument `",
+                            "argument `",
                             BASE_ARG_NAME,
                             "`: expected type `",
                             BASE_TYPE_FORMATTED,
                             "`, found: `",
                             IMPL_TYPE_FORMATTED,
-                            "`.",
+                            "`",
                         )
                     }
-                    Cause::RequiredField => {
+                    $crate::macros::reflect::assert_field_args::Cause::RequiredField => {
                         $crate::const_concat!(
-                            "Argument `",
+                            "argument `",
                             BASE_ARG_NAME,
                             "` of type `",
                             BASE_TYPE_FORMATTED,
-                            "` was expected, but not found."
+                            "` was expected, but not found"
                         )
                     }
-                    Cause::AdditionalNonNullableField => {
+                    $crate::macros::reflect::assert_field_args::Cause::AdditionalNonNullableField => {
                         $crate::const_concat!(
-                            "Argument `",
+                            "argument `",
                             IMPL_ARG_NAME,
                             "` of type `",
                             IMPL_TYPE_FORMATTED,
-                            "` isn't present on the interface and so has to be nullable."
+                            "` isn't present on the interface and so has to be nullable"
                         )
                     }
                 };
                 const ERROR_MSG: &str =
-                    $crate::const_concat!(ERR_PREFIX, "Field `", FIELD_NAME, "`: ", MSG);
+                    $crate::const_concat!(ERR_PREFIX, "field `", FIELD_NAME, "`: ", MSG);
                 ::core::panic!("{}", ERROR_MSG);
             }
         };
     };
+}
+
+#[doc(hidden)]
+pub mod assert_field_args {
+    //! Helper `const` machinery for the [`assert_field_args!`] macro.
+    //!
+    //! [`assert_field_args!`]: macro@super::assert_field_args
+
+    use crate::macros::reflect;
+
+    /// Error of performing a type-[`check`] of [`reflect::Arguments`].
+    pub struct Error {
+        /// [`Cause`] why the type-[`check`] failed.
+        pub cause: Cause,
+
+        /// [`reflect::Argument`] of the base type leading to this [`Error`].
+        pub base: reflect::Argument,
+
+        /// [`reflect::Argument`] of the implemented type leading to this [`Error`].
+        pub implementation: reflect::Argument,
+    }
+
+    /// Possible causes of the [`Error`].
+    pub enum Cause {
+        /// Missing argument.
+        RequiredField,
+
+        /// Argument isn't present on the interface and so has to be nullable.
+        AdditionalNonNullableField,
+
+        /// Argument has the wrong type.
+        TypeMismatch,
+    }
+
+    /// Type-checks the provided `base_args` against the provided interface's `impl_args`.
+    ///
+    /// # Errors
+    ///
+    /// With an [`Error`] if the type-check fails. See the possible [`Cause`]s for details.
+    pub const fn check(
+        base_args: reflect::Arguments,
+        impl_args: reflect::Arguments,
+    ) -> Result<(), Error> {
+        let mut base_i = 0;
+        while base_i < base_args.len() {
+            let (base_name, base_type, base_wrap_val) = base_args[base_i];
+
+            let mut impl_i = 0;
+            let mut was_found = false;
+            while impl_i < impl_args.len() {
+                let (impl_name, impl_type, impl_wrap_val) = impl_args[impl_i];
+
+                if reflect::str_eq(base_name, impl_name) {
+                    if reflect::str_eq(base_type, impl_type) && base_wrap_val == impl_wrap_val {
+                        was_found = true;
+                        break;
+                    } else {
+                        return Err(Error {
+                            cause: Cause::TypeMismatch,
+                            base: (base_name, base_type, base_wrap_val),
+                            implementation: (impl_name, impl_type, impl_wrap_val),
+                        });
+                    }
+                }
+
+                impl_i += 1;
+            }
+
+            if !was_found {
+                return Err(Error {
+                    cause: Cause::RequiredField,
+                    base: (base_name, base_type, base_wrap_val),
+                    implementation: (base_name, base_type, base_wrap_val),
+                });
+            }
+
+            base_i += 1;
+        }
+
+        let mut impl_i = 0;
+        while impl_i < impl_args.len() {
+            let (impl_name, impl_type, impl_wrapped_val) = impl_args[impl_i];
+            impl_i += 1;
+
+            if impl_wrapped_val % 10 == 2 {
+                continue;
+            }
+
+            let mut base_i = 0;
+            let mut was_found = false;
+            while base_i < base_args.len() {
+                let (base_name, _, _) = base_args[base_i];
+                if reflect::str_eq(base_name, impl_name) {
+                    was_found = true;
+                    break;
+                }
+                base_i += 1;
+            }
+            if !was_found {
+                return Err(Error {
+                    cause: Cause::AdditionalNonNullableField,
+                    base: (impl_name, impl_type, impl_wrapped_val),
+                    implementation: (impl_name, impl_type, impl_wrapped_val),
+                });
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Unwraps the provided [`Result::Err`] into an [`Error`] in a specific way.
+    // TODO: Try remove once `Result::unwrap_err()` is allowed in `const` context.
+    #[must_use]
+    pub const fn unwrap_error(v: Result<(), Error>) -> Error {
+        match v {
+            // Unfortunately we can't use `unreachable!()` here, as this branch will be executed
+            // either way.
+            Ok(()) => Error {
+                cause: Cause::RequiredField,
+                base: ("unreachable", "unreachable", 1),
+                implementation: ("unreachable", "unreachable", 1),
+            },
+            Err(err) => err,
+        }
+    }
 }
 
 /// Statically asserts whether a [`Field`]'s [`Argument`] represents a `Null`able type, so can be
@@ -894,12 +902,15 @@ macro_rules! assert_field_arg_deprecable {
         const _: () = {
             const TY_NAME: &::core::primitive::str =
                 <$ty as $crate::macros::reflect::BaseType<$scalar>>::NAME;
-            const FIELD_NAME: &::core::primitive::str = $field_name;
+
+            const FIELD_NAME: $crate::macros::reflect::Name = $field_name;
+            const FIELD_HASH: $crate::macros::reflect::FieldName =
+                $crate::macros::reflect::fnv1a128(FIELD_NAME);
+
+            $crate::assert_has_field!(FIELD_NAME, $ty, $scalar);
+
             const ARGS: $crate::macros::reflect::Arguments =
-                <$ty as $crate::macros::reflect::FieldMeta<
-                    $scalar,
-                    { $crate::checked_hash!(FIELD_NAME, $ty, $scalar) },
-                >>::ARGUMENTS;
+                <$ty as $crate::macros::reflect::FieldMeta<$scalar, FIELD_HASH>>::ARGUMENTS;
             const ARG_NAME: &::core::primitive::str = $arg_name;
             const ARG: $crate::macros::reflect::Argument =
                 $crate::macros::reflect::get_arg_by_name(ARGS, ARG_NAME).expect(
@@ -911,6 +922,7 @@ macro_rules! assert_field_arg_deprecable {
                         "`",
                     ),
                 );
+
             if ARG.2 % 10 != 2 {
                 const ARG_TY: &::core::primitive::str = $crate::format_type!(ARG.1, ARG.2);
                 const ERROR_MSG: &::core::primitive::str = $crate::const_concat!(
@@ -930,6 +942,20 @@ macro_rules! assert_field_arg_deprecable {
     };
 }
 
+/// Extracts an [`Argument`] from the provided [`Arguments`] by its [`Name`].
+#[must_use]
+pub const fn get_arg_by_name(args: Arguments, name: Name) -> Option<Argument> {
+    let mut i = 0;
+    while i < args.len() {
+        let arg = args[i];
+        if str_eq(arg.0, name) {
+            return Some(arg);
+        }
+        i += 1;
+    }
+    None
+}
+
 /// Statically asserts whether an input object [`Field`] represents a `Null`able type, so can be
 /// deprecated.
 ///
@@ -945,17 +971,17 @@ macro_rules! assert_input_field_deprecable {
         const _: () = {
             const TY_NAME: &::core::primitive::str =
                 <$ty as $crate::macros::reflect::BaseType<$scalar>>::NAME;
-            const FIELD_NAME: &::core::primitive::str = $field_name;
+
+            const FIELD_NAME: $crate::macros::reflect::Name = $field_name;
+            const FIELD_HASH: $crate::macros::reflect::FieldName =
+                $crate::macros::reflect::fnv1a128(FIELD_NAME);
+
+            $crate::assert_has_field!(FIELD_NAME, $ty, $scalar);
+
             const FIELD_TY_NAME: &::core::primitive::str =
-                <$ty as $crate::macros::reflect::FieldMeta<
-                    $scalar,
-                    { $crate::checked_hash!(FIELD_NAME, $ty, $scalar) },
-                >>::TYPE;
+                <$ty as $crate::macros::reflect::FieldMeta<$scalar, FIELD_HASH>>::TYPE;
             const FIELD_WRAPPED_VAL: $crate::macros::reflect::WrappedValue =
-                <$ty as $crate::macros::reflect::FieldMeta<
-                    $scalar,
-                    { $crate::checked_hash!(FIELD_NAME, $ty, $scalar) },
-                >>::WRAPPED_VALUE;
+                <$ty as $crate::macros::reflect::FieldMeta<$scalar, FIELD_HASH>>::WRAPPED_VALUE;
 
             if FIELD_WRAPPED_VAL % 10 != 2 {
                 const FIELD_TY: &::core::primitive::str =
@@ -975,27 +1001,38 @@ macro_rules! assert_input_field_deprecable {
     };
 }
 
-/// Concatenates `const` [`str`](prim@str)s in a `const` context.
+/// Ensures that the given `$impl_ty` has the specified [`Field`], otherwise panics with an
+/// understandable message.
+#[macro_export]
+macro_rules! assert_has_field {
+    ($field_name: expr, $impl_ty: ty, $scalar: ty $(, $prefix: expr)? $(,)?) => {{
+        let exists = $crate::macros::reflect::str_exists_in_arr(
+            $field_name,
+            <$impl_ty as $crate::macros::reflect::Fields<$scalar>>::NAMES,
+        );
+        if !exists {
+            const MSG: &str = $crate::const_concat!(
+                $($prefix,)?
+                "field `",
+                $field_name,
+                "` isn't implemented on `",
+                <$impl_ty as $crate::macros::reflect::BaseType<$scalar>>::NAME,
+                "`"
+            );
+            ::core::panic!("{}", MSG);
+        }
+    }};
+}
+
+/// Concatenates `const` [`str`]s in a `const` context.
+///
+/// [`str`]: prim@str
 #[macro_export]
 macro_rules! const_concat {
     ($($s:expr),* $(,)?) => {{
         const LEN: ::core::primitive::usize = 0 $(+ $s.as_bytes().len())*;
-        const CNT: ::core::primitive::usize = [$($s),*].len();
-        const fn concat(input: [&::core::primitive::str; CNT]) -> [::core::primitive::u8; LEN] {
-            let mut bytes = [0; LEN];
-            let (mut i, mut byte) = (0, 0);
-            while i < CNT {
-                let mut b = 0;
-                while b < input[i].len() {
-                    bytes[byte] = input[i].as_bytes()[b];
-                    byte += 1;
-                    b += 1;
-                }
-                i += 1;
-            }
-            bytes
-        }
-        const CON: [::core::primitive::u8; LEN] = concat([$($s),*]);
+        const CON: [::core::primitive::u8; LEN] =
+            $crate::macros::reflect::const_concat_into_bytes::<LEN>(&[$($s),*]);
 
         // TODO: Use `.unwrap()` once it becomes `const`.
         match ::core::str::from_utf8(&CON) {
@@ -1005,33 +1042,31 @@ macro_rules! const_concat {
     }};
 }
 
-/// Ensures that the given `$impl_ty` implements [`Field`] and returns a
-/// [`fnv1a128`] hash for it, otherwise panics with understandable message.
-#[macro_export]
-macro_rules! checked_hash {
-    ($field_name: expr, $impl_ty: ty, $scalar: ty $(, $prefix: expr)? $(,)?) => {{
-        let exists = $crate::macros::reflect::str_exists_in_arr(
-            $field_name,
-            <$impl_ty as $crate::macros::reflect::Fields<$scalar>>::NAMES,
-        );
-        if exists {
-            $crate::macros::reflect::fnv1a128(FIELD_NAME)
-        } else {
-            const MSG: &str = $crate::const_concat!(
-                $($prefix,)?
-                "field `",
-                $field_name,
-                "` isn't implemented on `",
-                <$impl_ty as $crate::macros::reflect::BaseType<$scalar>>::NAME,
-                "`"
-            );
-            ::core::panic!("{}", MSG)
+/// Concatenates the provided [`str`]s into a bytes array of the specified `LEN`.
+///
+/// # Panics
+///
+/// If the specified `LEN` doesn't fit all the provided [`str`]s.
+///
+/// [`str`]: prim@str
+#[must_use]
+pub const fn const_concat_into_bytes<const LEN: usize>(input: &[&str]) -> [u8; LEN] {
+    let mut bytes = [0; LEN];
+    let (mut i, mut byte) = (0, 0);
+    while i < input.len() {
+        let mut b = 0;
+        let string_bytes = input[i].as_bytes();
+        while b < string_bytes.len() {
+            bytes[byte] = string_bytes[b];
+            byte += 1;
+            b += 1;
         }
-    }};
+        i += 1;
+    }
+    bytes
 }
 
-/// Formats the given [`Type`] and [`WrappedValue`] into a readable GraphQL type
-/// name.
+/// Formats the provided [`Type`] and [`WrappedValue`] into a readable GraphQL type name.
 ///
 /// # Examples
 ///
@@ -1048,84 +1083,113 @@ macro_rules! format_type {
             $crate::macros::reflect::Type,
             $crate::macros::reflect::WrappedValue,
         ) = ($ty, $wrapped_value);
-        const RES_LEN: usize = $crate::macros::reflect::type_len_with_wrapped_val(TYPE.0, TYPE.1);
+        const LEN: usize = $crate::macros::reflect::type_len_with_wrapped_val(TYPE.0, TYPE.1);
 
-        const OPENING_BRACKET: &::core::primitive::str = "[";
-        const CLOSING_BRACKET: &::core::primitive::str = "]";
-        const BANG: &::core::primitive::str = "!";
-
-        const fn format_type_arr() -> [::core::primitive::u8; RES_LEN] {
-            let (ty, wrap_val) = TYPE;
-            let mut type_arr: [::core::primitive::u8; RES_LEN] = [0; RES_LEN];
-
-            let mut current_start = 0;
-            let mut current_end = RES_LEN - 1;
-            let mut current_wrap_val = wrap_val;
-            let mut is_null = false;
-            while current_wrap_val % 10 != 0 {
-                match current_wrap_val % 10 {
-                    2 => is_null = true, // Skips writing `BANG` later.
-                    3 => {
-                        // Write `OPENING_BRACKET` at `current_start`.
-                        let mut i = 0;
-                        while i < OPENING_BRACKET.as_bytes().len() {
-                            type_arr[current_start + i] = OPENING_BRACKET.as_bytes()[i];
-                            i += 1;
-                        }
-                        current_start += i;
-                        if !is_null {
-                            // Write `BANG` at `current_end`.
-                            i = 0;
-                            while i < BANG.as_bytes().len() {
-                                type_arr[current_end - BANG.as_bytes().len() + i + 1] =
-                                    BANG.as_bytes()[i];
-                                i += 1;
-                            }
-                            current_end -= i;
-                        }
-                        // Write `CLOSING_BRACKET` at `current_end`.
-                        i = 0;
-                        while i < CLOSING_BRACKET.as_bytes().len() {
-                            type_arr[current_end - CLOSING_BRACKET.as_bytes().len() + i + 1] =
-                                CLOSING_BRACKET.as_bytes()[i];
-                            i += 1;
-                        }
-                        current_end -= i;
-                        is_null = false;
-                    }
-                    _ => {}
-                }
-
-                current_wrap_val /= 10;
-            }
-
-            // Writes `Type` at `current_start`.
-            let mut i = 0;
-            while i < ty.as_bytes().len() {
-                type_arr[current_start + i] = ty.as_bytes()[i];
-                i += 1;
-            }
-            i = 0;
-            if !is_null {
-                // Writes `BANG` at `current_end`.
-                while i < BANG.as_bytes().len() {
-                    type_arr[current_end - BANG.as_bytes().len() + i + 1] = BANG.as_bytes()[i];
-                    i += 1;
-                }
-            }
-
-            type_arr
-        }
-
-        const TYPE_ARR: [::core::primitive::u8; RES_LEN] = format_type_arr();
+        const TYPE_BYTES: [::core::primitive::u8; LEN] =
+            $crate::macros::reflect::format_type_into_bytes::<LEN>(TYPE.0, TYPE.1);
 
         // TODO: Use `.unwrap()` once it becomes `const`.
         const TYPE_FORMATTED: &::core::primitive::str =
-            match ::core::str::from_utf8(TYPE_ARR.as_slice()) {
+            match ::core::str::from_utf8(TYPE_BYTES.as_slice()) {
                 ::core::result::Result::Ok(s) => s,
                 _ => unreachable!(),
             };
 
         TYPE_FORMATTED
     }};
+}
+
+/// Formats the provided [`Type`] and [`WrappedValue`] into a readable GraphQL type name and returns
+/// it as a bytes array of the specified `LEN`.
+///
+/// Use the [`type_len_with_wrapped_val()`] function to count the correct `LEN`.
+///
+/// # Panics
+///
+/// If the specified `LEN` doesn't fit the formated GraphQL type name.
+#[must_use]
+pub const fn format_type_into_bytes<const LEN: usize>(
+    ty: Type,
+    wrap_val: WrappedValue,
+) -> [u8; LEN] {
+    const OPENING_BRACKET: &str = "[";
+    const CLOSING_BRACKET: &str = "]";
+    const BANG: &str = "!";
+
+    let mut type_arr: [u8; LEN] = [0; LEN];
+
+    let mut current_start = 0;
+    let mut current_end = LEN - 1;
+    let mut current_wrap_val = wrap_val;
+    let mut is_null = false;
+    while current_wrap_val % 10 != 0 {
+        match current_wrap_val % 10 {
+            2 => is_null = true, // Skips writing `BANG` later.
+            3 => {
+                // Write `OPENING_BRACKET` at `current_start`.
+                let mut i = 0;
+                while i < OPENING_BRACKET.len() {
+                    type_arr[current_start + i] = OPENING_BRACKET.as_bytes()[i];
+                    i += 1;
+                }
+                current_start += i;
+                if !is_null {
+                    // Write `BANG` at `current_end`.
+                    i = 0;
+                    while i < BANG.len() {
+                        type_arr[current_end - BANG.len() + i + 1] = BANG.as_bytes()[i];
+                        i += 1;
+                    }
+                    current_end -= i;
+                }
+                // Write `CLOSING_BRACKET` at `current_end`.
+                i = 0;
+                while i < CLOSING_BRACKET.len() {
+                    type_arr[current_end - CLOSING_BRACKET.len() + i + 1] =
+                        CLOSING_BRACKET.as_bytes()[i];
+                    i += 1;
+                }
+                current_end -= i;
+                is_null = false;
+            }
+            _ => {}
+        }
+
+        current_wrap_val /= 10;
+    }
+
+    // Writes `Type` at `current_start`.
+    let mut i = 0;
+    while i < ty.len() {
+        type_arr[current_start + i] = ty.as_bytes()[i];
+        i += 1;
+    }
+    i = 0;
+    if !is_null {
+        // Writes `BANG` at `current_end`.
+        while i < BANG.len() {
+            type_arr[current_end - BANG.len() + i + 1] = BANG.as_bytes()[i];
+            i += 1;
+        }
+    }
+
+    type_arr
+}
+
+/// Length __in bytes__ of the [`format_type!`] macro result.
+#[must_use]
+pub const fn type_len_with_wrapped_val(ty: Type, val: WrappedValue) -> usize {
+    let mut len = ty.len() + "!".len(); // Type!
+
+    let mut curr = val;
+    while curr % 10 != 0 {
+        match curr % 10 {
+            2 => len -= "!".len(),   // remove !
+            3 => len += "[]!".len(), // [Type]!
+            _ => {}
+        }
+        curr /= 10;
+    }
+
+    len
 }

@@ -78,6 +78,6 @@ fn main() {
 [3]: https://spec.graphql.org/October2021#sel-GAFRJDABABI5C
 [4]: https://spec.graphql.org/October2021#sel-GAFRJFABABMvpN
 [5]: https://spec.graphql.org/October2021#sec-Execution
-[9]: https://docs.rs/juniper/0.17.0/juniper/struct.RootNode.html#method.disable_introspection
+[9]: https://docs.rs/juniper/0.17.1/juniper/struct.RootNode.html#method.disable_introspection
 [10]: https://www.apollographql.com/blog/why-you-should-disable-graphql-introspection-in-production
 [11]: https://spec.graphql.org/October2021#sec-Validation

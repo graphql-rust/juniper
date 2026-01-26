@@ -1,4 +1,4 @@
-error[E0080]: evaluation panicked: Failed to implement interface `Character` on `ObjA`: Field `id`: Argument `isPresent`: expected type `Boolean!`, found: `Int!`.
+error[E0080]: evaluation panicked: failed to implement interface `Character` on `ObjA`: field `id`: argument `isPresent`: expected type `Boolean!`, found: `Int!`
   --> fail/interface/trait/wrong_argument_type.rs:16:8
    |
 16 |     fn id(&self, is_present: bool) -> &str;
@@ -6,7 +6,7 @@ error[E0080]: evaluation panicked: Failed to implement interface `Character` on 
    |
    = note: this error originates in the macro `$crate::panic::panic_2021` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0080]: evaluation panicked: Failed to implement interface `Character` on `ObjA`: Field `id`: Argument `isPresent`: expected type `Boolean!`, found: `Int!`.
+error[E0080]: evaluation panicked: failed to implement interface `Character` on `ObjA`: field `id`: argument `isPresent`: expected type `Boolean!`, found: `Int!`
   --> fail/interface/trait/wrong_argument_type.rs:16:8
    |
 16 |     fn id(&self, is_present: bool) -> &str;

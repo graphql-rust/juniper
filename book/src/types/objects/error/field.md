@@ -178,6 +178,6 @@ And the specified structured error information will be included into the [error'
 [14]: https://doc.rust-lang.org/book/ch09-02-recoverable-errors-with-result.html#a-shortcut-for-propagating-errors-the--operator
 [15]: https://spec.graphql.org/October2021#sec-Introspection
 [19]: https://doc.rust-lang.org/stable/std/fmt/trait.Display.html
-[21]: https://docs.rs/juniper/0.17.0/juniper/executor/type.FieldResult.html
-[22]: https://docs.rs/juniper/0.17.0/juniper/executor/struct.FieldError.html
-[23]: https://docs.rs/juniper/0.17.0/juniper/executor/trait.IntoFieldError.html
+[21]: https://docs.rs/juniper/0.17.1/juniper/executor/type.FieldResult.html
+[22]: https://docs.rs/juniper/0.17.1/juniper/executor/struct.FieldError.html
+[23]: https://docs.rs/juniper/0.17.1/juniper/executor/trait.IntoFieldError.html

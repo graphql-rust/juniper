@@ -142,7 +142,7 @@ enum Episode<T> {
 
 [0]: https://spec.graphql.org/October2021#sec-Enums
 [1]: https://spec.graphql.org/October2021#sec-Scalars
-[2]: https://docs.rs/juniper/0.17.0/juniper/derive.GraphQLEnum.html
+[2]: https://docs.rs/juniper/0.17.1/juniper/derive.GraphQLEnum.html
 [3]: https://doc.rust-lang.org/reference/items/enumerations.html
 [4]: https://spec.graphql.org/October2021#sec-Descriptions
 [5]: https://spec.graphql.org/October2021#sec-Language.Arguments

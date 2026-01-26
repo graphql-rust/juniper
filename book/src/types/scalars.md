@@ -490,7 +490,7 @@ mod date_scalar {
 [`jiff::tz::Offset`]: https://docs.rs/jiff/latest/jiff/tz/struct.Offset.html
 [`jiff::tz::TimeZone`]: https://docs.rs/jiff/latest/jiff/tz/struct.TimeZone.html
 [`jiff::Zoned`]: https://docs.rs/jiff/latest/jiff/struct.Zoned.html
-[`juniper::integrations::jiff::TimeZone`]: https://docs.rs/juniper/0.17.0/juniper/integrations/jiff/struct.TimeZone.html
+[`juniper::integrations::jiff::TimeZone`]: https://docs.rs/juniper/0.17.1/juniper/integrations/jiff/struct.TimeZone.html
 [`LocalDate`]: https://graphql-scalars.dev/docs/scalars/local-date
 [`LocalDateTime`]: https://graphql-scalars.dev/docs/scalars/local-date-time
 [`LocalTime`]: https://graphql-scalars.dev/docs/scalars/local-time
@@ -504,7 +504,7 @@ mod date_scalar {
 [`ruint::aliases::U256`]: https://docs.rs/ruint/latest/ruint/aliases/type.U256.html
 [`rust_decimal`]: https://docs.rs/rust_decimal
 [`rust_decimal::Decimal`]: https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html
-[`ScalarValue`]: https://docs.rs/juniper/0.17.0/juniper/trait.ScalarValue.html
+[`ScalarValue`]: https://docs.rs/juniper/0.17.1/juniper/trait.ScalarValue.html
 [`serde`]: https://docs.rs/serde
 [`time`]: https://docs.rs/time
 [`time::Date`]: https://docs.rs/time/latest/time/struct.Date.html
@@ -535,5 +535,5 @@ mod date_scalar {
 [5]: https://spec.graphql.org/October2021/#sec-Scalars.Built-in-Scalars
 [6]: https://serde.rs/container-attrs.html#transparent
 [7]: https://spec.graphql.org/October2021#sec-Value-Resolution
-[8]: https://docs.rs/juniper/0.17.0/juniper/derive.GraphQLScalar.html
-[9]: https://docs.rs/juniper/0.17.0/juniper/attr.graphql_scalar.html
+[8]: https://docs.rs/juniper/0.17.1/juniper/derive.GraphQLScalar.html
+[9]: https://docs.rs/juniper/0.17.1/juniper/attr.graphql_scalar.html

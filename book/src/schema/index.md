@@ -159,11 +159,11 @@ fn main() {
 
 
 
-[`EmptyMutation`]: https://docs.rs/juniper/0.17.0/juniper/struct.EmptyMutation.html
-[`EmptySubscription`]: https://docs.rs/juniper/0.17.0/juniper/struct.EmptySubscription.html
+[`EmptyMutation`]: https://docs.rs/juniper/0.17.1/juniper/struct.EmptyMutation.html
+[`EmptySubscription`]: https://docs.rs/juniper/0.17.1/juniper/struct.EmptySubscription.html
 [`juniper`]: https://docs.rs/juniper
 [`juniper-from-schema`]: https://docs.rs/juniper-from-schema
-[`RootNode`]: https://docs.rs/juniper/0.17.0/juniper/struct.RootNode.html
+[`RootNode`]: https://docs.rs/juniper/0.17.1/juniper/struct.RootNode.html
 [code-first]: https://www.apollographql.com/blog/backend/architecture/schema-first-vs-code-only-graphql#code-only
 [schema-first]: https://www.apollographql.com/blog/backend/architecture/schema-first-vs-code-only-graphql#schema-first
 [GraphQL]: https://graphql.org
@@ -179,7 +179,7 @@ fn main() {
 [4]: https://spec.graphql.org/October2021#sec-Objects
 [5]: https://spec.graphql.org/October2021#sec-Root-Operation-Types.Default-Root-Operation-Type-Names
 [6]: https://graphql.org/learn/schema#type-language
-[20]: https://docs.rs/juniper/0.17.0/juniper/struct.RootNode.html#method.as_sdl
+[20]: https://docs.rs/juniper/0.17.1/juniper/struct.RootNode.html#method.as_sdl
 [21]: https://docs.rs/crate/juniper/latest/source/src/introspection/query.graphql
-[22]: https://docs.rs/juniper/0.17.0/juniper/fn.introspect.html
+[22]: https://docs.rs/juniper/0.17.1/juniper/fn.introspect.html
 [30]: https://npmjs.com/package/graphql-json-to-sdl

@@ -1,4 +1,4 @@
-error[E0080]: evaluation panicked: Failed to implement interface `Character` on `ObjA`: missing implementer reference in interface's `for` attribute.
+error[E0080]: evaluation panicked: failed to implement interface `Character` on `ObjA`: missing implementer reference in interface's `for` attribute
  --> fail/interface/struct/attr_missing_for_attr.rs:3:10
   |
 3 | #[derive(GraphQLObject)]

@@ -1,4 +1,4 @@
-error[E0080]: evaluation panicked: Failed to implement interface `Node2` on `Node3`: missing `impl = ` for transitive interface `Node1` on `Node3`.
+error[E0080]: evaluation panicked: failed to implement interface `Node2` on `Node3`: missing `impl = ` for transitive interface `Node1` on `Node3`
  --> fail/interface/struct/attr_missing_transitive_impl.rs:8:46
   |
 8 | #[graphql_interface(impl = Node1Value, for = Node3Value)]

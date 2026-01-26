@@ -1,4 +1,4 @@
-error[E0080]: evaluation panicked: Failed to implement interface `Character` on `ObjA`: missing interface reference in implementer's `impl` attribute.
+error[E0080]: evaluation panicked: failed to implement interface `Character` on `ObjA`: missing interface reference in implementer's `impl` attribute
  --> fail/interface/struct/derive_missing_impl_attr.rs:8:10
   |
 8 | #[derive(GraphQLInterface)]
