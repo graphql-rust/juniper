@@ -152,10 +152,10 @@ For information about serving [GraphQL subscriptions][9] over [WebSocket], see t
 [`Coordinator`]: https://docs.rs/juniper_subscriptions/0.18.0/juniper_subscriptions/struct.Coordinator.html
 [`Connection`]: https://docs.rs/juniper_subscriptions/0.18.0/juniper_subscriptions/struct.Connection.html
 [`Future`]: https://doc.rust-lang.org/stable/std/future/trait.Future.html
-[`GraphQLError`]: https://docs.rs/juniper/0.17.0/juniper/enum.GraphQLError.html
+[`GraphQLError`]: https://docs.rs/juniper/0.17.1/juniper/enum.GraphQLError.html
 [`Stream`]: https://docs.rs/futures/latest/futures/stream/trait.Stream.html
-[`SubscriptionCoordinator`]:  https://docs.rs/juniper/0.17.0/juniper/trait.SubscriptionCoordinator.html
-[`SubscriptionConnection`]: https://docs.rs/juniper/0.17.0/juniper/trait.SubscriptionConnection.html
+[`SubscriptionCoordinator`]:  https://docs.rs/juniper/0.17.1/juniper/trait.SubscriptionCoordinator.html
+[`SubscriptionConnection`]: https://docs.rs/juniper/0.17.1/juniper/trait.SubscriptionConnection.html
 [GraphQL]: https://graphql.org
 [Juniper]: https://docs.rs/juniper
 [Rust]: https://www.rust-lang.org

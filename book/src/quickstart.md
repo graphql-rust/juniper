@@ -14,7 +14,7 @@ This page will give you a short introduction to the concepts in [Juniper].
 
 ```toml
 [dependencies]
-juniper = "0.17.0"
+juniper = "0.17.1"
 ```
 
 
@@ -229,4 +229,4 @@ fn main() {
 [schema-first]: https://www.apollographql.com/blog/backend/architecture/schema-first-vs-code-only-graphql#schema-first
 
 [1]: https://spec.graphql.org/October2021#sec-Root-Operation-Types
-[2]: https://docs.rs/juniper/0.17.0/juniper/macro.graphql_object.html
+[2]: https://docs.rs/juniper/0.17.1/juniper/macro.graphql_object.html

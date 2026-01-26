@@ -153,7 +153,7 @@ struct Point2D {
 [spec]: https://spec.graphql.org/October2021
 
 [0]: https://spec.graphql.org/October2021#sec-Input-Objects
-[2]: https://docs.rs/juniper/0.17.0/juniper/derive.GraphQLInputObject.html
+[2]: https://docs.rs/juniper/0.17.1/juniper/derive.GraphQLInputObject.html
 [4]: https://spec.graphql.org/October2021#sec-Language.Fields
 [5]: https://spec.graphql.org/October2021#sec-Language.Arguments
 [6]: https://doc.rust-lang.org/reference/comments.html#doc-comments

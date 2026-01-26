@@ -159,7 +159,7 @@ enum Character<S> {
 
 [0]: https://spec.graphql.org/October2021#sec-Unions
 [1]: https://graphql.org/learn/schema
-[2]: https://docs.rs/juniper/0.17.0/juniper/derive.GraphQLUnion.html
+[2]: https://docs.rs/juniper/0.17.1/juniper/derive.GraphQLUnion.html
 [6]: https://doc.rust-lang.org/reference/comments.html#doc-comments
 [7]: https://spec.graphql.org/October2021#sec-Descriptions
 [10]: https://spec.graphql.org/October2021#sec-Objects

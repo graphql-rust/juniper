@@ -397,8 +397,8 @@ trait Person {
 [Rust]: https://www.rust-lang.org
 
 [0]: https://spec.graphql.org/October2021#sec-Interfaces
-[2]: https://docs.rs/juniper/0.17.0/juniper/derive.GraphQLInterface.html
-[3]: https://docs.rs/juniper/0.17.0/juniper/attr.graphql_interface.html
+[2]: https://docs.rs/juniper/0.17.1/juniper/derive.GraphQLInterface.html
+[3]: https://docs.rs/juniper/0.17.1/juniper/attr.graphql_interface.html
 [4]: https://spec.graphql.org/October2021#sec-Language.Fields
 [5]: https://spec.graphql.org/October2021#sec-Language.Arguments
 [6]: https://spec.graphql.org/October2021#sec-Non-Null

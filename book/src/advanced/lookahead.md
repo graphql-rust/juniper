@@ -213,9 +213,9 @@ See more available look-ahead features in the API docs of the [`LookAheadSelecti
 
 
 
-[`DefaultScalarValue`]: https://docs.rs/juniper/0.17.0/juniper/enum.DefaultScalarValue.html
-[`Executor`]: https://docs.rs/juniper/0.17.0/juniper/executor/struct.Executor.html
-[`ScalarValue`]: https://docs.rs/juniper/0.17.0/juniper/trait.ScalarValue.html
+[`DefaultScalarValue`]: https://docs.rs/juniper/0.17.1/juniper/enum.DefaultScalarValue.html
+[`Executor`]: https://docs.rs/juniper/0.17.1/juniper/executor/struct.Executor.html
+[`ScalarValue`]: https://docs.rs/juniper/0.17.1/juniper/trait.ScalarValue.html
 [GraphQL]: https://graphql.org
 [Juniper]: https://docs.rs/juniper
 [Rust]: https://www.rust-lang.org
@@ -224,6 +224,6 @@ See more available look-ahead features in the API docs of the [`LookAheadSelecti
 [1]: https://spec.graphql.org/October2021#sec-Execution
 [2]: https://spec.graphql.org/October2021#sec-Language.Operations\
 [3]: https://spec.graphql.org/October2021#sec-Language.Fields
-[20]: https://docs.rs/juniper/0.17.0/juniper/executor/struct.Executor.html#method.look_ahead
-[21]: https://docs.rs/juniper/0.17.0/juniper/executor/struct.LookAheadSelection.html
-[22]: https://docs.rs/juniper/0.17.0/juniper/executor/struct.LookAheadChildren.html
+[20]: https://docs.rs/juniper/0.17.1/juniper/executor/struct.Executor.html#method.look_ahead
+[21]: https://docs.rs/juniper/0.17.1/juniper/executor/struct.LookAheadSelection.html
+[22]: https://docs.rs/juniper/0.17.1/juniper/executor/struct.LookAheadChildren.html

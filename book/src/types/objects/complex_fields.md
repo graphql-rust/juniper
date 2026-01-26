@@ -217,8 +217,8 @@ impl Person {
 
 [0]: https://spec.graphql.org/October2021#sec-Objects
 [1]: https://spec.graphql.org/October2021#sec-Execution
-[2]: https://docs.rs/juniper/0.17.0/juniper/derive.GraphQLObject.html
-[3]: https://docs.rs/juniper/0.17.0/juniper/attr.graphql_object.html
+[2]: https://docs.rs/juniper/0.17.1/juniper/derive.GraphQLObject.html
+[3]: https://docs.rs/juniper/0.17.1/juniper/attr.graphql_object.html
 [4]: https://spec.graphql.org/October2021#sec-Language.Fields
 [5]: https://spec.graphql.org/October2021#sec-Language.Arguments
 [6]: https://doc.rust-lang.org/reference/items/implementations.html#inherent-implementations

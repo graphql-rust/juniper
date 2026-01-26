@@ -106,7 +106,7 @@ impl Mutation {
 
 
 
-[`Nullable`]: https://docs.rs/juniper/0.17.0/juniper/enum.Nullable.html
+[`Nullable`]: https://docs.rs/juniper/0.17.1/juniper/enum.Nullable.html
 [GraphQL]: https://graphql.org
 [Juniper]: https://docs.rs/juniper
 [Rust]: https://www.rust-lang.org
