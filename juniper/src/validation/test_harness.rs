@@ -661,6 +661,13 @@ where
                 .field::<Option<String>>(arcstr::literal!("nonNullIntArgField"), i)
                 .argument(registry.arg::<i32>(arcstr::literal!("nonNullIntArg"), i)),
             registry
+                .field::<Option<String>>(arcstr::literal!("nonNullIntArgFieldWithDefault"), i)
+                .argument(registry.arg_with_default::<i32>(
+                    arcstr::literal!("nonNullIntArg"),
+                    &3,
+                    i,
+                )),
+            registry
                 .field::<Option<String>>(arcstr::literal!("stringArgField"), i)
                 .argument(registry.arg::<Option<String>>(arcstr::literal!("stringArg"), i)),
             registry
