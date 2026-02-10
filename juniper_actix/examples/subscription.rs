@@ -86,13 +86,16 @@ impl Subscription {
                        Second result will be an error."
     )]
     async fn random_human(context: &Database) -> RandomHumanStream {
-        use rand::{Rng as _, SeedableRng as _, rngs::StdRng};
+        use rand::{
+            RngExt as _, SeedableRng as _,
+            rngs::{StdRng, SysRng},
+        };
 
         let mut counter = 0;
 
         let context = (*context).clone();
 
-        let mut rng = StdRng::from_os_rng();
+        let mut rng = StdRng::try_from_rng(&mut SysRng).unwrap();
         let mut interval = tokio::time::interval(Duration::from_secs(5));
         let stream = async_stream::stream! {
             counter += 1;
