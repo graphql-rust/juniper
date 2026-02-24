@@ -31,7 +31,7 @@ subscriptions = [
 
 [dependencies]
 actix-web = "4.4"
-actix-ws = { version = "0.3", optional = true }
+actix-ws = { version = "0.4", optional = true }
 derive_more = { version = "2.0", features = ["display", "error"], optional = true }
 futures = { version = "0.3.22", optional = true }
 juniper = { version = "0.17", path = "../juniper", default-features = false }
