@@ -40,6 +40,17 @@ pub struct ConnectionConfig<CtxT> {
     ///
     /// By default, keep-alives are sent every 15 seconds.
     pub keep_alive_interval: Duration,
+
+    #[cfg(feature = "graphql-transport-ws")]
+    /// Indicates whether to ensure the client sends keep-alive messages within
+    /// [`keep_alive_interval`].
+    ///
+    /// Applicable only for `graphql-transport-ws` protocol, does nothing for `graphql-ws`.
+    ///
+    /// By default, disabled for compatibility with clients that do not support keep-alives.
+    ///
+    /// [`keep_alive_interval`]: Self::keep_alive_interval
+    pub detect_connection_lost: bool,
 }
 
 impl<CtxT> ConnectionConfig<CtxT> {
@@ -49,6 +60,8 @@ impl<CtxT> ConnectionConfig<CtxT> {
             context,
             max_in_flight_operations: 0,
             keep_alive_interval: Duration::from_secs(15),
+            #[cfg(feature = "graphql-transport-ws")]
+            detect_connection_lost: false,
         }
     }
 
@@ -70,6 +83,19 @@ impl<CtxT> ConnectionConfig<CtxT> {
     #[must_use]
     pub fn with_keep_alive_interval(mut self, interval: Duration) -> Self {
         self.keep_alive_interval = interval;
+        self
+    }
+
+    #[cfg(feature = "graphql-transport-ws")]
+    /// Specifies whether to ensure the client sends keep-alive messages within
+    /// the [`keep_alive_interval`].
+    ///
+    /// Applicable only for `graphql-transport-ws` protocol, does nothing for `graphql-ws`.
+    ///
+    /// [`keep_alive_interval`]: Self::keep_alive_interval
+    #[must_use]
+    pub fn with_detect_connection_lost(mut self, detect: bool) -> Self {
+        self.detect_connection_lost = detect;
         self
     }
 }
