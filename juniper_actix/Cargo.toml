@@ -2,7 +2,7 @@
 name = "juniper_actix"
 version = "0.7.0"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.88"
 description = "`juniper` GraphQL integration with `actix-web`."
 license = "BSD-2-Clause"
 authors = [
