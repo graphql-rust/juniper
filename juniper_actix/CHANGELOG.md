@@ -6,6 +6,18 @@ All user visible changes to `juniper_actix` crate will be documented in this fil
 
 
 
+## master
+
+### BC Breaks
+
+- Switched to 0.4 version of [`actix-ws` crate]. ([#1366])
+- Bumped up [MSRV] to 1.88 due to [`actix-ws` crate] requirements. ([#1366])
+
+[#1366]: /../../pull/1366
+
+
+
+
 ## [0.7.0] · 2025-09-08
 [0.7.0]: /../../tree/juniper_actix-v0.7.0/juniper_actix
 
