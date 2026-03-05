@@ -27,10 +27,11 @@ subscriptions = [
     "dep:derive_more", 
     "dep:futures", 
     "dep:juniper_graphql_ws",
+    "actix-web/ws",
 ]
 
 [dependencies]
-actix-web = "4.4"
+actix-web = { version = "4.13", default-features = false }
 actix-ws = { version = "0.4", optional = true }
 derive_more = { version = "2.0", features = ["display", "error"], optional = true }
 futures = { version = "0.3.22", optional = true }
@@ -44,6 +45,7 @@ actix-cors = "0.7"
 actix-http = "3.2"
 actix-rt = "2.0"
 actix-test = "0.1"
+actix-web = { version = "4.13", features = ["macros"] }
 anyhow = "1.0.47"
 async-stream = "0.3"
 env_logger = "0.11"
