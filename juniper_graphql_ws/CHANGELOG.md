@@ -6,6 +6,17 @@ All user visible changes to `juniper_graphql_ws` crate will be documented in thi
 
 
 
+## master
+
+### Fixed
+
+- Inability to re-subscribe with the same operation `id` after subscription was completed by server. ([#1368]) 
+
+[#1368]: /../../pull/1368
+
+
+
+
 ## [0.5.0] · 2025-09-08
 [0.5.0]: /../../tree/juniper_graphql_ws-v0.5.0/juniper_graphql_ws
 
