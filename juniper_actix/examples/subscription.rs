@@ -140,7 +140,6 @@ async fn main() -> std::io::Result<()> {
                     .supports_credentials()
                     .max_age(3600),
             )
-            .wrap(middleware::Compress::default())
             .wrap(middleware::Logger::default())
             .service(web::resource("/subscriptions").route(web::get().to(subscriptions)))
             .service(
