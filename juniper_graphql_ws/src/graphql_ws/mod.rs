@@ -40,7 +40,7 @@ pub use self::{
 
 struct ExecutionParams<S: Schema> {
     start_payload: StartPayload<S::ScalarValue>,
-    config: Arc<ConnectionConfig<S::Context>>,
+    config: ConnectionConfig<S::Context>,
     schema: S,
 }
 
@@ -61,7 +61,7 @@ enum ConnectionState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
     PreInit { init: I, schema: S },
     /// Active is the state after a ConnectionInit message has been accepted.
     Active {
-        config: Arc<ConnectionConfig<S::Context>>,
+        config: ConnectionConfig<S::Context>,
         stoppers: HashMap<String, oneshot::Sender<()>>,
         schema: S,
     },
@@ -69,7 +69,12 @@ enum ConnectionState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
     Terminated,
 }
 
-impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
+impl<S, I> ConnectionState<S, I>
+where
+    S: Schema,
+    S::Context: Clone,
+    I: Init<S::ScalarValue, S::Context>,
+{
     // Each message we receive results in a stream of zero or more reactions. For example, a
     // ConnectionTerminate message results in a one-item stream with the EndStream reaction.
     async fn handle_message(
@@ -112,7 +117,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
 
                         (
                             Self::Active {
-                                config: Arc::new(config),
+                                config,
                                 stoppers: HashMap::new(),
                                 schema,
                             },
@@ -435,6 +440,7 @@ where
     T: TryInto<ClientMessage<S::ScalarValue>>,
     T::Error: Error,
     S: Schema,
+    S::Context: Clone,
     I: Init<S::ScalarValue, S::Context> + Send,
 {
     type Error = Infallible;

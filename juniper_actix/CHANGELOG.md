@@ -6,6 +6,18 @@ All user visible changes to `juniper_actix` crate will be documented in this fil
 
 
 
+## [0.8.0] · 2026-03-??
+[0.8.0]: /../../tree/juniper_actix-v0.8.0/juniper_actix
+
+### BC Breaks
+
+- Context now required `Clone` bound. ([#1369])
+
+[#1369]: /../../pull/1369
+
+
+
+
 ## [0.7.0] · 2025-09-08
 [0.7.0]: /../../tree/juniper_actix-v0.7.0/juniper_actix
 

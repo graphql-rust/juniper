@@ -173,7 +173,7 @@ where
     Mutation::TypeInfo: Send + Sync,
     Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
     Subscription::TypeInfo: Send + Sync,
-    CtxT: Unpin + Send + Sync + 'static,
+    CtxT: Clone + Unpin + Send + Sync + 'static,
     S: ScalarValue + Send + Sync + 'static,
     I: juniper_graphql_ws::Init<S, CtxT> + Clone + Send + Sync,
 {
@@ -235,7 +235,7 @@ where
     Mutation::TypeInfo: Send + Sync,
     Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
     Subscription::TypeInfo: Send + Sync,
-    CtxT: Unpin + Send + Sync + 'static,
+    CtxT: Clone + Unpin + Send + Sync + 'static,
     S: ScalarValue + Send + Sync + 'static,
     I: juniper_graphql_ws::Init<S, CtxT> + Send,
 {
@@ -282,7 +282,7 @@ where
     Mutation::TypeInfo: Send + Sync,
     Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
     Subscription::TypeInfo: Send + Sync,
-    CtxT: Unpin + Send + Sync + 'static,
+    CtxT: Clone + Unpin + Send + Sync + 'static,
     S: ScalarValue + Send + Sync + 'static,
     I: juniper_graphql_ws::Init<S, CtxT> + Send,
 {

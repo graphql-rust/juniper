@@ -207,7 +207,7 @@ pub mod subscriptions {
         Mutation::TypeInfo: Send + Sync,
         Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
         Subscription::TypeInfo: Send + Sync,
-        CtxT: Unpin + Send + Sync + 'static,
+        CtxT: Clone + Unpin + Send + Sync + 'static,
         S: ScalarValue + Send + Sync + 'static,
         I: Init<S, CtxT> + Send,
     {
@@ -250,7 +250,7 @@ pub mod subscriptions {
         Mutation::TypeInfo: Send + Sync,
         Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
         Subscription::TypeInfo: Send + Sync,
-        CtxT: Unpin + Send + Sync + 'static,
+        CtxT: Clone + Unpin + Send + Sync + 'static,
         S: ScalarValue + Send + Sync + 'static,
         I: Init<S, CtxT> + Send,
     {
@@ -318,7 +318,7 @@ pub mod subscriptions {
         Mutation::TypeInfo: Send + Sync,
         Subscription: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
         Subscription::TypeInfo: Send + Sync,
-        CtxT: Unpin + Send + Sync + 'static,
+        CtxT: Clone + Unpin + Send + Sync + 'static,
         S: ScalarValue + Send + Sync + 'static,
         I: Init<S, CtxT> + Send,
     {
