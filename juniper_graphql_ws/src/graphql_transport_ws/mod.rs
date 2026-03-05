@@ -168,58 +168,56 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                                 message: format!("Subscriber for {id} already exists"),
                             }
                             .into_stream()
+                        } else if config.max_in_flight_operations > 0
+                            && stoppers.len() >= config.max_in_flight_operations
+                        {
+                            // Too many in-flight operations. Just send back a validation error.
+                            stream::iter(vec![
+                                Output::Message(ServerMessage::Error {
+                                    id: id.clone(),
+                                    payload: GraphQLError::from(RuleError::new(
+                                        "Too many in-flight operations.",
+                                        &[],
+                                    ))
+                                    .into(),
+                                }),
+                                Output::Message(ServerMessage::Complete { id }),
+                            ])
+                            .boxed()
                         } else {
-                            if config.max_in_flight_operations > 0
-                                && stoppers.len() >= config.max_in_flight_operations
-                            {
-                                // Too many in-flight operations. Just send back a validation error.
-                                stream::iter(vec![
-                                    Output::Message(ServerMessage::Error {
-                                        id: id.clone(),
-                                        payload: GraphQLError::from(RuleError::new(
-                                            "Too many in-flight operations.",
-                                            &[],
-                                        ))
-                                        .into(),
-                                    }),
-                                    Output::Message(ServerMessage::Complete { id }),
-                                ])
-                                .boxed()
-                            } else {
-                                // Create a channel that we can use to cancel the operation.
-                                let (tx, rx) = oneshot::channel::<()>();
-                                stoppers.insert(id.clone(), tx);
+                            // Create a channel that we can use to cancel the operation.
+                            let (tx, rx) = oneshot::channel::<()>();
+                            stoppers.insert(id.clone(), tx);
 
-                                // Create the operation stream. This stream will emit Next and Error
-                                // messages, but will not emit Complete – that part is up to us.
-                                let s = Self::start(
-                                    id.clone(),
-                                    ExecutionParams {
-                                        subscribe_payload: payload,
-                                        config: config.clone(),
-                                        schema: schema.clone(),
-                                    },
-                                )
-                                .into_stream()
-                                .flatten();
+                            // Create the operation stream. This stream will emit Next and Error
+                            // messages, but will not emit Complete – that part is up to us.
+                            let s = Self::start(
+                                id.clone(),
+                                ExecutionParams {
+                                    subscribe_payload: payload,
+                                    config: config.clone(),
+                                    schema: schema.clone(),
+                                },
+                            )
+                            .into_stream()
+                            .flatten();
 
-                                // Combine this with our oneshot channel so that the stream ends if the
-                                // oneshot is ever fired.
-                                let s = stream::unfold((rx, s.boxed()), async |(rx, mut s)| {
-                                    let next = match future::select(rx, s.next()).await {
-                                        Either::Left(_) => None,
-                                        Either::Right((r, rx)) => r.map(|r| (r, rx)),
-                                    };
-                                    next.map(|(r, rx)| (r, (rx, s)))
-                                });
+                            // Combine this with our oneshot channel so that the stream ends if the
+                            // oneshot is ever fired.
+                            let s = stream::unfold((rx, s.boxed()), async |(rx, mut s)| {
+                                let next = match future::select(rx, s.next()).await {
+                                    Either::Left(_) => None,
+                                    Either::Right((r, rx)) => r.map(|r| (r, rx)),
+                                };
+                                next.map(|(r, rx)| (r, (rx, s)))
+                            });
 
-                                // Once the stream ends, send the Complete message.
-                                let s = s.chain(
-                                    Output::Message(ServerMessage::Complete { id }).into_stream(),
-                                );
+                            // Once the stream ends, send the Complete message.
+                            let s = s.chain(
+                                Output::Message(ServerMessage::Complete { id }).into_stream(),
+                            );
 
-                                s.boxed()
-                            }
+                            s.boxed()
                         }
                     }
                     ClientMessage::Complete { id } => {
