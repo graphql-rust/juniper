@@ -158,6 +158,9 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
             } => {
                 let reactions = match msg {
                     ClientMessage::Subscribe { id, payload } => {
+                        // Prune stoppers which streams are already completed or canceled.
+                        stoppers.retain(|_, tx| !tx.is_canceled());
+
                         if stoppers.contains_key(&id) {
                             // We already have an operation with this id. We must close the connection.
                             Output::Close {
@@ -166,9 +169,6 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                             }
                             .into_stream()
                         } else {
-                            // Go ahead and prune canceled stoppers before adding a new one.
-                            stoppers.retain(|_, tx| !tx.is_canceled());
-
                             if config.max_in_flight_operations > 0
                                 && stoppers.len() >= config.max_in_flight_operations
                             {
