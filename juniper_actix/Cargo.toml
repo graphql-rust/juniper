@@ -45,7 +45,7 @@ actix-cors = "0.7"
 actix-http = "3.2"
 actix-rt = "2.0"
 actix-test = "0.1"
-actix-web = { version = "4.13", features = ["macros"] }
+actix-web = { version = "4.13", features = ["macros"], default-features = false }
 anyhow = "1.0.47"
 async-stream = "0.3"
 env_logger = "0.11"
