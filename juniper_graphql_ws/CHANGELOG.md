@@ -6,6 +6,19 @@ All user visible changes to `juniper_graphql_ws` crate will be documented in thi
 
 
 
+## [0.6.0] · 2026-03-??
+[0.6.0]: /../../tree/juniper_graphql_ws-v0.6.0/juniper_graphql_ws
+
+### Added
+
+- Client keep-alives watchdog for [`graphql-transport-ws` GraphQL over WebSocket Protocol][proto-6.0.7] (#1367).
+
+[#1367]: /../../pull/1367
+[proto-6.0.7]: https://github.com/enisdenjo/graphql-ws/blob/v6.0.7/PROTOCOL.md
+
+
+
+
 ## [0.5.0] · 2025-09-08
 [0.5.0]: /../../tree/juniper_graphql_ws-v0.5.0/juniper_graphql_ws
 

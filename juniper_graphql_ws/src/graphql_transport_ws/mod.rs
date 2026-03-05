@@ -23,12 +23,13 @@ use juniper::{
     GraphQLError, RuleError, ScalarValue,
     futures::{
         Sink, Stream,
-        channel::oneshot,
+        channel::{mpsc, oneshot},
         future::{self, BoxFuture, Either, FutureExt as _, TryFutureExt as _},
         stream::{self, BoxStream, SelectAll, StreamExt as _},
         task::{Context, Poll, Waker},
     },
 };
+use tokio::time;
 
 use super::{ConnectionConfig, Init, Schema};
 
@@ -83,6 +84,7 @@ enum ConnectionState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
     Active {
         config: Arc<ConnectionConfig<S::Context>>,
         stoppers: HashMap<String, oneshot::Sender<()>>,
+        ping_tx: mpsc::UnboundedSender<()>,
         schema: S,
     },
     /// Terminated is the state after a ConnectionInit message has been rejected.
@@ -101,10 +103,13 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                 ClientMessage::ConnectionInit { payload } => match init.init(payload).await {
                     Ok(config) => {
                         let keep_alive_interval = config.keep_alive_interval;
+                        let detect_connection_lost = config.detect_connection_lost;
 
                         let mut s =
                             stream::iter(vec![Output::Message(ServerMessage::ConnectionAck)])
                                 .boxed();
+
+                        let (ping_tx, ping_rx) = mpsc::unbounded();
 
                         #[expect(closure_returning_async_block, reason = "not possible")]
                         if keep_alive_interval > Duration::from_secs(0) {
@@ -112,10 +117,32 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                                 .chain(Output::Message(ServerMessage::Pong).into_stream())
                                 .boxed();
                             s = s
-                                .chain(stream::unfold((), move |_| async move {
-                                    tokio::time::sleep(keep_alive_interval).await;
-                                    Some((Output::Message(ServerMessage::Pong), ()))
-                                }))
+                                .chain(stream::unfold(
+                                    Some(ping_rx),
+                                    move |ping_rx: Option<mpsc::UnboundedReceiver<()>>| async move {
+                                        let mut ping_rx = ping_rx?;
+
+                                        if matches!(
+                                            time::timeout(keep_alive_interval, ping_rx.next())
+                                                .await,
+                                            Ok(None) | Err(_)
+                                        ) && detect_connection_lost
+                                        {
+                                            // Channel closed unexpectedly, or we didn't receive
+                                            // a ping in time. Either way consider the `Connection`
+                                            // lost.
+                                            return Some((
+                                                Output::Close {
+                                                    code: 1000,
+                                                    message: "Connection lost unexpectedly".into(),
+                                                },
+                                                None,
+                                            ));
+                                        }
+
+                                        Some((Output::Message(ServerMessage::Pong), Some(ping_rx)))
+                                    },
+                                ))
                                 .boxed();
                         }
 
@@ -123,6 +150,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                             Self::Active {
                                 config: Arc::new(config),
                                 stoppers: HashMap::new(),
+                                ping_tx,
                                 schema,
                             },
                             s,
@@ -154,6 +182,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
             Self::Active {
                 config,
                 mut stoppers,
+                ping_tx,
                 schema,
             } => {
                 let reactions = match msg {
@@ -227,7 +256,8 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                         stream::empty().boxed()
                     }
                     ClientMessage::Ping { .. } => {
-                        stream::iter(vec![Output::Message(ServerMessage::Pong)]).boxed()
+                        _ = ping_tx.unbounded_send(());
+                        stream::empty().boxed()
                     }
                     _ => stream::empty().boxed(),
                 };
@@ -235,6 +265,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                     Self::Active {
                         config,
                         stoppers,
+                        ping_tx,
                         schema,
                     },
                     reactions,
