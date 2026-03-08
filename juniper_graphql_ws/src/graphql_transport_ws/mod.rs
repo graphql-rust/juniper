@@ -39,7 +39,7 @@ pub use self::{
 
 struct ExecutionParams<S: Schema> {
     subscribe_payload: SubscribePayload<S::ScalarValue>,
-    config: Arc<ConnectionConfig<S::Context>>,
+    config: ConnectionConfig<S::Context>,
     schema: S,
 }
 
@@ -81,7 +81,7 @@ enum ConnectionState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
     PreInit { init: I, schema: S },
     /// Active is the state after a ConnectionInit message has been accepted.
     Active {
-        config: Arc<ConnectionConfig<S::Context>>,
+        config: ConnectionConfig<S::Context>,
         stoppers: HashMap<String, oneshot::Sender<()>>,
         schema: S,
     },
@@ -121,7 +121,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
 
                         (
                             Self::Active {
-                                config: Arc::new(config),
+                                config,
                                 stoppers: HashMap::new(),
                                 schema,
                             },
@@ -484,8 +484,7 @@ where
 
 impl<S, I, T> Sink<T> for Connection<S, I>
 where
-    T: TryInto<Input<S::ScalarValue>>,
-    T::Error: Error,
+    T: TryInto<Input<S::ScalarValue>, Error: Error>,
     S: Schema,
     I: Init<S::ScalarValue, S::Context> + Send,
 {
@@ -605,6 +604,7 @@ mod test {
 
     use super::{Connection, ConnectionConfig, NextPayload, Output, SubscribePayload};
 
+    #[derive(Clone, Copy)]
     struct Context(i32);
 
     impl juniper::Context for Context {}

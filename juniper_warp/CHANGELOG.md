@@ -6,6 +6,18 @@ All user visible changes to `juniper_warp` crate will be documented in this file
 
 
 
+## master
+
+### BC Breaks
+
+- `subscriptions::*` functions now require `Clone` bound on the context type for ability to have a "fresh" context value each time a new [GraphQL] operation is started in a [WebSocket] connection. ([#1369])
+  > **COMPATIBILITY**: Previously, it was `Arc`ed inside, sharing the same context value across all [GraphQL] operations of a [WebSocket] connection. To preserve the previous behavior, the `Schema::Context` type should be either wrapped into `Arc` or made `Arc`-based internally.
+
+[#1369]: /../../pull/1369
+
+
+
+
 ## [0.9.0] · 2025-09-08
 [0.9.0]: /../../tree/juniper_warp-v0.9.0/juniper_warp
 
@@ -67,5 +79,7 @@ See [old CHANGELOG](/../../blob/juniper_warp-v0.7.0/juniper_warp/CHANGELOG.md).
 [`warp` crate]: https://docs.rs/warp
 [graphql-transport-ws]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
 [graphql-ws]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
+[GraphQL]: http://graphql.org
 [MSRV]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field
 [Semantic Versioning 2.0.0]: https://semver.org
+[WebSocket]: https://en.wikipedia.org/wiki/WebSocket

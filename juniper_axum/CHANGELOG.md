@@ -6,6 +6,18 @@ All user visible changes to `juniper_axum` crate will be documented in this file
 
 
 
+## master
+
+### BC Breaks
+
+- `subscriptions::*` functions now require `Clone` bound on the context type for ability to have a "fresh" context value each time a new [GraphQL] operation is started in a [WebSocket] connection. ([#1369])
+  > **COMPATIBILITY**: Previously, it was `Arc`ed inside, sharing the same context value across all [GraphQL] operations of a [WebSocket] connection. To preserve the previous behavior, the `Schema::Context` type should be either wrapped into `Arc` or made `Arc`-based internally.
+
+[#1369]: /../../pull/1369
+
+
+
+
 ## [0.3.0] · 2025-09-08
 [0.3.0]: /../../tree/juniper_axum-v0.3.0/juniper_axum
 
@@ -91,3 +103,4 @@ All user visible changes to `juniper_axum` crate will be documented in this file
 [GraphQL Playground]: https://github.com/prisma/graphql-playground
 [MSRV]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field
 [Semantic Versioning 2.0.0]: https://semver.org
+[WebSocket]: https://en.wikipedia.org/wiki/WebSocket
