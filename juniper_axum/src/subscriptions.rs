@@ -88,7 +88,7 @@ use juniper_graphql_ws::{Init, Schema, graphql_transport_ws, graphql_ws};
 /// [`Handler`]: axum::handler::Handler
 /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
 /// [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
-pub fn ws<S: Schema<Context: Clone>>(
+pub fn ws<S: Schema>(
     init: impl Init<S::ScalarValue, S::Context> + Clone + Send,
 ) -> impl FnOnce(Extension<S>, WebSocketUpgrade) -> future::Ready<Response> + Clone + Send {
     move |Extension(schema), ws| {
@@ -176,7 +176,7 @@ pub fn ws<S: Schema<Context: Clone>>(
 /// [`extract`]: axum::extract
 /// [`Handler`]: axum::handler::Handler
 /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
-pub fn graphql_transport_ws<S: Schema<Context: Clone>>(
+pub fn graphql_transport_ws<S: Schema>(
     init: impl Init<S::ScalarValue, S::Context> + Clone + Send,
 ) -> impl FnOnce(Extension<S>, WebSocketUpgrade) -> future::Ready<Response> + Clone + Send {
     move |Extension(schema), ws| {
@@ -269,7 +269,7 @@ pub fn graphql_transport_ws<S: Schema<Context: Clone>>(
 /// [`Handler`]: axum::handler::Handler
 /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
 /// [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
-pub fn graphql_ws<S: Schema<Context: Clone>>(
+pub fn graphql_ws<S: Schema>(
     init: impl Init<S::ScalarValue, S::Context> + Clone + Send,
 ) -> impl FnOnce(Extension<S>, WebSocketUpgrade) -> future::Ready<Response> + Clone + Send {
     move |Extension(schema), ws| {
@@ -372,7 +372,6 @@ pub fn graphql_ws<S: Schema<Context: Clone>>(
 pub async fn serve_ws<S, I>(socket: WebSocket, schema: S, init: I)
 where
     S: Schema,
-    S::Context: Clone,
     I: Init<S::ScalarValue, S::Context> + Send,
 {
     if socket.protocol().map(AsRef::as_ref) == Some("graphql-ws".as_bytes()) {
@@ -474,7 +473,6 @@ where
 pub async fn serve_graphql_transport_ws<S, I>(socket: WebSocket, schema: S, init: I)
 where
     S: Schema,
-    S::Context: Clone,
     I: Init<S::ScalarValue, S::Context> + Send,
 {
     let (ws_tx, ws_rx) = socket.split();
@@ -607,7 +605,6 @@ where
 pub async fn serve_graphql_ws<S, I>(socket: WebSocket, schema: S, init: I)
 where
     S: Schema,
-    S::Context: Clone,
     I: Init<S::ScalarValue, S::Context> + Send,
 {
     let (ws_tx, ws_rx) = socket.split();

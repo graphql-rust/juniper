@@ -10,7 +10,8 @@ All user visible changes to `juniper_graphql_ws` crate will be documented in thi
 
 ### BC Breaks
 
-- Context now requires `Clone` bound. ([#1369])
+- `Schema::Context` now requires `Clone` bound for ability to have a "fresh" context value each time a new [GraphQL] operation is started in a [WebSocket] connection. ([#1369])
+  > **COMPATIBILITY**: Previously, it was `Arc`ed inside, sharing the same context value across all [GraphQL] operations of a [WebSocket] connection. To preserve the previous behavior, the `Schema::Context` type should be either wrapped into `Arc` or made `Arc`-based internally.
 
 ### Fixed
 
@@ -75,5 +76,7 @@ See [old CHANGELOG](/../../blob/juniper_graphql_ws-v0.3.0/juniper_graphql_ws/CHA
 [`graphql-ws` npm package]: https://npmjs.com/package/graphql-ws
 [`juniper` crate]: https://docs.rs/juniper
 [`juniper_subscriptions` crate]: https://docs.rs/juniper_subscriptions
+[GraphQL]: https://graphql.org
 [MSRV]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field
 [Semantic Versioning 2.0.0]: https://semver.org
+[WebSocket]: https://en.wikipedia.org/wiki/WebSocket

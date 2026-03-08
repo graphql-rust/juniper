@@ -69,12 +69,7 @@ enum ConnectionState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
     Terminated,
 }
 
-impl<S, I> ConnectionState<S, I>
-where
-    S: Schema,
-    S::Context: Clone,
-    I: Init<S::ScalarValue, S::Context>,
-{
+impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
     // Each message we receive results in a stream of zero or more reactions. For example, a
     // ConnectionTerminate message results in a one-item stream with the EndStream reaction.
     async fn handle_message(
@@ -435,10 +430,8 @@ where
 
 impl<S, I, T> Sink<T> for Connection<S, I>
 where
-    T: TryInto<ClientMessage<S::ScalarValue>>,
-    T::Error: Error,
+    T: TryInto<ClientMessage<S::ScalarValue>, Error: Error>,
     S: Schema,
-    S::Context: Clone,
     I: Init<S::ScalarValue, S::Context> + Send,
 {
     type Error = Infallible;
