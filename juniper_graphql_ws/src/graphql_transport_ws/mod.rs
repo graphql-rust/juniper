@@ -75,6 +75,11 @@ impl<S: ScalarValue + Send> Output<S> {
     fn into_stream(self) -> BoxStream<'static, Self> {
         stream::once(future::ready(self)).boxed()
     }
+
+    /// Converts the reaction into a one-item stream yielding the optional reaction.
+    fn into_optional_stream(self) -> BoxStream<'static, Option<Self>> {
+        stream::once(future::ready(Some(self))).boxed()
+    }
 }
 
 enum ConnectionState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
@@ -107,38 +112,56 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
 
                         let ping = Arc::new(Notify::new());
 
-                        let mut s =
-                            stream::iter(vec![Output::Message(ServerMessage::ConnectionAck)])
-                                .boxed();
+                        let mut s = stream::once(future::ready(
+                            Output::Message(ServerMessage::ConnectionAck)
+                                .into_optional_stream()
+                                .boxed(),
+                        ))
+                        .boxed();
 
-                        #[expect(closure_returning_async_block, reason = "not possible")]
                         if keep_alive_interval > Duration::from_secs(0) {
                             s = s
-                                .chain(Output::Message(ServerMessage::Pong).into_stream())
+                                .chain(stream::once(future::ready(
+                                    Output::Message(ServerMessage::Pong)
+                                        .into_optional_stream()
+                                        .boxed(),
+                                )))
                                 .boxed();
                             s = s
-                                .chain(stream::unfold((), move |_| async move {
-                                    tokio::time::sleep(keep_alive_interval).await;
-                                    Some((Output::Message(ServerMessage::Pong), ()))
-                                }))
+                                .chain(stream::once(future::ready(
+                                    stream::repeat(())
+                                        .then(move |()| {
+                                            tokio::time::sleep(keep_alive_interval).map(|()| {
+                                                Some(Output::Message(ServerMessage::Pong))
+                                            })
+                                        })
+                                        .boxed(),
+                                )))
                                 .boxed();
                         }
 
                         if keep_alive_timeout > Duration::from_secs(0) {
                             let ping_rx = ping.clone();
                             s = s
-                                .chain(stream::repeat(()).filter_map(move |()| {
-                                    let ping_rx = ping_rx.clone();
-                                    async move {
-                                        time::timeout(keep_alive_timeout, ping_rx.notified())
-                                            .await
-                                            .is_err()
-                                            .then(|| Output::Close {
-                                                code: 1000,
-                                                message: "Connection lost unexpectedly".into(),
-                                            })
-                                    }
-                                }))
+                                .chain(stream::once(future::ready(
+                                    stream::repeat(())
+                                        .then(move |()| {
+                                            let ping_rx = ping_rx.clone();
+                                            async move {
+                                                time::timeout(
+                                                    keep_alive_timeout,
+                                                    ping_rx.notified(),
+                                                )
+                                                .await
+                                                .is_err()
+                                                .then(|| Output::Close {
+                                                    code: 1000,
+                                                    message: "Connection lost unexpectedly".into(),
+                                                })
+                                            }
+                                        })
+                                        .boxed(),
+                                )))
                                 .boxed();
                         }
 
@@ -149,28 +172,31 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                                 ping,
                                 schema,
                             },
-                            s,
+                            s.flat_map_unordered(None, |s| s.flat_map(stream::iter))
+                                .boxed(),
                         )
                     }
                     Err(e) => (
                         Self::Terminated,
-                        stream::iter(vec![Output::Close {
+                        Output::Close {
                             code: 4403,
                             message: e.to_string(),
-                        }])
+                        }
+                        .into_stream()
                         .boxed(),
                     ),
                 },
                 ClientMessage::Ping { .. } => (
                     Self::PreInit { init, schema },
-                    stream::iter(vec![Output::Message(ServerMessage::Pong)]).boxed(),
+                    Output::Message(ServerMessage::Pong).into_stream().boxed(),
                 ),
                 ClientMessage::Subscribe { .. } => (
                     Self::PreInit { init, schema },
-                    stream::iter(vec![Output::Close {
+                    Output::Close {
                         code: 4401,
                         message: "Unauthorized".to_string(),
-                    }])
+                    }
+                    .into_stream()
                     .boxed(),
                 ),
                 _ => (Self::PreInit { init, schema }, stream::empty().boxed()),
@@ -250,8 +276,8 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                         stream::empty().boxed()
                     }
                     ClientMessage::Ping { .. } => {
-                        ping.notify_one();
-                        stream::iter(vec![Output::Message(ServerMessage::Pong)]).boxed()
+                        ping.notify_waiters();
+                        Output::Message(ServerMessage::Pong).into_stream().boxed()
                     }
                     _ => stream::empty().boxed(),
                 };

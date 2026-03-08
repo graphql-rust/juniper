@@ -68,7 +68,10 @@ impl<CtxT> ConnectionConfig<CtxT> {
     #[must_use]
     pub fn with_keep_alive_interval(mut self, interval: Duration) -> Self {
         self.keep_alive.interval = interval;
-        self.keep_alive.timeout = interval;
+        #[cfg(feature = "graphql-transport-ws")]
+        {
+            self.keep_alive.timeout = interval;
+        }
         self
     }
 
