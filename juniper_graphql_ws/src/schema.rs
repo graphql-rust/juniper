@@ -5,8 +5,15 @@ use juniper::{GraphQLSubscriptionType, GraphQLTypeAsync, RootNode, ScalarValue};
 /// Schema defines the requirements for schemas that can be used for operations. Typically this is
 /// just an `Arc<RootNode<...>>` and you should not have to implement it yourself.
 pub trait Schema: Unpin + Clone + Send + Sync + 'static {
-    /// The context type.
-    type Context: Unpin + Send + Sync;
+    /// The context type associates with this [`Schema`].
+    ///
+    /// # Cloning
+    ///
+    /// [`Clone`] is required, because the context type is [`Clone`]d each time a new operation is
+    /// started over a connection. To share the same context value among all the connection's
+    /// operations, the context type should be either wrapped into an [`Arc`] or implement
+    /// [`Arc`]-based [`Clone`]ing by itself.
+    type Context: Clone + Unpin + Send + Sync;
 
     /// The scalar value type.
     type ScalarValue: ScalarValue + Send + Sync;
@@ -88,7 +95,7 @@ where
     MutationT::TypeInfo: Send + Sync,
     SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
     SubscriptionT::TypeInfo: Send + Sync,
-    CtxT: Unpin + Send + Sync + 'static,
+    CtxT: Clone + Unpin + Send + Sync + 'static,
     S: ScalarValue + Send + Sync + 'static,
 {
     type Context = CtxT;
@@ -114,7 +121,7 @@ where
     MutationT::TypeInfo: Send + Sync,
     SubscriptionT: GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
     SubscriptionT::TypeInfo: Send + Sync,
-    CtxT: Unpin + Send + Sync,
+    CtxT: Clone + Unpin + Send + Sync,
     S: ScalarValue + Send + Sync + 'static,
 {
     type Context = CtxT;

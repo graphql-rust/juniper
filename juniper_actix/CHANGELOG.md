@@ -12,8 +12,11 @@ All user visible changes to `juniper_actix` crate will be documented in this fil
 
 - Switched to 0.4 version of [`actix-ws` crate]. ([#1366])
 - Bumped up [MSRV] to 1.88 due to [`actix-ws` crate] requirements. ([#1366])
+- `subscriptions::*` functions now require `Clone` bound on the context type for ability to have a "fresh" context value each time a new [GraphQL] operation is started in a [WebSocket] connection. ([#1369])
+  > **COMPATIBILITY**: Previously, it was `Arc`ed inside, sharing the same context value across all [GraphQL] operations of a [WebSocket] connection. To preserve the previous behavior, the `Schema::Context` type should be either wrapped into `Arc` or made `Arc`-based internally.
 
 [#1366]: /../../pull/1366
+[#1369]: /../../pull/1369
 
 
 
@@ -87,5 +90,7 @@ See [old CHANGELOG](/../../blob/juniper_actix-v0.4.0/juniper_actix/CHANGELOG.md)
 [`juniper_graphql_ws` crate]: https://docs.rs/juniper_graphql_ws
 [graphql-transport-ws]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
 [graphql-ws]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
+[GraphQL]: https://graphql.org
 [MSRV]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field
 [Semantic Versioning 2.0.0]: https://semver.org
+[WebSocket]: https://en.wikipedia.org/wiki/WebSocket

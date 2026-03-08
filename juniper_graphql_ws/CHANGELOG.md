@@ -8,6 +8,11 @@ All user visible changes to `juniper_graphql_ws` crate will be documented in thi
 
 ## master
 
+### BC Breaks
+
+- `Schema::Context` now requires `Clone` bound for ability to have a "fresh" context value each time a new [GraphQL] operation is started in a [WebSocket] connection. ([#1369])
+  > **COMPATIBILITY**: Previously, it was `Arc`ed inside, sharing the same context value across all [GraphQL] operations of a [WebSocket] connection. To preserve the previous behavior, the `Schema::Context` type should be either wrapped into `Arc` or made `Arc`-based internally.
+
 ### Added
 
 - Client keep-alives watchdog for [`graphql-transport-ws` GraphQL over WebSocket Protocol][proto-6.0.7]. ([#1367])
@@ -18,6 +23,7 @@ All user visible changes to `juniper_graphql_ws` crate will be documented in thi
 
 [#1367]: /../../pull/1367
 [#1368]: /../../pull/1368
+[#1369]: /../../pull/1369
 [proto-6.0.7]: https://github.com/enisdenjo/graphql-ws/blob/v6.0.7/PROTOCOL.md
 
 
@@ -76,5 +82,7 @@ See [old CHANGELOG](/../../blob/juniper_graphql_ws-v0.3.0/juniper_graphql_ws/CHA
 [`graphql-ws` npm package]: https://npmjs.com/package/graphql-ws
 [`juniper` crate]: https://docs.rs/juniper
 [`juniper_subscriptions` crate]: https://docs.rs/juniper_subscriptions
+[GraphQL]: https://graphql.org
 [MSRV]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field
 [Semantic Versioning 2.0.0]: https://semver.org
+[WebSocket]: https://en.wikipedia.org/wiki/WebSocket
