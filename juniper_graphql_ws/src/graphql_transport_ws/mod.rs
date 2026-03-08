@@ -1009,10 +1009,12 @@ mod test {
     }
 
     #[tokio::test]
-    async fn test_keep_alives() {
+    async fn test_keep_alive_interval() {
         let mut conn = Connection::new(
             new_test_schema(),
-            ConnectionConfig::new(Context(1)).with_keep_alive_interval(Duration::from_millis(20)),
+            ConnectionConfig::new(Context(1))
+                .with_keep_alive_interval(Duration::from_millis(20))
+                .with_keep_alive_timeout(Duration::from_secs(0)),
         );
 
         conn.send(ClientMessage::ConnectionInit {
@@ -1032,6 +1034,35 @@ mod test {
                 conn.next().await.unwrap()
             );
         }
+    }
+
+    #[tokio::test]
+    async fn test_keep_alive_timeout() {
+        let mut conn = Connection::new(
+            new_test_schema(),
+            ConnectionConfig::new(Context(1))
+                .with_keep_alive_interval(Duration::from_millis(0))
+                .with_keep_alive_timeout(Duration::from_millis(20)),
+        );
+
+        conn.send(ClientMessage::ConnectionInit {
+            payload: graphql_vars! {},
+        })
+        .await
+        .unwrap();
+
+        assert_eq!(
+            Output::Message(ServerMessage::ConnectionAck),
+            conn.next().await.unwrap()
+        );
+
+        assert_eq!(
+            Output::Close {
+                code: 10000,
+                message: "Connection lost unexpectedly".into(),
+            },
+            conn.next().await.unwrap()
+        );
     }
 
     #[tokio::test]
