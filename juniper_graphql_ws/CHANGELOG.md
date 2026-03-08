@@ -10,7 +10,7 @@ All user visible changes to `juniper_graphql_ws` crate will be documented in thi
 
 ### BC Breaks
 
-- Context now required `Clone` bound. ([#1369])
+- Context now requires `Clone` bound. ([#1369])
 
 ### Fixed
 

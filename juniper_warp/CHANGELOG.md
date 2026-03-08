@@ -6,12 +6,11 @@ All user visible changes to `juniper_warp` crate will be documented in this file
 
 
 
-## [0.10.0] · 2026-03-??
-[0.10.0]: /../../tree/juniper_warp-v0.10.0/juniper_warp
+## master
 
 ### BC Breaks
 
-- Context now required `Clone` bound. ([#1369])
+- Context now requires `Clone` bound. ([#1369])
 
 [#1369]: /../../pull/1369
 

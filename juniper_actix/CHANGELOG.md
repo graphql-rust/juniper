@@ -12,7 +12,7 @@ All user visible changes to `juniper_actix` crate will be documented in this fil
 
 - Switched to 0.4 version of [`actix-ws` crate]. ([#1366])
 - Bumped up [MSRV] to 1.88 due to [`actix-ws` crate] requirements. ([#1366])
-- Context now required `Clone` bound. ([#1369])
+- Context now requires `Clone` bound. ([#1369])
 
 [#1366]: /../../pull/1366
 [#1369]: /../../pull/1369

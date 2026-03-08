@@ -6,12 +6,11 @@ All user visible changes to `juniper_axum` crate will be documented in this file
 
 
 
-## [0.4.0] · 2026-03-??
-[0.4.0]: /../../tree/juniper_axum-v0.4.0/juniper_axum
+## master
 
 ### BC Breaks
 
-- Context now required `Clone` bound. ([#1369])
+- Context now requires `Clone` bound. ([#1369])
 
 [#1369]: /../../pull/1369
 
