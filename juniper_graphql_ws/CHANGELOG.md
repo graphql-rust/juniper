@@ -10,7 +10,7 @@ All user visible changes to `juniper_graphql_ws` crate will be documented in thi
 
 ### Added
 
-- Client keep-alives watchdog for [`graphql-transport-ws` GraphQL over WebSocket Protocol][proto-6.0.7] ([#1367]).
+- Client keep-alives watchdog for [`graphql-transport-ws` GraphQL over WebSocket Protocol][proto-6.0.7]. ([#1367])
 
 ### Fixed
 
