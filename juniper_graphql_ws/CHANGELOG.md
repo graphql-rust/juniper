@@ -8,13 +8,13 @@ All user visible changes to `juniper_graphql_ws` crate will be documented in thi
 
 ## master
 
+### Added
+
+- Client keep-alives watchdog for [`graphql-transport-ws` GraphQL over WebSocket Protocol][proto-6.0.7]. ([#1367])
+
 ### Fixed
 
 - Inability to re-subscribe with the same operation `id` after subscription was completed by server. ([#1368]) 
-
-### Added
-
-- Client keep-alives watchdog for [`graphql-transport-ws` GraphQL over WebSocket Protocol][proto-6.0.7] (#1367).
 
 [#1367]: /../../pull/1367
 [#1368]: /../../pull/1368
