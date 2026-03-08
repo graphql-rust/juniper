@@ -20,3 +20,75 @@ note: cycle used when computing type of `<impl at $DIR/fail/interface/struct/der
    |          ^^^^^^^^^^^^^^^^
    = note: see https://rustc-dev-guide.rust-lang.org/overview.html#queries and https://rustc-dev-guide.rust-lang.org/query.html for more information
    = note: this error originates in the derive macro `GraphQLInterface` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0658]: use of unstable library feature `str_as_str`
+ --> fail/interface/struct/derive_cyclic_impl.rs:6:5
+  |
+6 |     id: String,
+  |     ^^
+  |
+  = note: see issue #130366 <https://github.com/rust-lang/rust/issues/130366> for more information
+  = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0658]: use of unstable library feature `str_as_str`
+ --> fail/interface/struct/derive_cyclic_impl.rs:6:5
+  |
+6 |     id: String,
+  |     ^^
+  |
+  = note: see issue #130366 <https://github.com/rust-lang/rust/issues/130366> for more information
+  = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0658]: use of unstable library feature `str_as_str`
+ --> fail/interface/struct/derive_cyclic_impl.rs:6:5
+  |
+6 |     id: String,
+  |     ^^
+  |
+  = note: see issue #130366 <https://github.com/rust-lang/rust/issues/130366> for more information
+  = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0658]: use of unstable library feature `str_as_str`
+ --> fail/interface/struct/derive_cyclic_impl.rs:6:5
+  |
+6 |     id: String,
+  |     ^^
+  |
+  = note: see issue #130366 <https://github.com/rust-lang/rust/issues/130366> for more information
+  = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0658]: use of unstable library feature `str_as_str`
+  --> fail/interface/struct/derive_cyclic_impl.rs:12:5
+   |
+12 |     id: String,
+   |     ^^
+   |
+   = note: see issue #130366 <https://github.com/rust-lang/rust/issues/130366> for more information
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0658]: use of unstable library feature `str_as_str`
+  --> fail/interface/struct/derive_cyclic_impl.rs:12:5
+   |
+12 |     id: String,
+   |     ^^
+   |
+   = note: see issue #130366 <https://github.com/rust-lang/rust/issues/130366> for more information
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0658]: use of unstable library feature `str_as_str`
+  --> fail/interface/struct/derive_cyclic_impl.rs:12:5
+   |
+12 |     id: String,
+   |     ^^
+   |
+   = note: see issue #130366 <https://github.com/rust-lang/rust/issues/130366> for more information
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0658]: use of unstable library feature `str_as_str`
+  --> fail/interface/struct/derive_cyclic_impl.rs:12:5
+   |
+12 |     id: String,
+   |     ^^
+   |
+   = note: see issue #130366 <https://github.com/rust-lang/rust/issues/130366> for more information
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)

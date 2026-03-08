@@ -5,13 +5,13 @@ error: Invalid URL: relative URL without a base
   |                        ^^^^^^^^^^^^
 
 error: cannot find attribute `graphql` in this scope
- --> fail/scalar/type_alias/attr_invalid_url.rs:6:3
-  |
-6 | #[graphql(
-  |   ^^^^^^^
-  |
+  --> fail/scalar/type_alias/attr_invalid_url.rs:6:3
+   |
+ 6 | #[graphql(
+   |   ^^^^^^^
+   |
 help: `graphql` is an attribute that can be used by the derive macros `GraphQLEnum`, `GraphQLInputObject`, `GraphQLInterface`, `GraphQLObject`, `GraphQLScalar` and `GraphQLUnion`, you might be missing a `derive` attribute
-  |
-11+ #[derive(GraphQLEnum, GraphQLInputObject, GraphQLInterface, GraphQLObject, GraphQLScalar, GraphQLUnion)]
-12| type MyScalar = ScalarSpecifiedByUrl;
-  |
+   |
+11 + #[derive(GraphQLEnum, GraphQLInputObject, GraphQLInterface, GraphQLObject, GraphQLScalar, GraphQLUnion)]
+12 | type MyScalar = ScalarSpecifiedByUrl;
+   |

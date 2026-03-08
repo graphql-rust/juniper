@@ -6,13 +6,17 @@ All user visible changes to `juniper_graphql_ws` crate will be documented in thi
 
 
 
-## [0.6.0] · 2026-03-??
-[0.6.0]: /../../tree/juniper_graphql_ws-v0.6.0/juniper_graphql_ws
+## master
 
 ### BC Breaks
 
 - Context now required `Clone` bound. ([#1369])
 
+### Fixed
+
+- Inability to re-subscribe with the same operation `id` after subscription was completed by server. ([#1368]) 
+
+[#1368]: /../../pull/1368
 [#1369]: /../../pull/1369
 
 
