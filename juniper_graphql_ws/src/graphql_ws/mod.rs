@@ -545,6 +545,7 @@ mod test {
 
     use super::{Connection, ConnectionConfig, ConnectionErrorPayload, DataPayload, StartPayload};
 
+    #[derive(Clone, Copy)]
     struct Context(i32);
 
     impl juniper::Context for Context {}

@@ -604,6 +604,7 @@ mod test {
 
     use super::{Connection, ConnectionConfig, NextPayload, Output, SubscribePayload};
 
+    #[derive(Clone, Copy)]
     struct Context(i32);
 
     impl juniper::Context for Context {}
