@@ -20,3 +20,75 @@ note: cycle used when computing type of `<impl at $DIR/fail/interface/trait/cycl
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   = note: see https://rustc-dev-guide.rust-lang.org/overview.html#queries and https://rustc-dev-guide.rust-lang.org/query.html for more information
   = note: this error originates in the attribute macro `graphql_interface` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0658]: use of unstable library feature `str_as_str`
+ --> fail/interface/trait/cyclic_impl.rs:5:8
+  |
+5 |     fn id(&self) -> &str;
+  |        ^^
+  |
+  = note: see issue #130366 <https://github.com/rust-lang/rust/issues/130366> for more information
+  = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0658]: use of unstable library feature `str_as_str`
+ --> fail/interface/trait/cyclic_impl.rs:5:8
+  |
+5 |     fn id(&self) -> &str;
+  |        ^^
+  |
+  = note: see issue #130366 <https://github.com/rust-lang/rust/issues/130366> for more information
+  = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0658]: use of unstable library feature `str_as_str`
+ --> fail/interface/trait/cyclic_impl.rs:5:8
+  |
+5 |     fn id(&self) -> &str;
+  |        ^^
+  |
+  = note: see issue #130366 <https://github.com/rust-lang/rust/issues/130366> for more information
+  = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0658]: use of unstable library feature `str_as_str`
+ --> fail/interface/trait/cyclic_impl.rs:5:8
+  |
+5 |     fn id(&self) -> &str;
+  |        ^^
+  |
+  = note: see issue #130366 <https://github.com/rust-lang/rust/issues/130366> for more information
+  = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0658]: use of unstable library feature `str_as_str`
+  --> fail/interface/trait/cyclic_impl.rs:10:8
+   |
+10 |     fn id() -> String;
+   |        ^^
+   |
+   = note: see issue #130366 <https://github.com/rust-lang/rust/issues/130366> for more information
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0658]: use of unstable library feature `str_as_str`
+  --> fail/interface/trait/cyclic_impl.rs:10:8
+   |
+10 |     fn id() -> String;
+   |        ^^
+   |
+   = note: see issue #130366 <https://github.com/rust-lang/rust/issues/130366> for more information
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0658]: use of unstable library feature `str_as_str`
+  --> fail/interface/trait/cyclic_impl.rs:10:8
+   |
+10 |     fn id() -> String;
+   |        ^^
+   |
+   = note: see issue #130366 <https://github.com/rust-lang/rust/issues/130366> for more information
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0658]: use of unstable library feature `str_as_str`
+  --> fail/interface/trait/cyclic_impl.rs:10:8
+   |
+10 |     fn id() -> String;
+   |        ^^
+   |
+   = note: see issue #130366 <https://github.com/rust-lang/rust/issues/130366> for more information
+   = note: this error originates in the macro `$crate::format_type` which comes from the expansion of the macro `::juniper::assert_field` (in Nightly builds, run with -Z macro-backtrace for more info)
