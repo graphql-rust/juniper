@@ -102,14 +102,14 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
             Self::PreInit { init, schema } => match msg {
                 ClientMessage::ConnectionInit { payload } => match init.init(payload).await {
                     Ok(config) => {
-                        let keep_alive_interval = config.keep_alive_interval;
-                        let detect_connection_lost = config.detect_connection_lost;
+                        let keep_alive_interval = config.keep_alive.interval;
+                        let keep_alive_timeout = config.keep_alive.timeout;
+
+                        let ping = Arc::new(Notify::new());
 
                         let mut s =
                             stream::iter(vec![Output::Message(ServerMessage::ConnectionAck)])
                                 .boxed();
-
-                        let ping = Arc::new(Notify::new());
 
                         #[expect(closure_returning_async_block, reason = "not possible")]
                         if keep_alive_interval > Duration::from_secs(0) {
@@ -117,31 +117,28 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                                 .chain(Output::Message(ServerMessage::Pong).into_stream())
                                 .boxed();
                             s = s
-                                .chain(stream::unfold(
-                                    Some(ping.clone()),
-                                    move |ping: Option<Arc<Notify>>| async move {
-                                        let ping = ping?;
+                                .chain(stream::unfold((), move |_| async move {
+                                    tokio::time::sleep(keep_alive_interval).await;
+                                    Some((Output::Message(ServerMessage::Pong), ()))
+                                }))
+                                .boxed();
+                        }
 
-                                        if time::timeout(keep_alive_interval, ping.notified())
+                        if keep_alive_timeout > Duration::from_secs(0) {
+                            let ping_rx = ping.clone();
+                            s = s
+                                .chain(stream::repeat(()).filter_map(move |()| {
+                                    let ping_rx = ping_rx.clone();
+                                    async move {
+                                        time::timeout(keep_alive_timeout, ping_rx.notified())
                                             .await
                                             .is_err()
-                                            && detect_connection_lost
-                                        {
-                                            // Channel closed unexpectedly, or we didn't receive
-                                            // a ping in time. Either way consider the `Connection`
-                                            // lost.
-                                            return Some((
-                                                Output::Close {
-                                                    code: 1000,
-                                                    message: "Connection lost unexpectedly".into(),
-                                                },
-                                                None,
-                                            ));
-                                        }
-
-                                        Some((Output::Message(ServerMessage::Pong), Some(ping)))
-                                    },
-                                ))
+                                            .then(|| Output::Close {
+                                                code: 1000,
+                                                message: "Connection lost unexpectedly".into(),
+                                            })
+                                    }
+                                }))
                                 .boxed();
                         }
 
@@ -254,7 +251,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                     }
                     ClientMessage::Ping { .. } => {
                         ping.notify_one();
-                        stream::empty().boxed()
+                        stream::iter(vec![Output::Message(ServerMessage::Pong)]).boxed()
                     }
                     _ => stream::empty().boxed(),
                 };
