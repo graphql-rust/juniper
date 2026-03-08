@@ -2,7 +2,7 @@
 name = "juniper_actix"
 version = "0.7.0"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.88"
 description = "`juniper` GraphQL integration with `actix-web`."
 license = "BSD-2-Clause"
 authors = [
@@ -27,11 +27,12 @@ subscriptions = [
     "dep:derive_more", 
     "dep:futures", 
     "dep:juniper_graphql_ws",
+    "actix-web/ws",
 ]
 
 [dependencies]
-actix-web = "4.4"
-actix-ws = { version = "0.3", optional = true }
+actix-web = { version = "4.13", default-features = false }
+actix-ws = { version = "0.4", optional = true }
 derive_more = { version = "2.0", features = ["display", "error"], optional = true }
 futures = { version = "0.3.22", optional = true }
 juniper = { version = "0.17", path = "../juniper", default-features = false }
@@ -44,6 +45,7 @@ actix-cors = "0.7"
 actix-http = "3.2"
 actix-rt = "2.0"
 actix-test = "0.1"
+actix-web = { version = "4.13", features = ["macros"], default-features = false }
 anyhow = "1.0.47"
 async-stream = "0.3"
 env_logger = "0.11"

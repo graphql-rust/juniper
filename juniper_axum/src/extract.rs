@@ -7,7 +7,7 @@ use axum::{
     body::Body,
     extract::{FromRequest, FromRequestParts, Query},
     http::{HeaderValue, Method, Request, StatusCode, header},
-    response::{IntoResponse as _, Response},
+    response::{IntoResponse, Response},
 };
 use juniper::{
     DefaultScalarValue, ScalarValue,
@@ -103,7 +103,6 @@ where
                         StatusCode::BAD_REQUEST,
                         format!("Invalid request query string: {e}"),
                     )
-                        .into_response()
                 })
                 .and_then(|query| {
                     query
@@ -115,9 +114,9 @@ where
                                 StatusCode::BAD_REQUEST,
                                 format!("Invalid request query `variables`: {e}"),
                             )
-                                .into_response()
                         })
-                }),
+                })
+                .map_err(IntoResponse::into_response),
             (&Method::POST, Some(x)) if x.starts_with("application/json") => {
                 Json::<GraphQLBatchRequest<S>>::from_request(req, state)
                     .await
