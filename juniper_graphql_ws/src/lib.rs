@@ -86,7 +86,7 @@ impl<CtxT> ConnectionConfig<CtxT> {
     /// Applicable only for the [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new],
     /// and does nothing for the [legacy `graphql-ws` GraphQL over WebSocket Protocol][old].
     ///
-    /// By default, timeout equals the [`KeepAliveConfig::interval`].
+    /// By default, timeout equals to the [`KeepAliveConfig::interval`].
     ///
     /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
     /// [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
@@ -127,7 +127,7 @@ pub struct KeepAliveConfig {
     /// Applicable only for the [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new],
     /// and does nothing for the [legacy `graphql-ws` GraphQL over WebSocket Protocol][old].
     ///
-    /// By default, timeout equals the [`interval`].
+    /// By default, timeout equals to the [`interval`].
     ///
     /// [`interval`]: Self::interval
     /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md

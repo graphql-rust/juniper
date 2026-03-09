@@ -12,10 +12,9 @@ All user visible changes to `juniper_graphql_ws` crate will be documented in thi
 
 - `Schema::Context` now requires `Clone` bound for ability to have a "fresh" context value each time a new [GraphQL] operation is started in a [WebSocket] connection. ([#1369])
   > **COMPATIBILITY**: Previously, it was `Arc`ed inside, sharing the same context value across all [GraphQL] operations of a [WebSocket] connection. To preserve the previous behavior, the `Schema::Context` type should be either wrapped into `Arc` or made `Arc`-based internally.
-
-### Added
-
-- Client keep-alives watchdog for [`graphql-transport-ws` GraphQL over WebSocket Protocol][proto-6.0.7]. ([#1367])
+- Replaced `ConnectionConfig::keep_alive_interval` option with `ConnectionConfig::keep_alive` one as `KeepAliveConfig`. ([#1367])
+- Made [WebSocket] connection closed once `ConnectionConfig::keep_alive::timeout` is reached in [`graphql-transport-ws` GraphQL over WebSocket Protocol][proto-6.0.7]. ([#1367])
+  > **COMPATIBILITY**: Previously, a [WebSocket] connection was kept alive, even when clients do not respond to server's `Pong` messages at all. To preserve the previous behavior, the `ConnectionConfig::keep_alive::timeout` should be set to `Duration:::ZERO`.
 
 ### Fixed
 

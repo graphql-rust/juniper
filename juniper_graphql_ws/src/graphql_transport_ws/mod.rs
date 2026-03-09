@@ -14,7 +14,7 @@ mod client_message;
 mod server_message;
 
 use std::{
-    collections::HashMap, convert::Infallible, error::Error, iter, marker::PhantomPinned, pin::Pin,
+    collections::HashMap, convert::Infallible, error::Error, marker::PhantomPinned, pin::Pin,
     sync::Arc, time::Duration,
 };
 
@@ -125,28 +125,24 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
 
                         if keep_alive_timeout > Duration::from_secs(0) {
                             let ping_rx = ping.clone();
-                            s = stream::select_all(
-                                iter::once(s).chain(iter::once(
-                                    stream::repeat(())
-                                        .then(move |()| {
-                                            let ping_rx = ping_rx.clone();
-                                            async move {
-                                                time::timeout(
-                                                    keep_alive_timeout,
-                                                    ping_rx.notified(),
-                                                )
+                            s = stream::select_all([
+                                s,
+                                stream::repeat(())
+                                    .then(move |()| {
+                                        let ping_rx = ping_rx.clone();
+                                        async move {
+                                            time::timeout(keep_alive_timeout, ping_rx.notified())
                                                 .await
                                                 .is_err()
                                                 .then(|| Output::Close {
                                                     code: 1000,
                                                     message: "Connection lost unexpectedly".into(),
                                                 })
-                                            }
-                                        })
-                                        .flat_map(stream::iter)
-                                        .boxed(),
-                                )),
-                            )
+                                        }
+                                    })
+                                    .filter_map(future::ready)
+                                    .boxed(),
+                            ])
                             .boxed();
                         }
 
@@ -1045,7 +1041,7 @@ mod test {
                 code: 1000,
                 message: "Connection lost unexpectedly".into(),
             },
-            conn.next().await.unwrap()
+            conn.next().await.unwrap(),
         );
     }
 
@@ -1077,7 +1073,7 @@ mod test {
 
         assert_eq!(
             Output::Message(ServerMessage::ConnectionAck),
-            conn.next().await.unwrap()
+            conn.next().await.unwrap(),
         );
 
         assert_eq!(
