@@ -1058,7 +1058,7 @@ mod test {
 
         assert_eq!(
             Output::Close {
-                code: 10000,
+                code: 1000,
                 message: "Connection lost unexpectedly".into(),
             },
             conn.next().await.unwrap()
