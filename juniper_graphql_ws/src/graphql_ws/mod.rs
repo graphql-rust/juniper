@@ -84,7 +84,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
             Self::PreInit { init, schema } => match msg {
                 ClientMessage::ConnectionInit { payload } => match init.init(payload).await {
                     Ok(config) => {
-                        let keep_alive_interval = config.keep_alive_interval;
+                        let keep_alive_interval = config.keep_alive.interval;
 
                         let mut s = stream::iter(vec![Reaction::ServerMessage(
                             ServerMessage::ConnectionAck,

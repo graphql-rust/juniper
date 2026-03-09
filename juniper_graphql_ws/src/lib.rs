@@ -34,12 +34,8 @@ pub struct ConnectionConfig<CtxT> {
     /// By default, there is no limit to in-flight operations.
     pub max_in_flight_operations: usize,
 
-    /// Interval at which to send keep-alives.
-    ///
-    /// Specifying a [`Duration::ZERO`] will disable keep-alives.
-    ///
-    /// By default, keep-alives are sent every 15 seconds.
-    pub keep_alive_interval: Duration,
+    /// Keep-alive configuration.
+    pub keep_alive: KeepAliveConfig,
 }
 
 impl<CtxT> ConnectionConfig<CtxT> {
@@ -48,7 +44,7 @@ impl<CtxT> ConnectionConfig<CtxT> {
         Self {
             context,
             max_in_flight_operations: 0,
-            keep_alive_interval: Duration::from_secs(15),
+            keep_alive: KeepAliveConfig::default(),
         }
     }
 
@@ -66,10 +62,37 @@ impl<CtxT> ConnectionConfig<CtxT> {
     ///
     /// Specifying a [`Duration::ZERO`] will disable keep-alives.
     ///
+    /// Also, sets a keep-alive timeout to the provided [`Duration`].
+    ///
     /// By default, keep-alives are sent every 15 seconds.
     #[must_use]
     pub fn with_keep_alive_interval(mut self, interval: Duration) -> Self {
-        self.keep_alive_interval = interval;
+        self.keep_alive.interval = interval;
+        #[cfg(feature = "graphql-transport-ws")]
+        {
+            self.keep_alive.timeout = interval;
+        }
+        self
+    }
+
+    #[cfg(feature = "graphql-transport-ws")]
+    /// Specifies the timeout for waiting a keep-alive response from clients after sending them a
+    /// keep-alive message.
+    ///
+    /// Once the timeout is hit, the connection is closed by the server.
+    ///
+    /// Specifying a [`Duration::ZERO`] disables timeout checking.
+    ///
+    /// Applicable only for the [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new],
+    /// and does nothing for the [legacy `graphql-ws` GraphQL over WebSocket Protocol][old].
+    ///
+    /// By default, timeout equals to the [`KeepAliveConfig::interval`].
+    ///
+    /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
+    /// [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
+    #[must_use]
+    pub fn with_keep_alive_timeout(mut self, timeout: Duration) -> Self {
+        self.keep_alive.timeout = timeout;
         self
     }
 }
@@ -80,6 +103,46 @@ impl<S: ScalarValue, CtxT: Unpin + Send + 'static> Init<S, CtxT> for ConnectionC
 
     fn init(self, _params: Variables<S>) -> Self::Future {
         future::ready(Ok(self))
+    }
+}
+
+/// Config for keeping a connection alive.
+#[derive(Clone, Copy, Debug)]
+pub struct KeepAliveConfig {
+    /// Interval at which to send keep-alives.
+    ///
+    /// Specifying a [`Duration::ZERO`] disables keep-alives.
+    ///
+    /// By default, keep-alives are sent every 15 seconds.
+    pub interval: Duration,
+
+    #[cfg(feature = "graphql-transport-ws")]
+    /// Timeout for waiting a keep-alive response from clients after sending them a keep-alive
+    /// message.
+    ///
+    /// Once the timeout is hit, the connection is closed by the server.
+    ///
+    /// Specifying a [`Duration::ZERO`] disables timeout checking.
+    ///
+    /// Applicable only for the [new `graphql-transport-ws` GraphQL over WebSocket Protocol][new],
+    /// and does nothing for the [legacy `graphql-ws` GraphQL over WebSocket Protocol][old].
+    ///
+    /// By default, timeout equals to the [`interval`].
+    ///
+    /// [`interval`]: Self::interval
+    /// [new]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
+    /// [old]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
+    pub timeout: Duration,
+}
+
+impl Default for KeepAliveConfig {
+    fn default() -> Self {
+        let interval = Duration::from_secs(15);
+        Self {
+            interval,
+            #[cfg(feature = "graphql-transport-ws")]
+            timeout: interval,
+        }
     }
 }
 

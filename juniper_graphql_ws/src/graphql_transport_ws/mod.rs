@@ -29,6 +29,7 @@ use juniper::{
         task::{Context, Poll, Waker},
     },
 };
+use tokio::{sync::Notify, time};
 
 use super::{ConnectionConfig, Init, Schema};
 
@@ -83,6 +84,7 @@ enum ConnectionState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
     Active {
         config: ConnectionConfig<S::Context>,
         stoppers: HashMap<String, oneshot::Sender<()>>,
+        ping: Arc<Notify>,
         schema: S,
     },
     /// Terminated is the state after a ConnectionInit message has been rejected.
@@ -100,29 +102,55 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
             Self::PreInit { init, schema } => match msg {
                 ClientMessage::ConnectionInit { payload } => match init.init(payload).await {
                     Ok(config) => {
-                        let keep_alive_interval = config.keep_alive_interval;
+                        let keep_alive_interval = config.keep_alive.interval;
+                        let keep_alive_timeout = config.keep_alive.timeout;
 
-                        let mut s =
-                            stream::iter(vec![Output::Message(ServerMessage::ConnectionAck)])
-                                .boxed();
+                        let ping = Arc::new(Notify::new());
 
-                        #[expect(closure_returning_async_block, reason = "not possible")]
+                        let mut s = Output::Message(ServerMessage::ConnectionAck)
+                            .into_stream()
+                            .boxed();
+
                         if keep_alive_interval > Duration::from_secs(0) {
                             s = s
                                 .chain(Output::Message(ServerMessage::Pong).into_stream())
                                 .boxed();
                             s = s
-                                .chain(stream::unfold((), move |_| async move {
-                                    tokio::time::sleep(keep_alive_interval).await;
-                                    Some((Output::Message(ServerMessage::Pong), ()))
+                                .chain(stream::repeat(()).then(move |()| {
+                                    tokio::time::sleep(keep_alive_interval)
+                                        .map(|()| Output::Message(ServerMessage::Pong))
                                 }))
                                 .boxed();
+                        }
+
+                        if keep_alive_timeout > Duration::from_secs(0) {
+                            let ping_rx = ping.clone();
+                            s = stream::select_all([
+                                s,
+                                stream::repeat(())
+                                    .then(move |()| {
+                                        let ping_rx = ping_rx.clone();
+                                        async move {
+                                            time::timeout(keep_alive_timeout, ping_rx.notified())
+                                                .await
+                                                .is_err()
+                                                .then(|| Output::Close {
+                                                    code: 1000,
+                                                    message: "Connection lost unexpectedly".into(),
+                                                })
+                                        }
+                                    })
+                                    .filter_map(future::ready)
+                                    .boxed(),
+                            ])
+                            .boxed();
                         }
 
                         (
                             Self::Active {
                                 config,
                                 stoppers: HashMap::new(),
+                                ping,
                                 schema,
                             },
                             s,
@@ -130,23 +158,25 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                     }
                     Err(e) => (
                         Self::Terminated,
-                        stream::iter(vec![Output::Close {
+                        Output::Close {
                             code: 4403,
                             message: e.to_string(),
-                        }])
+                        }
+                        .into_stream()
                         .boxed(),
                     ),
                 },
                 ClientMessage::Ping { .. } => (
                     Self::PreInit { init, schema },
-                    stream::iter(vec![Output::Message(ServerMessage::Pong)]).boxed(),
+                    Output::Message(ServerMessage::Pong).into_stream().boxed(),
                 ),
                 ClientMessage::Subscribe { .. } => (
                     Self::PreInit { init, schema },
-                    stream::iter(vec![Output::Close {
+                    Output::Close {
                         code: 4401,
                         message: "Unauthorized".to_string(),
-                    }])
+                    }
+                    .into_stream()
                     .boxed(),
                 ),
                 _ => (Self::PreInit { init, schema }, stream::empty().boxed()),
@@ -154,6 +184,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
             Self::Active {
                 config,
                 mut stoppers,
+                ping,
                 schema,
             } => {
                 let reactions = match msg {
@@ -225,7 +256,8 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                         stream::empty().boxed()
                     }
                     ClientMessage::Ping { .. } => {
-                        stream::iter(vec![Output::Message(ServerMessage::Pong)]).boxed()
+                        ping.notify_waiters();
+                        Output::Message(ServerMessage::Pong).into_stream().boxed()
                     }
                     _ => stream::empty().boxed(),
                 };
@@ -233,6 +265,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                     Self::Active {
                         config,
                         stoppers,
+                        ping,
                         schema,
                     },
                     reactions,
@@ -956,10 +989,12 @@ mod test {
     }
 
     #[tokio::test]
-    async fn test_keep_alives() {
+    async fn test_keep_alive_interval() {
         let mut conn = Connection::new(
             new_test_schema(),
-            ConnectionConfig::new(Context(1)).with_keep_alive_interval(Duration::from_millis(20)),
+            ConnectionConfig::new(Context(1))
+                .with_keep_alive_interval(Duration::from_millis(20))
+                .with_keep_alive_timeout(Duration::from_secs(0)),
         );
 
         conn.send(ClientMessage::ConnectionInit {
@@ -979,6 +1014,35 @@ mod test {
                 conn.next().await.unwrap()
             );
         }
+    }
+
+    #[tokio::test]
+    async fn test_keep_alive_timeout() {
+        let mut conn = Connection::new(
+            new_test_schema(),
+            ConnectionConfig::new(Context(1))
+                .with_keep_alive_interval(Duration::from_millis(0))
+                .with_keep_alive_timeout(Duration::from_millis(20)),
+        );
+
+        conn.send(ClientMessage::ConnectionInit {
+            payload: graphql_vars! {},
+        })
+        .await
+        .unwrap();
+
+        assert_eq!(
+            Output::Message(ServerMessage::ConnectionAck),
+            conn.next().await.unwrap()
+        );
+
+        assert_eq!(
+            Output::Close {
+                code: 1000,
+                message: "Connection lost unexpectedly".into(),
+            },
+            conn.next().await.unwrap(),
+        );
     }
 
     #[tokio::test]
@@ -1009,7 +1073,7 @@ mod test {
 
         assert_eq!(
             Output::Message(ServerMessage::ConnectionAck),
-            conn.next().await.unwrap()
+            conn.next().await.unwrap(),
         );
 
         assert_eq!(
