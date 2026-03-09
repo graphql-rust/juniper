@@ -14,7 +14,7 @@ mod client_message;
 mod server_message;
 
 use std::{
-    collections::HashMap, convert::Infallible, error::Error, marker::PhantomPinned, pin::Pin,
+    collections::HashMap, convert::Infallible, error::Error, iter, marker::PhantomPinned, pin::Pin,
     sync::Arc, time::Duration,
 };
 
@@ -75,11 +75,6 @@ impl<S: ScalarValue + Send> Output<S> {
     fn into_stream(self) -> BoxStream<'static, Self> {
         stream::once(future::ready(self)).boxed()
     }
-
-    /// Converts the reaction into a one-item stream yielding the optional reaction.
-    fn into_optional_stream(self) -> BoxStream<'static, Option<Self>> {
-        stream::once(future::ready(Some(self))).boxed()
-    }
 }
 
 enum ConnectionState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
@@ -112,38 +107,26 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
 
                         let ping = Arc::new(Notify::new());
 
-                        let mut s = stream::once(future::ready(
-                            Output::Message(ServerMessage::ConnectionAck)
-                                .into_optional_stream()
-                                .boxed(),
-                        ))
-                        .boxed();
+                        let mut s = Output::Message(ServerMessage::ConnectionAck)
+                            .into_stream()
+                            .boxed();
 
                         if keep_alive_interval > Duration::from_secs(0) {
                             s = s
-                                .chain(stream::once(future::ready(
-                                    Output::Message(ServerMessage::Pong)
-                                        .into_optional_stream()
-                                        .boxed(),
-                                )))
+                                .chain(Output::Message(ServerMessage::Pong).into_stream())
                                 .boxed();
                             s = s
-                                .chain(stream::once(future::ready(
-                                    stream::repeat(())
-                                        .then(move |()| {
-                                            tokio::time::sleep(keep_alive_interval).map(|()| {
-                                                Some(Output::Message(ServerMessage::Pong))
-                                            })
-                                        })
-                                        .boxed(),
-                                )))
+                                .chain(stream::repeat(()).then(move |()| {
+                                    tokio::time::sleep(keep_alive_interval)
+                                        .map(|()| Output::Message(ServerMessage::Pong))
+                                }))
                                 .boxed();
                         }
 
                         if keep_alive_timeout > Duration::from_secs(0) {
                             let ping_rx = ping.clone();
-                            s = s
-                                .chain(stream::once(future::ready(
+                            s = stream::select_all(
+                                iter::once(s).chain(iter::once(
                                     stream::repeat(())
                                         .then(move |()| {
                                             let ping_rx = ping_rx.clone();
@@ -160,9 +143,11 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                                                 })
                                             }
                                         })
+                                        .flat_map(stream::iter)
                                         .boxed(),
-                                )))
-                                .boxed();
+                                )),
+                            )
+                            .boxed();
                         }
 
                         (
@@ -172,8 +157,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                                 ping,
                                 schema,
                             },
-                            s.flat_map_unordered(None, |s| s.flat_map(stream::iter))
-                                .boxed(),
+                            s,
                         )
                     }
                     Err(e) => (
