@@ -16,12 +16,12 @@ mod client_message;
 mod server_message;
 
 use std::{
-    collections::HashMap, convert::Infallible, error::Error, marker::PhantomPinned, pin::Pin,
-    sync::Arc, time::Duration,
+    collections::HashMap, convert::Infallible, error::Error, marker::PhantomPinned,
+    panic::AssertUnwindSafe, pin::Pin, sync::Arc, time::Duration,
 };
 
 use juniper::{
-    GraphQLError, RuleError,
+    GraphQLError, RuleError, Value,
     futures::{
         Sink, Stream,
         channel::oneshot,
@@ -40,7 +40,7 @@ pub use self::{
 
 struct ExecutionParams<S: Schema> {
     start_payload: StartPayload<S::ScalarValue>,
-    config: ConnectionConfig<S::Context>,
+    config: ConnectionConfig<S::Context, S::ScalarValue>,
     schema: S,
 }
 
@@ -61,7 +61,7 @@ enum ConnectionState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
     PreInit { init: I, schema: S },
     /// Active is the state after a ConnectionInit message has been accepted.
     Active {
-        config: ConnectionConfig<S::Context>,
+        config: ConnectionConfig<S::Context, S::ScalarValue>,
         stoppers: HashMap<String, oneshot::Sender<()>>,
         schema: S,
     },
@@ -228,35 +228,71 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
 
         let params = Arc::new(params);
 
-        // Try to execute this as a query or mutation.
-        match juniper::execute(
+        let fut = juniper::execute(
             &params.start_payload.query,
             params.start_payload.operation_name.as_deref(),
             params.schema.root_node(),
             &params.start_payload.variables,
             &params.config.context,
         )
-        .await
-        {
-            Ok((data, errors)) => {
-                return Reaction::ServerMessage(ServerMessage::Data {
-                    id: id.clone(),
-                    payload: DataPayload { data, errors },
-                })
-                .into_stream();
-            }
-            Err(GraphQLError::IsSubscription) => {}
-            Err(e) => {
-                return Reaction::ServerMessage(ServerMessage::Error {
+        .map_ok(|(data, errors)| {
+            Reaction::ServerMessage(ServerMessage::Data {
+                id: id.clone(),
+                payload: DataPayload { data, errors },
+            })
+            .into_stream()
+        })
+        .unwrap_or_else(|e| {
+            if matches!(e, GraphQLError::IsSubscription) {
+                SubscriptionStart::new(id.clone(), params.clone()).boxed()
+            } else {
+                Reaction::ServerMessage(ServerMessage::Error {
                     id: id.clone(),
                     payload: ErrorPayload::new(Box::new(params.clone()), e),
                 })
-                .into_stream();
+                .into_stream()
             }
+        });
+        if let Some(panic_handler) = params.config.panic_handler.as_ref().map(Arc::clone) {
+            let stream = AssertUnwindSafe(fut)
+                .catch_unwind()
+                .await
+                .unwrap_or_else(|e| {
+                    if let Some(e) = panic_handler(e, &params.config.context) {
+                        Reaction::ServerMessage(ServerMessage::Data {
+                            id: id.clone(),
+                            payload: DataPayload {
+                                data: Value::null(),
+                                errors: vec![e],
+                            },
+                        })
+                        .into_stream()
+                    } else {
+                        Reaction::EndStream.into_stream()
+                    }
+                });
+            AssertUnwindSafe(stream)
+                .catch_unwind()
+                .map(move |res| match res {
+                    Ok(item) => item,
+                    Err(e) => {
+                        if let Some(e) = panic_handler(e, &params.config.context) {
+                            Reaction::ServerMessage(ServerMessage::Data {
+                                id: id.clone(),
+                                payload: DataPayload {
+                                    data: Value::null(),
+                                    errors: vec![e],
+                                },
+                            })
+                        } else {
+                            Reaction::EndStream
+                        }
+                    }
+                })
+                .boxed()
+        } else {
+            fut.await
         }
-
-        // Try to execute as a subscription.
-        SubscriptionStart::new(id, params.clone()).boxed()
     }
 }
 

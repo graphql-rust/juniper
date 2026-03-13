@@ -5,6 +5,7 @@ use std::{
     cmp::Ordering,
     collections::HashMap,
     fmt::{Debug, Display},
+    mem,
     sync::{Arc, RwLock},
 };
 
@@ -236,7 +237,7 @@ pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S
 
 /// Boxed `Stream` yielding `Result<Value<S>, ExecutionError<S>>`
 pub type ValuesStream<'a, S = DefaultScalarValue> =
-    std::pin::Pin<Box<dyn Stream<Item = Result<Value<S>, ExecutionError<S>>> + Send + 'a>>;
+    std::pin::Pin<Box<dyn Stream<Item = Result<Value<S>, Vec<ExecutionError<S>>>> + Send + 'a>>;
 
 /// The map of variables used for substitution during query execution
 pub type Variables<S = DefaultScalarValue> = HashMap<String, InputValue<S>>;
@@ -680,6 +681,12 @@ where
             path,
             error,
         }
+    }
+
+    /// Takes errors from this [`Executor`] clearing the internal error buffer.
+    #[must_use]
+    pub fn take_errors(&self) -> Vec<ExecutionError<S>> {
+        mem::take(&mut self.errors.write().unwrap())
     }
 
     /// Construct a lookahead selection for the current selection.

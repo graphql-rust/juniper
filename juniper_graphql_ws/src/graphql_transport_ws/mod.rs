@@ -14,13 +14,13 @@ mod client_message;
 mod server_message;
 
 use std::{
-    collections::HashMap, convert::Infallible, error::Error, marker::PhantomPinned, pin::Pin,
-    sync::Arc, time::Duration,
+    collections::HashMap, convert::Infallible, error::Error, marker::PhantomPinned,
+    panic::AssertUnwindSafe, pin::Pin, sync::Arc, time::Duration,
 };
 
 use derive_more::with_trait::From;
 use juniper::{
-    GraphQLError, RuleError, ScalarValue,
+    GraphQLError, RuleError, ScalarValue, Value,
     futures::{
         Sink, Stream,
         channel::oneshot,
@@ -40,7 +40,7 @@ pub use self::{
 
 struct ExecutionParams<S: Schema> {
     subscribe_payload: SubscribePayload<S::ScalarValue>,
-    config: ConnectionConfig<S::Context>,
+    config: ConnectionConfig<S::Context, S::ScalarValue>,
     schema: S,
 }
 
@@ -82,7 +82,7 @@ enum ConnectionState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
     PreInit { init: I, schema: S },
     /// Active is the state after a ConnectionInit message has been accepted.
     Active {
-        config: ConnectionConfig<S::Context>,
+        config: ConnectionConfig<S::Context, S::ScalarValue>,
         stoppers: HashMap<String, oneshot::Sender<()>>,
         ping: Arc<Notify>,
         schema: S,
@@ -286,35 +286,78 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
 
         let params = Arc::new(params);
 
-        // Try to execute this as a query or mutation.
-        match juniper::execute(
+        let fut = juniper::execute(
             &params.subscribe_payload.query,
             params.subscribe_payload.operation_name.as_deref(),
             params.schema.root_node(),
             &params.subscribe_payload.variables,
             &params.config.context,
         )
-        .await
-        {
-            Ok((data, errors)) => {
-                return Output::Message(ServerMessage::Next {
-                    id: id.clone(),
-                    payload: NextPayload { data, errors },
-                })
-                .into_stream();
-            }
-            Err(GraphQLError::IsSubscription) => {}
-            Err(e) => {
-                return Output::Message(ServerMessage::Error {
+        .map_ok(|(data, errors)| {
+            Output::Message(ServerMessage::Next {
+                id: id.clone(),
+                payload: NextPayload { data, errors },
+            })
+            .into_stream()
+        })
+        .unwrap_or_else(|e| {
+            if matches!(e, GraphQLError::IsSubscription) {
+                SubscriptionStart::new(id.clone(), params.clone()).boxed()
+            } else {
+                Output::Message(ServerMessage::Error {
                     id: id.clone(),
                     payload: ErrorPayload::new(Box::new(params.clone()), e),
                 })
-                .into_stream();
+                .into_stream()
             }
+        });
+        if let Some(panic_handler) = params.config.panic_handler.as_ref().map(Arc::clone) {
+            let stream = AssertUnwindSafe(fut)
+                .catch_unwind()
+                .await
+                .unwrap_or_else(|e| {
+                    if let Some(e) = panic_handler(e, &params.config.context) {
+                        Output::Message(ServerMessage::Next {
+                            id: id.clone(),
+                            payload: NextPayload {
+                                data: Value::null(),
+                                errors: vec![e],
+                            },
+                        })
+                        .into_stream()
+                    } else {
+                        Output::Close {
+                            code: 1000,
+                            message: "Fatal error while operation execution".into(),
+                        }
+                        .into_stream()
+                    }
+                });
+            AssertUnwindSafe(stream)
+                .catch_unwind()
+                .map(move |res| match res {
+                    Ok(item) => item,
+                    Err(e) => {
+                        if let Some(e) = panic_handler(e, &params.config.context) {
+                            Output::Message(ServerMessage::Next {
+                                id: id.clone(),
+                                payload: NextPayload {
+                                    data: Value::null(),
+                                    errors: vec![e],
+                                },
+                            })
+                        } else {
+                            Output::Close {
+                                code: 1000,
+                                message: "Fatal error while subscription execution".into(),
+                            }
+                        }
+                    }
+                })
+                .boxed()
+        } else {
+            fut.await
         }
-
-        // Try to execute as a subscription.
-        SubscriptionStart::new(id, params.clone()).boxed()
     }
 }
 

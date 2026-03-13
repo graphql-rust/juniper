@@ -3,8 +3,22 @@
 use std::{any::Any, marker::PhantomPinned};
 
 use derive_more::with_trait::Debug;
-use juniper::GraphQLError;
+use juniper::{ExecutionError, GraphQLError, Value};
 use serde::{Serialize, Serializer};
+
+/// Sent after execution of an operation. For queries and mutations, this is sent to the client
+/// once. For subscriptions, this is sent for every event in the event stream.
+#[derive(Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NextPayload<S> {
+    /// The result data.
+    pub data: Value<S>,
+
+    /// The errors that have occurred during execution. Note that parse and validation errors are
+    /// not included here. They are sent via Error messages.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub errors: Vec<ExecutionError<S>>,
+}
 
 /// Payload for errors that can happen before execution.
 ///

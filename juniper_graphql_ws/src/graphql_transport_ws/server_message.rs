@@ -1,21 +1,6 @@
-use juniper::{ExecutionError, Value};
 use serde::Serialize;
 
-pub use crate::server_message::ErrorPayload;
-
-/// Sent after execution of an operation. For queries and mutations, this is sent to the client
-/// once. For subscriptions, this is sent for every event in the event stream.
-#[derive(Debug, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct NextPayload<S> {
-    /// The result data.
-    pub data: Value<S>,
-
-    /// The errors that have occurred during execution. Note that parse and validation errors are
-    /// not included here. They are sent via Error messages.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub errors: Vec<ExecutionError<S>>,
-}
+pub use crate::server_message::{ErrorPayload, NextPayload};
 
 /// ServerMessage defines the message types that servers can send.
 #[derive(Debug, PartialEq, Serialize)]
