@@ -20,6 +20,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
         - Renamed `ast::Operation::variable_definitions` field to `variables_definition`.
 - Changed `ScalarToken::String` to contain raw quoted and escaped `StringLiteral` (was unquoted but escaped string before). ([#1349])
 - Added `LexerError::UnterminatedBlockString` variant. ([#1349])
+- `ValuesStream` now works with error batches. ([#1371])
 
 ### Added
 
@@ -75,6 +76,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1355]: /../../pull/1355
 [#1358]: /../../pull/1358
 [#1361]: /../../pull/1361
+[#1371]: /../../pull/1371
 [graphql/graphql-spec#525]: https://github.com/graphql/graphql-spec/pull/525
 [graphql/graphql-spec#687]: https://github.com/graphql/graphql-spec/issues/687
 [graphql/graphql-spec#805]: https://github.com/graphql/graphql-spec/pull/805
