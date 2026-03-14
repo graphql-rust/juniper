@@ -6,6 +6,7 @@ use std::{
     collections::HashMap,
     fmt::{Debug, Display},
     mem,
+    pin::Pin,
     sync::{Arc, RwLock},
 };
 
@@ -229,17 +230,17 @@ impl<S> FieldError<S> {
     }
 }
 
-/// The result of resolving the value of a field of type `T`
+/// [`Result`] of resolving the value of a field of type `T`.
 pub type FieldResult<T, S = DefaultScalarValue> = Result<T, FieldError<S>>;
 
-/// The result of resolving an unspecified field
+/// [`Result`] of resolving an unspecified field.
 pub type ExecutionResult<S = DefaultScalarValue> = Result<Value<S>, FieldError<S>>;
 
-/// Boxed `Stream` yielding `Result<Value<S>, ExecutionError<S>>`
+/// [`Box`]ed [`Stream`] yielding `Result<Value<S>, Vec<ExecutionError<S>>>`.
 pub type ValuesStream<'a, S = DefaultScalarValue> =
-    std::pin::Pin<Box<dyn Stream<Item = Result<Value<S>, Vec<ExecutionError<S>>>> + Send + 'a>>;
+    Pin<Box<dyn Stream<Item = Result<Value<S>, Vec<ExecutionError<S>>>> + Send + 'a>>;
 
-/// The map of variables used for substitution during query execution
+/// [`HashMap`] of variables used for substitution during query execution.
 pub type Variables<S = DefaultScalarValue> = HashMap<String, InputValue<S>>;
 
 /// Custom error handling trait to enable error types other than [`FieldError`]
@@ -683,7 +684,7 @@ where
         }
     }
 
-    /// Takes errors from this [`Executor`] clearing the internal error buffer.
+    /// Takes errors from this [`Executor`] clearing its internal [`ExecutionError`]s buffer.
     #[must_use]
     pub fn take_errors(&self) -> Vec<ExecutionError<S>> {
         mem::take(&mut self.errors.write().unwrap())
