@@ -90,7 +90,7 @@ fn create_and_execute(
 ) -> Result<
     (
         Vec<String>,
-        Vec<Vec<Result<Value<DefaultScalarValue>, ExecutionError<DefaultScalarValue>>>>,
+        Vec<Vec<Result<Value<DefaultScalarValue>, Vec<ExecutionError<DefaultScalarValue>>>>>,
     ),
     Vec<ExecutionError<DefaultScalarValue>>,
 > {

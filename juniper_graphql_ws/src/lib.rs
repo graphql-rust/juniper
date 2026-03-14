@@ -15,16 +15,17 @@ mod schema;
 mod server_message;
 mod util;
 
-use std::{convert::Infallible, error::Error, future, time::Duration};
+use std::{any::Any, convert::Infallible, error::Error, future, sync::Arc, time::Duration};
 
-use juniper::{ScalarValue, Variables};
+use derive_more::with_trait::Debug;
+use juniper::{ExecutionError, ScalarValue, Variables};
 
 pub use self::schema::{ArcSchema, Schema};
 
 /// ConnectionConfig is used to configure the connection once the client sends the ConnectionInit
 /// message.
-#[derive(Clone, Copy, Debug)]
-pub struct ConnectionConfig<CtxT> {
+#[derive(Clone, Debug)]
+pub struct ConnectionConfig<CtxT, S> {
     /// Custom-provided [`juniper::Context`].
     pub context: CtxT,
 
@@ -36,15 +37,20 @@ pub struct ConnectionConfig<CtxT> {
 
     /// Keep-alive configuration.
     pub keep_alive: KeepAliveConfig,
+
+    /// Optional [`PanicHandler`] for panics happened during execution of operations.
+    #[debug(ignore)]
+    pub panic_handler: Option<Arc<dyn PanicHandler<S, CtxT>>>,
 }
 
-impl<CtxT> ConnectionConfig<CtxT> {
+impl<CtxT, S> ConnectionConfig<CtxT, S> {
     /// Constructs the configuration required for a connection to be accepted.
     pub fn new(context: CtxT) -> Self {
         Self {
             context,
             max_in_flight_operations: 0,
             keep_alive: KeepAliveConfig::default(),
+            panic_handler: None,
         }
     }
 
@@ -95,9 +101,26 @@ impl<CtxT> ConnectionConfig<CtxT> {
         self.keep_alive.timeout = timeout;
         self
     }
+
+    /// Specifies the [`PanicHandler`] for panics happened during execution of operations.
+    ///
+    /// # [`PanicHandler`]'s result
+    ///
+    /// - If an [`ExecutionError`] is returned from the [`PanicHandler`], it will be emitted to
+    ///   clients as a regular operation result.
+    /// - Otherwise (if [`None`] is returned), then no data will be emitted to clients, and the
+    ///   whole connection will be terminated immediately.
+    #[must_use]
+    pub fn with_panic_handler(
+        mut self,
+        panic_handler: impl PanicHandler<S, CtxT> + 'static,
+    ) -> Self {
+        self.panic_handler = Some(Arc::new(panic_handler));
+        self
+    }
 }
 
-impl<S: ScalarValue, CtxT: Unpin + Send + 'static> Init<S, CtxT> for ConnectionConfig<CtxT> {
+impl<S: ScalarValue, CtxT: Unpin + Send + 'static> Init<S, CtxT> for ConnectionConfig<CtxT, S> {
     type Error = Infallible;
     type Future = future::Ready<Result<Self, Self::Error>>;
 
@@ -146,6 +169,26 @@ impl Default for KeepAliveConfig {
     }
 }
 
+/// Handler of panics used in [`catch_unwind()`].
+///
+/// # Result
+///
+/// - If an [`ExecutionError`] is returned, it will be emitted to clients as a regular operation
+///   result.
+/// - Otherwise (if [`None`] is returned), then no data will be emitted to clients, and the whole
+///   connection will be terminated immediately.
+///
+/// [`catch_unwind()`]: std::panic::catch_unwind
+pub trait PanicHandler<S, CtxT>:
+    Fn(Box<dyn Any + Send + 'static>, &CtxT) -> Option<ExecutionError<S>> + Send + Sync
+{
+}
+
+impl<T, S, CtxT> PanicHandler<S, CtxT> for T where
+    T: Fn(Box<dyn Any + Send + 'static>, &CtxT) -> Option<ExecutionError<S>> + Send + Sync + ?Sized
+{
+}
+
 /// Init defines the requirements for types that can provide connection configurations when
 /// ConnectionInit messages are received. Implementations are provided for `ConnectionConfig` and
 /// closures that meet the requirements.
@@ -155,7 +198,7 @@ pub trait Init<S: ScalarValue, CtxT>: Unpin + 'static {
     type Error: Error;
 
     /// The future configuration type.
-    type Future: Future<Output = Result<ConnectionConfig<CtxT>, Self::Error>> + Send + 'static;
+    type Future: Future<Output = Result<ConnectionConfig<CtxT, S>, Self::Error>> + Send + 'static;
 
     /// Returns a future for the configuration to use.
     fn init(self, params: Variables<S>) -> Self::Future;
@@ -165,7 +208,7 @@ impl<F, S, CtxT, Fut, E> Init<S, CtxT> for F
 where
     S: ScalarValue,
     F: FnOnce(Variables<S>) -> Fut + Unpin + 'static,
-    Fut: Future<Output = Result<ConnectionConfig<CtxT>, E>> + Send + 'static,
+    Fut: Future<Output = Result<ConnectionConfig<CtxT, S>, E>> + Send + 'static,
     E: Error,
 {
     type Error = E;

@@ -16,12 +16,12 @@ mod client_message;
 mod server_message;
 
 use std::{
-    collections::HashMap, convert::Infallible, error::Error, marker::PhantomPinned, pin::Pin,
-    sync::Arc, time::Duration,
+    collections::HashMap, convert::Infallible, error::Error, marker::PhantomPinned,
+    panic::AssertUnwindSafe, pin::Pin, sync::Arc, time::Duration,
 };
 
 use juniper::{
-    GraphQLError, RuleError,
+    GraphQLError, RuleError, Value,
     futures::{
         Sink, Stream,
         channel::oneshot,
@@ -40,7 +40,7 @@ pub use self::{
 
 struct ExecutionParams<S: Schema> {
     start_payload: StartPayload<S::ScalarValue>,
-    config: ConnectionConfig<S::Context>,
+    config: ConnectionConfig<S::Context, S::ScalarValue>,
     schema: S,
 }
 
@@ -50,9 +50,9 @@ enum Reaction<S: Schema> {
 }
 
 impl<S: Schema> Reaction<S> {
-    /// Converts the reaction into a one-item stream.
-    fn into_stream(self) -> BoxStream<'static, Self> {
-        stream::once(future::ready(self)).boxed()
+    /// Wraps this [`Reaction`] into a singe-item [`Stream`].
+    fn into_stream(self) -> stream::Once<future::Ready<Self>> {
+        stream::once(future::ready(self))
     }
 }
 
@@ -61,7 +61,7 @@ enum ConnectionState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
     PreInit { init: I, schema: S },
     /// Active is the state after a ConnectionInit message has been accepted.
     Active {
-        config: ConnectionConfig<S::Context>,
+        config: ConnectionConfig<S::Context, S::ScalarValue>,
         stoppers: HashMap<String, oneshot::Sender<()>>,
         schema: S,
     },
@@ -77,7 +77,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
         msg: ClientMessage<S::ScalarValue>,
     ) -> (Self, BoxStream<'static, Reaction<S>>) {
         if let ClientMessage::ConnectionTerminate = msg {
-            return (self, Reaction::EndStream.into_stream());
+            return (self, Reaction::EndStream.into_stream().boxed());
         }
 
         match self {
@@ -86,29 +86,27 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                     Ok(config) => {
                         let keep_alive_interval = config.keep_alive.interval;
 
-                        let mut s = stream::iter(vec![Reaction::ServerMessage(
+                        let s = stream::iter(vec![Reaction::ServerMessage(
                             ServerMessage::ConnectionAck,
-                        )])
-                        .boxed();
+                        )]);
 
                         #[expect(closure_returning_async_block, reason = "not possible")]
-                        if keep_alive_interval > Duration::from_secs(0) {
-                            s = s
-                                .chain(
-                                    Reaction::ServerMessage(ServerMessage::ConnectionKeepAlive)
-                                        .into_stream(),
-                                )
-                                .boxed();
-                            s = s
-                                .chain(stream::unfold((), move |_| async move {
-                                    tokio::time::sleep(keep_alive_interval).await;
-                                    Some((
-                                        Reaction::ServerMessage(ServerMessage::ConnectionKeepAlive),
-                                        (),
-                                    ))
-                                }))
-                                .boxed();
-                        }
+                        let s = if keep_alive_interval > Duration::from_secs(0) {
+                            s.chain(
+                                Reaction::ServerMessage(ServerMessage::ConnectionKeepAlive)
+                                    .into_stream(),
+                            )
+                            .chain(stream::unfold((), move |_| async move {
+                                tokio::time::sleep(keep_alive_interval).await;
+                                Some((
+                                    Reaction::ServerMessage(ServerMessage::ConnectionKeepAlive),
+                                    (),
+                                ))
+                            }))
+                            .boxed()
+                        } else {
+                            s.boxed()
+                        };
 
                         (
                             Self::Active {
@@ -228,35 +226,74 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
 
         let params = Arc::new(params);
 
-        // Try to execute this as a query or mutation.
-        match juniper::execute(
+        let fut = juniper::execute(
             &params.start_payload.query,
             params.start_payload.operation_name.as_deref(),
             params.schema.root_node(),
             &params.start_payload.variables,
             &params.config.context,
         )
-        .await
-        {
-            Ok((data, errors)) => {
-                return Reaction::ServerMessage(ServerMessage::Data {
-                    id: id.clone(),
-                    payload: DataPayload { data, errors },
-                })
-                .into_stream();
-            }
-            Err(GraphQLError::IsSubscription) => {}
-            Err(e) => {
-                return Reaction::ServerMessage(ServerMessage::Error {
+        .map_ok(|(data, errors)| {
+            Reaction::ServerMessage(ServerMessage::Data {
+                id: id.clone(),
+                payload: DataPayload { data, errors },
+            })
+            .into_stream()
+            .left_stream()
+        })
+        .unwrap_or_else(|e| {
+            if matches!(e, GraphQLError::IsSubscription) {
+                SubscriptionStart::new(id.clone(), params.clone()).right_stream()
+            } else {
+                Reaction::ServerMessage(ServerMessage::Error {
                     id: id.clone(),
                     payload: ErrorPayload::new(Box::new(params.clone()), e),
                 })
-                .into_stream();
+                .into_stream()
+                .left_stream()
             }
+        });
+        if let Some(panic_handler) = params.config.panic_handler.as_ref().map(Arc::clone) {
+            let stream = AssertUnwindSafe(fut)
+                .catch_unwind()
+                .await
+                .unwrap_or_else(|e| {
+                    if let Some(e) = panic_handler(e, &params.config.context) {
+                        Reaction::ServerMessage(ServerMessage::Data {
+                            id: id.clone(),
+                            payload: DataPayload {
+                                data: Value::null(),
+                                errors: vec![e],
+                            },
+                        })
+                    } else {
+                        Reaction::EndStream
+                    }
+                    .into_stream()
+                    .left_stream()
+                });
+            AssertUnwindSafe(stream)
+                .catch_unwind()
+                .map(move |res| match res {
+                    Ok(item) => item,
+                    Err(e) => {
+                        if let Some(e) = panic_handler(e, &params.config.context) {
+                            Reaction::ServerMessage(ServerMessage::Data {
+                                id: id.clone(),
+                                payload: DataPayload {
+                                    data: Value::null(),
+                                    errors: vec![e],
+                                },
+                            })
+                        } else {
+                            Reaction::EndStream
+                        }
+                    }
+                })
+                .boxed()
+        } else {
+            fut.await.boxed()
         }
-
-        // Try to execute as a subscription.
-        SubscriptionStart::new(id, params.clone()).boxed()
     }
 }
 
@@ -291,12 +328,12 @@ struct SubscriptionStart<S: Schema> {
 }
 
 impl<S: Schema> SubscriptionStart<S> {
-    fn new(id: String, params: Arc<ExecutionParams<S>>) -> Pin<Box<Self>> {
-        Box::pin(Self {
+    fn new(id: String, params: Arc<ExecutionParams<S>>) -> Self {
+        Self {
             params,
             state: SubscriptionStartState::Init { id },
             _marker: PhantomPinned,
-        })
+        }
     }
 }
 
@@ -468,7 +505,8 @@ where
                                     message: e.to_string(),
                                 },
                             })
-                            .into_stream(),
+                            .into_stream()
+                            .boxed(),
                         );
                         ConnectionSinkState::Ready { state }
                     }

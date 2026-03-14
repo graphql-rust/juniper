@@ -18,12 +18,17 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
         - Placing `#[graphql(deprecated)]` attribute on method arguments in `#[graphql_object]` and `#[graphql_interface]` macros.
 - Support of `#[graphql(rename_all = "snake_case")]` attribute. ([#1354])
 
+### Fixed
+
+- Memory leak caused by incorrect error handling in `#[graphql_subscription]` macro expansion. ([#1371])
+
 [#864]: /../../issues/864
 [#1055]: /../../issues/1055
 [#1062]: /../../issues/1062
 [#1347]: /../../issues/1347
 [#1348]: /../../pull/1348
 [#1354]: /../../pull/1354
+[#1371]: /../../pull/1371
 [graphql/graphql-spec#525]: https://github.com/graphql/graphql-spec/pull/525
 [graphql/graphql-spec#805]: https://github.com/graphql/graphql-spec/pull/805
 [graphql/graphql-spec#825]: https://github.com/graphql/graphql-spec/pull/825

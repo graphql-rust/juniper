@@ -144,9 +144,9 @@ where
         )))),
         Value::Scalar(s) => Box::pin(s.map(|res| match res {
             Ok(val) => ExecutionOutput::from_data(val),
-            Err(err) => ExecutionOutput {
+            Err(errors) => ExecutionOutput {
                 data: Value::null(),
-                errors: vec![err],
+                errors,
             },
         })),
         Value::List(list) => {
@@ -217,7 +217,7 @@ where
                         match val {
                             Ok(value) => (name, value),
                             Err(e) => {
-                                errors.push(e);
+                                errors.extend(e);
                                 (name, Value::Null)
                             }
                         }
@@ -288,7 +288,7 @@ mod whole_responses_stream {
         assert_eq!(result, expected);
     }
 
-    type PollResult = Result<Value<DefaultScalarValue>, ExecutionError<DefaultScalarValue>>;
+    type PollResult = Result<Value<DefaultScalarValue>, Vec<ExecutionError<DefaultScalarValue>>>;
 
     #[tokio::test]
     async fn value_scalar() {

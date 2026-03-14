@@ -16,13 +16,22 @@ All user visible changes to `juniper_graphql_ws` crate will be documented in thi
 - Made [WebSocket] connection closed once `ConnectionConfig::keep_alive::timeout` is reached in [`graphql-transport-ws` GraphQL over WebSocket Protocol][proto-6.0.7]. ([#1367])
   > **COMPATIBILITY**: Previously, a [WebSocket] connection was kept alive, even when clients do not respond to server's `Pong` messages at all. To preserve the previous behavior, the `ConnectionConfig::keep_alive::timeout` should be set to `Duration:::ZERO`.
 
+### Added
+
+- `ConnectionConfig::panic_handler` field and `ConnectionConfig::with_panic_handler()` method allowing to specify `PanicHandler` for panics happened during execution of [GraphQL] operations. ([#1371])
+
+### Changed
+
+- Merged `graphql_transport_ws::NextPayload` and `graphql_ws::DataPayload` into a single struct. ([#1371])
+
 ### Fixed
 
-- Inability to re-subscribe with the same operation `id` after subscription was completed by server. ([#1368]) 
+- Inability to re-subscribe with the same operation `id` after subscription was completed by server. ([#1368])
 
 [#1367]: /../../pull/1367
 [#1368]: /../../pull/1368
 [#1369]: /../../pull/1369
+[#1371]: /../../pull/1371
 [proto-6.0.7]: https://github.com/enisdenjo/graphql-ws/blob/v6.0.7/PROTOCOL.md
 
 

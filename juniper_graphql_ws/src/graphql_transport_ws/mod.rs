@@ -14,13 +14,13 @@ mod client_message;
 mod server_message;
 
 use std::{
-    collections::HashMap, convert::Infallible, error::Error, marker::PhantomPinned, pin::Pin,
-    sync::Arc, time::Duration,
+    collections::HashMap, convert::Infallible, error::Error, marker::PhantomPinned,
+    panic::AssertUnwindSafe, pin::Pin, sync::Arc, time::Duration,
 };
 
 use derive_more::with_trait::From;
 use juniper::{
-    GraphQLError, RuleError, ScalarValue,
+    GraphQLError, RuleError, ScalarValue, Value,
     futures::{
         Sink, Stream,
         channel::oneshot,
@@ -40,7 +40,7 @@ pub use self::{
 
 struct ExecutionParams<S: Schema> {
     subscribe_payload: SubscribePayload<S::ScalarValue>,
-    config: ConnectionConfig<S::Context>,
+    config: ConnectionConfig<S::Context, S::ScalarValue>,
     schema: S,
 }
 
@@ -71,9 +71,9 @@ pub enum Output<S: ScalarValue> {
 }
 
 impl<S: ScalarValue + Send> Output<S> {
-    /// Converts the reaction into a one-item stream.
-    fn into_stream(self) -> BoxStream<'static, Self> {
-        stream::once(future::ready(self)).boxed()
+    /// Wraps this [`Output`] into a singe-item [`Stream`].
+    fn into_stream(self) -> stream::Once<future::Ready<Self>> {
+        stream::once(future::ready(self))
     }
 }
 
@@ -82,7 +82,7 @@ enum ConnectionState<S: Schema, I: Init<S::ScalarValue, S::Context>> {
     PreInit { init: I, schema: S },
     /// Active is the state after a ConnectionInit message has been accepted.
     Active {
-        config: ConnectionConfig<S::Context>,
+        config: ConnectionConfig<S::Context, S::ScalarValue>,
         stoppers: HashMap<String, oneshot::Sender<()>>,
         ping: Arc<Notify>,
         schema: S,
@@ -107,26 +107,23 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
 
                         let ping = Arc::new(Notify::new());
 
-                        let mut s = Output::Message(ServerMessage::ConnectionAck)
-                            .into_stream()
-                            .boxed();
+                        let s = Output::Message(ServerMessage::ConnectionAck).into_stream();
 
-                        if keep_alive_interval > Duration::from_secs(0) {
-                            s = s
-                                .chain(Output::Message(ServerMessage::Pong).into_stream())
-                                .boxed();
-                            s = s
+                        let s = if keep_alive_interval > Duration::from_secs(0) {
+                            s.chain(Output::Message(ServerMessage::Pong).into_stream())
                                 .chain(stream::repeat(()).then(move |()| {
                                     tokio::time::sleep(keep_alive_interval)
                                         .map(|()| Output::Message(ServerMessage::Pong))
                                 }))
-                                .boxed();
-                        }
+                                .right_stream()
+                        } else {
+                            s.left_stream()
+                        };
 
-                        if keep_alive_timeout > Duration::from_secs(0) {
+                        let s = if keep_alive_timeout > Duration::from_secs(0) {
                             let ping_rx = ping.clone();
-                            s = stream::select_all([
-                                s,
+                            stream::select_all([
+                                s.boxed(),
                                 stream::repeat(())
                                     .then(move |()| {
                                         let ping_rx = ping_rx.clone();
@@ -143,8 +140,10 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                                     .filter_map(future::ready)
                                     .boxed(),
                             ])
-                            .boxed();
-                        }
+                            .boxed()
+                        } else {
+                            s.boxed()
+                        };
 
                         (
                             Self::Active {
@@ -199,6 +198,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                                 message: format!("Subscriber for {id} already exists"),
                             }
                             .into_stream()
+                            .boxed()
                         } else if config.max_in_flight_operations > 0
                             && stoppers.len() >= config.max_in_flight_operations
                         {
@@ -286,35 +286,80 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
 
         let params = Arc::new(params);
 
-        // Try to execute this as a query or mutation.
-        match juniper::execute(
+        let fut = juniper::execute(
             &params.subscribe_payload.query,
             params.subscribe_payload.operation_name.as_deref(),
             params.schema.root_node(),
             &params.subscribe_payload.variables,
             &params.config.context,
         )
-        .await
-        {
-            Ok((data, errors)) => {
-                return Output::Message(ServerMessage::Next {
-                    id: id.clone(),
-                    payload: NextPayload { data, errors },
-                })
-                .into_stream();
-            }
-            Err(GraphQLError::IsSubscription) => {}
-            Err(e) => {
-                return Output::Message(ServerMessage::Error {
+        .map_ok(|(data, errors)| {
+            Output::Message(ServerMessage::Next {
+                id: id.clone(),
+                payload: NextPayload { data, errors },
+            })
+            .into_stream()
+            .left_stream()
+        })
+        .unwrap_or_else(|e| {
+            if matches!(e, GraphQLError::IsSubscription) {
+                SubscriptionStart::new(id.clone(), params.clone()).right_stream()
+            } else {
+                Output::Message(ServerMessage::Error {
                     id: id.clone(),
                     payload: ErrorPayload::new(Box::new(params.clone()), e),
                 })
-                .into_stream();
+                .into_stream()
+                .left_stream()
             }
+        });
+        if let Some(panic_handler) = params.config.panic_handler.as_ref().map(Arc::clone) {
+            let stream = AssertUnwindSafe(fut)
+                .catch_unwind()
+                .await
+                .unwrap_or_else(|e| {
+                    if let Some(e) = panic_handler(e, &params.config.context) {
+                        Output::Message(ServerMessage::Next {
+                            id: id.clone(),
+                            payload: NextPayload {
+                                data: Value::null(),
+                                errors: vec![e],
+                            },
+                        })
+                    } else {
+                        Output::Close {
+                            code: 1000,
+                            message: "Operation execution panicked".into(),
+                        }
+                    }
+                    .into_stream()
+                    .left_stream()
+                });
+            AssertUnwindSafe(stream)
+                .catch_unwind()
+                .map(move |res| match res {
+                    Ok(item) => item,
+                    Err(e) => {
+                        if let Some(e) = panic_handler(e, &params.config.context) {
+                            Output::Message(ServerMessage::Next {
+                                id: id.clone(),
+                                payload: NextPayload {
+                                    data: Value::null(),
+                                    errors: vec![e],
+                                },
+                            })
+                        } else {
+                            Output::Close {
+                                code: 1000,
+                                message: "Subscription execution panicked".into(),
+                            }
+                        }
+                    }
+                })
+                .boxed()
+        } else {
+            fut.await.boxed()
         }
-
-        // Try to execute as a subscription.
-        SubscriptionStart::new(id, params.clone()).boxed()
     }
 }
 
@@ -349,12 +394,12 @@ struct SubscriptionStart<S: Schema> {
 }
 
 impl<S: Schema> SubscriptionStart<S> {
-    fn new(id: String, params: Arc<ExecutionParams<S>>) -> Pin<Box<Self>> {
-        Box::pin(Self {
+    fn new(id: String, params: Arc<ExecutionParams<S>>) -> Self {
+        Self {
             params,
             state: SubscriptionStartState::Init { id },
             _marker: PhantomPinned,
-        })
+        }
     }
 }
 
@@ -543,7 +588,8 @@ where
                                 code: 1000,
                                 message: "Normal Closure".into(),
                             }
-                            .into_stream(),
+                            .into_stream()
+                            .boxed(),
                         );
                         ConnectionSinkState::Closed
                     }
@@ -554,7 +600,8 @@ where
                                 code: 4400,
                                 message: e.to_string(),
                             }
-                            .into_stream(),
+                            .into_stream()
+                            .boxed(),
                         );
                         ConnectionSinkState::Closed
                     }

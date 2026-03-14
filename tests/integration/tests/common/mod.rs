@@ -65,7 +65,7 @@ pub mod util {
                 if let Value::Scalar(ref mut stream) = val {
                     return match stream.next().await {
                         Some(Ok(val)) => Ok((graphql_value!({ name: val }), vec![])),
-                        Some(Err(e)) => Ok((Value::Null, vec![e])),
+                        Some(Err(errs)) => Ok((Value::Null, errs)),
                         None => Ok((Value::Null, vec![])),
                     };
                 }

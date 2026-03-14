@@ -359,15 +359,20 @@ impl Definition {
                                     ::core::option::Option::Some((ctx, r)),
                                 ) => {
                                     let sub = ex.replaced_context(ctx);
-                                    sub.resolve_with_ctx_async(&(), &r)
+                                    let val = sub.resolve_with_ctx_async(&(), &r)
                                         .await
-                                        .map_err(|e| ex.new_error(e))
+                                        .map_err(|e| ::std::vec![ex.new_error(e)])?;
+                                    let errs = sub.take_errors();
+                                    if !errs.is_empty() {
+                                        return ::core::result::Result::Err(errs)
+                                    }
+                                    ::core::result::Result::Ok(val)
                                 }
                                 ::core::result::Result::Ok(::core::option::Option::None) => {
                                     ::core::result::Result::Ok(::juniper::Value::null())
                                 }
                                 ::core::result::Result::Err(e) => {
-                                    ::core::result::Result::Err(ex.new_error(e))
+                                    ::core::result::Result::Err(::std::vec![ex.new_error(e)])
                                 }
                             }
                         }
