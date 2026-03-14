@@ -266,10 +266,10 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                                 errors: vec![e],
                             },
                         })
-                        .into_stream()
                     } else {
-                        Reaction::EndStream.into_stream()
+                        Reaction::EndStream
                     }
+                    .into_stream()
                 });
             AssertUnwindSafe(stream)
                 .catch_unwind()

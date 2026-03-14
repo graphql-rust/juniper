@@ -18,11 +18,15 @@ All user visible changes to `juniper_graphql_ws` crate will be documented in thi
 
 ### Added
 
-- Panic handling support. ([#1371])
+- `ConnectionConfig::panic_handler` field and `ConnectionConfig::with_panic_handler()` method allowing to specify `PanicHandler` for panics happened during execution of [GraphQL] operations. ([#1371])
+
+### Changed
+
+- Merged `graphql_transport_ws::NextPayload` and `graphql_ws::DataPayload` into a single struct. ([#1371])
 
 ### Fixed
 
-- Inability to re-subscribe with the same operation `id` after subscription was completed by server. ([#1368]) 
+- Inability to re-subscribe with the same operation `id` after subscription was completed by server. ([#1368])
 
 [#1367]: /../../pull/1367
 [#1368]: /../../pull/1368

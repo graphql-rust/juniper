@@ -38,8 +38,8 @@ pub struct ConnectionConfig<CtxT, S> {
     /// Keep-alive configuration.
     pub keep_alive: KeepAliveConfig,
 
-    /// [`PanicHandler`] to use for handling panics in the connection.
-    #[debug(skip)]
+    /// Optional [`PanicHandler`] for panics happened during execution of operations.
+    #[debug(ignore)]
     pub panic_handler: Option<Arc<dyn PanicHandler<S, CtxT>>>,
 }
 
@@ -102,7 +102,14 @@ impl<CtxT, S> ConnectionConfig<CtxT, S> {
         self
     }
 
-    /// Specifies the [`PanicHandler`] to be used to handle connection's panics.
+    /// Specifies the [`PanicHandler`] for panics happened during execution of operations.
+    ///
+    /// # [`PanicHandler`]'s result
+    ///
+    /// - If an [`ExecutionError`] is returned from the [`PanicHandler`], it will be emitted to
+    ///   clients as a regular operation result.
+    /// - Otherwise (if [`None`] is returned), then no data will be emitted to clients, and the
+    ///   whole connection will be terminated immediately.
     #[must_use]
     pub fn with_panic_handler(
         mut self,
@@ -162,14 +169,23 @@ impl Default for KeepAliveConfig {
     }
 }
 
-/// Panic handler type for [`std::panic::catch_unwind`].
+/// Handler of panics used in [`catch_unwind()`].
+///
+/// # Result
+///
+/// - If an [`ExecutionError`] is returned, it will be emitted to clients as a regular operation
+///   result.
+/// - Otherwise (if [`None`] is returned), then no data will be emitted to clients, and the whole
+///   connection will be terminated immediately.
+///
+/// [`catch_unwind()`]: std::panic::catch_unwind
 pub trait PanicHandler<S, CtxT>:
     Fn(Box<dyn Any + Send + 'static>, &CtxT) -> Option<ExecutionError<S>> + Send + Sync
 {
 }
 
 impl<T, S, CtxT> PanicHandler<S, CtxT> for T where
-    T: Fn(Box<dyn Any + Send + 'static>, &CtxT) -> Option<ExecutionError<S>> + Send + Sync
+    T: Fn(Box<dyn Any + Send + 'static>, &CtxT) -> Option<ExecutionError<S>> + Send + Sync + ?Sized
 {
 }
 

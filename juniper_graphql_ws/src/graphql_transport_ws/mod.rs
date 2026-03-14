@@ -324,14 +324,13 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                                 errors: vec![e],
                             },
                         })
-                        .into_stream()
                     } else {
                         Output::Close {
                             code: 1000,
-                            message: "Fatal error while operation execution".into(),
+                            message: "Operation execution panicked".into(),
                         }
-                        .into_stream()
                     }
+                    .into_stream()
                 });
             AssertUnwindSafe(stream)
                 .catch_unwind()
@@ -349,14 +348,14 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                         } else {
                             Output::Close {
                                 code: 1000,
-                                message: "Fatal error while subscription execution".into(),
+                                message: "Subscription execution panicked".into(),
                             }
                         }
                     }
                 })
                 .boxed()
         } else {
-            fut.await
+            fut.await.boxed()
         }
     }
 }
