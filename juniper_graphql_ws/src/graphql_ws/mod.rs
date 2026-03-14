@@ -50,9 +50,9 @@ enum Reaction<S: Schema> {
 }
 
 impl<S: Schema> Reaction<S> {
-    /// Converts the reaction into a one-item stream.
-    fn into_stream(self) -> BoxStream<'static, Self> {
-        stream::once(future::ready(self)).boxed()
+    /// Wraps this [`Reaction`] into a singe-item [`Stream`].
+    fn into_stream(self) -> stream::Once<future::Ready<Self>> {
+        stream::once(future::ready(self))
     }
 }
 
@@ -77,7 +77,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
         msg: ClientMessage<S::ScalarValue>,
     ) -> (Self, BoxStream<'static, Reaction<S>>) {
         if let ClientMessage::ConnectionTerminate = msg {
-            return (self, Reaction::EndStream.into_stream());
+            return (self, Reaction::EndStream.into_stream().boxed());
         }
 
         match self {
@@ -86,29 +86,27 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                     Ok(config) => {
                         let keep_alive_interval = config.keep_alive.interval;
 
-                        let mut s = stream::iter(vec![Reaction::ServerMessage(
+                        let s = stream::iter(vec![Reaction::ServerMessage(
                             ServerMessage::ConnectionAck,
-                        )])
-                        .boxed();
+                        )]);
 
                         #[expect(closure_returning_async_block, reason = "not possible")]
-                        if keep_alive_interval > Duration::from_secs(0) {
-                            s = s
-                                .chain(
-                                    Reaction::ServerMessage(ServerMessage::ConnectionKeepAlive)
-                                        .into_stream(),
-                                )
-                                .boxed();
-                            s = s
-                                .chain(stream::unfold((), move |_| async move {
-                                    tokio::time::sleep(keep_alive_interval).await;
-                                    Some((
-                                        Reaction::ServerMessage(ServerMessage::ConnectionKeepAlive),
-                                        (),
-                                    ))
-                                }))
-                                .boxed();
-                        }
+                        let s = if keep_alive_interval > Duration::from_secs(0) {
+                            s.chain(
+                                Reaction::ServerMessage(ServerMessage::ConnectionKeepAlive)
+                                    .into_stream(),
+                            )
+                            .chain(stream::unfold((), move |_| async move {
+                                tokio::time::sleep(keep_alive_interval).await;
+                                Some((
+                                    Reaction::ServerMessage(ServerMessage::ConnectionKeepAlive),
+                                    (),
+                                ))
+                            }))
+                            .boxed()
+                        } else {
+                            s.boxed()
+                        };
 
                         (
                             Self::Active {
@@ -241,16 +239,18 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                 payload: DataPayload { data, errors },
             })
             .into_stream()
+            .left_stream()
         })
         .unwrap_or_else(|e| {
             if matches!(e, GraphQLError::IsSubscription) {
-                SubscriptionStart::new(id.clone(), params.clone()).boxed()
+                SubscriptionStart::new(id.clone(), params.clone()).right_stream()
             } else {
                 Reaction::ServerMessage(ServerMessage::Error {
                     id: id.clone(),
                     payload: ErrorPayload::new(Box::new(params.clone()), e),
                 })
                 .into_stream()
+                .left_stream()
             }
         });
         if let Some(panic_handler) = params.config.panic_handler.as_ref().map(Arc::clone) {
@@ -270,6 +270,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                         Reaction::EndStream
                     }
                     .into_stream()
+                    .left_stream()
                 });
             AssertUnwindSafe(stream)
                 .catch_unwind()
@@ -291,7 +292,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                 })
                 .boxed()
         } else {
-            fut.await
+            fut.await.boxed()
         }
     }
 }
@@ -327,12 +328,12 @@ struct SubscriptionStart<S: Schema> {
 }
 
 impl<S: Schema> SubscriptionStart<S> {
-    fn new(id: String, params: Arc<ExecutionParams<S>>) -> Pin<Box<Self>> {
-        Box::pin(Self {
+    fn new(id: String, params: Arc<ExecutionParams<S>>) -> Self {
+        Self {
             params,
             state: SubscriptionStartState::Init { id },
             _marker: PhantomPinned,
-        })
+        }
     }
 }
 
@@ -504,7 +505,8 @@ where
                                     message: e.to_string(),
                                 },
                             })
-                            .into_stream(),
+                            .into_stream()
+                            .boxed(),
                         );
                         ConnectionSinkState::Ready { state }
                     }
