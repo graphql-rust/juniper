@@ -14,7 +14,7 @@ enum ArgumentPosition<'a> {
 }
 
 pub struct KnownArgumentNames<'a, S: Debug + 'a> {
-    current_args: Option<(ArgumentPosition<'a>, &'a Vec<Argument<S>>)>,
+    current_args: Option<(ArgumentPosition<'a>, &'a [Argument<S>])>,
 }
 
 pub fn factory<'a, S: Debug>() -> KnownArgumentNames<'a, S> {
@@ -36,7 +36,7 @@ where
             .map(|d| {
                 (
                     ArgumentPosition::Directive(directive.item.name.item),
-                    &d.arguments,
+                    d.arguments.as_slice(),
                 )
             });
     }
@@ -48,18 +48,14 @@ where
     fn enter_field(&mut self, ctx: &mut ValidatorContext<'a, S>, field: &'a Spanning<Field<S>>) {
         self.current_args = ctx
             .parent_type()
-            .and_then(|t| t.field_by_name(field.item.name.item))
-            .and_then(|f| f.arguments.as_ref())
-            .map(|args| {
+            .and_then(|t| t.field_by_name(field.item.name.item).map(|f| (t, f)))
+            .map(|(t, f)| {
                 (
                     ArgumentPosition::Field(
                         field.item.name.item,
-                        ctx.parent_type()
-                            .expect("Parent type should exist")
-                            .name()
-                            .expect("Parent type should be named"),
+                        t.name().expect("Parent type should be named"),
                     ),
-                    args,
+                    f.arguments.as_deref().unwrap_or(&[]),
                 )
             });
     }
@@ -141,6 +137,18 @@ mod tests {
             unknownField(unknownArg: SIT)
           }
         "#,
+        );
+    }
+
+    #[test]
+    fn field_with_no_args_fails_on_provided_args() {
+        expect_fails_rule::<_, _, DefaultScalarValue>(
+            factory,
+            r#"{ dog { nickname(unknownArg: SIT) } }"#,
+            &[RuleError::new(
+                &field_error_message("unknownArg", "nickname", "Dog"),
+                &[SourcePosition::new(17, 0, 17)],
+            )],
         );
     }
 
