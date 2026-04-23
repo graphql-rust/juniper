@@ -3,9 +3,3 @@ error: duplicated attribute argument found
    |
 10 | #[graphql(for = [ObjA, ObjA])]
    |                        ^^^^
-
-error[E0425]: cannot find type `CharacterValue` in this scope
- --> fail/interface/struct/derive_implementers_duplicate_pretty.rs:4:18
-  |
-4 | #[graphql(impl = CharacterValue)]
-  |                  ^^^^^^^^^^^^^^ not found in this scope
