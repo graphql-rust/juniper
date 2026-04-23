@@ -323,11 +323,16 @@ jobs:
     if: ${{ startsWith(github.ref, 'refs/tags/juniper') }}
     needs: ["release-github"]
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
+
+      - uses: rust-lang/crates-io-auth-action@v1
+        id: auth
 
       - name: Parse crate name and version from Git tag
         id: tag
@@ -338,7 +343,7 @@ jobs:
 
       - run: cargo publish -p ${{ steps.tag.outputs.group2 }} --all-features
         env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATESIO_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
 
   release-check:
     name: check (release)
