@@ -28,20 +28,13 @@ where
             ref span,
         }) = var_def.default_value
         {
-            if var_def.var_type.item.is_non_null() {
-                ctx.report_error(
-                    &non_null_error_message(var_name.item, &var_def.var_type.item),
-                    &[span.start],
-                )
-            } else {
-                let meta_type = ctx.schema.make_type(&var_def.var_type.item);
+            let meta_type = ctx.schema.make_type(&var_def.var_type.item);
 
-                if let Some(err) = validate_literal_value(ctx.schema, &meta_type, var_value) {
-                    ctx.report_error(
-                        &type_error_message(var_name.item, &var_def.var_type.item, err),
-                        &[span.start],
-                    );
-                }
+            if let Some(err) = validate_literal_value(ctx.schema, &meta_type, var_value) {
+                ctx.report_error(
+                    &type_error_message(var_name.item, &var_def.var_type.item, err),
+                    &[span.start],
+                );
             }
         }
     }
@@ -58,16 +51,9 @@ fn type_error_message(
     )
 }
 
-fn non_null_error_message(arg_name: impl fmt::Display, type_name: impl fmt::Display) -> String {
-    format!(
-        "Argument \"{arg_name}\" has type \"{type_name}\" and is not nullable, \
-         so it can't have a default value",
-    )
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{factory, non_null_error_message, type_error_message};
+    use super::{factory, type_error_message};
 
     use crate::{
         parser::SourcePosition,
@@ -117,24 +103,30 @@ mod tests {
     }
 
     #[test]
-    fn no_required_variables_with_default_values() {
-        expect_fails_rule::<_, _, DefaultScalarValue>(
+    fn required_variables_with_valid_default_values() {
+        expect_passes_rule::<_, _, DefaultScalarValue>(
             factory,
             r#"
-            query UnreachableDefaultValues($a: Int! = 3, $b: String! = "default") {
+            query RequiredWithDefaults($a: Int! = 3, $b: String! = "default") {
                 dog { name }
             }
             "#,
-            &[
-                RuleError::new(
-                    &non_null_error_message("a", "Int!"),
-                    &[SourcePosition::new(55, 1, 54)],
-                ),
-                RuleError::new(
-                    &non_null_error_message("b", "String!"),
-                    &[SourcePosition::new(72, 1, 71)],
-                ),
-            ],
+        );
+    }
+
+    #[test]
+    fn required_variables_with_null_default_value() {
+        expect_fails_rule::<_, _, DefaultScalarValue>(
+            factory,
+            r#"
+            query NullDefaultForRequired($a: Int! = null) {
+                dog { name }
+            }
+            "#,
+            &[RuleError::new(
+                &type_error_message("a", "Int!", error::non_null("Int!")),
+                &[SourcePosition::new(53, 1, 52)],
+            )],
         );
     }
 

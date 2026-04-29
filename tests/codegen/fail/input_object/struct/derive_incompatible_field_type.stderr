@@ -15,9 +15,9 @@ help: the trait `IsInputType<__S>` is not implemented for `ObjectA`
              `ArcStr` implements `IsInputType<__S>`
              `Box<T>` implements `IsInputType<S>`
              `ID` implements `IsInputType<__S>`
+             `Nullable<T>` implements `IsInputType<S>`
              `Object` implements `IsInputType<__S>`
              `Vec<T>` implements `IsInputType<S>`
-             `[T; N]` implements `IsInputType<S>`
            and $N others
 
 error[E0277]: the trait bound `ObjectA: FromInputValue<__S>` is not satisfied
@@ -39,10 +39,10 @@ help: the trait `FromInputValue<__S>` is not implemented for `ObjectA`
              `ArcStr` implements `FromInputValue<__S>`
              `Box<T>` implements `FromInputValue<S>`
              `ID` implements `FromInputValue<__S>`
+             `Nullable<T>` implements `FromInputValue<S>`
              `Object` implements `FromInputValue<__S>`
              `Vec<T>` implements `FromInputValue<S>`
              `[T; N]` implements `FromInputValue<S>`
-             `bool` implements `FromInputValue<__S>`
            and $N others
 note: required by a bound in `Registry::<S>::arg`
   --> $WORKSPACE/juniper/src/executor/mod.rs
@@ -69,10 +69,10 @@ help: the trait `FromInputValue<__S>` is not implemented for `ObjectA`
             `ArcStr` implements `FromInputValue<__S>`
             `Box<T>` implements `FromInputValue<S>`
             `ID` implements `FromInputValue<__S>`
+            `Nullable<T>` implements `FromInputValue<S>`
             `Object` implements `FromInputValue<__S>`
             `Vec<T>` implements `FromInputValue<S>`
             `[T; N]` implements `FromInputValue<S>`
-            `bool` implements `FromInputValue<__S>`
           and $N others
   = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -93,8 +93,8 @@ help: the trait `ToInputValue<_>` is not implemented for `ObjectA`
             `ArcStr` implements `ToInputValue<__S>`
             `Box<T>` implements `ToInputValue<S>`
             `ID` implements `ToInputValue<__S>`
+            `Nullable<T>` implements `ToInputValue<S>`
             `Object` implements `ToInputValue<__S>`
             `Value<S>` implements `ToInputValue<S>`
-            `Vec<T>` implements `ToInputValue<S>`
           and $N others
   = note: this error originates in the derive macro `GraphQLInputObject` (in Nightly builds, run with -Z macro-backtrace for more info)

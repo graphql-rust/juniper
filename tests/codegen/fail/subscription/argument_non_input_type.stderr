@@ -15,9 +15,9 @@ help: the trait `IsInputType<__S>` is not implemented for `ObjA`
              `ArcStr` implements `IsInputType<__S>`
              `Box<T>` implements `IsInputType<S>`
              `ID` implements `IsInputType<__S>`
+             `Nullable<T>` implements `IsInputType<S>`
              `Vec<T>` implements `IsInputType<S>`
              `[T; N]` implements `IsInputType<S>`
-             `[T]` implements `IsInputType<S>`
            and $N others
 
 error[E0277]: the trait bound `ObjA: FromInputValue<__S>` is not satisfied
@@ -39,10 +39,10 @@ help: the trait `FromInputValue<__S>` is not implemented for `ObjA`
              `ArcStr` implements `FromInputValue<__S>`
              `Box<T>` implements `FromInputValue<S>`
              `ID` implements `FromInputValue<__S>`
+             `Nullable<T>` implements `FromInputValue<S>`
              `Vec<T>` implements `FromInputValue<S>`
              `[T; N]` implements `FromInputValue<S>`
              `bool` implements `FromInputValue<__S>`
-             `compact_str::CompactString` implements `FromInputValue<__S>`
            and $N others
 note: required by a bound in `Registry::<S>::arg`
   --> $WORKSPACE/juniper/src/executor/mod.rs
@@ -69,10 +69,10 @@ help: the trait `FromInputValue<__S>` is not implemented for `ObjA`
              `ArcStr` implements `FromInputValue<__S>`
              `Box<T>` implements `FromInputValue<S>`
              `ID` implements `FromInputValue<__S>`
+             `Nullable<T>` implements `FromInputValue<S>`
              `Vec<T>` implements `FromInputValue<S>`
              `[T; N]` implements `FromInputValue<S>`
              `bool` implements `FromInputValue<__S>`
-             `compact_str::CompactString` implements `FromInputValue<__S>`
            and $N others
    = note: this error originates in the attribute macro `graphql_subscription` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -92,10 +92,10 @@ help: the trait `FromInputValue<__S>` is not implemented for `ObjA`
              `ArcStr` implements `FromInputValue<__S>`
              `Box<T>` implements `FromInputValue<S>`
              `ID` implements `FromInputValue<__S>`
+             `Nullable<T>` implements `FromInputValue<S>`
              `Vec<T>` implements `FromInputValue<S>`
              `[T; N]` implements `FromInputValue<S>`
              `bool` implements `FromInputValue<__S>`
-             `compact_str::CompactString` implements `FromInputValue<__S>`
            and $N others
 
 warning: unused variable: `obj`
