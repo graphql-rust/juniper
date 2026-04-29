@@ -55,6 +55,12 @@ fn validate_var_defs<S>(
         let raw_type_name = def.var_type.item.innermost_name();
         match schema.concrete_type_by_name(raw_type_name) {
             Some(t) if t.is_input() => {
+                // Spec §6.1.2: if no value is provided and a default value
+                // exists, the default value is used regardless of nullability.
+                if values.get(name.item).is_none() && def.default_value.is_some() {
+                    continue;
+                }
+
                 let ct = schema.make_type(&def.var_type.item);
 
                 if def.var_type.item.is_non_null() && is_absent_or_null(values.get(name.item)) {

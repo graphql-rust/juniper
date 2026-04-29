@@ -576,6 +576,61 @@ async fn allow_non_nullable_inputs_to_be_set_to_value_directly() {
 }
 
 #[tokio::test]
+async fn default_used_for_non_nullable_variable_when_not_provided() {
+    run_variable_query(
+        r#"query q($value: String! = "fallback") { fieldWithNonNullableStringInput(input: $value) }"#,
+        graphql::vars! {},
+        |result| {
+            assert_eq!(
+                result.get_field_value("fieldWithNonNullableStringInput"),
+                Some(&graphql::value!(r#""fallback""#)),
+            );
+        },
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn provided_value_overrides_non_nullable_variable_default() {
+    run_variable_query(
+        r#"query q($value: String! = "fallback") { fieldWithNonNullableStringInput(input: $value) }"#,
+        graphql::vars! {"value": "override"},
+        |result| {
+            assert_eq!(
+                result.get_field_value("fieldWithNonNullableStringInput"),
+                Some(&graphql::value!(r#""override""#)),
+            );
+        },
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn does_not_allow_null_for_non_nullable_variable_with_default() {
+    let schema = RootNode::new(
+        TestType,
+        EmptyMutation::<()>::new(),
+        EmptySubscription::<()>::new(),
+    );
+
+    let query = r#"query q($value: String! = "fallback") { fieldWithNonNullableStringInput(input: $value) }"#;
+    let vars = graphql::vars! {"value": null};
+
+    let error = crate::execute(query, None, &schema, &vars, &())
+        .await
+        .unwrap_err();
+
+    assert_eq!(
+        error,
+        RuleError::new(
+            r#"Variable "$value" of required type "String!" was not provided."#,
+            &[SourcePosition::new(8, 0, 8)],
+        )
+        .into(),
+    );
+}
+
+#[tokio::test]
 async fn allow_lists_to_be_null() {
     run_variable_query(
         r#"query q($input: [String]) { list(input: $input) }"#,
