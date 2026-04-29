@@ -1,5 +1,6 @@
 use crate::{
-    graphql,
+    GraphQLError, RuleError, graphql,
+    parser::SourcePosition,
     schema::model::RootNode,
     tests::fixtures::starwars::schema::{Database, Query},
     types::scalars::{EmptyMutation, EmptySubscription},
@@ -287,6 +288,26 @@ async fn test_query_name_invalid_variable() {
     assert_eq!(
         crate::execute(doc, None, &schema, &vars, &database).await,
         Ok((graphql::value!({ "human": null }), vec![])),
+    );
+}
+
+#[tokio::test]
+async fn test_rejects_unknown_argument_on_query_field_without_args() {
+    let doc = "{ hero { name(unknownArg: true) } }";
+    let database = Database::new();
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
+
+    assert_eq!(
+        crate::execute(doc, None, &schema, &graphql::vars! {}, &database).await,
+        Err(GraphQLError::ValidationError(vec![RuleError::new(
+            r#"Unknown argument "unknownArg" on field "name" of type "Character""#,
+            &[SourcePosition::new(14, 0, 14)],
+        )])),
+        "expected validation error, got successful response",
     );
 }
 
