@@ -1107,6 +1107,16 @@ mod default_argument {
                 graphql_vars! {},
             ),
             (
+                "query q($arg1: Int) { human { id(arg1: $arg1) } }",
+                r#"0|Some("second")&true"#,
+                graphql_vars! {},
+            ),
+            (
+                "query q($arg1: Int) { human { id(arg1: $arg1) } }",
+                r#"3|Some("second")&true"#,
+                graphql_vars! { "arg1": 3 },
+            ),
+            (
                 "query q($arg2: String) { human { id(arg2: $arg2) } }",
                 r#"0|Some("second")&true"#,
                 graphql_vars! {},
