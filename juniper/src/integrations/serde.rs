@@ -9,7 +9,7 @@ use serde::{
 
 use crate::{
     DefaultScalarValue, GraphQLError, Object, Value,
-    ast::InputValue,
+    ast::{InputValue, OperationType},
     executor::ExecutionError,
     parser::{ParseError, SourcePosition, Spanning},
     validation::RuleError,
@@ -67,6 +67,14 @@ impl Serialize for GraphQLError {
             .serialize(ser),
             Self::NotSubscription => [Helper {
                 message: "Expected subscription, got query",
+            }]
+            .serialize(ser),
+            Self::NotSupported(op) => [Helper {
+                message: match op {
+                    OperationType::Query => "Schema is not configured for queries",
+                    OperationType::Mutation => "Schema is not configured for mutations",
+                    OperationType::Subscription => "Schema is not configured for subscriptions",
+                },
             }]
             .serialize(ser),
         }

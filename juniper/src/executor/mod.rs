@@ -859,10 +859,13 @@ where
 
         let root_type = match operation.item.operation_type {
             OperationType::Query => root_node.schema.query_type(),
-            OperationType::Mutation => root_node
-                .schema
-                .mutation_type()
-                .expect("No mutation type found"),
+            OperationType::Mutation => match root_node.schema.mutation_type() {
+                Some(root_type) => root_type,
+                // The schema has no mutation type (e.g. `EmptyMutation`), so a
+                // mutation operation can't be executed against it. Return a
+                // request error instead of panicking.
+                None => return Err(GraphQLError::NotSupported(OperationType::Mutation)),
+            },
             OperationType::Subscription => unreachable!(),
         };
 
@@ -957,10 +960,13 @@ where
 
         let root_type = match operation.item.operation_type {
             OperationType::Query => root_node.schema.query_type(),
-            OperationType::Mutation => root_node
-                .schema
-                .mutation_type()
-                .expect("No mutation type found"),
+            OperationType::Mutation => match root_node.schema.mutation_type() {
+                Some(root_type) => root_type,
+                // The schema has no mutation type (e.g. `EmptyMutation`), so a
+                // mutation operation can't be executed against it. Return a
+                // request error instead of panicking.
+                None => return Err(GraphQLError::NotSupported(OperationType::Mutation)),
+            },
             OperationType::Subscription => unreachable!(),
         };
 
@@ -1103,10 +1109,12 @@ where
         }
 
         let root_type = match operation.item.operation_type {
-            OperationType::Subscription => root_node
-                .schema
-                .subscription_type()
-                .expect("No subscription type found"),
+            OperationType::Subscription => match root_node.schema.subscription_type() {
+                Some(root_type) => root_type,
+                // The schema has no subscription type (e.g. `EmptySubscription`);
+                // return a request error instead of panicking.
+                None => return Err(GraphQLError::NotSupported(OperationType::Subscription)),
+            },
             _ => unreachable!(),
         };
 

@@ -21,6 +21,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Changed `ScalarToken::String` to contain raw quoted and escaped `StringLiteral` (was unquoted but escaped string before). ([#1349])
 - Added `LexerError::UnterminatedBlockString` variant. ([#1349])
 - Fixed `ValuesStream` to return batch of `ExecutionError`s instead of a single one. ([#1371])
+- Added `GraphQLError::NotSupported` variant. ([#1378])
 
 ### Added
 
@@ -65,6 +66,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Incorrect double escaping in `ScalarToken::String` `Display`ing. ([#1349])
 - Memory leak caused by incorrect error handling in `#[graphql_subscription]` macro expansion. ([#1371])
 - Incorrect rejection of default values on non-`Null` variables. ([#1376])
+- Executing a `mutation` against a schema without a mutation type (e.g. `EmptyMutation`), or a `subscription` against one without a subscription type (e.g. `EmptySubscription`), now returns a `GraphQLError::NotSupported` error rather than panicking. ([#1378])
 
 [#864]: /../../issues/864
 [#1055]: /../../issues/1055
@@ -80,6 +82,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1371]: /../../pull/1371
 [#1376]: /../../pull/1376
 [#1377]: /../../pull/1377
+[#1378]: /../../pull/1378
 [graphql/graphql-spec#525]: https://github.com/graphql/graphql-spec/pull/525
 [graphql/graphql-spec#687]: https://github.com/graphql/graphql-spec/issues/687
 [graphql/graphql-spec#805]: https://github.com/graphql/graphql-spec/pull/805
