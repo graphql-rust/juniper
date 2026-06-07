@@ -10,12 +10,12 @@ help: the trait `IsOutputType<__S>` is not implemented for `ObjB`
 4 | struct ObjB {
   | ^^^^^^^^^^^
   = help: the following other types implement trait `IsOutputType<S>`:
-            `&T` implements `IsOutputType<S>`
-            `Arc<T>` implements `IsOutputType<S>`
-            `ArcStr` implements `IsOutputType<__S>`
-            `Argument<S>` implements `IsOutputType<S>`
-            `Box<T>` implements `IsOutputType<S>`
-            `EnumValue` implements `IsOutputType<__S>`
-            `ID` implements `IsOutputType<__S>`
-            `ObjA` implements `IsOutputType<__S>`
+            ArcStr
+            EnumValue
+            ID
+            ObjA
+            bool
+            compact_str::CompactString
+            f64
+            i32
           and $N others

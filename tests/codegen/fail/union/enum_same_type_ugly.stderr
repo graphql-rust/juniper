@@ -15,16 +15,12 @@ error[E0277]: the trait bound `std::string::String: GraphQLObject<__S>` is not s
 5 |     A(std::string::String),
   |       ^^^^^^^^^^^^^^^^^^^ the trait `GraphQLObject<__S>` is not implemented for `std::string::String`
   |
-  = help: the following other types implement trait `GraphQLObject<S>`:
-            `&T` implements `GraphQLObject<S>`
-            `Arc<T>` implements `GraphQLObject<S>`
-            `Argument<S>` implements `GraphQLObject<S>`
-            `Box<T>` implements `GraphQLObject<S>`
-            `EnumValue` implements `GraphQLObject<__S>`
-            `SchemaType<S>` implements `GraphQLObject<S>`
-            `juniper::meta::Field<S>` implements `GraphQLObject<S>`
-            `juniper::schema::model::DirectiveType<S>` implements `GraphQLObject<S>`
-            `juniper::schema::model::TypeType<'a, S>` implements `GraphQLObject<S>`
+help: the trait `GraphQLObject<__S>` is implemented for `EnumValue`
+ --> $WORKSPACE/juniper/src/schema/schema.rs
+  |
+  | #[graphql_object]
+  | ^^^^^^^^^^^^^^^^^
+  = note: this error originates in the attribute macro `graphql_object` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `std::string::String: GraphQLObject<__S>` is not satisfied
  --> fail/union/enum_same_type_ugly.rs:6:7
@@ -32,13 +28,9 @@ error[E0277]: the trait bound `std::string::String: GraphQLObject<__S>` is not s
 6 |     B(String),
   |       ^^^^^^ the trait `GraphQLObject<__S>` is not implemented for `std::string::String`
   |
-  = help: the following other types implement trait `GraphQLObject<S>`:
-            `&T` implements `GraphQLObject<S>`
-            `Arc<T>` implements `GraphQLObject<S>`
-            `Argument<S>` implements `GraphQLObject<S>`
-            `Box<T>` implements `GraphQLObject<S>`
-            `EnumValue` implements `GraphQLObject<__S>`
-            `SchemaType<S>` implements `GraphQLObject<S>`
-            `juniper::meta::Field<S>` implements `GraphQLObject<S>`
-            `juniper::schema::model::DirectiveType<S>` implements `GraphQLObject<S>`
-            `juniper::schema::model::TypeType<'a, S>` implements `GraphQLObject<S>`
+help: the trait `GraphQLObject<__S>` is implemented for `EnumValue`
+ --> $WORKSPACE/juniper/src/schema/schema.rs
+  |
+  | #[graphql_object]
+  | ^^^^^^^^^^^^^^^^^
+  = note: this error originates in the attribute macro `graphql_object` (in Nightly builds, run with -Z macro-backtrace for more info)
