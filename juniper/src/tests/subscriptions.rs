@@ -148,7 +148,7 @@ fn create_and_execute(
 #[test]
 fn returns_requested_object() {
     let query = r#"subscription {
-        asyncHuman(id: "1") {
+        asyncHuman {
             id
             name
         }
@@ -176,7 +176,7 @@ fn returns_requested_object() {
 #[test]
 fn returns_error() {
     let query = r#"subscription {
-        errorHuman(id: "1") {
+        errorHuman {
             id
             name
         }
@@ -227,7 +227,7 @@ fn can_access_context() {
 fn resolves_typed_inline_fragments() {
     let query = r#"subscription {
              ... on MySubscription {
-                asyncHuman(id: "32") {
+                asyncHuman {
                   id
                 }
              }
@@ -255,7 +255,7 @@ fn resolves_typed_inline_fragments() {
 fn resolves_nontyped_inline_fragments() {
     let query = r#"subscription {
              ... {
-                asyncHuman(id: "32") {
+                asyncHuman {
                   id
                 }
              }
@@ -310,7 +310,7 @@ fn can_access_arguments() {
 #[test]
 fn type_alias() {
     let query = r#"subscription {
-        aliasedHuman: asyncHuman(id: "1") {
+        aliasedHuman: asyncHuman {
             id
             name
         }
