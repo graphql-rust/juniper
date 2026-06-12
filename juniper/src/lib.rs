@@ -137,6 +137,18 @@ pub enum GraphQLError {
     IsSubscription,
     #[display("Operation is not a subscription")]
     NotSubscription,
+    /// The requested operation type has no corresponding root type defined in
+    /// the schema — e.g. a `mutation` against [`EmptyMutation`], or a
+    /// `subscription` against [`EmptySubscription`].
+    ///
+    /// [`EmptyMutation`]: crate::EmptyMutation
+    /// [`EmptySubscription`]: crate::EmptySubscription
+    #[display("Schema is not configured for {} operations", match _0 {
+        OperationType::Query => "queries",
+        OperationType::Mutation => "mutations",
+        OperationType::Subscription => "subscriptions",
+    })]
+    NotSupported(OperationType),
 }
 
 impl From<RuleError> for GraphQLError {
@@ -154,7 +166,8 @@ impl std::error::Error for GraphQLError {
             | Self::MultipleOperationsProvided
             | Self::UnknownOperationName
             | Self::IsSubscription
-            | Self::NotSubscription => None,
+            | Self::NotSubscription
+            | Self::NotSupported(_) => None,
         }
     }
 }
