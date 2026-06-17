@@ -48,7 +48,7 @@ http-body-util = "0.1.2"
 async-stream = "0.3"
 env_logger = "0.11"
 http-body-util = "0.1"
-itertools = "0.14"
+itertools = "0.15"
 juniper = { version = "0.17", path = "../juniper", features = ["expose-test-schema"] }
 log = "0.4"
 percent-encoding = "2.1"
