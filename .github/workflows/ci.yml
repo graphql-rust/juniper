@@ -444,9 +444,9 @@ jobs:
       - uses: actions/checkout@v7
       - uses: peaceiris/actions-mdbook@v2
 
-      - run: make book.build out=gh-pages${{ (github.ref == 'refs/heads/master'
-                                              && '/master')
-                                          ||     '' }}
+      - run: make book.build out=book/gh-pages${{ (github.ref == 'refs/heads/master'
+                                                   && '/master')
+                                               ||     '' }}
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
