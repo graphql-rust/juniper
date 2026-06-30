@@ -12,7 +12,7 @@ build-dir = "_rendered"
 create-missing = false
 
 [output.html]
-git_repository_url = "https://github.com/graphql-rust/juniper"
+git-repository-url = "https://github.com/graphql-rust/juniper"
 
 [rust]
 edition = "2024"
