@@ -73,7 +73,7 @@ uuid = { version = "1.3", default-features = false, optional = true }
 
 # Fixes for `minimal-versions` check.
 # TODO: Try remove on upgrade of `bigdecimal` crate.
-num-bigint = { version = "0.4.2", optional = true }
+num-bigint = { version = "0.5.0", optional = true }
 # TODO: Try remove on upgrade of `chrono-tz` crate.
 regex = { version = "1.6", features = ["std"], default-features = false, optional = true }
 # TODO: Try remove on upgrade of `bson` crate.
