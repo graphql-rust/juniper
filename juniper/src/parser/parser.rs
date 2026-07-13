@@ -55,14 +55,9 @@ impl<'a> Parser<'a> {
     #[doc(hidden)]
     pub fn new(lexer: &mut Lexer<'a>) -> Result<Parser<'a>, Spanning<LexerError>> {
         let mut tokens = Vec::new();
-
         for res in lexer {
-            match res {
-                Ok(s) => tokens.push(s),
-                Err(e) => return Err(e),
-            }
+            tokens.push(res?);
         }
-
         Ok(Parser { tokens })
     }
 
