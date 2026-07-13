@@ -141,16 +141,10 @@ where
     S: ScalarValue,
 {
     let start_pos = parser.expect(&Token::Name("fragment"))?.span.start;
-    let name = match parser.expect_name() {
-        Ok(n) => {
-            if n.item == "on" {
-                return Err(n.map(|_| ParseError::UnexpectedToken("on".into())));
-            } else {
-                n
-            }
-        }
-        Err(e) => return Err(e),
-    };
+    let name = parser.expect_name()?;
+    if name.item == "on" {
+        return Err(name.map(|_| ParseError::UnexpectedToken("on".into())));
+    }
 
     parser.expect(&Token::Name("on"))?;
     let type_cond = parser.expect_name()?;

@@ -273,12 +273,10 @@ where
                 if variables.is_some() {
                     return Err(invalid_err("variables"));
                 }
-                match serde_json::from_str::<InputValue<S>>(&value)
-                    .map_err(GraphQLRequestError::Variables)
-                {
-                    Ok(parsed_variables) => variables = Some(parsed_variables),
-                    Err(e) => return Err(e),
-                }
+                variables = Some(
+                    serde_json::from_str::<InputValue<S>>(&value)
+                        .map_err(GraphQLRequestError::Variables)?,
+                );
             }
             _ => continue,
         }

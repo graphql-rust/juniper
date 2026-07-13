@@ -22,6 +22,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Added `LexerError::UnterminatedBlockString` variant. ([#1349])
 - Fixed `ValuesStream` to return batch of `ExecutionError`s instead of a single one. ([#1371])
 - Added `GraphQLError::NotSupported` variant. ([#1378])
+- Upgraded [`compact_str` crate] integration to [0.10 version](https://github.com/ParkMyCar/compact_str/blob/v0.10.0/CHANGELOG.md#0100). ([#1387])
 
 ### Added
 
@@ -83,6 +84,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1376]: /../../pull/1376
 [#1377]: /../../pull/1377
 [#1378]: /../../pull/1378
+[#1387]: /../../pull/1387
 [graphql/graphql-spec#525]: https://github.com/graphql/graphql-spec/pull/525
 [graphql/graphql-spec#687]: https://github.com/graphql/graphql-spec/issues/687
 [graphql/graphql-spec#805]: https://github.com/graphql/graphql-spec/pull/805
@@ -490,6 +492,7 @@ See [old CHANGELOG](/../../blob/juniper-v0.15.12/juniper/CHANGELOG.md).
 [`bson` crate]: https://docs.rs/bson
 [`chrono` crate]: https://docs.rs/chrono
 [`chrono-tz` crate]: https://docs.rs/chrono-tz
+[`compact_str` crate]: https://docs.rs/compact_str
 [`derive_more` crate]: https://docs.rs/derive_more
 [`jiff` crate]: https://docs.rs/jiff
 [`time` crate]: https://docs.rs/time

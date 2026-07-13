@@ -51,7 +51,7 @@ bigdecimal = { version = "0.4", optional = true }
 bson = { version = "3.0", optional = true }
 chrono = { version = "0.4.30", features = ["alloc"], default-features = false, optional = true }
 chrono-tz = { version = "0.10", default-features = false, optional = true }
-compact_str = "0.9"
+compact_str = "0.10"
 derive_more = { version = "2.0", features = ["debug", "deref", "display", "error", "from", "into", "into_iterator", "try_into"] }
 fnv = "1.0.5"
 futures = { version = "0.3.22", features = ["alloc"], default-features = false }
@@ -85,7 +85,7 @@ void = { version = "1.0.2", optional = true }
 arcstr = { version = "1.1", features = ["serde"] }
 bencher = "0.1.2"
 chrono = { version = "0.4.30", features = ["alloc"], default-features = false }
-compact_str = { version = "0.9", features = ["serde"] }
+compact_str = { version = "0.10", features = ["serde"] }
 jiff = { version = "0.2", features = ["tzdb-bundle-always"], default-features = false }
 pretty_assertions = "1.0.0"
 serde_json = "1.0.18"
