@@ -90,7 +90,7 @@ pub struct ExecutionError<S> {
 impl<S> Eq for ExecutionError<S> where Self: PartialEq {}
 
 impl<S> ExecutionError<S> {
-    /// Construct a new execution error occuring at the beginning of the query
+    /// Construct a new execution error occurring at the beginning of the query
     pub fn at_origin(error: FieldError<S>) -> ExecutionError<S> {
         ExecutionError {
             location: SourcePosition::new_origin(),

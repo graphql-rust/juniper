@@ -66,7 +66,7 @@ where
     S: ScalarValue,
 {
     /// Stream's return Value that will be returned if
-    /// no errors occured. Is used to determine field type in
+    /// no errors occurred. Is used to determine field type in
     /// `#[juniper::graphql_subscription]`
     type Item: GraphQLValue<S>;
 }
