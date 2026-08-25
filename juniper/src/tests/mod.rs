@@ -6,6 +6,8 @@ mod introspection_tests;
 #[cfg(test)]
 mod operation_not_supported;
 #[cfg(test)]
+mod parse_and_validate;
+#[cfg(test)]
 mod query_tests;
 #[cfg(test)]
 mod schema_introspection;

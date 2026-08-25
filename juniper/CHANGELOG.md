@@ -53,6 +53,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - `ruint::aliases::U128` as `U128` scalar.
     - `ruint::aliases::U256` as `U256` scalar.
     - `integrations::ruint::unit_scalar` module for declaring custom-sized `ruint::Unit` scalars.
+- `parse_and_validate()` function for parsing and validating a query without executing it, returning the `OperationType` that would be executed. ([#1392], [#726])
 
 ### Changed
 
@@ -86,6 +87,8 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1378]: /../../pull/1378
 [#1380]: /../../pull/1380
 [#1387]: /../../pull/1387
+[#1392]: /../../pull/1392
+[#726]: /../../issues/726
 [graphql/graphql-spec#525]: https://github.com/graphql/graphql-spec/pull/525
 [graphql/graphql-spec#687]: https://github.com/graphql/graphql-spec/issues/687
 [graphql/graphql-spec#805]: https://github.com/graphql/graphql-spec/pull/805
