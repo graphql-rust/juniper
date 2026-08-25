@@ -218,6 +218,59 @@ where
     execute_validated_query(&document, operation, root_node, variables, context)
 }
 
+/// Parses and validates a GraphQL query against the provided schema without
+/// executing it, returning the [`OperationType`] that would be executed.
+///
+/// This runs the same parsing and validation steps as [`execute()`] and
+/// [`execute_sync()`], but stops short of resolving anything. It's useful when
+/// you need to know whether a request is a query, mutation or subscription
+/// before deciding how to run it, e.g. to route subscriptions to
+/// [`resolve_into_stream()`] and everything else to [`execute()`], without
+/// having to attempt execution first.
+pub fn parse_and_validate<'a, S, QueryT, MutationT, SubscriptionT>(
+    document_source: &'a str,
+    operation_name: Option<&str>,
+    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
+    variables: &Variables<S>,
+) -> Result<OperationType, GraphQLError>
+where
+    S: ScalarValue,
+    QueryT: GraphQLType<S>,
+    MutationT: GraphQLType<S, Context = QueryT::Context>,
+    SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
+{
+    let document = parse_document_source(document_source, &root_node.schema)?;
+
+    {
+        let mut ctx = ValidatorContext::new(&root_node.schema, &document);
+        visit_all_rules(&mut ctx, &document);
+        if root_node.introspection_disabled {
+            visit_rule(
+                &mut MultiVisitorNil.with(rules::disable_introspection::factory()),
+                &mut ctx,
+                &document,
+            );
+        }
+
+        let errors = ctx.into_errors();
+        if !errors.is_empty() {
+            return Err(errors.into());
+        }
+    }
+
+    let operation = get_operation(&document, operation_name)?;
+
+    {
+        let errors = validate_input_values(variables, operation, &root_node.schema);
+
+        if !errors.is_empty() {
+            return Err(errors.into());
+        }
+    }
+
+    Ok(operation.item.operation_type)
+}
+
 /// Execute a query in a provided schema
 pub async fn execute<'a, S, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
