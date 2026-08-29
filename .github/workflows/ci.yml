@@ -172,7 +172,7 @@ jobs:
           - macOS
           - windows
         include:
-          # For tests only.
+          # 1.93.1 for tests only.
           - { msrv: "1.93.1", crate: "juniper", os: "ubuntu" }
           - { msrv: "1.93.1", crate: "juniper", os: "macOS" }
           - { msrv: "1.93.1", crate: "juniper", os: "windows" }
