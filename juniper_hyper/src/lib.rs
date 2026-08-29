@@ -38,7 +38,7 @@ where
 {
     match parse_req(req).await {
         Ok(req) => execute_request_sync(schema, context, req).await,
-        Err(resp) => resp,
+        Err(resp) => *resp,
     }
 }
 
@@ -62,11 +62,11 @@ where
 {
     match parse_req(req).await {
         Ok(req) => execute_request(schema, context, req).await,
-        Err(resp) => resp,
+        Err(resp) => *resp,
     }
 }
 
-async fn parse_req<S, B>(req: Request<B>) -> Result<GraphQLBatchRequest<S>, Response<String>>
+async fn parse_req<S, B>(req: Request<B>) -> Result<GraphQLBatchRequest<S>, Box<Response<String>>>
 where
     S: ScalarValue,
     B: Body<Error: Display>,
@@ -81,12 +81,12 @@ where
             match content_type {
                 Some(Ok("application/json")) => parse_post_json_req(req.into_body()).await,
                 Some(Ok("application/graphql")) => parse_post_graphql_req(req.into_body()).await,
-                _ => return Err(new_response(StatusCode::BAD_REQUEST)),
+                _ => return Err(new_response(StatusCode::BAD_REQUEST).into()),
             }
         }
-        _ => return Err(new_response(StatusCode::METHOD_NOT_ALLOWED)),
+        _ => return Err(new_response(StatusCode::METHOD_NOT_ALLOWED).into()),
     }
-    .map_err(render_error)
+    .map_err(|e| render_error(e).into())
 }
 
 fn parse_get_req<S, B>(req: Request<B>) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError<B>>
