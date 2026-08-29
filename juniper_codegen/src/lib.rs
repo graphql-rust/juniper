@@ -2055,7 +2055,7 @@ pub fn graphql_subscription(attr: TokenStream, body: TokenStream) -> TokenStream
 ///
 /// # Custom name and description
 ///
-/// The name of [GraphQL union][1] may be overriden with a `name` attribute's argument. By default,
+/// The name of [GraphQL union][1] may be overridden with a `name` attribute's argument. By default,
 /// a type name is used.
 ///
 /// The description of [GraphQL union][1] may be specified either with a `description`/`desc`
@@ -2374,7 +2374,7 @@ pub fn derive_union(body: TokenStream) -> TokenStream {
 ///
 /// # Custom name and description
 ///
-/// The name of [GraphQL union][1] may be overriden with a `name` attribute's argument. By default,
+/// The name of [GraphQL union][1] may be overridden with a `name` attribute's argument. By default,
 /// a type name is used.
 ///
 /// The description of [GraphQL union][1] may be specified either with a `description`/`desc`
