@@ -172,6 +172,10 @@ jobs:
           - macOS
           - windows
         include:
+          # 1.93.1 for tests only.
+          - { msrv: "1.93.1", crate: "juniper", os: "ubuntu" }
+          - { msrv: "1.93.1", crate: "juniper", os: "macOS" }
+          - { msrv: "1.93.1", crate: "juniper", os: "windows" }
           - { msrv: "1.88.0", crate: "juniper_actix", os: "ubuntu" }
           - { msrv: "1.88.0", crate: "juniper_actix", os: "macOS" }
           - { msrv: "1.88.0", crate: "juniper_actix", os: "windows" }
@@ -188,6 +192,10 @@ jobs:
       - run: cargo +nightly update -Z minimal-versions
 
       - run: make test.cargo crate=${{ matrix.crate }}
+        if: ${{ matrix.msrv != '1.85.0' || matrix.crate != 'juniper' }}
+
+      - run: cargo check -p ${{ matrix.crate }} --all-features
+        if: ${{ matrix.msrv == '1.85.0' && matrix.crate == 'juniper' }}
 
   package:
     name: check (package)

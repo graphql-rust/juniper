@@ -58,7 +58,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 - [September 2025] GraphQL spec: ([#1347])
     - Canonical introspection query to [16.11.0 version of GraphQL.js](https://github.com/graphql/graphql-js/blob/v16.11.0/src/utilities/getIntrospectionQuery.ts#L75). ([#1348])
-- Upgraded [GraphiQL] to [5.2.4 version](https://github.com/graphql/graphiql/blob/graphiql%405.2.4/packages/graphiql/CHANGELOG.md#524). ([#1361], [#1377], [#1380])
+- Upgraded [GraphiQL] to [5.3.0 version](https://github.com/graphql/graphiql/blob/graphiql%405.3.0/packages/graphiql/CHANGELOG.md#530). ([#1361], [#1377], [#1380], [#1393])
 
 ### Fixed
 
@@ -86,6 +86,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1378]: /../../pull/1378
 [#1380]: /../../pull/1380
 [#1387]: /../../pull/1387
+[#1393]: /../../pull/1393
 [graphql/graphql-spec#525]: https://github.com/graphql/graphql-spec/pull/525
 [graphql/graphql-spec#687]: https://github.com/graphql/graphql-spec/issues/687
 [graphql/graphql-spec#805]: https://github.com/graphql/graphql-spec/pull/805
