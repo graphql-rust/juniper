@@ -22,7 +22,9 @@ pub(crate) fn output_type(ret_ty: &syn::ReturnType) -> Result<syn::Type, Span> {
     };
 
     let path = match ret_ty.unparenthesized() {
-        syn::Type::Path(syn::TypePath { qself: None, path }) => path,
+        syn::Type::Path(syn::TypePath {
+            qself: None, path, ..
+        }) => path,
         _ => return Err(ret_ty.span()),
     };
 
@@ -66,7 +68,8 @@ pub(crate) fn output_type(ret_ty: &syn::ReturnType) -> Result<syn::Type, Span> {
 pub(crate) fn context_ty(sig: &syn::Signature) -> Result<Option<syn::Type>, Span> {
     match sig.receiver() {
         Some(rcv) => {
-            if rcv.reference.is_none() || rcv.mutability.is_some() {
+            // Only `&self` is expected in method's signature.
+            if !matches!(rcv.kind, syn::ReceiverKind::Reference(_, _, None)) {
                 return Err(rcv.span());
             }
         }
