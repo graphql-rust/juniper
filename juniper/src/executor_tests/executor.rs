@@ -129,6 +129,85 @@ mod field_execution {
     }
 }
 
+mod non_null_null_result {
+    use std::future;
+
+    use arcstr::ArcStr;
+
+    use crate::{
+        BoxFuture, DefaultScalarValue, EmptyMutation, EmptySubscription, ExecutionResult, Executor,
+        GraphQLType, GraphQLValue, GraphQLValueAsync, Registry, RootNode, Value, graphql,
+        schema::meta::MetaType, types::base::Arguments,
+    };
+
+    struct Query;
+
+    impl GraphQLType<DefaultScalarValue> for Query {
+        fn name(_: &Self::TypeInfo) -> Option<ArcStr> {
+            Some("Query".into())
+        }
+
+        fn meta(
+            info: &Self::TypeInfo,
+            registry: &mut Registry<DefaultScalarValue>,
+        ) -> MetaType<DefaultScalarValue> {
+            let fields = &[registry.field::<String>("critical", &())];
+            registry.build_object_type::<Self>(info, fields).into_meta()
+        }
+    }
+
+    impl GraphQLValue<DefaultScalarValue> for Query {
+        type Context = ();
+        type TypeInfo = ();
+
+        fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
+            <Self as GraphQLType>::name(info)
+        }
+
+        fn resolve_field(
+            &self,
+            _: &Self::TypeInfo,
+            _: &str,
+            _: &Arguments<DefaultScalarValue>,
+            _: &Executor<Self::Context>,
+        ) -> ExecutionResult {
+            Ok(Value::null())
+        }
+    }
+
+    impl GraphQLValueAsync<DefaultScalarValue> for Query {
+        fn resolve_field_async<'a>(
+            &'a self,
+            _: &'a Self::TypeInfo,
+            _: &'a str,
+            _: &'a Arguments<DefaultScalarValue>,
+            _: &'a Executor<Self::Context>,
+        ) -> BoxFuture<'a, ExecutionResult> {
+            Box::pin(future::ready(Ok(Value::null())))
+        }
+    }
+
+    fn schema() -> RootNode<Query, EmptyMutation, EmptySubscription> {
+        RootNode::new(Query, EmptyMutation::new(), EmptySubscription::new())
+    }
+
+    #[tokio::test]
+    async fn direct_null_from_non_null_field_is_not_reported() {
+        let document = "{ critical }";
+
+        for (value, errors) in [
+            crate::execute(document, None, &schema(), &graphql::vars! {}, &())
+                .await
+                .expect("async execution failed"),
+            crate::execute_sync(document, None, &schema(), &graphql::vars! {}, &())
+                .expect("sync execution failed"),
+        ] {
+            assert_eq!(value, graphql::value!(null));
+            assert_eq!(errors, []);
+        }
+    }
+}
+
 mod merge_parallel_fragments {
     use crate::{
         graphql, graphql_object,
