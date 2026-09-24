@@ -136,8 +136,9 @@ mod non_null_null_result {
 
     use crate::{
         BoxFuture, DefaultScalarValue, EmptyMutation, EmptySubscription, ExecutionResult, Executor,
-        GraphQLType, GraphQLValue, GraphQLValueAsync, Registry, RootNode, Value, graphql,
-        schema::meta::MetaType, types::base::Arguments,
+        FieldError, GraphQLType, GraphQLValue, GraphQLValueAsync, Registry, RootNode, Value,
+        executor::ExecutionError, graphql, parser::SourcePosition, schema::meta::MetaType,
+        types::base::Arguments,
     };
 
     struct Query;
@@ -192,7 +193,7 @@ mod non_null_null_result {
     }
 
     #[tokio::test]
-    async fn direct_null_from_non_null_field_is_not_reported() {
+    async fn direct_null_from_non_null_field_is_reported() {
         let document = "{ critical }";
 
         for (value, errors) in [
@@ -203,7 +204,17 @@ mod non_null_null_result {
                 .expect("sync execution failed"),
         ] {
             assert_eq!(value, graphql::value!(null));
-            assert_eq!(errors, []);
+            assert_eq!(
+                errors,
+                [ExecutionError::new(
+                    SourcePosition::new(2, 0, 2),
+                    &["critical"],
+                    FieldError::new(
+                        "Cannot return null for non-nullable field Query.critical.",
+                        graphql::value!(null),
+                    ),
+                )],
+            );
         }
     }
 }

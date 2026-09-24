@@ -672,6 +672,17 @@ where
         });
     }
 
+    pub(crate) fn has_error_at_or_below_current_path(&self) -> bool {
+        let mut path = Vec::new();
+        self.field_path.construct_path(&mut path);
+
+        self.errors
+            .read()
+            .unwrap()
+            .iter()
+            .any(|error| error.path.starts_with(&path))
+    }
+
     /// Returns new [`ExecutionError`] at current location
     pub fn new_error(&self, error: FieldError<S>) -> ExecutionError<S> {
         let mut path = Vec::new();

@@ -68,6 +68,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Memory leak caused by incorrect error handling in `#[graphql_subscription]` macro expansion. ([#1371])
 - Incorrect rejection of default values on non-`Null` variables. ([#1376])
 - Executing a `mutation` against a schema without a mutation type (e.g. `EmptyMutation`), or a `subscription` against one without a subscription type (e.g. `EmptySubscription`), now returns a `GraphQLError::NotSupported` error rather than panicking. ([#1378])
+- Missing execution errors for null values returned from non-`Null` fields.
 
 [#864]: /../../issues/864
 [#1055]: /../../issues/1055
