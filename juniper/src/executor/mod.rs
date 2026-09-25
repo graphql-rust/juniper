@@ -30,7 +30,9 @@ use crate::{
         model::{RootNode, SchemaType, TypeType},
     },
     types::{
-        async_await::{GraphQLTypeAsync, GraphQLValueAsync},
+        async_await::{
+            GraphQLTypeAsync, GraphQLValueAsync, resolve_selection_set_into_async_serial,
+        },
         base::{GraphQLType, GraphQLValue},
         name::Name,
         subscriptions::{GraphQLSubscriptionType, GraphQLSubscriptionValue},
@@ -991,10 +993,16 @@ where
                     .resolve_into_value_async(&root_node.query_info, &root_node)
                     .await
             }
+            // The root selection set of a `mutation` operation is executed serially.
+            // See https://spec.graphql.org/September2025#sec-Normal-and-Serial-Execution
             OperationType::Mutation => {
-                executor
-                    .resolve_into_value_async(&root_node.mutation_info, &root_node.mutation_type)
-                    .await
+                resolve_selection_set_into_async_serial(
+                    &root_node.mutation_type,
+                    &root_node.mutation_info,
+                    &operation.item.selection_set[..],
+                    &executor,
+                )
+                .await
             }
             OperationType::Subscription => unreachable!(),
         };
