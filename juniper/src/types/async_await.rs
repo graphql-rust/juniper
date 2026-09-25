@@ -3,7 +3,7 @@ use std::future;
 use auto_enums::enum_derive;
 
 use crate::{
-    ast::Selection,
+    ast::{Field, Selection},
     executor::{ExecutionResult, Executor},
     parser::Spanning,
     value::{DefaultScalarValue, Object, ScalarValue, Value},
@@ -446,6 +446,216 @@ where
                 }
                 _ => unreachable!(),
             },
+        }
+    }
+
+    Value::Object(object)
+}
+
+/// [Field] of a `mutation`'s root [selection set], collected for serial execution.
+///
+/// [Field]: https://spec.graphql.org/September2025#sec-Language.Fields
+/// [selection set]: https://spec.graphql.org/September2025#sec-Selection-Sets
+struct CollectedField<'a, S> {
+    /// Collected [`Field`] itself, along with its position in the query.
+    field: &'a Spanning<Field<'a, S>>,
+
+    /// Type condition and [selection set] of the fragment this [`Field`] was collected from, if it
+    /// was collected from one.
+    ///
+    /// [selection set]: https://spec.graphql.org/September2025#sec-Selection-Sets
+    fragment: Option<(Option<&'a str>, &'a [Selection<'a, S>])>,
+}
+
+/// Collects [fields] of the provided `selection_set` in the order they appear in the query,
+/// flattening [fragments] into the same sequence.
+///
+/// Only correct for the root [selection set] of a `mutation` operation, where the type is always an
+/// [object] one, and so any type condition resolves back to the very same `instance`.
+///
+/// [fields]: https://spec.graphql.org/September2025#sec-Language.Fields
+/// [fragments]: https://spec.graphql.org/September2025#sec-Language.Fragments
+/// [object]: https://spec.graphql.org/September2025#sec-Objects
+/// [selection set]: https://spec.graphql.org/September2025#sec-Selection-Sets
+fn collect_root_fields<'a, T, S>(
+    instance: &'a T,
+    info: &'a T::TypeInfo,
+    selection_set: &'a [Selection<'a, S>],
+    executor: &'a Executor<'a, 'a, T::Context, S>,
+    fragment: Option<(Option<&'a str>, &'a [Selection<'a, S>])>,
+    out: &mut Vec<CollectedField<'a, S>>,
+) where
+    T: GraphQLValue<S> + ?Sized,
+    S: ScalarValue,
+{
+    for selection in selection_set {
+        match *selection {
+            Selection::Field(ref f) => {
+                if is_excluded(&f.item.directives, executor.variables()) {
+                    continue;
+                }
+
+                out.push(CollectedField { field: f, fragment });
+            }
+
+            Selection::FragmentSpread(Spanning {
+                item: ref spread, ..
+            }) => {
+                if is_excluded(&spread.directives, executor.variables()) {
+                    continue;
+                }
+
+                let frag = executor
+                    .fragment_by_name(spread.name.item)
+                    .expect("Fragment could not be found");
+                let concrete_type_name = instance.concrete_type_name(executor.context(), info);
+
+                if executor
+                    .schema()
+                    .is_named_subtype(&concrete_type_name, frag.type_condition.item)
+                {
+                    collect_root_fields(
+                        instance,
+                        info,
+                        &frag.selection_set[..],
+                        executor,
+                        Some((Some(frag.type_condition.item), &frag.selection_set[..])),
+                        out,
+                    );
+                }
+            }
+
+            Selection::InlineFragment(Spanning { item: ref frag, .. }) => {
+                if is_excluded(&frag.directives, executor.variables()) {
+                    continue;
+                }
+
+                match &frag.type_condition {
+                    Some(type_condition) => {
+                        let concrete_type_name =
+                            instance.concrete_type_name(executor.context(), info);
+
+                        if executor
+                            .schema()
+                            .is_named_subtype(&concrete_type_name, type_condition.item)
+                        {
+                            collect_root_fields(
+                                instance,
+                                info,
+                                &frag.selection_set[..],
+                                executor,
+                                Some((Some(type_condition.item), &frag.selection_set[..])),
+                                out,
+                            );
+                        }
+                    }
+                    None => collect_root_fields(
+                        instance,
+                        info,
+                        &frag.selection_set[..],
+                        executor,
+                        Some((None, &frag.selection_set[..])),
+                        out,
+                    ),
+                }
+            }
+        }
+    }
+}
+
+/// Resolves the provided `selection_set` against the `instance` serially, as required for the root
+/// [selection set] of a [mutation] operation.
+///
+/// [mutation]: https://spec.graphql.org/September2025#sec-Mutation
+/// [selection set]: https://spec.graphql.org/September2025#sec-Selection-Sets
+pub(crate) async fn resolve_selection_set_into_async_serial<'a, T, S>(
+    instance: &'a T,
+    info: &'a T::TypeInfo,
+    selection_set: &'a [Selection<'a, S>],
+    executor: &'a Executor<'a, 'a, T::Context, S>,
+) -> Value<S>
+where
+    T: GraphQLValueAsync<S> + ?Sized,
+    T::TypeInfo: Sync,
+    T::Context: Sync,
+    S: ScalarValue + Send + Sync,
+{
+    let meta_type = executor
+        .schema()
+        .concrete_type_by_name(
+            instance
+                .type_name(info)
+                .expect("Resolving named type's selection set"),
+        )
+        .expect("Type not found in schema");
+
+    let mut fields = Vec::with_capacity(selection_set.len());
+    collect_root_fields(instance, info, selection_set, executor, None, &mut fields);
+
+    let mut object = Object::with_capacity(fields.len());
+
+    for CollectedField { field, fragment } in fields {
+        let Spanning { item: f, span } = field;
+
+        let response_name = f.alias.as_ref().unwrap_or(&f.name).item;
+
+        if f.name.item == "__typename" {
+            object.add_field(
+                response_name,
+                Value::Scalar(instance.concrete_type_name(executor.context(), info).into()),
+            );
+            continue;
+        }
+
+        let meta_field = meta_type.field_by_name(f.name.item).unwrap_or_else(|| {
+            panic!(
+                "Field {} not found on type {:?}",
+                f.name.item,
+                meta_type.name(),
+            )
+        });
+
+        let exec_vars = executor.variables();
+
+        // Fields collected through a fragment must be resolved against a sub-executor of that
+        // fragment, so that `Executor::look_ahead()` still finds them in its parent selection set.
+        let fragment_exec = fragment.map(|(ty, set)| executor.type_sub_executor(ty, Some(set)));
+        let parent_exec = fragment_exec.as_ref().unwrap_or(executor);
+
+        let sub_exec = parent_exec.field_sub_executor(
+            response_name,
+            f.name.item,
+            span.start,
+            f.selection_set.as_ref().map(|v| &v[..]),
+        );
+        let args = Arguments::new(
+            f.arguments.as_ref().map(|m| {
+                m.item
+                    .iter()
+                    .filter_map(|(k, v)| {
+                        let val = v.item.clone().into_const(exec_vars)?;
+                        Some((k.item, Spanning::new(v.span, val)))
+                    })
+                    .collect()
+            }),
+            &meta_field.arguments,
+        );
+
+        match instance
+            .resolve_field_async(info, f.name.item, &args, &sub_exec)
+            .await
+        {
+            Ok(Value::Null) if meta_field.field_type.is_non_null() => return Value::null(),
+            Ok(v) => merge_key_into(&mut object, response_name, v),
+            Err(e) => {
+                sub_exec.push_error_at(e, span.start);
+
+                if meta_field.field_type.is_non_null() {
+                    return Value::null();
+                }
+
+                merge_key_into(&mut object, response_name, Value::null());
+            }
         }
     }
 
