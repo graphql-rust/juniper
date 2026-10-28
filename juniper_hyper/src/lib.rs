@@ -28,16 +28,16 @@ pub const DEFAULT_BODY_LIMIT: usize = 2 * 1024 * 1024;
 ///
 /// Insert a [`BodyLimit`] into the extensions of a [`Request`] to replace the
 /// [`DEFAULT_BODY_LIMIT`] for this request. A request with a larger body gets a
-/// `413 Payload Too Large` response. The handlers stop reading a body as soon as it exceeds the
-/// limit, so large bodies cannot exhaust the memory of the server.
+/// `413 Payload Too Large` response. The handlers stop reading a body as soon as the body exceeds
+/// the limit. Large bodies thus cannot exhaust the memory of the server.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct BodyLimit(pub usize);
 
 /// Executes synchronously  the provided GraphQL [`Request`] against the provided `schema` in the
 /// provided `context`, returning the encoded [`Response`].
 ///
-/// Reads at most [`DEFAULT_BODY_LIMIT`] bytes of the request body, unless the request extensions
-/// contain a [`BodyLimit`].
+/// Reads at most [`DEFAULT_BODY_LIMIT`] bytes of the request body. A [`BodyLimit`] in the request
+/// extensions replaces this limit.
 pub async fn graphql_sync<CtxT, QueryT, MutationT, SubscriptionT, S, B>(
     schema: Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
@@ -63,8 +63,8 @@ where
 /// Executes the provided GraphQL [`Request`] against the provided `schema` in the provided
 /// `context`, returning the encoded [`Response`].
 ///
-/// Reads at most [`DEFAULT_BODY_LIMIT`] bytes of the request body, unless the request extensions
-/// contain a [`BodyLimit`].
+/// Reads at most [`DEFAULT_BODY_LIMIT`] bytes of the request body. A [`BodyLimit`] in the request
+/// extensions replaces this limit.
 pub async fn graphql<CtxT, QueryT, MutationT, SubscriptionT, S, B>(
     schema: Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
@@ -195,10 +195,10 @@ pub async fn playground(
     resp
 }
 
-/// Reads `body` into memory, unless it is larger than `limit` bytes.
+/// Reads `body` into memory if `body` has at most `limit` bytes.
 ///
-/// Rejects `body` before reading it if its size hint exceeds `limit`. Otherwise, stops reading
-/// `body` as soon as it exceeds `limit`.
+/// A size hint above `limit` rejects `body` without reading it. A body without such a size hint
+/// is read until its bytes exceed `limit`.
 async fn read_body<B: Body>(body: B, limit: usize) -> Result<Vec<u8>, GraphQLRequestError<B>> {
     if body.size_hint().lower() > u64::try_from(limit).unwrap_or(u64::MAX) {
         return Err(GraphQLRequestError::BodyTooLarge(limit));
@@ -628,8 +628,8 @@ mod tests {
             )
         }
 
-        /// Returns the status of the error response to `req`, or [`StatusCode::OK`] if the body
-        /// of `req` is accepted.
+        /// Returns the status of the response to `req`. An accepted body returns
+        /// [`StatusCode::OK`].
         async fn status<B: Body<Error: Display>>(req: Request<B>) -> StatusCode {
             match parse_req::<DefaultScalarValue, _>(req).await {
                 Ok(_) => StatusCode::OK,

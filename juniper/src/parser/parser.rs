@@ -51,15 +51,16 @@ pub(crate) struct Limits {
     /// Maximum number of tokens in a document.
     pub(crate) max_tokens: usize,
 
-    /// Maximum number of fields in an operation, with the fields of a fragment counted once for
-    /// each of its spreads.
+    /// Maximum number of fields in an operation.
+    ///
+    /// The count includes the fields of a fragment once for each spread of the fragment.
     pub(crate) max_fields: usize,
 }
 
 impl Limits {
     /// Default value of [`Limits::max_depth`].
     ///
-    /// Real documents rarely nest deeper than 20 levels. In a debug build, the parser overflows a
+    /// Real documents rarely nest deeper than 20 levels. A debug build of the parser overflows a
     /// 2 MiB thread stack at about 300 levels.
     pub(crate) const DEFAULT_MAX_DEPTH: usize = 64;
 
@@ -71,7 +72,7 @@ impl Limits {
     /// Default value of [`Limits::max_fields`].
     ///
     /// Each field takes at least one token. A document without fragments thus reaches the default
-    /// token limit before this limit.
+    /// token limit before the default field limit.
     pub(crate) const DEFAULT_MAX_FIELDS: usize = Self::DEFAULT_MAX_TOKENS;
 }
 
@@ -110,7 +111,7 @@ pub struct Parser<'a> {
 
     /// Nesting depth of the current part of the document.
     ///
-    /// [`Parser::nested()`] keeps this depth within [`Limits::max_depth`].
+    /// [`Parser::nested()`] keeps the depth within [`Limits::max_depth`].
     depth: usize,
 }
 
@@ -166,8 +167,8 @@ impl<'a> Parser<'a> {
     /// Parses a nested part of the document with `parse`.
     ///
     /// Fails with [`ParseError::DepthLimitExceeded`] instead of calling `parse` if the nested part
-    /// exceeds [`Limits::max_depth`]. The parser is recursive, so this limit keeps it from
-    /// overflowing the stack.
+    /// exceeds [`Limits::max_depth`]. The parser is recursive. The depth limit keeps the parser
+    /// from overflowing the stack.
     pub(crate) fn nested<T>(
         &mut self,
         parse: impl FnOnce(&mut Self) -> Result<T, Spanning<ParseError>>,

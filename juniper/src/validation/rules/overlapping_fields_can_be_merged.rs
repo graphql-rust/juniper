@@ -144,8 +144,8 @@ pub struct OverlappingFieldsCanBeMerged<'a, S: Debug + 'a> {
 
     /// Number of field pairs that the rule can still compare.
     ///
-    /// The rule compares all pairs of fields with the same response name, which takes quadratic
-    /// time. The budget bounds the time and memory that the rule spends on any document.
+    /// Comparing all pairs of fields with the same response name takes quadratic time. The budget
+    /// bounds the time and memory of the rule for any document.
     remaining_comparisons: Cell<usize>,
 
     /// Whether the rule ran out of comparisons before it checked all fields.
@@ -158,7 +158,7 @@ pub struct OverlappingFieldsCanBeMerged<'a, S: Debug + 'a> {
 /// Maximum number of field pairs that the rule compares in a document.
 ///
 /// Real documents rarely need more than a few hundred comparisons. One comparison takes at most
-/// about 300 ns, so the rule spends at most about 30 ms on a document.
+/// about 300 ns. The rule thus spends at most about 30 ms on a document.
 const MAX_COMPARISONS: usize = 100_000;
 
 /// Maximum number of conflicts that the rule reports for a document.
@@ -320,9 +320,9 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
             return;
         }
 
-        // `field_map` is compared with each fragment only once. Fragments can spread the same
-        // fragment through many paths, and comparing it once for each path takes exponential
-        // time. GraphQL.js memoizes the same pairs of fields and fragments.
+        // The loop compares `field_map` with each fragment once. Fragments can reach the same
+        // fragment through many paths. A comparison for each path would take exponential time.
+        // GraphQL.js memoizes the same pairs of fields and fragments.
         let mut compared_fragments = HashSet::from([fragment_name]);
         while let Some(fragment_name) = to_check.pop() {
             if !compared_fragments.insert(fragment_name) {
@@ -794,7 +794,7 @@ where
         let conflicts =
             self.find_conflicts_within_selection_set(ctx.parent_type(), selection_set, ctx);
         if self.out_of_comparisons.get() {
-            // The conflicts of a document with too many comparisons are incomplete, so the rule
+            // The conflicts of a document with too many comparisons are incomplete. The rule
             // reports the document as too complex instead.
             let position = selection_set.first().map(selection_start).into_iter();
             ctx.report_error(TOO_COMPLEX_MESSAGE, &position.collect::<Vec<_>>());
@@ -1478,9 +1478,9 @@ mod tests {
 
     #[test]
     fn checks_diamond_fragment_spreads_in_linear_time() {
-        // Each level spreads 2 fragments that both spread the next level, so following every
-        // spread takes `2^30` steps. The document has no operation because the expanded operation
-        // would exceed the field limit of the parser.
+        // Each level spreads 2 fragments. Each of the 2 fragments spreads the next level.
+        // Following every spread thus takes `2^30` steps. The document has no operation because
+        // the expanded operation would exceed the field limit of the parser.
         let mut query = String::new();
         for i in 0..30 {
             query += &format!(

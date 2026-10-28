@@ -35,7 +35,7 @@ fn field_limit(max_fields: usize) -> Limits {
     }
 }
 
-/// Builds a document in which each of `levels` fragments spreads the next fragment twice.
+/// Builds a document with `levels` fragments that each spread the next fragment twice.
 ///
 /// Following every spread of the document takes `2^levels` steps.
 fn fragment_bomb(levels: usize) -> String {
@@ -85,7 +85,7 @@ mod depth {
     fn reports_position_of_spread_over_limit() {
         let err = parse(&fragment_chain(3), depth_limit(4)).unwrap_err();
 
-        // The `F3` fragment has the `dog` field, which nests too deep.
+        // The `dog` field of the `F3` fragment nests too deep.
         let dog = fragment_chain(3).rfind("dog").unwrap();
         assert_eq!(err.span.start.index(), dog);
     }

@@ -37,13 +37,14 @@ where
 
 /// Check of a document with its fragment spreads expanded.
 ///
-/// A fragment spread nests the selections of its fragment one level deeper. The parser limits
-/// the depth of each definition on its own, but chained fragments can nest much deeper than any
-/// single definition. Validation and execution follow fragment spreads recursively, so the depth
-/// limit keeps them from overflowing the stack.
+/// A fragment spread nests the selections of its fragment one level deeper. The parser limits the
+/// depth of each definition separately. Chained fragments can nest much deeper than any single
+/// definition. Validation and execution follow fragment spreads recursively. The depth limit keeps
+/// validation and execution from overflowing the stack.
 ///
-/// Fragments that spread a fragment more than once also multiply its fields. A document of a few
-/// hundred tokens can expand into billions of fields. The field limit bounds the work of execution.
+/// A fragment that spreads another fragment more than once multiplies the fields of the other
+/// fragment. A document of a few hundred tokens can expand into billions of fields. The field
+/// limit bounds the work of execution.
 struct ExpansionCheck<'a, 'd, S> {
     document: &'d [Definition<'a, S>],
     fragments: HashMap<&'a str, &'d [Selection<'a, S>]>,
@@ -51,12 +52,14 @@ struct ExpansionCheck<'a, 'd, S> {
 
     /// Expansions of the checked fragments, with depths relative to the depth of their spreads.
     ///
-    /// Each fragment is checked only once, so fragments that spread the same fragment many times
-    /// cannot make the check take exponential time.
+    /// The check visits each fragment once and reuses the stored expansion for repeated spreads.
+    /// The check thus takes linear time in the size of the document.
     fragment_expansions: HashMap<&'a str, Expansion>,
 
-    /// Fragments that the check is in. A spread of one of these fragments is a cycle, and the
-    /// check ignores it. Validation reports fragment cycles.
+    /// Fragments on the current check path.
+    ///
+    /// A spread of a fragment on this path forms a cycle. The check skips such a spread because
+    /// validation reports fragment cycles.
     open_fragments: HashSet<&'a str>,
 }
 
@@ -93,8 +96,8 @@ impl<'a, 'd, S> ExpansionCheck<'a, 'd, S> {
 
     /// Checks every operation and fragment of the document.
     ///
-    /// Only operations have a field limit because only operations execute. The depth of unused
-    /// fragments is checked too because validation follows their spreads as well.
+    /// The field limit applies only to operations because only operations execute. The depth limit
+    /// also applies to unused fragments because validation follows their spreads.
     fn run(mut self) -> Result<(), Spanning<ParseError>> {
         for definition in self.document {
             match definition {
@@ -115,7 +118,7 @@ impl<'a, 'd, S> ExpansionCheck<'a, 'd, S> {
         Ok(())
     }
 
-    /// Returns the expansion of `selection_set`, which starts at `depth`.
+    /// Returns the expansion of `selection_set` at nesting `depth`.
     fn selection_set(
         &mut self,
         selection_set: &'d [Selection<'a, S>],
@@ -144,9 +147,9 @@ impl<'a, 'd, S> ExpansionCheck<'a, 'd, S> {
         Ok(expansion)
     }
 
-    /// Returns the expansion of `selection_set`, which nests one level below `depth`.
+    /// Returns the expansion of `selection_set` one nesting level below `depth`.
     ///
-    /// Fails at `span` if the nested selection set exceeds the depth limit.
+    /// Fails at `span` if `selection_set` exceeds the depth limit.
     fn nested(
         &mut self,
         selection_set: &'d [Selection<'a, S>],
@@ -162,10 +165,11 @@ impl<'a, 'd, S> ExpansionCheck<'a, 'd, S> {
         self.selection_set(selection_set, depth + 1)
     }
 
-    /// Returns the expansion of the `name`d fragment, which is spread at `depth`.
+    /// Returns the expansion of the `name`d fragment for a spread at `depth`.
     ///
-    /// Fails at `span` if the fragment exceeds the depth limit. Undefined fragments and fragment
-    /// cycles expand to nothing. Validation reports them.
+    /// Fails at `span` if the fragment exceeds the depth limit. The expansion of an undefined
+    /// fragment or a fragment cycle is empty because validation reports undefined fragments and
+    /// fragment cycles.
     fn fragment(
         &mut self,
         name: &'a str,
