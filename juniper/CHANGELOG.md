@@ -73,6 +73,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Executing a `mutation` against a schema without a mutation type (e.g. `EmptyMutation`), or a `subscription` against one without a subscription type (e.g. `EmptySubscription`), now returns a `GraphQLError::NotSupported` error rather than panicking. ([#1378])
 - Stack overflow on deeply nested selection sets, input values, list types, and fragment spreads. ([GHSA-34cw-x8g7-rcv5])
 - Quadratic parsing time in the number of tokens. ([GHSA-36rq-8957-mjrx])
+- Exponential validation time of fragments that spread the same fragment through many paths. ([GHSA-36rq-8957-mjrx])
 
 [#864]: /../../issues/864
 [#1055]: /../../issues/1055

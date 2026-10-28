@@ -116,7 +116,12 @@ impl<'a> CycleDetector<'a> {
         path: Vec<&'a BorrowedSpanning<'a, str>>,
         mut path_indices: HashMap<&'a str, usize>,
     ) -> Vec<CycleDetectorState<'a>> {
-        self.visited.insert(from);
+        // A visited fragment is either on the current path or fully explored. A spread back into
+        // the current path is reported as a cycle before it gets here. Exploring a fragment again
+        // finds no new cycles and takes exponential time if fragments spread each other repeatedly.
+        if !self.visited.insert(from) {
+            return Vec::new();
+        }
 
         if !self.spreads.contains_key(from) {
             return Vec::new();
@@ -286,6 +291,37 @@ mod tests {
                 &[SourcePosition::new(35, 1, 34)],
             )],
         );
+    }
+
+    #[test]
+    fn reports_cycle_behind_visited_fragment_once() {
+        expect_fails_rule::<_, _, DefaultScalarValue>(
+            factory,
+            r#"
+          fragment fragA on Dog { ...fragB ...fragC }
+          fragment fragB on Dog { ...fragC }
+          fragment fragC on Dog { ...fragB }
+        "#,
+            &[RuleError::new(
+                &error_message("fragC"),
+                &[SourcePosition::new(134, 3, 34)],
+            )],
+        );
+    }
+
+    #[test]
+    fn checks_repeated_spreads_once() {
+        // Each fragment spreads the next one twice, so following every spread takes `2^40` steps.
+        let mut query = String::new();
+        for i in 0..40 {
+            query += &format!(
+                "fragment frag{i} on Dog {{ ...frag{j} ...frag{j} }}\n",
+                j = i + 1
+            );
+        }
+        query += "fragment frag40 on Dog { name }";
+
+        expect_passes_rule::<_, _, DefaultScalarValue>(factory, &query);
     }
 
     #[test]
