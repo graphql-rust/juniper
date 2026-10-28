@@ -1,6 +1,6 @@
 //! This example demonstrates a simple [`hyper`] server implementation for [`juniper`].
 
-#![expect(unused_crate_dependencies, reason = "example")]
+#![allow(unused_crate_dependencies, reason = "example")]
 
 use std::{convert::Infallible, error::Error, net::SocketAddr, sync::Arc};
 

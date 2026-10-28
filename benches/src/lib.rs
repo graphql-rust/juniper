@@ -1,4 +1,4 @@
-#![cfg_attr(test, expect(unused_crate_dependencies, reason = "benches"))]
+#![cfg_attr(test, allow(unused_crate_dependencies, reason = "benches"))]
 
 use juniper::{
     DefaultScalarValue, EmptyMutation, EmptySubscription, ExecutionError, FieldError, GraphQLEnum,

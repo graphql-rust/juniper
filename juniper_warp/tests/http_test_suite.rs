@@ -1,6 +1,6 @@
 //! [`HttpIntegration`] testing for [`warp`].
 
-#![expect(unused_crate_dependencies, reason = "integration tests")]
+#![allow(unused_crate_dependencies, reason = "integration tests")]
 
 use http_body_util::BodyExt as _;
 use itertools::Itertools as _;

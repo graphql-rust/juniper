@@ -1,6 +1,6 @@
 //! This example demonstrates simple default integration with [`axum`].
 
-#![expect(unused_crate_dependencies, reason = "example")]
+#![allow(unused_crate_dependencies, reason = "example")]
 
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 

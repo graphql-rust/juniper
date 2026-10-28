@@ -1,6 +1,6 @@
 #![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
 #![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
-#![cfg_attr(test, expect(unused_crate_dependencies, reason = "examples"))]
+#![cfg_attr(test, allow(unused_crate_dependencies, reason = "examples"))]
 
 use std::{string::FromUtf8Error, sync::Arc};
 

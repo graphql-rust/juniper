@@ -3,7 +3,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(
     test,
-    expect(unused_crate_dependencies, reason = "examples and integration tests")
+    allow(unused_crate_dependencies, reason = "examples and integration tests")
 )]
 
 // TODO: Try remove on upgrade of `warp` crate.
