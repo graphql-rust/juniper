@@ -1,6 +1,6 @@
 //! Ensuring that [`GraphQLResponse`] could be built by crate users.
 
-#![expect(unused_crate_dependencies, reason = "single test case")]
+#![allow(unused_crate_dependencies, reason = "single test case")]
 
 use juniper_rocket::GraphQLResponse;
 use rocket::http::Status;

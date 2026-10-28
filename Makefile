@@ -90,6 +90,13 @@ cargo.test: test.cargo
 
 # Run Rust tests of Book.
 #
+# Book examples use the libraries built for the `juniper_book` crate. The
+# recipe reads the library directories from Cargo's JSON messages because the
+# layout of Cargo's build directory is not stable. The jq program replaces the
+# Windows path separators with forward slashes. It writes the backslash as
+# `[92] | implode` because the shell on Windows changes backslashes in the
+# recipe.
+#
 # Usage:
 #	make test.book [clean=(no|yes)]
 
@@ -99,7 +106,8 @@ ifeq ($(clean),yes)
 endif
 	$(eval target := $(strip $(shell cargo -vV | sed -n 's/host: //p')))
 	cargo build -p juniper_book
-	mdbook test book -L target/debug/deps $(strip \
+	mdbook test book -L "$$(cargo build -p juniper_book --message-format=json \
+	                        | jq -js '[.[] | select(.reason == "compiler-artifact" and .target.kind != ["custom-build"]) | .filenames[] | split([92] | implode) | join("/") | sub("/[^/]+$$"; "")] | unique | join(",")')" $(strip \
 		$(if $(call eq,$(findstring windows,$(target)),),,\
 			$(shell cargo metadata -q \
 			        | jq -r '.packages[] | select(.name == "windows_$(word 1,$(subst -, ,$(target)))_$(word 4,$(subst -, ,$(target)))") | .manifest_path' \

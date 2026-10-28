@@ -3,7 +3,7 @@
 #![recursion_limit = "1024"]
 #![cfg_attr(
     all(test, not(doctest)),
-    expect(unused_crate_dependencies, reason = "for doc tests only")
+    allow(unused_crate_dependencies, reason = "for doc tests only")
 )]
 
 // NOTICE: Unfortunately this macro MUST be defined here, in the crate's root module, because Rust

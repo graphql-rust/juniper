@@ -18,6 +18,8 @@ You may install it with:
 cargo install mdbook
 ```
 
+Testing the Book also requires [jq](https://jqlang.org).
+
 
 ### Local test server
 
@@ -47,9 +49,7 @@ The output will be in the `_rendered/` directory.
 
 To run the tests validating all code examples in the book, run (from project root dir):
 ```bash
-cargo build
-mdbook test -L target/debug/deps
-
-# or via shortcut:
 make test.book
 ```
+
+This command builds the dependencies of the code examples with Cargo and passes the library directories to `mdbook test`.

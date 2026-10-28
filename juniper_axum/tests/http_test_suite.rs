@@ -1,6 +1,6 @@
 //! [`HttpIntegration`] testing for [`axum`].
 
-#![expect(unused_crate_dependencies, reason = "integration tests")]
+#![allow(unused_crate_dependencies, reason = "integration tests")]
 
 use std::sync::Arc;
 

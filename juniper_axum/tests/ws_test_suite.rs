@@ -1,6 +1,6 @@
 //! [`WsIntegration`] testing for [`axum`].
 
-#![expect(unused_crate_dependencies, reason = "integration tests")]
+#![allow(unused_crate_dependencies, reason = "integration tests")]
 #![cfg_attr(windows, expect(dead_code, unused_imports, reason = "disabled"))]
 
 use std::{net::SocketAddr, sync::Arc};
