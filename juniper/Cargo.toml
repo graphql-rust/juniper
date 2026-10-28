@@ -108,3 +108,4 @@ unused_crate_dependencies = "warn"
 name = "bench"
 harness = false
 path = "benches/bench.rs"
+required-features = ["expose-test-schema"]
