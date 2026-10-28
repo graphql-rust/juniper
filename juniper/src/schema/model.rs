@@ -173,8 +173,8 @@ where
     /// The depth counts nested selection sets, fragments, input values, and list types. A fragment
     /// spread nests the selections of its fragment one level deeper. A document that nests deeper
     /// than `max_depth` fails to parse with a [`ParseError::DepthLimitExceeded`]. Parsing,
-    /// validation, and execution are recursive, so this limit keeps them from overflowing the
-    /// stack.
+    /// validation, and execution are recursive. The depth limit keeps the recursion from
+    /// overflowing the stack.
     ///
     /// The default limit is 64.
     ///
@@ -221,7 +221,7 @@ where
     ///
     /// A document with more than `max_tokens` tokens fails to parse with a
     /// [`ParseError::TokenLimitExceeded`]. The time to parse and validate a document grows with
-    /// its number of tokens, so this limit bounds that time.
+    /// the number of tokens. The token limit thus bounds the time to parse and validate a document.
     ///
     /// The default limit is 15,000.
     ///
@@ -236,10 +236,10 @@ where
     /// The count includes the fields of a fragment once for each of its spreads. An operation with
     /// more than `max_fields` fields fails to parse with a [`ParseError::FieldLimitExceeded`].
     /// Fragments that spread other fragments more than once can expand a small document into an
-    /// exponential number of fields, so this limit bounds the work of execution.
+    /// exponential number of fields. The field limit bounds the work of execution.
     ///
-    /// The default limit is 15,000. Each field takes at least one token, so a document without
-    /// fragments reaches the default token limit before this limit.
+    /// The default limit is 15,000. Each field takes at least one token. A document without
+    /// fragments thus reaches the default token limit first.
     ///
     /// [`ParseError::FieldLimitExceeded`]: crate::parser::ParseError::FieldLimitExceeded
     pub fn limit_fields(mut self, max_fields: usize) -> Self {

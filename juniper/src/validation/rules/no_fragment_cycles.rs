@@ -116,9 +116,9 @@ impl<'a> CycleDetector<'a> {
         path: Vec<&'a BorrowedSpanning<'a, str>>,
         mut path_indices: HashMap<&'a str, usize>,
     ) -> Vec<CycleDetectorState<'a>> {
-        // A visited fragment is either on the current path or fully explored. A spread back into
-        // the current path is reported as a cycle before it gets here. Exploring a fragment again
-        // finds no new cycles and takes exponential time if fragments spread each other repeatedly.
+        // A spread into the current path is reported as a cycle and never visited. A visited
+        // fragment is thus fully explored. Exploring the fragment again finds no new cycles and
+        // takes exponential time if fragments spread each other repeatedly.
         if !self.visited.insert(from) {
             return Vec::new();
         }
@@ -311,7 +311,8 @@ mod tests {
 
     #[test]
     fn checks_repeated_spreads_once() {
-        // Each fragment spreads the next one twice, so following every spread takes `2^40` steps.
+        // Each fragment spreads the next fragment twice. Following every spread thus takes `2^40`
+        // steps.
         let mut query = String::new();
         for i in 0..40 {
             query += &format!(
