@@ -6,7 +6,7 @@ All user visible changes to `juniper_hyper` crate will be documented in this fil
 
 
 
-## [0.10.1] · unreleased
+## [0.10.1] · 2026-10-28
 [0.10.1]: /../../tree/juniper_hyper-v0.10.1/juniper_hyper
 
 [Diff](/../../compare/juniper_hyper-v0.10.0...juniper_hyper-v0.10.1)
