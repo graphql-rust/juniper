@@ -1,4 +1,10 @@
-use std::{borrow::Borrow, cell::RefCell, collections::HashMap, fmt::Debug, hash::Hash};
+use std::{
+    borrow::Borrow,
+    cell::RefCell,
+    collections::{HashMap, HashSet},
+    fmt::Debug,
+    hash::Hash,
+};
 
 use arcstr::ArcStr;
 use derive_more::with_trait::Display;
@@ -272,33 +278,35 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
     ) where
         S: ScalarValue,
     {
-        let mut to_check = Vec::new();
-        if let Some(fragments) = self.collect_conflicts_between_fields_and_fragment_inner(
+        let Some(mut to_check) = self.collect_conflicts_between_fields_and_fragment_inner(
             conflicts,
             field_map,
             fragment_name,
             mutually_exclusive,
             ctx,
-        ) {
-            to_check.push((fragment_name, fragments))
+        ) else {
+            return;
+        };
+        if to_check.is_empty() {
+            return;
         }
 
-        while let Some((fragment_name, fragment_names2)) = to_check.pop() {
-            for fragment_name2 in fragment_names2 {
-                // Early return on fragment recursion, as it makes no sense.
-                // Fragment recursions are prevented by `no_fragment_cycles` validator.
-                if fragment_name == fragment_name2 {
-                    return;
-                }
-                if let Some(fragments) = self.collect_conflicts_between_fields_and_fragment_inner(
-                    conflicts,
-                    field_map,
-                    fragment_name2,
-                    mutually_exclusive,
-                    ctx,
-                ) {
-                    to_check.push((fragment_name2, fragments));
-                };
+        // `field_map` is compared with each fragment only once. Fragments can spread the same
+        // fragment through many paths, and comparing it once for each path takes exponential
+        // time. GraphQL.js memoizes the same pairs of fields and fragments.
+        let mut compared_fragments = HashSet::from([fragment_name]);
+        while let Some(fragment_name) = to_check.pop() {
+            if !compared_fragments.insert(fragment_name) {
+                continue;
+            }
+            if let Some(fragment_names) = self.collect_conflicts_between_fields_and_fragment_inner(
+                conflicts,
+                field_map,
+                fragment_name,
+                mutually_exclusive,
+                ctx,
+            ) {
+                to_check.extend(fragment_names);
             }
         }
     }
@@ -1319,6 +1327,62 @@ mod tests {
                 ],
             )],
         );
+    }
+
+    #[test]
+    fn compares_fragment_reachable_through_many_paths_once() {
+        expect_fails_rule::<_, _, DefaultScalarValue>(
+            factory,
+            r#"
+          {
+            dog {
+              name: nickname
+              ...A
+            }
+          }
+          fragment A on Dog {
+            ...B
+            ...C
+          }
+          fragment B on Dog {
+            ...D
+          }
+          fragment C on Dog {
+            ...D
+          }
+          fragment D on Dog {
+            name
+          }
+        "#,
+            &[RuleError::new(
+                &error_message(
+                    "name",
+                    &Message("nickname and name are different fields".into()),
+                ),
+                &[
+                    SourcePosition::new(45, 3, 14),
+                    SourcePosition::new(341, 18, 12),
+                ],
+            )],
+        );
+    }
+
+    #[test]
+    fn checks_diamond_fragment_spreads_in_linear_time() {
+        // Each level spreads 2 fragments that both spread the next level, so following every
+        // spread takes `2^30` steps.
+        let mut query = "{ dog { ...F0 } }".to_owned();
+        for i in 0..30 {
+            query += &format!(
+                " fragment F{i} on Dog {{ ...A{i} ...B{i} }} \
+                 fragment A{i} on Dog {{ ...F{j} }} \
+                 fragment B{i} on Dog {{ ...F{j} }}",
+                j = i + 1,
+            );
+        }
+        query += " fragment F30 on Dog { name }";
+
+        expect_passes_rule::<_, _, DefaultScalarValue>(factory, &query);
     }
 
     #[test]
