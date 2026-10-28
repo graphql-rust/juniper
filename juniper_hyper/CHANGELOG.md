@@ -6,9 +6,10 @@ All user visible changes to `juniper_hyper` crate will be documented in this fil
 
 
 
-## main
+## [0.10.1] · unreleased
+[0.10.1]: /../../tree/juniper_hyper-v0.10.1/juniper_hyper
 
-[Diff](/../../compare/juniper_hyper-v0.10.0...main) | [Milestone](/../../milestone/9)
+[Diff](/../../compare/juniper_hyper-v0.10.0...juniper_hyper-v0.10.1)
 
 ### BC Breaks
 

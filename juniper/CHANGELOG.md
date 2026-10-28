@@ -6,6 +6,35 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 
 
+## [0.17.2] · unreleased
+[0.17.2]: /../../tree/juniper-v0.17.2/juniper
+
+[Diff](/../../compare/juniper-v0.17.1...juniper-v0.17.2)
+
+### BC Breaks
+
+- Limited documents to 64 levels of nesting, 15,000 tokens, and 15,000 fields by default. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
+- Limited validation of overlapping fields to 100,000 field comparisons and 100 reported conflicts. ([GHSA-36rq-8957-mjrx])
+- Added `ParseError::DepthLimitExceeded`, `ParseError::TokenLimitExceeded`, and `ParseError::FieldLimitExceeded` variants. Exhaustive `match`es on `ParseError` need a new arm. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
+
+### Added
+
+- `RootNode::limit_depth()`, `RootNode::limit_tokens()`, and `RootNode::limit_fields()` methods. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
+
+### Fixed
+
+- Stack overflow on deeply nested selection sets, input values, list types, and fragment spreads. ([GHSA-34cw-x8g7-rcv5])
+- Quadratic parsing time in the number of tokens. ([GHSA-36rq-8957-mjrx])
+- Exponential validation time of fragments that spread the same fragment through many paths. ([GHSA-36rq-8957-mjrx])
+- Exponential execution time of fragments that spread the same fragment more than once. ([GHSA-36rq-8957-mjrx])
+- Quadratic validation time and memory of fields with the same response name. ([GHSA-36rq-8957-mjrx])
+
+[GHSA-34cw-x8g7-rcv5]: /../../security/advisories/GHSA-34cw-x8g7-rcv5
+[GHSA-36rq-8957-mjrx]: /../../security/advisories/GHSA-36rq-8957-mjrx
+
+
+
+
 ## [0.17.1] · 2026-01-26
 [0.17.1]: /../../tree/juniper-v0.17.1/juniper
 
