@@ -1,3 +1,5 @@
+use std::collections::{HashMap, HashSet};
+
 use crate::ast::{
     Arguments, Definition, Directive, Field, Fragment, FragmentSpread, InlineFragment, InputValue,
     Operation, OperationType, OwnedDocument, Selection, Type, VariableDefinition,
@@ -6,7 +8,7 @@ use crate::ast::{
 
 use crate::{
     parser::{
-        Lexer, OptionParseResult, ParseError, ParseResult, Parser, Spanning, Token,
+        Lexer, OptionParseResult, ParseError, ParseResult, Parser, Span, Spanning, Token,
         UnlocatedParseResult, value::parse_value_literal,
     },
     schema::{
@@ -25,8 +27,146 @@ where
     S: ScalarValue,
 {
     let mut lexer = Lexer::new(s);
-    let mut parser = Parser::new(&mut lexer).map_err(|s| s.map(ParseError::LexerError))?;
-    parse_document(&mut parser, schema)
+    let mut parser = Parser::with_limits(&mut lexer, schema.limits)?;
+    let document = parse_document(&mut parser, schema)?;
+    SpreadDepthCheck::new(&document, schema.limits.max_depth).run()?;
+    Ok(document)
+}
+
+/// Check of the nesting depth that fragment spreads add to a document.
+///
+/// The parser limits the depth of each definition on its own. A fragment spread nests the
+/// selections of its fragment one level deeper. Chained fragments can thus nest much deeper than
+/// any single definition. Validation and execution follow fragment spreads recursively, so this
+/// check keeps them from overflowing the stack.
+struct SpreadDepthCheck<'a, 'd, S> {
+    document: &'d [Definition<'a, S>],
+    fragments: HashMap<&'a str, &'d [Selection<'a, S>]>,
+    max_depth: usize,
+
+    /// Depths of the checked fragments, relative to the depth of their spreads.
+    ///
+    /// Each fragment is checked only once, so fragments that spread the same fragment many times
+    /// cannot make the check take exponential time.
+    relative_depths: HashMap<&'a str, usize>,
+
+    /// Fragments that the check is in. A spread of one of these fragments is a cycle, and the
+    /// check ignores it. Validation reports fragment cycles.
+    open_fragments: HashSet<&'a str>,
+}
+
+impl<'a, 'd, S> SpreadDepthCheck<'a, 'd, S> {
+    fn new(document: &'d [Definition<'a, S>], max_depth: usize) -> Self {
+        let fragments = document
+            .iter()
+            .filter_map(|definition| match definition {
+                Definition::Fragment(fragment) => Some((
+                    fragment.item.name.item,
+                    fragment.item.selection_set.as_slice(),
+                )),
+                Definition::Operation(_) => None,
+            })
+            .collect();
+        Self {
+            document,
+            fragments,
+            max_depth,
+            relative_depths: HashMap::new(),
+            open_fragments: HashSet::new(),
+        }
+    }
+
+    /// Checks every operation and fragment of the document.
+    ///
+    /// Unused fragments are checked too because validation follows their spreads as well.
+    fn run(mut self) -> Result<(), Spanning<ParseError>> {
+        for definition in self.document {
+            match definition {
+                Definition::Operation(operation) => {
+                    self.selection_set_depth(&operation.item.selection_set, 1)?;
+                }
+                Definition::Fragment(fragment) => {
+                    self.fragment_depth(fragment.item.name.item, 0, fragment.span)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Returns the deepest depth inside `selection_set`, which starts at `depth`.
+    fn selection_set_depth(
+        &mut self,
+        selection_set: &'d [Selection<'a, S>],
+        depth: usize,
+    ) -> Result<usize, Spanning<ParseError>> {
+        let mut deepest = depth;
+        for selection in selection_set {
+            let selection_depth = match selection {
+                Selection::Field(field) => match &field.item.selection_set {
+                    Some(nested) => self.nested_depth(nested, depth, field.span)?,
+                    None => depth,
+                },
+                Selection::InlineFragment(fragment) => {
+                    self.nested_depth(&fragment.item.selection_set, depth, fragment.span)?
+                }
+                Selection::FragmentSpread(spread) => {
+                    self.fragment_depth(spread.item.name.item, depth, spread.span)?
+                }
+            };
+            deepest = deepest.max(selection_depth);
+        }
+        Ok(deepest)
+    }
+
+    /// Returns the deepest depth inside `selection_set`, which nests one level below `depth`.
+    ///
+    /// Fails at `span` if the nested selection set exceeds the depth limit.
+    fn nested_depth(
+        &mut self,
+        selection_set: &'d [Selection<'a, S>],
+        depth: usize,
+        span: Span,
+    ) -> Result<usize, Spanning<ParseError>> {
+        if depth >= self.max_depth {
+            return Err(Spanning::new(
+                span,
+                ParseError::DepthLimitExceeded(self.max_depth),
+            ));
+        }
+        self.selection_set_depth(selection_set, depth + 1)
+    }
+
+    /// Returns the deepest depth inside the `name`d fragment, which is spread at `depth`.
+    ///
+    /// Fails at `span` if the fragment exceeds the depth limit. Undefined fragments and fragment
+    /// cycles add no depth. Validation reports them.
+    fn fragment_depth(
+        &mut self,
+        name: &'a str,
+        depth: usize,
+        span: Span,
+    ) -> Result<usize, Spanning<ParseError>> {
+        if let Some(&relative_depth) = self.relative_depths.get(name) {
+            return if depth + relative_depth > self.max_depth {
+                Err(Spanning::new(
+                    span,
+                    ParseError::DepthLimitExceeded(self.max_depth),
+                ))
+            } else {
+                Ok(depth + relative_depth)
+            };
+        }
+        let Some(&selection_set) = self.fragments.get(name) else {
+            return Ok(depth);
+        };
+        if !self.open_fragments.insert(name) {
+            return Ok(depth);
+        }
+        let deepest = self.nested_depth(selection_set, depth, span)?;
+        self.open_fragments.remove(name);
+        self.relative_depths.insert(name, deepest - depth);
+        Ok(deepest)
+    }
 }
 
 fn parse_document<'a, S>(
@@ -188,11 +328,13 @@ fn parse_selection_set<'a, S>(
 where
     S: ScalarValue,
 {
-    parser.unlocated_delimited_nonempty_list(
-        &Token::CurlyOpen,
-        |p| parse_selection(p, schema, fields),
-        &Token::CurlyClose,
-    )
+    parser.nested(|parser| {
+        parser.unlocated_delimited_nonempty_list(
+            &Token::CurlyOpen,
+            |p| parse_selection(p, schema, fields),
+            &Token::CurlyClose,
+        )
+    })
 }
 
 fn parse_selection<'a, S>(
@@ -512,7 +654,7 @@ pub fn parse_type<'a>(parser: &mut Parser<'a>) -> ParseResult<Type<&'a str>> {
         span: start_span, ..
     }) = parser.skip(&Token::BracketOpen)?
     {
-        let inner_type = parse_type(parser)?;
+        let inner_type = parser.nested(parse_type)?;
         let end_pos = parser.expect(&Token::BracketClose)?.span.end;
         Spanning::start_end(&start_span.start, &end_pos, inner_type.item.wrap_list(None))
     } else {

@@ -12,6 +12,7 @@ mod tests;
 
 pub use self::document::parse_document_source;
 
+pub(crate) use self::parser::Limits;
 pub use self::{
     lexer::{Lexer, LexerError, ScalarToken, Token},
     parser::{OptionParseResult, ParseError, ParseResult, Parser, UnlocatedParseResult},
