@@ -25,6 +25,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Upgraded [`compact_str` crate] integration to [0.10 version](https://github.com/ParkMyCar/compact_str/blob/v0.10.0/CHANGELOG.md#0100). ([#1387])
 - Limited documents to 64 levels of nesting, 15,000 tokens, and 15,000 fields by default. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
 - Added `ParseError::DepthLimitExceeded`, `ParseError::TokenLimitExceeded`, and `ParseError::FieldLimitExceeded` variants. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
+- Limited validation of overlapping fields to 100,000 field comparisons and 100 reported conflicts. ([GHSA-36rq-8957-mjrx])
 
 ### Added
 
@@ -75,6 +76,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Quadratic parsing time in the number of tokens. ([GHSA-36rq-8957-mjrx])
 - Exponential validation time of fragments that spread the same fragment through many paths. ([GHSA-36rq-8957-mjrx])
 - Exponential execution time of fragments that spread the same fragment more than once. ([GHSA-36rq-8957-mjrx])
+- Quadratic validation time and memory of fields with the same response name. ([GHSA-36rq-8957-mjrx])
 
 [#864]: /../../issues/864
 [#1055]: /../../issues/1055
