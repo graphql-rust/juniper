@@ -27,6 +27,26 @@ All user visible changes to `juniper_hyper` crate will be documented in this fil
 
 
 
+## [0.10.1] · 2026-10-28
+[0.10.1]: /../../tree/juniper_hyper-v0.10.1/juniper_hyper
+
+[Diff](/../../compare/juniper_hyper-v0.10.0...juniper_hyper-v0.10.1)
+
+### BC Breaks
+
+- Limited request bodies in `graphql()` and `graphql_sync()` functions to 2 MiB by default. ([GHSA-pfrg-qg4f-grmv])
+
+### Added
+
+- `BodyLimit` request extension and `DEFAULT_BODY_LIMIT` constant for the size limit of request bodies. ([GHSA-pfrg-qg4f-grmv])
+
+### Fixed
+
+- Unbounded memory use of request bodies in `graphql()` and `graphql_sync()` functions. ([GHSA-pfrg-qg4f-grmv])
+
+
+
+
 ## [0.10.0] · 2025-09-08
 [0.10.0]: /../../tree/juniper_hyper-v0.10.0/juniper_hyper
 
