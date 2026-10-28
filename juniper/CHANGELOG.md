@@ -23,6 +23,8 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Fixed `ValuesStream` to return batch of `ExecutionError`s instead of a single one. ([#1371])
 - Added `GraphQLError::NotSupported` variant. ([#1378])
 - Upgraded [`compact_str` crate] integration to [0.10 version](https://github.com/ParkMyCar/compact_str/blob/v0.10.0/CHANGELOG.md#0100). ([#1387])
+- Limited documents to 64 levels of nesting and 15,000 tokens by default. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
+- Added `ParseError::DepthLimitExceeded` and `ParseError::TokenLimitExceeded` variants. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
 
 ### Added
 
@@ -53,6 +55,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - `ruint::aliases::U128` as `U128` scalar.
     - `ruint::aliases::U256` as `U256` scalar.
     - `integrations::ruint::unit_scalar` module for declaring custom-sized `ruint::Unit` scalars.
+- `RootNode::limit_depth()` and `RootNode::limit_tokens()` methods. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
 
 ### Changed
 
@@ -68,6 +71,8 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Memory leak caused by incorrect error handling in `#[graphql_subscription]` macro expansion. ([#1371])
 - Incorrect rejection of default values on non-`Null` variables. ([#1376])
 - Executing a `mutation` against a schema without a mutation type (e.g. `EmptyMutation`), or a `subscription` against one without a subscription type (e.g. `EmptySubscription`), now returns a `GraphQLError::NotSupported` error rather than panicking. ([#1378])
+- Stack overflow on deeply nested selection sets, input values, list types, and fragment spreads. ([GHSA-34cw-x8g7-rcv5])
+- Quadratic parsing time in the number of tokens. ([GHSA-36rq-8957-mjrx])
 
 [#864]: /../../issues/864
 [#1055]: /../../issues/1055
@@ -87,6 +92,8 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1380]: /../../pull/1380
 [#1387]: /../../pull/1387
 [#1393]: /../../pull/1393
+[GHSA-34cw-x8g7-rcv5]: /../../security/advisories/GHSA-34cw-x8g7-rcv5
+[GHSA-36rq-8957-mjrx]: /../../security/advisories/GHSA-36rq-8957-mjrx
 [graphql/graphql-spec#525]: https://github.com/graphql/graphql-spec/pull/525
 [graphql/graphql-spec#687]: https://github.com/graphql/graphql-spec/issues/687
 [graphql/graphql-spec#805]: https://github.com/graphql/graphql-spec/pull/805

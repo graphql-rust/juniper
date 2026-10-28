@@ -10,6 +10,7 @@ use crate::{
     GraphQLEnum,
     ast::{Type, TypeModifier},
     executor::{Context, Registry},
+    parser::Limits,
     schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta},
     types::{base::GraphQLType, name::Name},
     value::{DefaultScalarValue, ScalarValue},
@@ -167,6 +168,69 @@ where
         self
     }
 
+    /// Limits the nesting depth of the documents that this [`RootNode`] executes.
+    ///
+    /// The depth counts nested selection sets, fragments, input values, and list types. A fragment
+    /// spread nests the selections of its fragment one level deeper. A document that nests deeper
+    /// than `max_depth` fails to parse with a [`ParseError::DepthLimitExceeded`]. Parsing,
+    /// validation, and execution are recursive, so this limit keeps them from overflowing the
+    /// stack.
+    ///
+    /// The default limit is 64.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use juniper::{
+    /// #     graphql_object, graphql_vars, EmptyMutation, EmptySubscription, GraphQLError,
+    /// #     RootNode, parser::ParseError,
+    /// # };
+    /// #
+    /// pub struct Query;
+    ///
+    /// #[graphql_object]
+    /// impl Query {
+    ///     fn some() -> bool {
+    ///         true
+    ///     }
+    /// }
+    ///
+    /// type Schema = RootNode<Query, EmptyMutation, EmptySubscription>;
+    ///
+    /// let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new())
+    ///     .limit_depth(2);
+    ///
+    /// # // language=GraphQL
+    /// let query = "query { some(arg: [[true]]) }";
+    ///
+    /// match juniper::execute_sync(query, None, &schema, &graphql_vars! {}, &()) {
+    ///     Err(GraphQLError::ParseError(err)) => {
+    ///         assert_eq!(err.item, ParseError::DepthLimitExceeded(2));
+    ///     }
+    ///     res => panic!("expected `ParseError`, returned: {res:#?}"),
+    /// }
+    /// ```
+    ///
+    /// [`ParseError::DepthLimitExceeded`]: crate::parser::ParseError::DepthLimitExceeded
+    pub fn limit_depth(mut self, max_depth: usize) -> Self {
+        self.schema.limits.max_depth = max_depth;
+        self
+    }
+
+    /// Limits the number of tokens in the documents that this [`RootNode`] executes.
+    ///
+    /// A document with more than `max_tokens` tokens fails to parse with a
+    /// [`ParseError::TokenLimitExceeded`]. The time to parse and validate a document grows with
+    /// its number of tokens, so this limit bounds that time.
+    ///
+    /// The default limit is 15,000.
+    ///
+    /// [`ParseError::TokenLimitExceeded`]: crate::parser::ParseError::TokenLimitExceeded
+    pub fn limit_tokens(mut self, max_tokens: usize) -> Self {
+        self.schema.limits.max_tokens = max_tokens;
+        self
+    }
+
     #[cfg(feature = "schema-language")]
     /// Returns this [`RootNode`] as a [`String`] containing the schema in [SDL (schema definition language)].
     ///
@@ -215,6 +279,9 @@ pub struct SchemaType<S> {
     pub(crate) mutation_type_name: Option<String>,
     pub(crate) subscription_type_name: Option<String>,
     directives: FnvHashMap<ArcStr, DirectiveType<S>>,
+
+    /// Limits on the documents that this schema executes.
+    pub(crate) limits: Limits,
 }
 
 impl<S> Context for SchemaType<S> {}
@@ -298,6 +365,7 @@ impl<S> SchemaType<S> {
                 None
             },
             directives,
+            limits: Limits::default(),
         }
     }
 
