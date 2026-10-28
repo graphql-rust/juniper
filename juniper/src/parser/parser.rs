@@ -31,6 +31,10 @@ pub enum ParseError {
     /// The document contains more tokens than the token limit of the schema.
     #[display("Document exceeds the limit of {_0} tokens")]
     TokenLimitExceeded(#[error(not(source))] usize),
+
+    /// An operation of the document expands into more fields than the field limit of the schema.
+    #[display("Document exceeds the limit of {_0} fields")]
+    FieldLimitExceeded(#[error(not(source))] usize),
 }
 
 /// Limits on the documents that a [`Parser`] accepts.
@@ -43,6 +47,10 @@ pub(crate) struct Limits {
 
     /// Maximum number of tokens in a document.
     pub(crate) max_tokens: usize,
+
+    /// Maximum number of fields in an operation, with the fields of a fragment counted once for
+    /// each of its spreads.
+    pub(crate) max_fields: usize,
 }
 
 impl Limits {
@@ -56,6 +64,12 @@ impl Limits {
     ///
     /// graphql-java uses the same default token limit.
     pub(crate) const DEFAULT_MAX_TOKENS: usize = 15_000;
+
+    /// Default value of [`Limits::max_fields`].
+    ///
+    /// Each field takes at least one token. A document without fragments thus reaches the default
+    /// token limit before this limit.
+    pub(crate) const DEFAULT_MAX_FIELDS: usize = Self::DEFAULT_MAX_TOKENS;
 }
 
 impl Default for Limits {
@@ -63,6 +77,7 @@ impl Default for Limits {
         Self {
             max_depth: Self::DEFAULT_MAX_DEPTH,
             max_tokens: Self::DEFAULT_MAX_TOKENS,
+            max_fields: Self::DEFAULT_MAX_FIELDS,
         }
     }
 }

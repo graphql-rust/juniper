@@ -231,6 +231,22 @@ where
         self
     }
 
+    /// Limits the number of fields in the operations that this [`RootNode`] executes.
+    ///
+    /// The count includes the fields of a fragment once for each of its spreads. An operation with
+    /// more than `max_fields` fields fails to parse with a [`ParseError::FieldLimitExceeded`].
+    /// Fragments that spread other fragments more than once can expand a small document into an
+    /// exponential number of fields, so this limit bounds the work of execution.
+    ///
+    /// The default limit is 15,000. Each field takes at least one token, so a document without
+    /// fragments reaches the default token limit before this limit.
+    ///
+    /// [`ParseError::FieldLimitExceeded`]: crate::parser::ParseError::FieldLimitExceeded
+    pub fn limit_fields(mut self, max_fields: usize) -> Self {
+        self.schema.limits.max_fields = max_fields;
+        self
+    }
+
     #[cfg(feature = "schema-language")]
     /// Returns this [`RootNode`] as a [`String`] containing the schema in [SDL (schema definition language)].
     ///
