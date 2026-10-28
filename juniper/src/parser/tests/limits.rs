@@ -28,6 +28,27 @@ fn token_limit(max_tokens: usize) -> Limits {
     }
 }
 
+fn field_limit(max_fields: usize) -> Limits {
+    Limits {
+        max_fields,
+        ..Limits::default()
+    }
+}
+
+/// Builds a document in which each of `levels` fragments spreads the next fragment twice.
+///
+/// Following every spread of the document takes `2^levels` steps.
+fn fragment_bomb(levels: usize) -> String {
+    let mut source = "{ ...F0 }".to_owned();
+    for i in 0..levels {
+        source += &format!(
+            " fragment F{i} on QueryRoot {{ ...F{j} ...F{j} }}",
+            j = i + 1
+        );
+    }
+    source + &format!(" fragment F{levels} on QueryRoot {{ dog {{ name }} }}")
+}
+
 /// Builds a document whose operation spreads a chain of `length` fragments.
 fn fragment_chain(length: usize) -> String {
     let mut source = "{ ...F1 }".to_owned();
@@ -38,8 +59,8 @@ fn fragment_chain(length: usize) -> String {
 }
 
 mod depth {
-    use super::{depth_limit, fragment_chain, parse};
-    use crate::parser::{ParseError, SourcePosition};
+    use super::{depth_limit, fragment_bomb, fragment_chain, parse};
+    use crate::parser::{Limits, ParseError, SourcePosition};
 
     #[test]
     fn allows_selection_sets_at_limit() {
@@ -131,17 +152,12 @@ mod depth {
 
     #[test]
     fn checks_repeated_spreads_once() {
-        // Each fragment spreads the next one twice, so following every spread takes `2^40` steps.
-        let mut source = "{ ...F0 }".to_owned();
-        for i in 0..40 {
-            source += &format!(
-                " fragment F{i} on QueryRoot {{ ...F{j} ...F{j} }}",
-                j = i + 1
-            );
-        }
-        source += " fragment F40 on QueryRoot { dog { name } }";
+        let limits = Limits {
+            max_fields: usize::MAX,
+            ..depth_limit(64)
+        };
 
-        assert_eq!(parse(&source, depth_limit(64)), Ok(()));
+        assert_eq!(parse(&fragment_bomb(40), limits), Ok(()));
     }
 
     #[test]
@@ -175,6 +191,52 @@ mod tokens {
     }
 }
 
+mod fields {
+    use super::{field_limit, fragment_bomb, parse};
+    use crate::parser::{Limits, ParseError, SourcePosition};
+
+    #[test]
+    fn allows_fields_at_limit() {
+        assert_eq!(parse("{ a b { c } }", field_limit(3)), Ok(()));
+    }
+
+    #[test]
+    fn rejects_operation_over_limit() {
+        let err = parse("query Q { a b { c } }", field_limit(2)).unwrap_err();
+
+        assert_eq!(err.item, ParseError::FieldLimitExceeded(2));
+        assert_eq!(err.span.start, SourcePosition::new(0, 0, 0));
+    }
+
+    #[test]
+    fn counts_fragment_fields_for_each_spread() {
+        let source = "{ ...F ...F } fragment F on QueryRoot { a b }";
+
+        assert_eq!(parse(source, field_limit(4)), Ok(()));
+        assert_eq!(
+            parse(source, field_limit(3)).unwrap_err().item,
+            ParseError::FieldLimitExceeded(3),
+        );
+    }
+
+    #[test]
+    fn ignores_unused_fragments() {
+        let source = "{ a } fragment F on QueryRoot { b c d }";
+
+        assert_eq!(parse(source, field_limit(1)), Ok(()));
+    }
+
+    #[test]
+    fn defaults_reject_exponential_expansion() {
+        assert_eq!(
+            parse(&fragment_bomb(40), Limits::default())
+                .unwrap_err()
+                .item,
+            ParseError::FieldLimitExceeded(Limits::DEFAULT_MAX_FIELDS),
+        );
+    }
+}
+
 /// Default [`Limits`] reject documents that would overflow the 2 MiB stack of a test thread.
 #[test]
 fn defaults_reject_deep_nesting_without_stack_overflow() {
@@ -201,13 +263,15 @@ fn defaults_reject_too_many_tokens() {
 fn root_node_sets_limits() {
     let root = RootNode::new(QueryRoot, MutationRoot, SubscriptionRoot)
         .limit_depth(3)
-        .limit_tokens(7);
+        .limit_tokens(7)
+        .limit_fields(9);
 
     assert_eq!(
         root.schema.limits,
         Limits {
             max_depth: 3,
             max_tokens: 7,
+            max_fields: 9,
         },
     );
 }

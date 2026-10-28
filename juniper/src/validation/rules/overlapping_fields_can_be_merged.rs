@@ -1370,11 +1370,12 @@ mod tests {
     #[test]
     fn checks_diamond_fragment_spreads_in_linear_time() {
         // Each level spreads 2 fragments that both spread the next level, so following every
-        // spread takes `2^30` steps.
-        let mut query = "{ dog { ...F0 } }".to_owned();
+        // spread takes `2^30` steps. The document has no operation because the expanded operation
+        // would exceed the field limit of the parser.
+        let mut query = String::new();
         for i in 0..30 {
             query += &format!(
-                " fragment F{i} on Dog {{ ...A{i} ...B{i} }} \
+                " fragment F{i} on Dog {{ name ...A{i} ...B{i} }} \
                  fragment A{i} on Dog {{ ...F{j} }} \
                  fragment B{i} on Dog {{ ...F{j} }}",
                 j = i + 1,

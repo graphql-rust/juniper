@@ -23,8 +23,8 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Fixed `ValuesStream` to return batch of `ExecutionError`s instead of a single one. ([#1371])
 - Added `GraphQLError::NotSupported` variant. ([#1378])
 - Upgraded [`compact_str` crate] integration to [0.10 version](https://github.com/ParkMyCar/compact_str/blob/v0.10.0/CHANGELOG.md#0100). ([#1387])
-- Limited documents to 64 levels of nesting and 15,000 tokens by default. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
-- Added `ParseError::DepthLimitExceeded` and `ParseError::TokenLimitExceeded` variants. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
+- Limited documents to 64 levels of nesting, 15,000 tokens, and 15,000 fields by default. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
+- Added `ParseError::DepthLimitExceeded`, `ParseError::TokenLimitExceeded`, and `ParseError::FieldLimitExceeded` variants. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
 
 ### Added
 
@@ -55,7 +55,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - `ruint::aliases::U128` as `U128` scalar.
     - `ruint::aliases::U256` as `U256` scalar.
     - `integrations::ruint::unit_scalar` module for declaring custom-sized `ruint::Unit` scalars.
-- `RootNode::limit_depth()` and `RootNode::limit_tokens()` methods. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
+- `RootNode::limit_depth()`, `RootNode::limit_tokens()`, and `RootNode::limit_fields()` methods. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
 
 ### Changed
 
@@ -74,6 +74,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Stack overflow on deeply nested selection sets, input values, list types, and fragment spreads. ([GHSA-34cw-x8g7-rcv5])
 - Quadratic parsing time in the number of tokens. ([GHSA-36rq-8957-mjrx])
 - Exponential validation time of fragments that spread the same fragment through many paths. ([GHSA-36rq-8957-mjrx])
+- Exponential execution time of fragments that spread the same fragment more than once. ([GHSA-36rq-8957-mjrx])
 
 [#864]: /../../issues/864
 [#1055]: /../../issues/1055
