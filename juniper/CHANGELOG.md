@@ -6,7 +6,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 
 
-## [0.17.2] · unreleased
+## [0.17.2] · 2026-10-28
 [0.17.2]: /../../tree/juniper-v0.17.2/juniper
 
 [Diff](/../../compare/juniper-v0.17.1...juniper-v0.17.2)
