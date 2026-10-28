@@ -49,7 +49,7 @@ where
     type Context = ();
     type TypeInfo = NodeTypeInfo;
 
-    fn type_name<'i>(&self, info: &'i Self::TypeInfo) -> Option<ArcStr> {
+    fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
         <Self as GraphQLType<S>>::name(info)
     }
 

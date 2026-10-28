@@ -190,7 +190,7 @@ mod juniper_request_tests {
 
     #[tokio::test]
     async fn from_get_request() {
-        let req = Request::get(&format!(
+        let req = Request::get(format!(
             "/?query={}",
             urlencoding::encode("{ add(a: 2, b: 3) }")
         ))
@@ -208,7 +208,7 @@ mod juniper_request_tests {
 
     #[tokio::test]
     async fn from_get_request_with_variables() {
-        let req = Request::get(&format!(
+        let req = Request::get(format!(
             "/?query={}&variables={}",
             urlencoding::encode(
                 "query($id: String!) { human(id: $id) { id, name, appearsIn, homePlanet } }",

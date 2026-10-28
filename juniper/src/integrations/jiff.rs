@@ -485,7 +485,7 @@ mod local_date_test {
     fn parses_correct_input() {
         for (raw, expected) in [
             ("1996-12-19", LocalDate::constant(1996, 12, 19)),
-            ("1564-01-30", LocalDate::constant(1564, 01, 30)),
+            ("1564-01-30", LocalDate::constant(1564, 1, 30)),
         ] {
             let input: InputValue = graphql::input_value!((raw));
             let parsed = LocalDate::from_input_value(&input);
@@ -530,11 +530,11 @@ mod local_date_test {
                 graphql::input_value!("1996-12-19"),
             ),
             (
-                LocalDate::constant(1564, 01, 30),
+                LocalDate::constant(1564, 1, 30),
                 graphql::input_value!("1564-01-30"),
             ),
             (
-                LocalDate::constant(2020, 01, 01),
+                LocalDate::constant(2020, 1, 1),
                 graphql::input_value!("2020-01-01"),
             ),
         ] {

@@ -1,5 +1,3 @@
-use std::mem;
-
 use arcstr::ArcStr;
 
 use crate::{
@@ -9,7 +7,7 @@ use crate::{
     parser::parse_document_source,
     schema::{
         meta::{EnumValue, MetaType},
-        model::{DirectiveLocation, DirectiveType, RootNode},
+        model::{DirectiveLocation, DirectiveType, RootNode, SchemaType},
     },
     types::{
         base::{GraphQLType, GraphQLValue},
@@ -876,12 +874,17 @@ where
         false,
     ));
 
-    let doc = parse_document_source(q, &root.schema)
-        .unwrap_or_else(|_| panic!("Parse error on input {q:#?}"));
-    let mut ctx = ValidatorContext::new(unsafe { mem::transmute(&root.schema) }, &doc);
-
-    visit_fn(&mut ctx, unsafe { mem::transmute(doc.as_slice()) });
-
+    // `ValidatorContext` and the visitors borrow the schema and the document for `'a`. Leaking
+    // the schema and the document gives them the `'a` lifetime without `unsafe` code. The leaked
+    // memory stays allocated until the test process exits.
+    let schema: &'a SchemaType<S> = Box::leak(Box::new(root.schema));
+    let doc: &'a Document<'a, S> = Box::leak(
+        parse_document_source(q, schema)
+            .unwrap_or_else(|_| panic!("Parse error on input {q:#?}"))
+            .into_boxed_slice(),
+    );
+    let mut ctx = ValidatorContext::new(schema, doc);
+    visit_fn(&mut ctx, doc);
     ctx.into_errors()
 }
 
@@ -910,7 +913,7 @@ pub(crate) fn expect_passes_rule_with_schema<'a, Q, M, Sub, V, F, S>(
 {
     let errs = validate(r, m, s, q, move |ctx, doc| {
         let mut mv = MultiVisitorNil.with(factory());
-        visit(&mut mv, ctx, unsafe { mem::transmute(doc) });
+        visit(&mut mv, ctx, doc);
     });
 
     if !errs.is_empty() {
@@ -956,7 +959,7 @@ pub(crate) fn expect_fails_rule_with_schema<'a, Q, M, V, F, S>(
         q,
         move |ctx, doc| {
             let mut mv = MultiVisitorNil.with(factory());
-            visit(&mut mv, ctx, unsafe { mem::transmute(doc) });
+            visit(&mut mv, ctx, doc);
         },
     );
 
