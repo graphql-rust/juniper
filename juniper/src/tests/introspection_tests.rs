@@ -265,7 +265,7 @@ async fn test_introspection_possible_types() {
 
     let result = crate::execute(doc, None, &schema, &graphql::vars! {}, &database).await;
 
-    let (result, errors) = result.ok().expect("Query returned error");
+    let (result, errors) = result.expect("Query returned error");
 
     assert_eq!(errors, vec![]);
 

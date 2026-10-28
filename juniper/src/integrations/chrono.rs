@@ -319,7 +319,7 @@ mod local_date_test {
     fn parses_correct_input() {
         for (raw, expected) in [
             ("1996-12-19", LocalDate::from_ymd_opt(1996, 12, 19)),
-            ("1564-01-30", LocalDate::from_ymd_opt(1564, 01, 30)),
+            ("1564-01-30", LocalDate::from_ymd_opt(1564, 1, 30)),
         ] {
             let input: InputValue = graphql::input_value!((raw));
             let parsed = LocalDate::from_input_value(&input);
@@ -364,11 +364,11 @@ mod local_date_test {
                 graphql::input_value!("1996-12-19"),
             ),
             (
-                LocalDate::from_ymd_opt(1564, 01, 30),
+                LocalDate::from_ymd_opt(1564, 1, 30),
                 graphql::input_value!("1564-01-30"),
             ),
             (
-                LocalDate::from_ymd_opt(2020, 01, 01),
+                LocalDate::from_ymd_opt(2020, 1, 1),
                 graphql::input_value!("2020-01-01"),
             ),
         ] {
@@ -727,13 +727,13 @@ mod integration_test {
     #[tokio::test]
     async fn serializes() {
         #[derive(Clone, Copy)]
-        struct CET;
+        struct Cet;
 
-        impl TimeZone for CET {
+        impl TimeZone for Cet {
             type Offset = <chrono_tz::Tz as TimeZone>::Offset;
 
             fn from_offset(_: &Self::Offset) -> Self {
-                CET
+                Cet
             }
 
             fn offset_from_local_date(
@@ -759,9 +759,9 @@ mod integration_test {
             }
         }
 
-        impl FromFixedOffset for CET {
+        impl FromFixedOffset for Cet {
             fn from_fixed_offset(dt: DateTime<FixedOffset>) -> DateTime<Self> {
-                dt.with_timezone(&CET)
+                dt.with_timezone(&Cet)
             }
         }
 
@@ -794,11 +794,11 @@ mod integration_test {
                 )
             }
 
-            fn pass_date_time(dt: DateTime<CET>) -> DateTime<CET> {
+            fn pass_date_time(dt: DateTime<Cet>) -> DateTime<Cet> {
                 dt
             }
 
-            fn transform_date_time(dt: DateTime<CET>) -> DateTime<chrono::Utc> {
+            fn transform_date_time(dt: DateTime<Cet>) -> DateTime<chrono::Utc> {
                 dt.with_timezone(&chrono::Utc)
             }
         }
