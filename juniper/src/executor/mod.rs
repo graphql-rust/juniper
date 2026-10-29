@@ -74,6 +74,15 @@ where
     context: &'a CtxT,
     errors: &'r RwLock<Vec<ExecutionError<S>>>,
     field_path: Arc<FieldPath<'a>>,
+
+    /// Serial execution of the fields in the current selection set.
+    ///
+    /// The GraphQL specification requires serial execution of the root fields of a mutation.
+    /// Fragments at the root keep the flag. Field sub-executors clear the flag because the fields
+    /// of nested selection sets execute normally.
+    ///
+    /// See <https://spec.graphql.org/September2025#sec-Normal-and-Serial-Execution>.
+    serial: bool,
 }
 
 /// Error type for errors that occur during query execution
@@ -558,6 +567,7 @@ where
             context: ctx,
             errors: self.errors,
             field_path: self.field_path.clone(),
+            serial: self.serial,
         }
     }
 
@@ -590,6 +600,7 @@ where
                 location,
                 Arc::clone(&self.field_path),
             )),
+            serial: false,
         }
     }
 
@@ -612,12 +623,18 @@ where
             context: self.context,
             errors: self.errors,
             field_path: self.field_path.clone(),
+            serial: self.serial,
         }
     }
 
     /// `Executor`'s current selection set
     pub(crate) fn current_selection_set(&self) -> Option<&[Selection<'a, S>]> {
         self.current_selection_set
+    }
+
+    /// Returns `true` if the fields of the current selection set execute serially.
+    pub(crate) fn is_serial(&self) -> bool {
+        self.serial
     }
 
     /// Access the current context
@@ -910,6 +927,7 @@ where
             context,
             errors: &errors,
             field_path: Arc::new(FieldPath::Root(operation.span.start)),
+            serial: operation.item.operation_type == OperationType::Mutation,
         };
 
         value = match operation.item.operation_type {
@@ -1011,6 +1029,7 @@ where
             context,
             errors: &errors,
             field_path: Arc::new(FieldPath::Root(operation.span.start)),
+            serial: operation.item.operation_type == OperationType::Mutation,
         };
 
         value = match operation.item.operation_type {
@@ -1159,6 +1178,7 @@ where
             context,
             errors: &errors,
             field_path: Arc::new(FieldPath::Root(operation.span.start)),
+            serial: false,
         };
 
         value = match operation.item.operation_type {

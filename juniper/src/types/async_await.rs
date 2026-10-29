@@ -1,6 +1,7 @@
-use std::future;
+use std::{future, ops::ControlFlow};
 
 use auto_enums::enum_derive;
+use futures::stream::{FuturesOrdered, StreamExt as _};
 
 use crate::{
     ast::Selection,
@@ -183,8 +184,6 @@ where
     T::Context: Sync,
     S: ScalarValue + Send + Sync,
 {
-    use futures::stream::{FuturesOrdered, StreamExt as _};
-
     #[enum_derive(Future)]
     enum AsyncValueFuture<F1, F2, FS, IF1, IF2> {
         Field1(F1),
@@ -424,30 +423,54 @@ where
                 }
             }
         }
-    }
 
-    while let Some(item) = async_values.next().await {
-        match item {
-            AsyncValue::Field(AsyncField { name, value }) => {
-                if let Some(value) = value {
-                    merge_key_into(&mut object, &name, value);
-                } else {
-                    return Value::null();
-                }
-            }
-            AsyncValue::Nested(obj) => match obj {
-                v @ Value::Null => {
-                    return v;
-                }
-                Value::Object(obj) => {
-                    for (k, v) in obj {
-                        merge_key_into(&mut object, &k, v);
-                    }
-                }
-                _ => unreachable!(),
-            },
+        // In serial execution, each selection completes before the next selection starts.
+        if executor.is_serial()
+            && merge_async_values(&mut async_values, &mut object)
+                .await
+                .is_break()
+        {
+            return Value::null();
         }
     }
 
+    if merge_async_values(&mut async_values, &mut object)
+        .await
+        .is_break()
+    {
+        return Value::null();
+    }
+
     Value::Object(object)
+}
+
+/// Awaits the `values` in order and merges them into `object`.
+///
+/// Returns [`ControlFlow::Break`] for a field without a value or for a `null` nested object. Both
+/// come from a `null` in a non-null field. The `null` then replaces the whole `object`.
+async fn merge_async_values<F, S>(
+    values: &mut FuturesOrdered<F>,
+    object: &mut Object<S>,
+) -> ControlFlow<()>
+where
+    F: Future<Output = AsyncValue<S>>,
+{
+    while let Some(value) = values.next().await {
+        match value {
+            AsyncValue::Field(AsyncField {
+                name,
+                value: Some(value),
+            }) => merge_key_into(object, &name, value),
+            AsyncValue::Field(AsyncField { value: None, .. }) | AsyncValue::Nested(Value::Null) => {
+                return ControlFlow::Break(());
+            }
+            AsyncValue::Nested(Value::Object(nested)) => {
+                for (name, value) in nested {
+                    merge_key_into(object, &name, value);
+                }
+            }
+            AsyncValue::Nested(_) => unreachable!(),
+        }
+    }
+    ControlFlow::Continue(())
 }
