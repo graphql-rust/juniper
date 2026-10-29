@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-c687aeeb.js";
+            window.path_to_searchindex_js = "searchindex-b15911d9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-abc46b8f.js"></script>
+        <script src="toc-fcdc4e7f.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -2838,7 +2838,7 @@ impl Subscription {
 </span><span class="boring">fn main () {}</span></code></pre>
 <h2 id="coordinator"><a class="header" href="#coordinator">Coordinator</a></h2>
 <p><a href="https://spec.graphql.org/October2021#sec-Subscription">GraphQL subscriptions</a> require a bit more resources than regular <a href="https://spec.graphql.org/October2021#sec-Query">queries</a> and provide a great vector for <a href="https://en.wikipedia.org/wiki/Denial-of-service_attack">DoS attacks</a>. This can can bring down a server easily if not handled correctly. The <a href="https://docs.rs/juniper/0.17.1/juniper/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code> trait</a> provides coordination logic to enable functionality like <a href="https://en.wikipedia.org/wiki/Denial-of-service_attack">DoS attacks</a> mitigation and resource limits.</p>
-<p>The <a href="https://docs.rs/juniper/0.17.1/juniper/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> contains the <a href="https://spec.graphql.org/October2021#sec-Schema">schema</a> and can keep track of opened connections, handle <a href="https://spec.graphql.org/October2021#sec-Subscription">subscription</a> start and end, and maintain a global ID for each <a href="https://spec.graphql.org/October2021#sec-Subscription">subscription</a>. Each time a connection is established, the <a href="https://docs.rs/juniper/0.17.1/juniper/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> spawns a [32], which handles a single connection, providing resolver logic for a client stream as well as reconnection and shutdown logic.</p>
+<p>The <a href="https://docs.rs/juniper/0.17.1/juniper/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> contains the <a href="https://spec.graphql.org/October2021#sec-Schema">schema</a> and can keep track of opened connections, handle <a href="https://spec.graphql.org/October2021#sec-Subscription">subscription</a> start and end, and maintain a global ID for each <a href="https://spec.graphql.org/October2021#sec-Subscription">subscription</a>. Each time a connection is established, the <a href="https://docs.rs/juniper/0.17.1/juniper/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> spawns a <a href="https://docs.rs/juniper/0.17.1/juniper/trait.SubscriptionConnection.html"><code>SubscriptionConnection</code></a>, which handles a single connection, providing resolver logic for a client stream as well as reconnection and shutdown logic.</p>
 <p>While we can implement <a href="https://docs.rs/juniper/0.17.1/juniper/trait.SubscriptionCoordinator.html"><code>SubscriptionCoordinator</code></a> ourselves, <a href="https://docs.rs/juniper">Juniper</a> contains a simple and generic implementation called <a href="https://docs.rs/juniper_subscriptions/0.18.0/juniper_subscriptions/struct.Coordinator.html"><code>Coordinator</code></a>. The <code>subscribe</code> method returns a <a href="https://doc.rust-lang.org/stable/std/future/trait.Future.html"><code>Future</code></a> resolving into a <code>Result&lt;Connection, GraphQLError&gt;</code>, where <a href="https://docs.rs/juniper_subscriptions/0.18.0/juniper_subscriptions/struct.Connection.html"><code>Connection</code></a> is a <a href="https://docs.rs/futures/latest/futures/stream/trait.Stream.html"><code>Stream</code></a> of <a href="https://spec.graphql.org/October2021#sec-Values">values</a> returned by the operation, and a <a href="https://docs.rs/juniper/0.17.1/juniper/enum.GraphQLError.html"><code>GraphQLError</code></a> is the error when the <a href="https://spec.graphql.org/October2021#sec-Subscription">subscription operation</a> fails.</p>
 <pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate futures;
 </span><span class="boring">extern crate juniper;
@@ -2978,6 +2978,67 @@ fn main() {
 <p><strong>NOTE</strong>: Attempt to execute an <a href="https://spec.graphql.org/October2021#sec-Schema-Introspection">introspection query</a> results in <a href="https://spec.graphql.org/October2021#sec-Validation">validation</a> error, rather than <a href="https://spec.graphql.org/October2021#sec-Execution">execution</a> error.</p>
 </blockquote>
 <div style="break-before: page; page-break-before: always;"></div>
+<h1 id="document-limits"><a class="header" href="#document-limits">Document limits</a></h1>
+<p><strong><a href="https://docs.rs/juniper">Juniper</a> rejects <a href="https://spec.graphql.org/October2021#sec-Document">GraphQL documents</a> over its limits on nesting depth, tokens, and fields.</strong></p>
+<p>Clients choose the documents that a server parses, validates, and executes. A short document can still cause a lot of work. Deep nesting can overflow the stack of the server. Repeated <a href="https://spec.graphql.org/October2021#sec-Language.Fragments">fragment spreads</a> can expand a short document into an exponential number of fields. <a href="https://docs.rs/juniper">Juniper</a> rejects such documents during parsing. Validation and execution do not start for a rejected document. Version 0.17.2 added the limits.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Limit</th><th>Default</th><th>Method</th><th>Error</th></tr>
+</thead>
+<tbody>
+<tr><td>Nesting depth</td><td>64 levels</td><td><a href="https://docs.rs/juniper/0.17.2/juniper/struct.RootNode.html#method.limit_depth"><code>RootNode::limit_depth()</code></a></td><td><a href="https://docs.rs/juniper/0.17.2/juniper/parser/enum.ParseError.html#variant.DepthLimitExceeded"><code>ParseError::DepthLimitExceeded</code></a></td></tr>
+<tr><td>Tokens</td><td>15,000</td><td><a href="https://docs.rs/juniper/0.17.2/juniper/struct.RootNode.html#method.limit_tokens"><code>RootNode::limit_tokens()</code></a></td><td><a href="https://docs.rs/juniper/0.17.2/juniper/parser/enum.ParseError.html#variant.TokenLimitExceeded"><code>ParseError::TokenLimitExceeded</code></a></td></tr>
+<tr><td>Fields</td><td>15,000</td><td><a href="https://docs.rs/juniper/0.17.2/juniper/struct.RootNode.html#method.limit_fields"><code>RootNode::limit_fields()</code></a></td><td><a href="https://docs.rs/juniper/0.17.2/juniper/parser/enum.ParseError.html#variant.FieldLimitExceeded"><code>ParseError::FieldLimitExceeded</code></a></td></tr>
+</tbody>
+</table>
+</div>
+<ul>
+<li>The depth counts nested selection sets, fragments, input values, and list types. A <a href="https://spec.graphql.org/October2021#sec-Language.Fragments">fragment spread</a> nests the selections of its fragment one level deeper.</li>
+<li>The token limit bounds the time to parse and validate a document.</li>
+<li>The field count of an operation includes the fields of a fragment once for each spread of the fragment.</li>
+</ul>
+<h2 id="changing-the-limits"><a class="header" href="#changing-the-limits">Changing the limits</a></h2>
+<p>The <code>limit_*()</code> methods of a <a href="https://docs.rs/juniper/0.17.2/juniper/struct.RootNode.html"><code>RootNode</code></a> replace the default limits. A document over a limit fails with a <a href="https://docs.rs/juniper/0.17.2/juniper/enum.GraphQLError.html#variant.ParseError"><code>GraphQLError::ParseError</code></a>:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::{
+</span><span class="boring">    EmptyMutation, EmptySubscription, GraphQLError, RootNode, graphql_object, graphql_vars,
+</span><span class="boring">    parser::ParseError,
+</span><span class="boring">};
+</span><span class="boring">
+</span>struct Query;
+
+#[graphql_object]
+impl Query {
+    fn ping() -&gt; bool {
+        true
+    }
+}
+
+type Schema = RootNode&lt;Query, EmptyMutation, EmptySubscription&gt;;
+
+fn main() {
+    let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new())
+        .limit_depth(32)
+        .limit_tokens(5_000)
+        .limit_fields(2);
+
+    // The operation selects 3 fields.
+    let query = "{ a: ping b: ping c: ping }";
+
+    match juniper::execute_sync(query, None, &amp;schema, &amp;graphql_vars! {}, &amp;()) {
+        Err(GraphQLError::ParseError(err)) =&gt; {
+            assert_eq!(err.item, ParseError::FieldLimitExceeded(2));
+            assert_eq!(err.item.to_string(), "Document exceeds the limit of 2 fields");
+        }
+        res =&gt; panic!("expected `ParseError`, returned: {res:#?}"),
+    }
+}</code></pre>
+<h2 id="overlapping-fields"><a class="header" href="#overlapping-fields">Overlapping fields</a></h2>
+<p>The validation of <a href="https://spec.graphql.org/October2021#sec-Field-Selection-Merging">field selection merging</a> compares the fields with the same response name. The number of comparisons can grow quadratically with the size of a document. <a href="https://docs.rs/juniper">Juniper</a> stops the comparisons after 100,000 and rejects the document with the <code>Document has too many overlapping fields to validate</code> validation error. The validation reports at most 100 conflicts of a document. The two bounds are fixed.</p>
+<h2 id="request-bodies"><a class="header" href="#request-bodies">Request bodies</a></h2>
+<p>Web servers also limit the size of request bodies. <a href="https://docs.rs/juniper_hyper"><code>juniper_hyper</code></a> and <a href="https://docs.rs/juniper_warp"><code>juniper_warp</code></a> read at most 2 MiB of a request body by default. A larger body gets a <code>413 Payload Too Large</code> response. The API docs of the two crates show how to change the limit. The other integrations use the body limits of their web frameworks.</p>
+<div style="break-before: page; page-break-before: always;"></div>
 <h1 id="serving"><a class="header" href="#serving">Serving</a></h1>
 <p>Once we have built a <a href="#schema-1">GraphQL schema</a>, the next obvious step would be to serve it, so clients can interact with our <a href="https://graphql.org">GraphQL</a> API. Usually, <a href="https://graphql.org">GraphQL</a> APIs are served via <a href="https://en.wikipedia.org/wiki/HTTP">HTTP</a>.</p>
 <h2 id="web-server-frameworks-1"><a class="header" href="#web-server-frameworks-1">Web server frameworks</a></h2>
@@ -2987,7 +3048,7 @@ fn main() {
 <ul>
 <li><a href="https://docs.rs/actix-web"><code>actix-web</code></a> (<a href="https://docs.rs/juniper_actix"><code>juniper_actix</code></a> crate)</li>
 <li><a href="https://docs.rs/axum"><code>axum</code></a> (<a href="https://docs.rs/juniper_axum"><code>juniper_axum</code></a> crate)</li>
-<li><a href="https://docs.rs/hyper"><code>hyper</code></a> ([<code>juniper_hyper</code>] crate)</li>
+<li><a href="https://docs.rs/hyper"><code>hyper</code></a> (<a href="https://docs.rs/juniper_hyper"><code>juniper_hyper</code></a> crate)</li>
 <li><a href="https://docs.rs/rocket"><code>rocket</code></a> (<a href="https://docs.rs/juniper_rocket"><code>juniper_rocket</code></a> crate)</li>
 <li><a href="https://docs.rs/warp"><code>warp</code></a> (<a href="https://docs.rs/juniper_warp"><code>juniper_warp</code></a> crate)</li>
 </ul>
