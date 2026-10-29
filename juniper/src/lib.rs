@@ -168,26 +168,6 @@ impl std::error::Error for GraphQLError {
     }
 }
 
-/// Executes a query synchronously in the provided schema.
-///
-/// Parses and validates the document with [`parse_and_validate()`] and executes the operation with
-/// [`ValidatedOperation::execute_sync()`].
-pub fn execute_sync<'a, S, QueryT, MutationT, SubscriptionT>(
-    document_source: &'a str,
-    operation_name: Option<&str>,
-    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
-    variables: &Variables<S>,
-    context: &QueryT::Context,
-) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError>
-where
-    S: ScalarValue,
-    QueryT: GraphQLType<S>,
-    MutationT: GraphQLType<S, Context = QueryT::Context>,
-    SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
-{
-    parse_and_validate(document_source, operation_name, root_node)?.execute_sync(variables, context)
-}
-
 /// Parses and validates a GraphQL document in the provided schema without executing it.
 ///
 /// `operation_name` selects the operation of a document with more than one operation. The returned
@@ -267,6 +247,26 @@ where
     }
 
     ValidatedOperation::new(document, operation_name, root_node)
+}
+
+/// Executes a query synchronously in the provided schema.
+///
+/// Parses and validates the document with [`parse_and_validate()`] and executes the operation with
+/// [`ValidatedOperation::execute_sync()`].
+pub fn execute_sync<'a, S, QueryT, MutationT, SubscriptionT>(
+    document_source: &'a str,
+    operation_name: Option<&str>,
+    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
+    variables: &Variables<S>,
+    context: &QueryT::Context,
+) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError>
+where
+    S: ScalarValue,
+    QueryT: GraphQLType<S>,
+    MutationT: GraphQLType<S, Context = QueryT::Context>,
+    SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
+{
+    parse_and_validate(document_source, operation_name, root_node)?.execute_sync(variables, context)
 }
 
 /// Executes a query asynchronously in the provided schema.
