@@ -4,8 +4,8 @@ use std::pin::Pin;
 
 use futures::{Stream, StreamExt as _, TryFutureExt as _};
 use juniper::{
-    EmptyMutation, FieldError, OperationType, RootNode, graphql_object, graphql_subscription,
-    graphql_vars, parse_and_validate,
+    EmptyMutation, FieldError, OperationType, RootNode, ValidatedOperation, graphql_object,
+    graphql_subscription, graphql_vars,
 };
 
 pub struct Context;
@@ -51,7 +51,7 @@ fn schema() -> Schema {
 #[tokio::test]
 async fn executes_query() {
     let schema = schema();
-    let operation = parse_and_validate("query { users { id } }", None, &schema).unwrap();
+    let operation = ValidatedOperation::new("query { users { id } }", None, &schema).unwrap();
     assert_eq!(operation.operation_type(), OperationType::Query);
 
     let (_, errors) = operation
@@ -65,7 +65,8 @@ async fn executes_query() {
 #[tokio::test]
 async fn resolves_subscription() {
     let schema = schema();
-    let operation = parse_and_validate("subscription { users { id } }", None, &schema).unwrap();
+    let operation =
+        ValidatedOperation::new("subscription { users { id } }", None, &schema).unwrap();
     assert_eq!(operation.operation_type(), OperationType::Subscription);
 
     let mut stream = operation

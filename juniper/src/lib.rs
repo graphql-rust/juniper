@@ -73,11 +73,7 @@ use itertools::Itertools as _;
 // Needs to be public because macros use it.
 pub use crate::util::to_camel_case;
 
-use crate::{
-    introspection::{INTROSPECTION_QUERY, INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS},
-    parser::parse_document_source,
-    validation::{MultiVisitorNil, ValidatorContext, rules, visit as visit_rule, visit_all_rules},
-};
+use crate::introspection::{INTROSPECTION_QUERY, INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS};
 
 pub use crate::{
     ast::{
@@ -168,91 +164,10 @@ impl std::error::Error for GraphQLError {
     }
 }
 
-/// Parses and validates a GraphQL document in the provided schema without executing it.
-///
-/// `operation_name` selects the operation of a document with more than one operation. The returned
-/// [`ValidatedOperation`] reports the [`OperationType`] of the selected operation. The execution
-/// methods of the [`ValidatedOperation`] execute the operation without parsing and validating the
-/// document again. A server can thus route subscriptions to
-/// [`ValidatedOperation::resolve_into_stream()`] and other operations to
-/// [`ValidatedOperation::execute()`].
-///
-/// # Errors
-///
-/// - [`GraphQLError::ParseError`] if the document fails to parse or exceeds the document limits of
-///   the `root_node`.
-/// - [`GraphQLError::ValidationError`] if the document fails validation.
-/// - [`GraphQLError::MultipleOperationsProvided`] if the document has more than one operation and
-///   `operation_name` is [`None`].
-/// - [`GraphQLError::UnknownOperationName`] if the document has no operation with the
-///   `operation_name`.
-///
-/// # Example
-///
-/// ```rust
-/// # use juniper::{
-/// #     EmptyMutation, EmptySubscription, GraphQLError, OperationType, RootNode, graphql_object,
-/// #     graphql_value, graphql_vars,
-/// # };
-/// #
-/// struct Query;
-///
-/// #[graphql_object]
-/// impl Query {
-///     fn ping() -> bool {
-///         true
-///     }
-/// }
-///
-/// type Schema = RootNode<Query, EmptyMutation, EmptySubscription>;
-///
-/// let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
-///
-/// let operation = juniper::parse_and_validate("{ ping }", None, &schema)?;
-/// assert_eq!(operation.operation_type(), OperationType::Query);
-///
-/// let (data, errors) = operation.execute_sync(&graphql_vars! {}, &())?;
-/// assert_eq!(data, graphql_value!({"ping": true}));
-/// assert!(errors.is_empty());
-/// # Ok::<_, GraphQLError>(())
-/// ```
-pub fn parse_and_validate<'a, S, QueryT, MutationT, SubscriptionT>(
-    document_source: &'a str,
-    operation_name: Option<&str>,
-    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
-) -> Result<ValidatedOperation<'a, QueryT, MutationT, SubscriptionT, S>, GraphQLError>
-where
-    S: ScalarValue,
-    QueryT: GraphQLType<S>,
-    MutationT: GraphQLType<S>,
-    SubscriptionT: GraphQLType<S>,
-{
-    let document = parse_document_source(document_source, &root_node.schema)?;
-
-    {
-        let mut ctx = ValidatorContext::new(&root_node.schema, &document);
-        visit_all_rules(&mut ctx, &document);
-        if root_node.introspection_disabled {
-            visit_rule(
-                &mut MultiVisitorNil.with(rules::disable_introspection::factory()),
-                &mut ctx,
-                &document,
-            );
-        }
-
-        let errors = ctx.into_errors();
-        if !errors.is_empty() {
-            return Err(errors.into());
-        }
-    }
-
-    ValidatedOperation::new(document, operation_name, root_node)
-}
-
 /// Executes a query synchronously in the provided schema.
 ///
-/// Parses and validates the document with [`parse_and_validate()`] and executes the operation with
-/// [`ValidatedOperation::execute_sync()`].
+/// Parses and validates the document with [`ValidatedOperation::new()`] and executes the
+/// operation with [`ValidatedOperation::execute_sync()`].
 pub fn execute_sync<'a, S, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
     operation_name: Option<&str>,
@@ -266,13 +181,14 @@ where
     MutationT: GraphQLType<S, Context = QueryT::Context>,
     SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
 {
-    parse_and_validate(document_source, operation_name, root_node)?.execute_sync(variables, context)
+    ValidatedOperation::new(document_source, operation_name, root_node)?
+        .execute_sync(variables, context)
 }
 
 /// Executes a query asynchronously in the provided schema.
 ///
-/// Parses and validates the document with [`parse_and_validate()`] and executes the operation with
-/// [`ValidatedOperation::execute()`].
+/// Parses and validates the document with [`ValidatedOperation::new()`] and executes the
+/// operation with [`ValidatedOperation::execute()`].
 pub async fn execute<'a, S, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
     operation_name: Option<&str>,
@@ -290,15 +206,15 @@ where
     SubscriptionT::TypeInfo: Sync,
     S: ScalarValue + Send + Sync,
 {
-    parse_and_validate(document_source, operation_name, root_node)?
+    ValidatedOperation::new(document_source, operation_name, root_node)?
         .execute(variables, context)
         .await
 }
 
 /// Resolves a subscription into a [`ValuesStream`] in the provided schema.
 ///
-/// Parses and validates the document with [`parse_and_validate()`] and resolves the operation with
-/// [`ValidatedOperation::resolve_into_stream()`].
+/// Parses and validates the document with [`ValidatedOperation::new()`] and resolves the
+/// operation with [`ValidatedOperation::resolve_into_stream()`].
 pub async fn resolve_into_stream<'a, S, QueryT, MutationT, SubscriptionT>(
     document_source: &'a str,
     operation_name: Option<&str>,
@@ -316,7 +232,7 @@ where
     SubscriptionT::TypeInfo: Sync,
     S: ScalarValue + Send + Sync,
 {
-    parse_and_validate(document_source, operation_name, root_node)?
+    ValidatedOperation::new(document_source, operation_name, root_node)?
         .resolve_into_stream(variables, context)
         .await
 }

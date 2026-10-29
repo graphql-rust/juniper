@@ -9,13 +9,16 @@ use std::{
 
 use crate::{
     GraphQLError,
-    ast::{Definition, Fragment, Operation, OperationType, OwnedDocument},
-    parser::Spanning,
+    ast::{Definition, Fragment, Operation, OperationType},
+    parser::{Spanning, parse_document_source},
     schema::model::{RootNode, TypeType},
     types::{
         async_await::GraphQLTypeAsync, base::GraphQLType, subscriptions::GraphQLSubscriptionType,
     },
-    validation::validate_input_values,
+    validation::{
+        MultiVisitorNil, ValidatorContext, rules, validate_input_values, visit as visit_rule,
+        visit_all_rules,
+    },
     value::{DefaultScalarValue, ScalarValue, Value},
 };
 
@@ -23,12 +26,9 @@ use super::{ExecutionError, Executor, FieldPath, ValuesStream, Variables};
 
 /// GraphQL operation that passed parsing and validation.
 ///
-/// [`parse_and_validate()`] returns a [`ValidatedOperation`]. The execution methods validate the
-/// variables and execute the operation without parsing and validating the document again. A
-/// [`ValidatedOperation`] can execute more than once. Each execution takes its own variables and
-/// context.
-///
-/// [`parse_and_validate()`]: crate::parse_and_validate
+/// The execution methods validate the variables and execute the operation without parsing and
+/// validating the document again. A [`ValidatedOperation`] can execute more than once. Each
+/// execution takes its own variables and context.
 pub struct ValidatedOperation<'a, QueryT, MutationT, SubscriptionT, S = DefaultScalarValue>
 where
     QueryT: GraphQLType<S>,
@@ -54,21 +54,73 @@ where
     SubscriptionT: GraphQLType<S>,
     S: ScalarValue,
 {
-    /// Selects the operation to execute from a `document` that passed validation.
+    /// Parses and validates the `document_source` in the schema of the `root_node`.
     ///
-    /// `operation_name` selects the operation of a document with more than one operation.
+    /// `operation_name` selects the operation of a document with more than one operation. A server
+    /// can inspect the [`OperationType`] of the operation before execution. The server can then
+    /// route subscriptions to [`ValidatedOperation::resolve_into_stream()`] and other operations to
+    /// [`ValidatedOperation::execute()`].
     ///
     /// # Errors
     ///
-    /// - [`GraphQLError::MultipleOperationsProvided`] if the `document` has more than one operation
+    /// - [`GraphQLError::ParseError`] if the document fails to parse or exceeds the document
+    ///   limits of the `root_node`.
+    /// - [`GraphQLError::ValidationError`] if the document fails validation.
+    /// - [`GraphQLError::MultipleOperationsProvided`] if the document has more than one operation
     ///   and `operation_name` is [`None`].
-    /// - [`GraphQLError::UnknownOperationName`] if the `document` has no operation with the
+    /// - [`GraphQLError::UnknownOperationName`] if the document has no operation with the
     ///   `operation_name`.
-    pub(crate) fn new(
-        document: OwnedDocument<'a, S>,
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use juniper::{
+    /// #     EmptyMutation, EmptySubscription, GraphQLError, OperationType, RootNode,
+    /// #     ValidatedOperation, graphql_object, graphql_value, graphql_vars,
+    /// # };
+    /// #
+    /// struct Query;
+    ///
+    /// #[graphql_object]
+    /// impl Query {
+    ///     fn ping() -> bool {
+    ///         true
+    ///     }
+    /// }
+    ///
+    /// type Schema = RootNode<Query, EmptyMutation, EmptySubscription>;
+    ///
+    /// let schema = Schema::new(Query, EmptyMutation::new(), EmptySubscription::new());
+    ///
+    /// let operation = ValidatedOperation::new("{ ping }", None, &schema)?;
+    /// assert_eq!(operation.operation_type(), OperationType::Query);
+    ///
+    /// let (data, errors) = operation.execute_sync(&graphql_vars! {}, &())?;
+    /// assert_eq!(data, graphql_value!({"ping": true}));
+    /// assert!(errors.is_empty());
+    /// # Ok::<_, GraphQLError>(())
+    /// ```
+    pub fn new(
+        document_source: &'a str,
         operation_name: Option<&str>,
         root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
     ) -> Result<Self, GraphQLError> {
+        let document = parse_document_source(document_source, &root_node.schema)?;
+
+        let mut validator = ValidatorContext::new(&root_node.schema, &document);
+        visit_all_rules(&mut validator, &document);
+        if root_node.introspection_disabled {
+            visit_rule(
+                &mut MultiVisitorNil.with(rules::disable_introspection::factory()),
+                &mut validator,
+                &document,
+            );
+        }
+        let errors = validator.into_errors();
+        if !errors.is_empty() {
+            return Err(errors.into());
+        }
+
         let mut operation = None;
         let mut fragments = HashMap::new();
         for definition in document {

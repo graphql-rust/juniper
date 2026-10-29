@@ -1,4 +1,4 @@
-//! Tests of [`parse_and_validate()`] and [`ValidatedOperation`].
+//! Tests of [`ValidatedOperation::new()`] and [`ValidatedOperation`].
 //!
 //! [`ValidatedOperation`]: crate::ValidatedOperation
 
@@ -7,8 +7,8 @@ use std::pin::Pin;
 use futures::stream;
 
 use crate::{
-    Context, DefaultScalarValue, GraphQLError, RootNode, graphql_object, graphql_subscription,
-    parse_and_validate,
+    Context, DefaultScalarValue, GraphQLError, RootNode, ValidatedOperation, graphql_object,
+    graphql_subscription,
 };
 
 struct MyContext;
@@ -54,20 +54,20 @@ fn schema() -> Schema {
     RootNode::new(Query, Mutation, Subscription)
 }
 
-/// Returns the error of [`parse_and_validate()`] for the `operation_name` operation of the
+/// Returns the error of [`ValidatedOperation::new()`] for the `operation_name` operation of the
 /// `query`.
 fn error(schema: &Schema, query: &str, operation_name: Option<&str>) -> GraphQLError {
-    parse_and_validate(query, operation_name, schema).expect_err("invalid operation")
+    ValidatedOperation::new(query, operation_name, schema).expect_err("invalid operation")
 }
 
 mod operation_type {
-    use crate::{ast::OperationType, parse_and_validate};
+    use crate::{ValidatedOperation, ast::OperationType};
 
     use super::schema;
 
     /// Returns the [`OperationType`] of the `operation_name` operation of the `query`.
     fn operation_type(query: &str, operation_name: Option<&str>) -> OperationType {
-        parse_and_validate(query, operation_name, &schema())
+        ValidatedOperation::new(query, operation_name, &schema())
             .expect("valid operation")
             .operation_type()
     }
@@ -162,7 +162,7 @@ mod rejects {
 }
 
 mod execute {
-    use crate::{GraphQLError, graphql, parse_and_validate};
+    use crate::{GraphQLError, ValidatedOperation, graphql};
 
     use super::{MyContext, schema};
 
@@ -175,7 +175,7 @@ mod execute {
     #[test]
     fn synchronously() {
         let schema = schema();
-        let operation = parse_and_validate("{ ping }", None, &schema).unwrap();
+        let operation = ValidatedOperation::new("{ ping }", None, &schema).unwrap();
 
         let result = operation.execute_sync(&graphql::vars! {}, &MyContext);
 
@@ -185,7 +185,7 @@ mod execute {
     #[tokio::test]
     async fn asynchronously() {
         let schema = schema();
-        let operation = parse_and_validate("mutation { pong }", None, &schema).unwrap();
+        let operation = ValidatedOperation::new("mutation { pong }", None, &schema).unwrap();
 
         let result = operation.execute(&graphql::vars! {}, &MyContext).await;
 
@@ -196,7 +196,7 @@ mod execute {
     fn named_operation() {
         let schema = schema();
         let query = "query A { ping } query B { echo(value: 1) }";
-        let operation = parse_and_validate(query, Some("B"), &schema).unwrap();
+        let operation = ValidatedOperation::new(query, Some("B"), &schema).unwrap();
 
         let result = operation.execute_sync(&graphql::vars! {}, &MyContext);
 
@@ -208,7 +208,7 @@ mod execute {
         let schema = schema();
         let query =
             "query A { ...Echo } query B { ping } fragment Echo on Query { echo(value: 1) }";
-        let operation = parse_and_validate(query, Some("A"), &schema).unwrap();
+        let operation = ValidatedOperation::new(query, Some("A"), &schema).unwrap();
 
         let result = operation.execute_sync(&graphql::vars! {}, &MyContext);
 
@@ -218,7 +218,7 @@ mod execute {
     #[test]
     fn default_values() {
         let schema = schema();
-        let operation = parse_and_validate(ECHO_WITH_DEFAULT, None, &schema).unwrap();
+        let operation = ValidatedOperation::new(ECHO_WITH_DEFAULT, None, &schema).unwrap();
 
         let result = operation.execute_sync(&graphql::vars! {}, &MyContext);
 
@@ -228,7 +228,7 @@ mod execute {
     #[test]
     fn provided_variables_over_default_values() {
         let schema = schema();
-        let operation = parse_and_validate(ECHO_WITH_DEFAULT, None, &schema).unwrap();
+        let operation = ValidatedOperation::new(ECHO_WITH_DEFAULT, None, &schema).unwrap();
 
         let result = operation.execute_sync(&graphql::vars! {"value": 5}, &MyContext);
 
@@ -238,7 +238,7 @@ mod execute {
     #[test]
     fn more_than_once() {
         let schema = schema();
-        let operation = parse_and_validate(ECHO, None, &schema).unwrap();
+        let operation = ValidatedOperation::new(ECHO, None, &schema).unwrap();
 
         for value in [1, 2] {
             let result = operation.execute_sync(&graphql::vars! {"value": (value)}, &MyContext);
@@ -250,7 +250,7 @@ mod execute {
     #[test]
     fn rejects_invalid_variables() {
         let schema = schema();
-        let operation = parse_and_validate(ECHO, None, &schema).unwrap();
+        let operation = ValidatedOperation::new(ECHO, None, &schema).unwrap();
 
         for variables in [graphql::vars! {}, graphql::vars! {"value": "one"}] {
             let result = operation.execute_sync(&variables, &MyContext);
@@ -265,7 +265,7 @@ mod execute {
     #[test]
     fn rejects_subscription() {
         let schema = schema();
-        let operation = parse_and_validate("subscription { tick }", None, &schema).unwrap();
+        let operation = ValidatedOperation::new("subscription { tick }", None, &schema).unwrap();
 
         let result = operation.execute_sync(&graphql::vars! {}, &MyContext);
 
@@ -276,14 +276,14 @@ mod execute {
 mod resolve_into_stream {
     use futures::StreamExt as _;
 
-    use crate::{GraphQLError, Value, graphql, parse_and_validate};
+    use crate::{GraphQLError, ValidatedOperation, Value, graphql};
 
     use super::{MyContext, schema};
 
     #[tokio::test]
     async fn subscription() {
         let schema = schema();
-        let operation = parse_and_validate("subscription { tick }", None, &schema).unwrap();
+        let operation = ValidatedOperation::new("subscription { tick }", None, &schema).unwrap();
 
         let (value, errors) = operation
             .resolve_into_stream(&graphql::vars! {}, &MyContext)
@@ -312,7 +312,7 @@ mod resolve_into_stream {
     #[tokio::test]
     async fn rejects_query() {
         let schema = schema();
-        let operation = parse_and_validate("{ ping }", None, &schema).unwrap();
+        let operation = ValidatedOperation::new("{ ping }", None, &schema).unwrap();
 
         let result = operation
             .resolve_into_stream(&graphql::vars! {}, &MyContext)

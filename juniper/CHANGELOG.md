@@ -26,7 +26,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Limited documents to 64 levels of nesting, 15,000 tokens, and 15,000 fields by default. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
 - Added `ParseError::DepthLimitExceeded`, `ParseError::TokenLimitExceeded`, and `ParseError::FieldLimitExceeded` variants. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
 - Limited validation of overlapping fields to 100,000 field comparisons and 100 reported conflicts. ([GHSA-36rq-8957-mjrx])
-- Removed `executor::execute_validated_query()`, `executor::execute_validated_query_async()`, `executor::resolve_validated_subscription()`, and `executor::get_operation()` functions. `parse_and_validate()` and `ValidatedOperation` replace them. ([#1392])
+- Removed `executor::execute_validated_query()`, `executor::execute_validated_query_async()`, `executor::resolve_validated_subscription()`, and `executor::get_operation()` functions. `ValidatedOperation` replaces them. ([#1392])
 
 ### Added
 
@@ -58,7 +58,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - `ruint::aliases::U256` as `U256` scalar.
     - `integrations::ruint::uint_scalar` module for declaring custom-sized `ruint::Uint` scalars.
 - `RootNode::limit_depth()`, `RootNode::limit_tokens()`, and `RootNode::limit_fields()` methods. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
-- `parse_and_validate()` function and `ValidatedOperation` type to parse and validate a document once and to execute its operation later. ([#1392], [#726])
+- `ValidatedOperation` type to parse and validate a document once and to execute its operation later. ([#1392], [#726])
 
 ### Changed
 
