@@ -168,11 +168,11 @@ where
         self
     }
 
-    /// Limits the nesting depth of the documents that this [`RootNode`] executes.
+    /// Limits the nesting depth of documents for this [`RootNode`].
     ///
     /// The depth counts nested selection sets, fragments, input values, and list types. A fragment
-    /// spread nests the selections of its fragment one level deeper. A document that nests deeper
-    /// than `max_depth` fails to parse with a [`ParseError::DepthLimitExceeded`]. Parsing,
+    /// spread nests the selections of its fragment one level deeper. Parsing fails with a
+    /// [`ParseError::DepthLimitExceeded`] for a document deeper than `max_depth`. Parsing,
     /// validation, and execution are recursive. The depth limit keeps the recursion from
     /// overflowing the stack.
     ///
@@ -217,7 +217,7 @@ where
         self
     }
 
-    /// Limits the number of tokens in the documents that this [`RootNode`] executes.
+    /// Limits the number of tokens in documents for this [`RootNode`].
     ///
     /// A document with more than `max_tokens` tokens fails to parse with a
     /// [`ParseError::TokenLimitExceeded`]. The time to parse and validate a document grows with
@@ -231,12 +231,12 @@ where
         self
     }
 
-    /// Limits the number of fields in the operations that this [`RootNode`] executes.
+    /// Limits the number of fields in operations for this [`RootNode`].
     ///
     /// The count includes the fields of a fragment once for each of its spreads. An operation with
     /// more than `max_fields` fields fails to parse with a [`ParseError::FieldLimitExceeded`].
-    /// Fragments that spread other fragments more than once can expand a small document into an
-    /// exponential number of fields. The field limit bounds the work of execution.
+    /// Repeated spreads of fragments can expand a small document into an exponential number of
+    /// fields. The field limit bounds the work of execution.
     ///
     /// The default limit is 15,000. Each field takes at least one token. A document without
     /// fragments thus reaches the default token limit first.
@@ -296,7 +296,7 @@ pub struct SchemaType<S> {
     pub(crate) subscription_type_name: Option<String>,
     directives: FnvHashMap<ArcStr, DirectiveType<S>>,
 
-    /// Limits on the documents that this schema executes.
+    /// Document limits of this schema.
     pub(crate) limits: Limits,
 }
 

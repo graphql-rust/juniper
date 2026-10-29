@@ -50,15 +50,16 @@ struct ExpansionCheck<'a, 'd, S> {
     fragments: HashMap<&'a str, &'d [Selection<'a, S>]>,
     limits: Limits,
 
-    /// Expansions of the checked fragments, with depths relative to the depth of their spreads.
+    /// Expansions of the checked fragments.
     ///
-    /// The check visits each fragment once and reuses the stored expansion for repeated spreads.
-    /// The check thus takes linear time in the size of the document.
+    /// The depths of an expansion are relative to the depth of a spread of the fragment. The check
+    /// visits each fragment once and reuses the stored expansion for repeated spreads. The check
+    /// thus takes linear time in the size of the document.
     fragment_expansions: HashMap<&'a str, Expansion>,
 
     /// Fragments on the current check path.
     ///
-    /// A spread of a fragment on this path forms a cycle. The check skips such a spread because
+    /// A spread of a fragment on the path forms a cycle. The check skips such a spread because
     /// validation reports fragment cycles.
     open_fragments: HashSet<&'a str>,
 }
