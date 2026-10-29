@@ -3,7 +3,7 @@
 #![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
 #![cfg_attr(
     test,
-    expect(unused_crate_dependencies, reason = "examples and integration tests")
+    allow(unused_crate_dependencies, reason = "examples and integration tests")
 )]
 
 // TODO: Try remove on upgrade of `axum` crate.

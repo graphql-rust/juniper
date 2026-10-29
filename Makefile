@@ -90,20 +90,13 @@ cargo.test: test.cargo
 
 # Run Rust tests of Book.
 #
+# The `juniper_book` crate runs the Rust code examples of Book as doc tests.
+#
 # Usage:
-#	make test.book [clean=(no|yes)]
+#	make test.book
 
 test.book:
-ifeq ($(clean),yes)
-	cargo clean
-endif
-	$(eval target := $(strip $(shell cargo -vV | sed -n 's/host: //p')))
-	cargo build -p juniper_book
-	mdbook test book -L target/debug/deps $(strip \
-		$(if $(call eq,$(findstring windows,$(target)),),,\
-			$(shell cargo metadata -q \
-			        | jq -r '.packages[] | select(.name == "windows_$(word 1,$(subst -, ,$(target)))_$(word 4,$(subst -, ,$(target)))") | .manifest_path' \
-			        | sed -e "s/^/-L '/" -e 's/Cargo.toml/lib/' -e "s/$$/'/" )))
+	cargo test -p juniper_book
 
 
 # Run Rust tests of project crates.

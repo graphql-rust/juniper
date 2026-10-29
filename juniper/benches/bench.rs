@@ -1,3 +1,11 @@
+//! Benchmarks of `juniper` crate.
+
+#![allow(unused_crate_dependencies, reason = "single benchmark")]
+#![expect(
+    missing_docs,
+    reason = "`bencher` macros generate undocumented functions"
+)]
+
 use bencher::{Bencher, benchmark_group, benchmark_main};
 use juniper::{
     DefaultScalarValue, EmptyMutation, EmptySubscription, RootNode, execute_sync, graphql_vars,

@@ -1496,7 +1496,7 @@ mod test {
 
             match parsed.item {
                 Token::Scalar(ScalarToken::Float(actual)) => assert_eq!(actual, expected),
-                _ => assert!(false),
+                other => panic!("expected `Float` token, found: {other:?}"),
             }
         }
 

@@ -334,6 +334,7 @@ mod merge_parallel_inline_fragments {
         fn deep() -> Type {
             Type
         }
+        #[expect(clippy::self_named_constructors, reason = "GraphQL field resolver")]
         fn other() -> Vec<Other> {
             vec![Other, Other]
         }

@@ -1,7 +1,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
 #![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
-#![cfg_attr(test, expect(unused_crate_dependencies, reason = "examples"))]
+#![cfg_attr(test, allow(unused_crate_dependencies, reason = "examples"))]
 
 use actix_web::{
     Error, FromRequest, HttpMessage, HttpRequest, HttpResponse, error::JsonPayloadError,
@@ -486,14 +486,13 @@ mod tests {
         async fn graphql_handler() -> Result<HttpResponse, Error> {
             graphiql_handler("/abcd", None).await
         }
-        let mut app =
-            test::init_service(App::new().route("/", web::get().to(graphql_handler))).await;
+        let app = test::init_service(App::new().route("/", web::get().to(graphql_handler))).await;
         let req = TestRequest::get()
             .uri("/")
             .append_header((ACCEPT, "text/html"))
             .to_request();
 
-        let resp = test::call_service(&mut app, req).await;
+        let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK);
     }
 
@@ -502,14 +501,13 @@ mod tests {
         async fn graphql_handler() -> Result<HttpResponse, Error> {
             graphiql_handler("/dogs-api/graphql", Some("/dogs-api/subscriptions")).await
         }
-        let mut app =
-            test::init_service(App::new().route("/", web::get().to(graphql_handler))).await;
+        let app = test::init_service(App::new().route("/", web::get().to(graphql_handler))).await;
         let req = TestRequest::get()
             .uri("/")
             .append_header((ACCEPT, "text/html"))
             .to_request();
 
-        let resp = test::call_service(&mut app, req).await;
+        let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK);
         assert_eq!(
             resp.headers().get(CONTENT_TYPE).unwrap().to_str().unwrap(),
@@ -525,14 +523,13 @@ mod tests {
         async fn graphql_handler() -> Result<HttpResponse, Error> {
             playground_handler("/abcd", None).await
         }
-        let mut app =
-            test::init_service(App::new().route("/", web::get().to(graphql_handler))).await;
+        let app = test::init_service(App::new().route("/", web::get().to(graphql_handler))).await;
         let req = TestRequest::get()
             .uri("/")
             .append_header((ACCEPT, "text/html"))
             .to_request();
 
-        let resp = test::call_service(&mut app, req).await;
+        let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK);
     }
 
@@ -541,14 +538,13 @@ mod tests {
         async fn graphql_handler() -> Result<HttpResponse, Error> {
             playground_handler("/dogs-api/graphql", Some("/dogs-api/subscriptions")).await
         }
-        let mut app =
-            test::init_service(App::new().route("/", web::get().to(graphql_handler))).await;
+        let app = test::init_service(App::new().route("/", web::get().to(graphql_handler))).await;
         let req = TestRequest::get()
             .uri("/")
             .append_header((ACCEPT, "text/html"))
             .to_request();
 
-        let resp = test::call_service(&mut app, req).await;
+        let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK);
         assert_eq!(
             resp.headers().get(CONTENT_TYPE).unwrap().to_str().unwrap(),
@@ -576,14 +572,14 @@ mod tests {
             .uri("/")
             .to_request();
 
-        let mut app = test::init_service(
+        let app = test::init_service(
             App::new()
                 .app_data(Data::new(schema))
                 .route("/", web::post().to(index)),
         )
         .await;
 
-        let resp = test::call_service(&mut app, req).await;
+        let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), http::StatusCode::OK);
         assert_eq!(
             resp.headers().get("content-type").unwrap(),
@@ -608,14 +604,14 @@ mod tests {
             .uri("/?query=%7B%20hero%28episode%3A%20NEW_HOPE%29%20%7B%20name%20%7D%20%7D&variables=null")
             .to_request();
 
-        let mut app = test::init_service(
+        let app = test::init_service(
             App::new()
                 .app_data(Data::new(schema))
                 .route("/", web::get().to(index)),
         )
         .await;
 
-        let resp = test::call_service(&mut app, req).await;
+        let resp = test::call_service(&app, req).await;
 
         assert_eq!(resp.status(), http::StatusCode::OK);
         assert_eq!(
@@ -652,14 +648,14 @@ mod tests {
             .uri("/")
             .to_request();
 
-        let mut app = test::init_service(
+        let app = test::init_service(
             App::new()
                 .app_data(Data::new(schema))
                 .route("/", web::post().to(index)),
         )
         .await;
 
-        let resp = test::call_service(&mut app, req).await;
+        let resp = test::call_service(&app, req).await;
 
         assert_eq!(resp.status(), http::StatusCode::OK);
         assert_eq!(
@@ -691,14 +687,14 @@ mod tests {
                     EmptySubscription::<Database>::new(),
                 );
 
-                let mut app = test::init_service(
+                let app = test::init_service(
                     App::new()
                         .app_data(Data::new(schema))
                         .route("/", web::to(index)),
                 )
                 .await;
 
-                let resp = test::call_service(&mut app, req.to_request()).await;
+                let resp = test::call_service(&app, req.to_request()).await;
                 make_test_response(resp).await
             })
         }
@@ -858,11 +854,11 @@ mod subscription_tests {
 
     #[actix_web::rt::test]
     async fn test_graphql_ws_integration() {
-        graphql_ws::run_test_suite(&mut TestWsIntegration("graphql-ws")).await;
+        graphql_ws::run_test_suite(&TestWsIntegration("graphql-ws")).await;
     }
 
     #[actix_web::rt::test]
     async fn test_graphql_transport_ws_integration() {
-        graphql_transport_ws::run_test_suite(&mut TestWsIntegration("graphql-transport-ws")).await;
+        graphql_transport_ws::run_test_suite(&TestWsIntegration("graphql-transport-ws")).await;
     }
 }

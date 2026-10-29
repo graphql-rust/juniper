@@ -77,7 +77,7 @@ impl Mutation {
 Each function may have a different return type and depending on the input parameters a new result type may be required. For example, adding a `User` would require a new result type containing the variant `Ok(User)`instead of `Ok(Item)`.
 
 > **NOTE**: In this example the returned [string][5] contains a server-side localized error message. However, it is also
-possible to return a unique string identifier and have the client present a localized string to its users.
+> possible to return a unique string identifier and have the client present a localized string to its users.
 
 The client can send a mutation request and handle the resulting errors in the following manner:
 ```graphql

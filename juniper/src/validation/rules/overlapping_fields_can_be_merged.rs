@@ -1,4 +1,10 @@
-use std::{borrow::Borrow, cell::RefCell, collections::HashMap, fmt::Debug, hash::Hash};
+use std::{
+    borrow::Borrow,
+    cell::{Cell, RefCell},
+    collections::{HashMap, HashSet},
+    fmt::Debug,
+    hash::Hash,
+};
 
 use arcstr::ArcStr;
 use derive_more::with_trait::Display;
@@ -135,12 +141,41 @@ impl<'a> PairSet<'a> {
 pub struct OverlappingFieldsCanBeMerged<'a, S: Debug + 'a> {
     named_fragments: HashMap<&'a str, &'a Fragment<'a, S>>,
     compared_fragments: RefCell<PairSet<'a>>,
+
+    /// Number of field pairs that the rule can still compare.
+    ///
+    /// Comparing all pairs of fields with the same response name takes quadratic time. The budget
+    /// bounds the time and memory of the rule for any document.
+    remaining_comparisons: Cell<usize>,
+
+    /// Whether the rule ran out of comparisons before it checked all fields.
+    out_of_comparisons: Cell<bool>,
+
+    /// Number of conflicts that the rule can still report.
+    remaining_reports: usize,
 }
+
+/// Maximum number of field pairs that the rule compares in a document.
+///
+/// Real documents rarely need more than a few hundred comparisons. One comparison takes at most
+/// about 300 ns. The rule thus spends at most about 30 ms on a document.
+const MAX_COMPARISONS: usize = 100_000;
+
+/// Maximum number of conflicts that the rule reports for a document.
+///
+/// GraphQL.js stops validation after the same number of errors.
+const MAX_REPORTS: usize = 100;
+
+/// Error message for a document that needs more than [`MAX_COMPARISONS`] field comparisons.
+const TOO_COMPLEX_MESSAGE: &str = "Document has too many overlapping fields to validate";
 
 pub fn factory<'a, S: Debug>() -> OverlappingFieldsCanBeMerged<'a, S> {
     OverlappingFieldsCanBeMerged {
         named_fragments: HashMap::new(),
         compared_fragments: RefCell::new(PairSet::new()),
+        remaining_comparisons: Cell::new(MAX_COMPARISONS),
+        out_of_comparisons: Cell::new(false),
+        remaining_reports: MAX_REPORTS,
     }
 }
 
@@ -272,33 +307,35 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
     ) where
         S: ScalarValue,
     {
-        let mut to_check = Vec::new();
-        if let Some(fragments) = self.collect_conflicts_between_fields_and_fragment_inner(
+        let Some(mut to_check) = self.collect_conflicts_between_fields_and_fragment_inner(
             conflicts,
             field_map,
             fragment_name,
             mutually_exclusive,
             ctx,
-        ) {
-            to_check.push((fragment_name, fragments))
+        ) else {
+            return;
+        };
+        if to_check.is_empty() {
+            return;
         }
 
-        while let Some((fragment_name, fragment_names2)) = to_check.pop() {
-            for fragment_name2 in fragment_names2 {
-                // Early return on fragment recursion, as it makes no sense.
-                // Fragment recursions are prevented by `no_fragment_cycles` validator.
-                if fragment_name == fragment_name2 {
-                    return;
-                }
-                if let Some(fragments) = self.collect_conflicts_between_fields_and_fragment_inner(
-                    conflicts,
-                    field_map,
-                    fragment_name2,
-                    mutually_exclusive,
-                    ctx,
-                ) {
-                    to_check.push((fragment_name2, fragments));
-                };
+        // The loop compares `field_map` with each fragment once. Fragments can reach the same
+        // fragment through many paths. A comparison for each path would take exponential time.
+        // GraphQL.js memoizes the same pairs of fields and fragments.
+        let mut compared_fragments = HashSet::from([fragment_name]);
+        while let Some(fragment_name) = to_check.pop() {
+            if !compared_fragments.insert(fragment_name) {
+                continue;
+            }
+            if let Some(fragment_names) = self.collect_conflicts_between_fields_and_fragment_inner(
+                conflicts,
+                field_map,
+                fragment_name,
+                mutually_exclusive,
+                ctx,
+            ) {
+                to_check.extend(fragment_names);
             }
         }
     }
@@ -352,6 +389,9 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
                         ) {
                             conflicts.push(conflict);
                         }
+                        if self.out_of_comparisons.get() {
+                            return;
+                        }
                     }
                 }
             }
@@ -374,6 +414,9 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
                     {
                         conflicts.push(conflict);
                     }
+                    if self.out_of_comparisons.get() {
+                        return;
+                    }
                 }
             }
         }
@@ -390,6 +433,12 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
     where
         S: ScalarValue,
     {
+        let Some(remaining) = self.remaining_comparisons.get().checked_sub(1) else {
+            self.out_of_comparisons.set(true);
+            return None;
+        };
+        self.remaining_comparisons.set(remaining);
+
         let AstAndDef(ref parent_type1, ast1, ref def1) = *field1;
         let AstAndDef(ref parent_type2, ast2, ref def2) = *field2;
 
@@ -739,12 +788,34 @@ where
         ctx: &mut ValidatorContext<'a, S>,
         selection_set: &'a [Selection<S>],
     ) {
+        if self.out_of_comparisons.get() {
+            return;
+        }
+        let conflicts =
+            self.find_conflicts_within_selection_set(ctx.parent_type(), selection_set, ctx);
+        if self.out_of_comparisons.get() {
+            // The conflicts of a document with too many comparisons are incomplete. The rule
+            // reports the document as too complex instead.
+            let position = selection_set.first().map(selection_start).into_iter();
+            ctx.report_error(TOO_COMPLEX_MESSAGE, &position.collect::<Vec<_>>());
+            return;
+        }
         for Conflict(ConflictReason(reason_name, reason_msg), mut p1, mut p2) in
-            self.find_conflicts_within_selection_set(ctx.parent_type(), selection_set, ctx)
+            conflicts.into_iter().take(self.remaining_reports)
         {
             p1.append(&mut p2);
             ctx.report_error(&error_message(&reason_name, &reason_msg), &p1);
+            self.remaining_reports -= 1;
         }
+    }
+}
+
+/// Returns the start position of `selection`.
+fn selection_start<S>(selection: &Selection<'_, S>) -> SourcePosition {
+    match selection {
+        Selection::Field(field) => field.span.start,
+        Selection::FragmentSpread(spread) => spread.span.start,
+        Selection::InlineFragment(fragment) => fragment.span.start,
     }
 }
 
@@ -775,7 +846,10 @@ fn format_reason(reason: &ConflictReasonMessage) -> impl Display {
 mod tests {
     use arcstr::ArcStr;
 
-    use super::{ConflictReason, ConflictReasonMessage::*, error_message, factory};
+    use super::{
+        ConflictReason, ConflictReasonMessage::*, MAX_REPORTS, TOO_COMPLEX_MESSAGE, error_message,
+        factory,
+    };
 
     use crate::{
         executor::Registry,
@@ -789,8 +863,10 @@ mod tests {
     use crate::{
         parser::SourcePosition,
         validation::{
-            RuleError, expect_fails_rule, expect_fails_rule_with_schema, expect_passes_rule,
-            expect_passes_rule_with_schema,
+            MultiVisitorNil, RuleError, expect_fails_rule, expect_fails_rule_with_schema,
+            expect_passes_rule, expect_passes_rule_with_schema,
+            test_harness::{self, validate},
+            visit,
         },
         value::{DefaultScalarValue, ScalarValue},
     };
@@ -1319,6 +1395,104 @@ mod tests {
                 ],
             )],
         );
+    }
+
+    #[test]
+    fn compares_fragment_reachable_through_many_paths_once() {
+        expect_fails_rule::<_, _, DefaultScalarValue>(
+            factory,
+            r#"
+          {
+            dog {
+              name: nickname
+              ...A
+            }
+          }
+          fragment A on Dog {
+            ...B
+            ...C
+          }
+          fragment B on Dog {
+            ...D
+          }
+          fragment C on Dog {
+            ...D
+          }
+          fragment D on Dog {
+            name
+          }
+        "#,
+            &[RuleError::new(
+                &error_message(
+                    "name",
+                    &Message("nickname and name are different fields".into()),
+                ),
+                &[
+                    SourcePosition::new(45, 3, 14),
+                    SourcePosition::new(341, 18, 12),
+                ],
+            )],
+        );
+    }
+
+    #[test]
+    fn allows_comparisons_within_budget() {
+        // 447 fields with the same response name need 99,681 comparisons.
+        let query = format!("{{ dog {{ {} }} }}", "name ".repeat(447));
+
+        expect_passes_rule::<_, _, DefaultScalarValue>(factory, &query);
+    }
+
+    #[test]
+    fn reports_document_over_comparison_budget() {
+        // 448 fields with the same response name need 100,128 comparisons.
+        let query = format!("{{ dog {{ {} }} }}", "name ".repeat(448));
+
+        expect_fails_rule::<_, _, DefaultScalarValue>(
+            factory,
+            &query,
+            &[RuleError::new(
+                TOO_COMPLEX_MESSAGE,
+                &[SourcePosition::new(8, 0, 8)],
+            )],
+        );
+    }
+
+    #[test]
+    fn reports_at_most_max_reports_conflicts() {
+        // 15 `name` fields and 15 `nickname` fields with the same alias make 225 conflicts.
+        let query = format!("{{ dog {{ {} }} }}", "a: name a: nickname ".repeat(15));
+
+        let errors = validate::<_, _, _, _, DefaultScalarValue>(
+            test_harness::QueryRoot,
+            test_harness::MutationRoot,
+            test_harness::SubscriptionRoot,
+            &query,
+            |ctx, doc| {
+                visit(&mut MultiVisitorNil.with(factory()), ctx, doc);
+            },
+        );
+
+        assert_eq!(errors.len(), MAX_REPORTS);
+    }
+
+    #[test]
+    fn checks_diamond_fragment_spreads_in_linear_time() {
+        // Each level spreads 2 fragments. Each of the 2 fragments spreads the next level.
+        // Following every spread thus takes `2^30` steps. The document has no operation because
+        // the expanded operation would exceed the field limit of the parser.
+        let mut query = String::new();
+        for i in 0..30 {
+            query += &format!(
+                " fragment F{i} on Dog {{ name ...A{i} ...B{i} }} \
+                 fragment A{i} on Dog {{ ...F{j} }} \
+                 fragment B{i} on Dog {{ ...F{j} }}",
+                j = i + 1,
+            );
+        }
+        query += " fragment F30 on Dog { name }";
+
+        expect_passes_rule::<_, _, DefaultScalarValue>(factory, &query);
     }
 
     #[test]

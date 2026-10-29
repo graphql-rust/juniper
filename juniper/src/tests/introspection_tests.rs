@@ -106,6 +106,35 @@ async fn test_introspection_specific_object_type_name_and_kind() {
 }
 
 #[tokio::test]
+async fn test_introspection_unknown_type_is_null() {
+    // language=GraphQL
+    let doc = r#"
+        query IntrospectionUnknownTypeQuery {
+          __type(name: "Unknown") {
+            name
+            kind
+          }
+        }
+        "#;
+    let database = Database::new();
+    let schema = RootNode::new(
+        Query,
+        EmptyMutation::<Database>::new(),
+        EmptySubscription::<Database>::new(),
+    );
+
+    let expected = Ok((graphql_value!({"__type": null}), vec![]));
+    assert_eq!(
+        crate::execute(doc, None, &schema, &graphql::vars! {}, &database).await,
+        expected,
+    );
+    assert_eq!(
+        crate::execute_sync(doc, None, &schema, &graphql::vars! {}, &database),
+        expected,
+    );
+}
+
+#[tokio::test]
 async fn test_introspection_specific_interface_type_name_and_kind() {
     // language=GraphQL
     let doc = r#"
@@ -265,7 +294,7 @@ async fn test_introspection_possible_types() {
 
     let result = crate::execute(doc, None, &schema, &graphql::vars! {}, &database).await;
 
-    let (result, errors) = result.ok().expect("Query returned error");
+    let (result, errors) = result.expect("Query returned error");
 
     assert_eq!(errors, vec![]);
 
