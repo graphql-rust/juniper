@@ -672,15 +672,32 @@ where
         });
     }
 
-    pub(crate) fn has_error_at_or_below_current_path(&self) -> bool {
+    /// Pushes an error at `location` for a `null` result of the non-null `field_name` field of the
+    /// `parent_type`.
+    ///
+    /// Pushes nothing if an error exists at or below the current path. The `null` result then
+    /// comes from that error. The GraphQL specification allows only one error per field.
+    pub(crate) fn push_non_null_violation_at(
+        &self,
+        parent_type: &MetaType<S>,
+        field_name: &str,
+        location: SourcePosition,
+    ) {
         let mut path = Vec::new();
         self.field_path.construct_path(&mut path);
 
-        self.errors
-            .read()
-            .unwrap()
-            .iter()
-            .any(|error| error.path.starts_with(&path))
+        let mut errors = self.errors.write().unwrap();
+        if errors.iter().any(|e| e.path.starts_with(&path)) {
+            return;
+        }
+
+        let type_name = parent_type.name().map_or("<unknown>", AsRef::as_ref);
+        errors.push(ExecutionError {
+            location,
+            path,
+            error: format!("Cannot return null for non-nullable field {type_name}.{field_name}.")
+                .into(),
+        });
     }
 
     /// Returns new [`ExecutionError`] at current location

@@ -269,17 +269,7 @@ where
 
                     let value = match res {
                         Ok(Value::Null) if is_non_null => {
-                            if !sub_exec.has_error_at_or_below_current_path() {
-                                sub_exec.push_error_at(
-                                    format!(
-                                        "Cannot return null for non-nullable field {}.{}.",
-                                        meta_type.name().map_or("<unknown>", AsRef::as_ref),
-                                        f.name.item,
-                                    )
-                                    .into(),
-                                    pos,
-                                );
-                            }
+                            sub_exec.push_non_null_violation_at(meta_type, f.name.item, pos);
                             None
                         }
                         Ok(v) => Some(v),
