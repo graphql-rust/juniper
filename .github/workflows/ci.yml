@@ -285,7 +285,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ matrix.toolchain }}
-      - uses: peaceiris/actions-mdbook@v2
 
       - run: make test.book
 
