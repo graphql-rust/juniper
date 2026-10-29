@@ -25,11 +25,14 @@ struct Baz {
 
 #[graphql_object]
 impl Query {
-    #[expect(clippy::disallowed_names, reason = "intended")]
     fn foo() -> Foo {
-        let baz = Baz { c: 1, d: 2 };
-        let bar = Bar { a: 1, b: 2, baz };
-        Foo { bar }
+        Foo {
+            bar: Bar {
+                a: 1,
+                b: 2,
+                baz: Baz { c: 1, d: 2 },
+            },
+        }
     }
 }
 

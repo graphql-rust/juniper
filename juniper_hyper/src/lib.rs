@@ -1,14 +1,14 @@
 #![cfg_attr(any(doc, test), doc = include_str!("../README.md"))]
 #![cfg_attr(not(any(doc, test)), doc = env!("CARGO_PKG_NAME"))]
-#![cfg_attr(test, expect(unused_crate_dependencies, reason = "examples"))]
+#![cfg_attr(test, allow(unused_crate_dependencies, reason = "examples"))]
 
-use std::{string::FromUtf8Error, sync::Arc};
+use std::{pin::pin, string::FromUtf8Error, sync::Arc};
 
 use derive_more::with_trait::{Debug, Display, Error};
 use http_body_util::BodyExt as _;
 use hyper::{
     Method, Request, Response, StatusCode,
-    body::Body,
+    body::{Body, Buf as _},
     header::{self, HeaderValue},
 };
 use juniper::{
@@ -18,8 +18,25 @@ use juniper::{
 use serde_json::error::Error as SerdeError;
 use url::form_urlencoded;
 
+/// Default maximum size in bytes of a request body for [`graphql()`] and [`graphql_sync()`].
+///
+/// axum uses the same default.
+pub const DEFAULT_BODY_LIMIT: usize = 2 * 1024 * 1024;
+
+/// Maximum size in bytes of a request body for [`graphql()`] and [`graphql_sync()`].
+///
+/// A [`BodyLimit`] in the extensions of a [`Request`] replaces the [`DEFAULT_BODY_LIMIT`] for the
+/// request. A request with a larger body gets a `413 Payload Too Large` response. The handlers
+/// stop reading a body as soon as the body exceeds the limit. Large bodies thus cannot exhaust the
+/// memory of the server.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct BodyLimit(pub usize);
+
 /// Executes synchronously  the provided GraphQL [`Request`] against the provided `schema` in the
 /// provided `context`, returning the encoded [`Response`].
+///
+/// Reads at most [`DEFAULT_BODY_LIMIT`] bytes of the request body. A [`BodyLimit`] in the request
+/// extensions replaces the default limit.
 pub async fn graphql_sync<CtxT, QueryT, MutationT, SubscriptionT, S, B>(
     schema: Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
@@ -38,12 +55,15 @@ where
 {
     match parse_req(req).await {
         Ok(req) => execute_request_sync(schema, context, req).await,
-        Err(resp) => resp,
+        Err(resp) => *resp,
     }
 }
 
 /// Executes the provided GraphQL [`Request`] against the provided `schema` in the provided
 /// `context`, returning the encoded [`Response`].
+///
+/// Reads at most [`DEFAULT_BODY_LIMIT`] bytes of the request body. A [`BodyLimit`] in the request
+/// extensions replaces the default limit.
 pub async fn graphql<CtxT, QueryT, MutationT, SubscriptionT, S, B>(
     schema: Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
@@ -62,11 +82,11 @@ where
 {
     match parse_req(req).await {
         Ok(req) => execute_request(schema, context, req).await,
-        Err(resp) => resp,
+        Err(resp) => *resp,
     }
 }
 
-async fn parse_req<S, B>(req: Request<B>) -> Result<GraphQLBatchRequest<S>, Response<String>>
+async fn parse_req<S, B>(req: Request<B>) -> Result<GraphQLBatchRequest<S>, Box<Response<String>>>
 where
     S: ScalarValue,
     B: Body<Error: Display>,
@@ -74,19 +94,27 @@ where
     match *req.method() {
         Method::GET => parse_get_req(req),
         Method::POST => {
+            let body_limit = req
+                .extensions()
+                .get::<BodyLimit>()
+                .map_or(DEFAULT_BODY_LIMIT, |limit| limit.0);
             let content_type = req
                 .headers()
                 .get(header::CONTENT_TYPE)
                 .map(HeaderValue::to_str);
             match content_type {
-                Some(Ok("application/json")) => parse_post_json_req(req.into_body()).await,
-                Some(Ok("application/graphql")) => parse_post_graphql_req(req.into_body()).await,
-                _ => return Err(new_response(StatusCode::BAD_REQUEST)),
+                Some(Ok("application/json")) => {
+                    parse_post_json_req(req.into_body(), body_limit).await
+                }
+                Some(Ok("application/graphql")) => {
+                    parse_post_graphql_req(req.into_body(), body_limit).await
+                }
+                _ => return Err(new_response(StatusCode::BAD_REQUEST).into()),
             }
         }
-        _ => return Err(new_response(StatusCode::METHOD_NOT_ALLOWED)),
+        _ => return Err(new_response(StatusCode::METHOD_NOT_ALLOWED).into()),
     }
-    .map_err(render_error)
+    .map_err(|e| render_error(e).into())
 }
 
 fn parse_get_req<S, B>(req: Request<B>) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError<B>>
@@ -106,18 +134,14 @@ where
 
 async fn parse_post_json_req<S, B>(
     body: B,
+    body_limit: usize,
 ) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError<B>>
 where
     S: ScalarValue,
     B: Body,
 {
-    let chunk = body
-        .collect()
-        .await
-        .map_err(GraphQLRequestError::BodyHyper)?;
-
-    let input =
-        String::from_utf8(chunk.to_bytes().into()).map_err(GraphQLRequestError::BodyUtf8)?;
+    let input = String::from_utf8(read_body(body, body_limit).await?)
+        .map_err(GraphQLRequestError::BodyUtf8)?;
 
     serde_json::from_str::<GraphQLBatchRequest<S>>(&input)
         .map_err(GraphQLRequestError::BodyJSONError)
@@ -125,18 +149,14 @@ where
 
 async fn parse_post_graphql_req<S, B>(
     body: B,
+    body_limit: usize,
 ) -> Result<GraphQLBatchRequest<S>, GraphQLRequestError<B>>
 where
     S: ScalarValue,
     B: Body,
 {
-    let chunk = body
-        .collect()
-        .await
-        .map_err(GraphQLRequestError::BodyHyper)?;
-
-    let query =
-        String::from_utf8(chunk.to_bytes().into()).map_err(GraphQLRequestError::BodyUtf8)?;
+    let query = String::from_utf8(read_body(body, body_limit).await?)
+        .map_err(GraphQLRequestError::BodyUtf8)?;
 
     Ok(GraphQLBatchRequest::Single(GraphQLRequest::new(
         query, None, None,
@@ -174,11 +194,42 @@ pub async fn playground(
     resp
 }
 
+/// Reads `body` into memory if `body` has at most `limit` bytes.
+///
+/// Rejects `body` without reading it if the lower bound of its size hint exceeds `limit`. Stops
+/// reading `body` and rejects it as soon as the read bytes exceed `limit`.
+async fn read_body<B: Body>(body: B, limit: usize) -> Result<Vec<u8>, GraphQLRequestError<B>> {
+    if body.size_hint().lower() > u64::try_from(limit).unwrap_or(u64::MAX) {
+        return Err(GraphQLRequestError::BodyTooLarge(limit));
+    }
+    let mut body = pin!(body);
+    let mut bytes = Vec::new();
+    while let Some(frame) = body.frame().await {
+        let Ok(mut data) = frame.map_err(GraphQLRequestError::BodyHyper)?.into_data() else {
+            continue;
+        };
+        if data.remaining() > limit - bytes.len() {
+            return Err(GraphQLRequestError::BodyTooLarge(limit));
+        }
+        while data.has_remaining() {
+            let chunk = data.chunk();
+            bytes.extend_from_slice(chunk);
+            let read = chunk.len();
+            data.advance(read);
+        }
+    }
+    Ok(bytes)
+}
+
 fn render_error<B>(err: GraphQLRequestError<B>) -> Response<String>
 where
     B: Body<Error: Display>,
 {
-    let mut resp = new_response(StatusCode::BAD_REQUEST);
+    let status = match err {
+        GraphQLRequestError::BodyTooLarge(_) => StatusCode::PAYLOAD_TOO_LARGE,
+        _ => StatusCode::BAD_REQUEST,
+    };
+    let mut resp = new_response(status);
     *resp.body_mut() = err.to_string();
     resp
 }
@@ -323,6 +374,9 @@ enum GraphQLRequestError<B: Body> {
     Variables(SerdeError),
     #[debug("{_0:?}")]
     Invalid(#[error(not(source))] String),
+    #[debug("{_0:?}")]
+    #[display("Request body exceeds the limit of {_0} bytes")]
+    BodyTooLarge(#[error(not(source))] usize),
 }
 
 #[cfg(test)]
@@ -516,5 +570,116 @@ mod tests {
     #[tokio::test]
     async fn test_custom_request_sync_hyper_integration() {
         run_hyper_integration(3003, true, true).await
+    }
+
+    mod body_limit {
+        use std::{
+            collections::VecDeque,
+            convert::Infallible,
+            fmt::Display,
+            pin::Pin,
+            task::{Context, Poll},
+        };
+
+        use http_body_util::Full;
+        use hyper::{
+            Method, Request, StatusCode,
+            body::{Body, Bytes, Frame},
+            header,
+        };
+        use juniper::DefaultScalarValue;
+
+        use crate::{BodyLimit, DEFAULT_BODY_LIMIT, parse_req};
+
+        /// Body that yields its chunks without a size hint.
+        struct Chunks(VecDeque<Bytes>);
+
+        impl Body for Chunks {
+            type Data = Bytes;
+            type Error = Infallible;
+
+            fn poll_frame(
+                mut self: Pin<&mut Self>,
+                _: &mut Context<'_>,
+            ) -> Poll<Option<Result<Frame<Bytes>, Infallible>>> {
+                Poll::Ready(self.0.pop_front().map(|chunk| Ok(Frame::data(chunk))))
+            }
+        }
+
+        fn post<B>(body: B) -> Request<B> {
+            Request::builder()
+                .method(Method::POST)
+                .header(header::CONTENT_TYPE, "application/graphql")
+                .body(body)
+                .unwrap()
+        }
+
+        fn full(size: usize) -> Full<Bytes> {
+            Full::new(Bytes::from(" ".repeat(size)))
+        }
+
+        fn chunks(sizes: &[usize]) -> Chunks {
+            Chunks(
+                sizes
+                    .iter()
+                    .map(|&size| Bytes::from(" ".repeat(size)))
+                    .collect(),
+            )
+        }
+
+        /// Returns the status of the response to `req`. Returns [`StatusCode::OK`] for an accepted
+        /// body.
+        async fn status<B: Body<Error: Display>>(req: Request<B>) -> StatusCode {
+            match parse_req::<DefaultScalarValue, _>(req).await {
+                Ok(_) => StatusCode::OK,
+                Err(resp) => resp.status(),
+            }
+        }
+
+        fn with_limit<B>(mut req: Request<B>, limit: usize) -> Request<B> {
+            req.extensions_mut().insert(BodyLimit(limit));
+            req
+        }
+
+        #[tokio::test]
+        async fn accepts_body_at_default_limit() {
+            assert_eq!(status(post(full(DEFAULT_BODY_LIMIT))).await, StatusCode::OK);
+        }
+
+        #[tokio::test]
+        async fn rejects_body_over_default_limit() {
+            assert_eq!(
+                status(post(full(DEFAULT_BODY_LIMIT + 1))).await,
+                StatusCode::PAYLOAD_TOO_LARGE,
+            );
+        }
+
+        #[tokio::test]
+        async fn rejects_chunked_body_over_limit() {
+            assert_eq!(
+                status(with_limit(post(chunks(&[5, 5])), 10)).await,
+                StatusCode::OK,
+            );
+            assert_eq!(
+                status(with_limit(post(chunks(&[5, 5, 1])), 10)).await,
+                StatusCode::PAYLOAD_TOO_LARGE,
+            );
+        }
+
+        #[tokio::test]
+        async fn uses_limit_from_extensions() {
+            assert_eq!(
+                status(with_limit(
+                    post(full(DEFAULT_BODY_LIMIT + 1)),
+                    DEFAULT_BODY_LIMIT + 1
+                ))
+                .await,
+                StatusCode::OK,
+            );
+            assert_eq!(
+                status(with_limit(post(full(5)), 4)).await,
+                StatusCode::PAYLOAD_TOO_LARGE,
+            );
+        }
     }
 }

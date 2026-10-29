@@ -1,4 +1,7 @@
-use std::borrow::Cow;
+use std::{
+    borrow::Cow,
+    collections::{HashMap, HashSet},
+};
 
 use crate::{
     ast::{
@@ -7,8 +10,8 @@ use crate::{
         VariablesDefinition,
     },
     parser::{
-        Lexer, OptionParseResult, ParseError, ParseResult, Parser, ScalarToken, Spanning, Token,
-        UnlocatedParseResult, value::parse_value_literal,
+        Lexer, Limits, OptionParseResult, ParseError, ParseResult, Parser, ScalarToken, Span,
+        Spanning, Token, UnlocatedParseResult, value::parse_value_literal,
     },
     schema::{
         meta::{Argument, Field as MetaField},
@@ -26,8 +29,185 @@ where
     S: ScalarValue,
 {
     let mut lexer = Lexer::new(s);
-    let mut parser = Parser::new(&mut lexer).map_err(|s| s.map(Into::into))?;
-    parse_document(&mut parser, schema)
+    let mut parser = Parser::with_limits(&mut lexer, schema.limits)?;
+    let document = parse_document(&mut parser, schema)?;
+    ExpansionCheck::new(&document, schema.limits).run()?;
+    Ok(document)
+}
+
+/// Check of a document with its fragment spreads expanded.
+///
+/// A fragment spread nests the selections of its fragment one level deeper. The parser limits the
+/// depth of each definition separately. Chained fragments can nest much deeper than any single
+/// definition. Validation and execution follow fragment spreads recursively. The depth limit keeps
+/// validation and execution from overflowing the stack.
+///
+/// A fragment that spreads another fragment more than once multiplies the fields of the other
+/// fragment. A document of a few hundred tokens can expand into billions of fields. The field
+/// limit bounds the work of execution.
+struct ExpansionCheck<'a, 'd, S> {
+    document: &'d [Definition<'a, S>],
+    fragments: HashMap<&'a str, &'d [Selection<'a, S>]>,
+    limits: Limits,
+
+    /// Expansions of the checked fragments.
+    ///
+    /// The depths of an expansion are relative to the depth of a spread of the fragment. The check
+    /// visits each fragment once and reuses the stored expansion for repeated spreads. The check
+    /// thus takes linear time in the size of the document.
+    fragment_expansions: HashMap<&'a str, Expansion>,
+
+    /// Fragments on the current check path.
+    ///
+    /// A spread of a fragment on the path forms a cycle. The check skips such a spread because
+    /// validation reports fragment cycles.
+    open_fragments: HashSet<&'a str>,
+}
+
+/// Depth and field count of a part of a document with its fragment spreads expanded.
+#[derive(Clone, Copy)]
+struct Expansion {
+    /// Deepest nesting depth in the part.
+    depth: usize,
+
+    /// Number of fields in the part. The count saturates at [`usize::MAX`].
+    fields: usize,
+}
+
+impl<'a, 'd, S> ExpansionCheck<'a, 'd, S> {
+    fn new(document: &'d [Definition<'a, S>], limits: Limits) -> Self {
+        let fragments = document
+            .iter()
+            .filter_map(|definition| match definition {
+                Definition::Fragment(fragment) => Some((
+                    fragment.item.name.item,
+                    fragment.item.selection_set.as_slice(),
+                )),
+                Definition::Operation(_) => None,
+            })
+            .collect();
+        Self {
+            document,
+            fragments,
+            limits,
+            fragment_expansions: HashMap::new(),
+            open_fragments: HashSet::new(),
+        }
+    }
+
+    /// Checks every operation and fragment of the document.
+    ///
+    /// The field limit applies only to operations because only operations execute. The depth limit
+    /// also applies to unused fragments because validation follows their spreads.
+    fn run(mut self) -> Result<(), Spanning<ParseError>> {
+        for definition in self.document {
+            match definition {
+                Definition::Operation(operation) => {
+                    let expansion = self.selection_set(&operation.item.selection_set, 1)?;
+                    if expansion.fields > self.limits.max_fields {
+                        return Err(Spanning::new(
+                            operation.span,
+                            ParseError::FieldLimitExceeded(self.limits.max_fields),
+                        ));
+                    }
+                }
+                Definition::Fragment(fragment) => {
+                    self.fragment(fragment.item.name.item, 0, fragment.span)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Returns the expansion of `selection_set` at nesting `depth`.
+    fn selection_set(
+        &mut self,
+        selection_set: &'d [Selection<'a, S>],
+        depth: usize,
+    ) -> Result<Expansion, Spanning<ParseError>> {
+        let mut expansion = Expansion { depth, fields: 0 };
+        for selection in selection_set {
+            let nested = match selection {
+                Selection::Field(field) => {
+                    expansion.fields = expansion.fields.saturating_add(1);
+                    match &field.item.selection_set {
+                        Some(nested) => self.nested(nested, depth, field.span)?,
+                        None => continue,
+                    }
+                }
+                Selection::InlineFragment(fragment) => {
+                    self.nested(&fragment.item.selection_set, depth, fragment.span)?
+                }
+                Selection::FragmentSpread(spread) => {
+                    self.fragment(spread.item.name.item, depth, spread.span)?
+                }
+            };
+            expansion.depth = expansion.depth.max(nested.depth);
+            expansion.fields = expansion.fields.saturating_add(nested.fields);
+        }
+        Ok(expansion)
+    }
+
+    /// Returns the expansion of `selection_set` one nesting level below `depth`.
+    ///
+    /// Fails at `span` if `selection_set` exceeds the depth limit.
+    fn nested(
+        &mut self,
+        selection_set: &'d [Selection<'a, S>],
+        depth: usize,
+        span: Span,
+    ) -> Result<Expansion, Spanning<ParseError>> {
+        if depth >= self.limits.max_depth {
+            return Err(Spanning::new(
+                span,
+                ParseError::DepthLimitExceeded(self.limits.max_depth),
+            ));
+        }
+        self.selection_set(selection_set, depth + 1)
+    }
+
+    /// Returns the expansion of the `name`d fragment for a spread at `depth`.
+    ///
+    /// Fails at `span` if the fragment exceeds the depth limit. The expansion of an undefined
+    /// fragment or a fragment cycle is empty because validation reports undefined fragments and
+    /// fragment cycles.
+    fn fragment(
+        &mut self,
+        name: &'a str,
+        depth: usize,
+        span: Span,
+    ) -> Result<Expansion, Spanning<ParseError>> {
+        if let Some(&relative) = self.fragment_expansions.get(name) {
+            let depth = depth + relative.depth;
+            if depth > self.limits.max_depth {
+                return Err(Spanning::new(
+                    span,
+                    ParseError::DepthLimitExceeded(self.limits.max_depth),
+                ));
+            }
+            return Ok(Expansion {
+                depth,
+                fields: relative.fields,
+            });
+        }
+        let nothing = Expansion { depth, fields: 0 };
+        let Some(&selection_set) = self.fragments.get(name) else {
+            return Ok(nothing);
+        };
+        if !self.open_fragments.insert(name) {
+            return Ok(nothing);
+        }
+        let expansion = self.nested(selection_set, depth, span)?;
+        self.open_fragments.remove(name);
+        self.fragment_expansions.insert(
+            name,
+            Expansion {
+                depth: expansion.depth - depth,
+                fields: expansion.fields,
+            },
+        );
+        Ok(expansion)
+    }
 }
 
 fn parse_document<'a, S>(
@@ -193,11 +373,13 @@ fn parse_selection_set<'a, S>(
 where
     S: ScalarValue,
 {
-    parser.unlocated_delimited_nonempty_list(
-        &Token::CurlyOpen,
-        |p| parse_selection(p, schema, fields),
-        &Token::CurlyClose,
-    )
+    parser.nested(|parser| {
+        parser.unlocated_delimited_nonempty_list(
+            &Token::CurlyOpen,
+            |p| parse_selection(p, schema, fields),
+            &Token::CurlyClose,
+        )
+    })
 }
 
 fn parse_selection<'a, S>(
@@ -535,7 +717,7 @@ pub fn parse_type<'a>(parser: &mut Parser<'a>) -> ParseResult<Type<&'a str>> {
         span: start_span, ..
     }) = parser.skip(&Token::BracketOpen)?
     {
-        let inner_type = parse_type(parser)?;
+        let inner_type = parser.nested(parse_type)?;
         let end_pos = parser.expect(&Token::BracketClose)?.span.end;
         Spanning::start_end(&start_span.start, &end_pos, inner_type.item.wrap_list(None))
     } else {

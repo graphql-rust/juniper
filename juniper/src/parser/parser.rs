@@ -1,4 +1,4 @@
-use std::{borrow::Cow, fmt, iter};
+use std::{borrow::Cow, collections::VecDeque, fmt, iter};
 
 use compact_str::{CompactString, format_compact};
 use derive_more::with_trait::{Display, Error, From};
@@ -26,6 +26,64 @@ pub enum ParseError {
 
     /// A scalar of unexpected type occurred in the source
     ExpectedScalarError(#[error(not(source))] &'static str),
+
+    /// The document nests deeper than the depth limit of the schema.
+    #[display("Document nesting exceeds the limit of {_0} levels")]
+    DepthLimitExceeded(#[error(not(source))] usize),
+
+    /// The document contains more tokens than the token limit of the schema.
+    #[display("Document exceeds the limit of {_0} tokens")]
+    TokenLimitExceeded(#[error(not(source))] usize),
+
+    /// An operation of the document expands into more fields than the field limit of the schema.
+    #[display("Document exceeds the limit of {_0} fields")]
+    FieldLimitExceeded(#[error(not(source))] usize),
+}
+
+/// Document limits of a [`Parser`].
+///
+/// The limits bound the work of a server to parse, validate, and execute a document.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct Limits {
+    /// Maximum nesting depth of selection sets, fragments, input values, and list types.
+    pub(crate) max_depth: usize,
+
+    /// Maximum number of tokens in a document.
+    pub(crate) max_tokens: usize,
+
+    /// Maximum number of fields in an operation.
+    ///
+    /// The count includes the fields of a fragment once for each spread of the fragment.
+    pub(crate) max_fields: usize,
+}
+
+impl Limits {
+    /// Default value of [`Limits::max_depth`].
+    ///
+    /// Real documents rarely nest deeper than 20 levels. A debug build of the parser overflows a
+    /// 2 MiB thread stack at about 300 levels.
+    pub(crate) const DEFAULT_MAX_DEPTH: usize = 64;
+
+    /// Default value of [`Limits::max_tokens`].
+    ///
+    /// graphql-java uses the same default token limit.
+    pub(crate) const DEFAULT_MAX_TOKENS: usize = 15_000;
+
+    /// Default value of [`Limits::max_fields`].
+    ///
+    /// Each field takes at least one token. A document without fragments thus reaches the default
+    /// token limit before the default field limit.
+    pub(crate) const DEFAULT_MAX_FIELDS: usize = Self::DEFAULT_MAX_TOKENS;
+}
+
+impl Default for Limits {
+    fn default() -> Self {
+        Self {
+            max_depth: Self::DEFAULT_MAX_DEPTH,
+            max_tokens: Self::DEFAULT_MAX_TOKENS,
+            max_fields: Self::DEFAULT_MAX_FIELDS,
+        }
+    }
 }
 
 impl ParseError {
@@ -48,17 +106,42 @@ pub type OptionParseResult<T> = Result<Option<Spanning<T>>, Spanning<ParseError>
 #[doc(hidden)]
 #[derive(Debug)]
 pub struct Parser<'a> {
-    tokens: Vec<Spanning<Token<'a>>>,
+    tokens: VecDeque<Spanning<Token<'a>>>,
+    limits: Limits,
+
+    /// Nesting depth of the current part of the document.
+    ///
+    /// [`Parser::nested()`] keeps the depth within [`Limits::max_depth`].
+    depth: usize,
 }
 
 impl<'a> Parser<'a> {
     #[doc(hidden)]
-    pub fn new(lexer: &mut Lexer<'a>) -> Result<Parser<'a>, Spanning<LexerError>> {
-        let mut tokens = Vec::new();
-        for res in lexer {
-            tokens.push(res?);
+    pub fn new(lexer: &mut Lexer<'a>) -> Result<Self, Spanning<ParseError>> {
+        Self::with_limits(lexer, Limits::default())
+    }
+
+    /// Collects the tokens of `lexer` for parsing within `limits`.
+    ///
+    /// Fails with [`ParseError::TokenLimitExceeded`] as soon as `lexer` produces more tokens than
+    /// [`Limits::max_tokens`].
+    pub(crate) fn with_limits(
+        lexer: &mut Lexer<'a>,
+        limits: Limits,
+    ) -> Result<Self, Spanning<ParseError>> {
+        let mut tokens = VecDeque::new();
+        for token in lexer {
+            let token = token.map_err(|e| e.map(ParseError::LexerError))?;
+            if token.item != Token::EndOfFile && tokens.len() >= limits.max_tokens {
+                return Err(token.map(|_| ParseError::TokenLimitExceeded(limits.max_tokens)));
+            }
+            tokens.push_back(token);
         }
-        Ok(Parser { tokens })
+        Ok(Self {
+            tokens,
+            limits,
+            depth: 0,
+        })
     }
 
     #[doc(hidden)]
@@ -74,8 +157,32 @@ impl<'a> Parser<'a> {
                 ParseError::UnexpectedEndOfFile,
             ))
         } else {
-            Ok(self.tokens.remove(0))
+            Ok(self
+                .tokens
+                .pop_front()
+                .expect("`Token::EndOfFile` always remains in `self.tokens`"))
         }
+    }
+
+    /// Parses a nested part of the document with `parse`.
+    ///
+    /// Fails with [`ParseError::DepthLimitExceeded`] instead of calling `parse` if the nested part
+    /// exceeds [`Limits::max_depth`]. The parser is recursive. The depth limit keeps the parser
+    /// from overflowing the stack.
+    pub(crate) fn nested<T>(
+        &mut self,
+        parse: impl FnOnce(&mut Self) -> Result<T, Spanning<ParseError>>,
+    ) -> Result<T, Spanning<ParseError>> {
+        if self.depth >= self.limits.max_depth {
+            return Err(Spanning::new(
+                self.peek().span,
+                ParseError::DepthLimitExceeded(self.limits.max_depth),
+            ));
+        }
+        self.depth += 1;
+        let parsed = parse(self);
+        self.depth -= 1;
+        parsed
     }
 
     #[doc(hidden)]

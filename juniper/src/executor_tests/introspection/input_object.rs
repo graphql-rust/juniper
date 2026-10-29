@@ -84,6 +84,7 @@ struct FieldWithDefaults {
 
 #[graphql_object]
 impl Root {
+    #[expect(clippy::too_many_arguments, reason = "all input objects in one field")]
     fn test_field(
         a1: DefaultName,
         a2: NoTrailingComma,

@@ -18,6 +18,10 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
         - Placing `#[graphql(deprecated)]` attribute on method arguments in `#[graphql_object]` and `#[graphql_interface]` macros.
 - Support of `#[graphql(rename_all = "snake_case")]` attribute. ([#1354])
 
+### Changed
+
+- Migrated to [3.0][syn-3.0] version of [`syn`] crate. ([#1389])
+
 ### Fixed
 
 - Memory leak caused by incorrect error handling in `#[graphql_subscription]` macro expansion. ([#1371])
@@ -29,9 +33,11 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
 [#1348]: /../../pull/1348
 [#1354]: /../../pull/1354
 [#1371]: /../../pull/1371
+[#1389]: /../../pull/1389
 [graphql/graphql-spec#525]: https://github.com/graphql/graphql-spec/pull/525
 [graphql/graphql-spec#805]: https://github.com/graphql/graphql-spec/pull/805
 [graphql/graphql-spec#825]: https://github.com/graphql/graphql-spec/pull/825
+[syn-3.0]: https://github.com/dtolnay/syn/releases/tag/3.0.0
 
 
 
@@ -111,7 +117,7 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
 
 ### Changed
 
-- Migrated to 2 version of `syn` crate. ([#1157])
+- Migrated to [2.0][syn-2.0] version of [`syn`] crate. ([#1157])
 
 ### Fixed
 
@@ -133,10 +139,12 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
 [#1054]: /../../pull/1054
 [#1157]: /../../pull/1157
 [#1245]: /../../pull/1245
+[syn-2.0]: https://github.com/dtolnay/syn/releases/tag/2.0.0
 
 
 
 
+[`syn`]: https://docs.rs/syn
 [MSRV]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field
 [orphan rules]: https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules
 [Semantic Versioning 2.0.0]: https://semver.org

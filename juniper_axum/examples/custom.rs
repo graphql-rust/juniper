@@ -3,7 +3,7 @@
 //! [`Handler`]: axum::handler::Handler
 //! [`starwars::schema`]: juniper::tests::fixtures::starwars::schema
 
-#![expect(unused_crate_dependencies, reason = "example")]
+#![allow(unused_crate_dependencies, reason = "example")]
 
 use std::{net::SocketAddr, sync::Arc};
 

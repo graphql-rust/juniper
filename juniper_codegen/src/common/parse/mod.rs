@@ -157,8 +157,8 @@ impl TypeExt for syn::Type {
                         }
                     }
                     syn::PathArguments::Parenthesized(args) => {
-                        for ty in args.inputs.iter_mut() {
-                            ty.lifetimes_iter_mut(func)
+                        for arg in args.inputs.iter_mut() {
+                            arg.ty.lifetimes_iter_mut(func)
                         }
                         if let syn::ReturnType::Type(_, ty) = &mut args.output {
                             (*ty).lifetimes_iter_mut(func)
@@ -213,7 +213,7 @@ impl TypeExt for syn::Type {
             T::Path(ty) => iter_path(&mut ty.path, func),
 
             // These types unlikely will be used as GraphQL types.
-            T::BareFn(_) | T::Infer(_) | T::Macro(_) | T::Never(_) | T::Verbatim(_) => {}
+            T::FnPtr(_) | T::Infer(_) | T::Macro(_) | T::Never(_) | T::Verbatim(_) => {}
 
             // Following the `syn` idiom for exhaustive matching on `Type`:
             // https://docs.rs/syn/2.0.38/src/syn/ty.rs.html#64-79

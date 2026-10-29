@@ -74,6 +74,15 @@ where
     context: &'a CtxT,
     errors: &'r RwLock<Vec<ExecutionError<S>>>,
     field_path: Arc<FieldPath<'a>>,
+
+    /// Serial execution of the fields in the current selection set.
+    ///
+    /// The GraphQL specification requires serial execution of the root fields of a mutation.
+    /// Fragments at the root keep the flag. Field sub-executors clear the flag because the fields
+    /// of nested selection sets execute normally.
+    ///
+    /// See <https://spec.graphql.org/September2025#sec-Normal-and-Serial-Execution>.
+    serial: bool,
 }
 
 /// Error type for errors that occur during query execution
@@ -90,7 +99,7 @@ pub struct ExecutionError<S> {
 impl<S> Eq for ExecutionError<S> where Self: PartialEq {}
 
 impl<S> ExecutionError<S> {
-    /// Construct a new execution error occuring at the beginning of the query
+    /// Constructs a new [`ExecutionError`] occurring at the beginning of the query.
     pub fn at_origin(error: FieldError<S>) -> ExecutionError<S> {
         ExecutionError {
             location: SourcePosition::new_origin(),
@@ -558,6 +567,7 @@ where
             context: ctx,
             errors: self.errors,
             field_path: self.field_path.clone(),
+            serial: self.serial,
         }
     }
 
@@ -590,6 +600,7 @@ where
                 location,
                 Arc::clone(&self.field_path),
             )),
+            serial: false,
         }
     }
 
@@ -612,12 +623,18 @@ where
             context: self.context,
             errors: self.errors,
             field_path: self.field_path.clone(),
+            serial: self.serial,
         }
     }
 
     /// `Executor`'s current selection set
     pub(crate) fn current_selection_set(&self) -> Option<&[Selection<'a, S>]> {
         self.current_selection_set
+    }
+
+    /// Returns `true` if the fields of the current selection set execute serially.
+    pub(crate) fn is_serial(&self) -> bool {
+        self.serial
     }
 
     /// Access the current context
@@ -669,6 +686,34 @@ where
             location,
             path,
             error,
+        });
+    }
+
+    /// Pushes an error at `location` for a `null` result of the non-null `field_name` field of the
+    /// `parent_type`.
+    ///
+    /// Pushes nothing if an error exists at or below the current path. The `null` result then
+    /// comes from that error. The GraphQL specification allows only one error per field.
+    pub(crate) fn push_non_null_violation_at(
+        &self,
+        parent_type: &MetaType<S>,
+        field_name: &str,
+        location: SourcePosition,
+    ) {
+        let mut path = Vec::new();
+        self.field_path.construct_path(&mut path);
+
+        let mut errors = self.errors.write().unwrap();
+        if errors.iter().any(|e| e.path.starts_with(&path)) {
+            return;
+        }
+
+        let type_name = parent_type.name().map_or("<unknown>", AsRef::as_ref);
+        errors.push(ExecutionError {
+            location,
+            path,
+            error: format!("Cannot return null for non-nullable field {type_name}.{field_name}.")
+                .into(),
         });
     }
 
@@ -882,6 +927,7 @@ where
             context,
             errors: &errors,
             field_path: Arc::new(FieldPath::Root(operation.span.start)),
+            serial: operation.item.operation_type == OperationType::Mutation,
         };
 
         value = match operation.item.operation_type {
@@ -983,6 +1029,7 @@ where
             context,
             errors: &errors,
             field_path: Arc::new(FieldPath::Root(operation.span.start)),
+            serial: operation.item.operation_type == OperationType::Mutation,
         };
 
         value = match operation.item.operation_type {
@@ -1131,6 +1178,7 @@ where
             context,
             errors: &errors,
             field_path: Arc::new(FieldPath::Root(operation.span.start)),
+            serial: false,
         };
 
         value = match operation.item.operation_type {

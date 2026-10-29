@@ -57,7 +57,7 @@ impl Subscription {
 
 [GraphQL subscriptions][9] require a bit more resources than regular [queries][7] and provide a great vector for [DoS attacks][20]. This can can bring down a server easily if not handled correctly. The [`SubscriptionCoordinator` trait][`SubscriptionCoordinator`] provides coordination logic to enable functionality like [DoS attacks][20] mitigation and resource limits.
 
-The [`SubscriptionCoordinator`] contains the [schema][0] and can keep track of opened connections, handle [subscription][9] start and end, and maintain a global ID for each [subscription][9]. Each time a connection is established, the [`SubscriptionCoordinator`] spawns a [32], which handles a single connection, providing resolver logic for a client stream as well as reconnection and shutdown logic.
+The [`SubscriptionCoordinator`] contains the [schema][0] and can keep track of opened connections, handle [subscription][9] start and end, and maintain a global ID for each [subscription][9]. Each time a connection is established, the [`SubscriptionCoordinator`] spawns a [`SubscriptionConnection`], which handles a single connection, providing resolver logic for a client stream as well as reconnection and shutdown logic.
 
 While we can implement [`SubscriptionCoordinator`] ourselves, [Juniper] contains a simple and generic implementation called [`Coordinator`]. The `subscribe` method returns a [`Future`] resolving into a `Result<Connection, GraphQLError>`, where [`Connection`] is a [`Stream`] of [values][10] returned by the operation, and a [`GraphQLError`] is the error when the [subscription operation][9] fails.
 

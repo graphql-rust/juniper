@@ -187,7 +187,7 @@ fn parse_field(
         if let Some(arg) = method.sig.inputs.first() {
             match arg {
                 syn::FnArg::Receiver(rcv) => {
-                    if rcv.reference.is_none() || rcv.mutability.is_some() {
+                    if !matches!(rcv.kind, syn::ReceiverKind::Reference(_, _, None)) {
                         return err_invalid_method_receiver(rcv);
                     }
                 }

@@ -197,6 +197,7 @@ pub type WrappedValue = u128;
 /// assert_eq!(format_type!(TYPE_STR, WRAP_VAL_STR), "[String]");
 /// ```
 ///
+/// [`format_type!`]: crate::format_type
 /// [`VALUE`]: Self::VALUE
 /// [1]: https://spec.graphql.org/October2021#sec-Objects
 /// [2]: https://spec.graphql.org/October2021#sec-Wrapping-Types
@@ -385,6 +386,7 @@ pub trait AsyncField<S, const N: FieldName>: FieldMeta<S, N> {
     ///
     /// The `executor` can be used to drive selections into sub-[objects][1].
     ///
+    /// [`Value`]: crate::Value
     /// [1]: https://spec.graphql.org/October2021#sec-Objects
     fn call<'b>(
         &'b self,
@@ -481,6 +483,8 @@ pub const fn str_eq(l: &str, r: &str) -> bool {
 /// this interface in the `impl = ...` attribute argument.
 ///
 /// Symmetrical to [`assert_interfaces_impls!`].
+///
+/// [`assert_interfaces_impls!`]: crate::assert_interfaces_impls
 #[macro_export]
 macro_rules! assert_implemented_for {
     ($scalar: ty, $implementor: ty $(, $interfaces: ty)* $(,)?) => {
@@ -567,11 +571,13 @@ macro_rules! assert_transitive_impls {
 
 /// Asserts validness of [`Field`] [`Arguments`] and returned [`Type`].
 ///
-/// This assertion is a combination of [`assert_subtype`] and
-/// [`assert_field_args`].
+/// This assertion is a combination of [`assert_subtype!`] and
+/// [`assert_field_args!`].
 ///
 /// See [spec][1] for more info.
 ///
+/// [`assert_field_args!`]: macro@crate::assert_field_args
+/// [`assert_subtype!`]: crate::assert_subtype
 /// [1]: https://spec.graphql.org/October2021#IsValidImplementation()
 #[macro_export]
 macro_rules! assert_field {
@@ -765,7 +771,7 @@ macro_rules! assert_field_args {
 pub mod assert_field_args {
     //! Helper `const` machinery for the [`assert_field_args!`] macro.
     //!
-    //! [`assert_field_args!`]: macro@super::assert_field_args
+    //! [`assert_field_args!`]: macro@crate::assert_field_args
 
     use crate::macros::reflect;
 
@@ -1177,6 +1183,8 @@ pub const fn format_type_into_bytes<const LEN: usize>(
 }
 
 /// Length __in bytes__ of the [`format_type!`] macro result.
+///
+/// [`format_type!`]: crate::format_type
 #[must_use]
 pub const fn type_len_with_wrapped_val(ty: Type, val: WrappedValue) -> usize {
     let mut len = ty.len() + "!".len(); // Type!

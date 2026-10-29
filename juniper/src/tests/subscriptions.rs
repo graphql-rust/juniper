@@ -82,67 +82,43 @@ impl MySubscription {
     }
 }
 
-/// Create all variables, execute subscription
-/// and collect returned iterators.
-/// Panics if query is invalid (GraphQLError is returned)
-fn create_and_execute(
-    query: String,
-) -> Result<
-    (
-        Vec<String>,
-        Vec<Vec<Result<Value<DefaultScalarValue>, Vec<ExecutionError<DefaultScalarValue>>>>>,
-    ),
-    Vec<ExecutionError<DefaultScalarValue>>,
-> {
+/// Errors of a subscription execution or of a single stream item.
+type ExecutionErrors = Vec<ExecutionError<DefaultScalarValue>>;
+
+/// Items collected from the stream of a single subscription field.
+type StreamItems = Vec<Result<Value<DefaultScalarValue>, ExecutionErrors>>;
+
+/// Executes the subscription `query` and collects the items of each field stream.
+///
+/// Returns the field names and the collected stream items in the same order. Returns the
+/// execution errors if the response contains errors. Panics if the query is invalid or if the
+/// response value is not an object of streams.
+fn create_and_execute(query: String) -> Result<(Vec<String>, Vec<StreamItems>), ExecutionErrors> {
     let request = GraphQLRequest::new(query, None, None);
-
     let root_node = Schema::new(MyQuery, EmptyMutation::new(), MySubscription);
-
     let context = MyContext(2);
 
-    let response = run(crate::http::resolve_into_stream(
+    let (value, errors) = run(crate::http::resolve_into_stream(
         &request, &root_node, &context,
-    ));
-
-    assert!(response.is_ok());
-
-    let (values, errors) = response.unwrap();
-
+    ))
+    .expect("subscription query should be valid");
     if !errors.is_empty() {
         return Err(errors);
     }
-
-    // cannot compare with `assert_eq` because
-    // stream does not implement Debug
-    let response_value_object = match values {
-        Value::Object(o) => Some(o),
-        _ => None,
+    let Value::Object(fields) = value else {
+        panic!("subscription response value should be an object");
     };
 
-    assert!(response_value_object.is_some());
-
-    let response_returned_object = response_value_object.unwrap();
-
-    let fields = response_returned_object.into_iter();
-
     let mut names = vec![];
-    let mut collected_values = vec![];
-
-    for (name, stream_val) in fields {
-        names.push(name.clone());
-
-        // since macro returns Value::Scalar(iterator) every time,
-        // other variants may be skipped
-        match stream_val {
-            Value::Scalar(stream) => {
-                let collected = run(stream.collect::<Vec<_>>());
-                collected_values.push(collected);
-            }
-            _ => unreachable!(),
-        }
+    let mut items = vec![];
+    for (name, value) in fields {
+        let Value::Scalar(stream) = value else {
+            panic!("subscription field `{name}` should resolve to a stream");
+        };
+        names.push(name);
+        items.push(run(stream.collect::<Vec<_>>()));
     }
-
-    Ok((names, collected_values))
+    Ok((names, items))
 }
 
 #[test]

@@ -121,6 +121,8 @@ where
             context: self.context,
             errors: &self.errors,
             field_path: Arc::clone(&self.field_path),
+            // Subscriptions execute their fields normally.
+            serial: false,
         }
     }
 }

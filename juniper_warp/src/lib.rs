@@ -3,7 +3,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(
     test,
-    expect(unused_crate_dependencies, reason = "examples and integration tests")
+    allow(unused_crate_dependencies, reason = "examples and integration tests")
 )]
 
 // TODO: Try remove on upgrade of `warp` crate.
@@ -17,7 +17,7 @@ mod response;
 #[cfg(feature = "subscriptions")]
 pub mod subscriptions;
 
-use std::{collections::HashMap, str, sync::Arc};
+use std::{collections::HashMap, future, pin::pin, str, sync::Arc};
 
 use derive_more::with_trait::Display;
 use juniper::{
@@ -26,8 +26,7 @@ use juniper::{
 };
 use tokio::task;
 use warp::{
-    Filter,
-    body::{self, BodyDeserializeError},
+    Buf, Filter, Stream, body,
     http::{self, StatusCode},
     hyper::body::Bytes,
     query,
@@ -37,12 +36,22 @@ use warp::{
 
 use self::response::JuniperResponse;
 
+/// Default maximum size in bytes of a request body for [`make_graphql_filter()`] and
+/// [`make_graphql_filter_sync()`].
+///
+/// axum and `juniper_hyper` use the same default.
+pub const DEFAULT_BODY_LIMIT: usize = 2 * 1024 * 1024;
+
 /// Makes a [`Filter`] for handling GraphQL queries/mutations.
 ///
 /// The `schema` argument is your [`juniper`] schema.
 ///
 /// The `context_extractor` argument should be a [`Filter`] that provides the GraphQL context,
 /// required by the `schema`.
+///
+/// The [`Filter`] reads at most [`DEFAULT_BODY_LIMIT`] bytes of a request body. A request with a
+/// larger body gets a `413 Payload Too Large` response. Use
+/// [`make_graphql_filter_with_body_limit()`] for another limit.
 ///
 /// # Example
 ///
@@ -175,6 +184,30 @@ where
     CtxErr: Into<Rejection>,
     S: ScalarValue + Send + Sync + 'static,
 {
+    make_graphql_filter_with_body_limit(schema, context_extractor, DEFAULT_BODY_LIMIT)
+}
+
+/// Same as [`make_graphql_filter()`], but reads at most `body_limit` bytes of a request body.
+///
+/// A request with a larger body gets a `413 Payload Too Large` response. The [`Filter`] stops
+/// reading a body as soon as the body exceeds the limit. Large bodies thus cannot exhaust the
+/// memory of the server.
+pub fn make_graphql_filter_with_body_limit<S, Query, Mutation, Subscription, CtxT, CtxErr>(
+    schema: impl Into<Arc<juniper::RootNode<Query, Mutation, Subscription, S>>>,
+    context_extractor: impl Filter<Extract = (CtxT,), Error = CtxErr> + Send + Sync + 'static,
+    body_limit: usize,
+) -> impl Filter<Extract = (reply::Response,), Error = Rejection> + Clone + Send
+where
+    Query: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+    Query::TypeInfo: Send + Sync,
+    Mutation: juniper::GraphQLTypeAsync<S, Context = CtxT> + Send + 'static,
+    Mutation::TypeInfo: Send + Sync,
+    Subscription: juniper::GraphQLSubscriptionType<S, Context = CtxT> + Send + 'static,
+    Subscription::TypeInfo: Send + Sync,
+    CtxT: Send + Sync + 'static,
+    CtxErr: Into<Rejection>,
+    S: ScalarValue + Send + Sync + 'static,
+{
     let schema = schema.into();
     // At the moment, `warp` doesn't allow us to make `context_extractor` filter polymorphic over
     // its `Error` type to support both `Error = Infallible` and `Error = Rejection` filters at the
@@ -186,9 +219,9 @@ where
     let context_extractor = context_extractor.boxed();
 
     get_query_extractor::<S>()
-        .or(post_json_extractor::<S>())
+        .or(post_json_extractor::<S>(body_limit))
         .unify()
-        .or(post_graphql_extractor::<S>())
+        .or(post_graphql_extractor::<S>(body_limit))
         .unify()
         .and(warp::any().map(move || schema.clone()))
         .and(context_extractor)
@@ -202,10 +235,36 @@ where
 /// > __NOTE__: In order to avoid blocking, this handler will use [`tokio::task::spawn_blocking()`]
 /// >           on the runtime [`warp`] is running on.
 ///
+/// Use [`make_graphql_filter_sync_with_body_limit()`] for another body limit.
+///
 /// [1]: GraphQLBatchRequest::execute_sync
 pub fn make_graphql_filter_sync<S, Query, Mutation, Subscription, CtxT, CtxErr>(
     schema: impl Into<Arc<juniper::RootNode<Query, Mutation, Subscription, S>>>,
     context_extractor: impl Filter<Extract = (CtxT,), Error = CtxErr> + Send + Sync + 'static,
+) -> impl Filter<Extract = (reply::Response,), Error = Rejection> + Clone + Send
+where
+    Query: juniper::GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
+    Query::TypeInfo: Send + Sync,
+    Mutation: juniper::GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
+    Mutation::TypeInfo: Send + Sync,
+    Subscription: juniper::GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
+    Subscription::TypeInfo: Send + Sync,
+    CtxT: Send + Sync + 'static,
+    CtxErr: Into<Rejection>,
+    S: ScalarValue + Send + Sync + 'static,
+{
+    make_graphql_filter_sync_with_body_limit(schema, context_extractor, DEFAULT_BODY_LIMIT)
+}
+
+/// Same as [`make_graphql_filter_sync()`], but reads at most `body_limit` bytes of a request body.
+///
+/// A request with a larger body gets a `413 Payload Too Large` response. The [`Filter`] stops
+/// reading a body as soon as the body exceeds the limit. Large bodies thus cannot exhaust the
+/// memory of the server.
+pub fn make_graphql_filter_sync_with_body_limit<S, Query, Mutation, Subscription, CtxT, CtxErr>(
+    schema: impl Into<Arc<juniper::RootNode<Query, Mutation, Subscription, S>>>,
+    context_extractor: impl Filter<Extract = (CtxT,), Error = CtxErr> + Send + Sync + 'static,
+    body_limit: usize,
 ) -> impl Filter<Extract = (reply::Response,), Error = Rejection> + Clone + Send
 where
     Query: juniper::GraphQLType<S, Context = CtxT> + Send + Sync + 'static,
@@ -229,9 +288,9 @@ where
     let context_extractor = context_extractor.boxed();
 
     get_query_extractor::<S>()
-        .or(post_json_extractor::<S>())
+        .or(post_json_extractor::<S>(body_limit))
         .unify()
-        .or(post_graphql_extractor::<S>())
+        .or(post_graphql_extractor::<S>(body_limit))
         .unify()
         .and(warp::any().map(move || schema.clone()))
         .and(context_extractor)
@@ -286,22 +345,30 @@ where
 }
 
 /// Extracts a [`GraphQLBatchRequest`] from a POST `application/json` HTTP request.
-fn post_json_extractor<S>()
--> impl Filter<Extract = (GraphQLBatchRequest<S>,), Error = Rejection> + Clone + Send
-where
-    S: ScalarValue + Send,
-{
-    warp::post().and(body::json())
-}
-
-/// Extracts a [`GraphQLBatchRequest`] from a POST `application/graphql` HTTP request.
-fn post_graphql_extractor<S>()
--> impl Filter<Extract = (GraphQLBatchRequest<S>,), Error = Rejection> + Clone + Send
+fn post_json_extractor<S>(
+    body_limit: usize,
+) -> impl Filter<Extract = (GraphQLBatchRequest<S>,), Error = Rejection> + Clone + Send
 where
     S: ScalarValue + Send,
 {
     warp::post()
-        .and(body::bytes())
+        .and(json_content_type())
+        .and(limited_body(body_limit))
+        .and_then(async |body: Bytes| {
+            serde_json::from_slice::<GraphQLBatchRequest<S>>(&body)
+                .map_err(|e| reject::custom(FilterError::InvalidJsonBody(e)))
+        })
+}
+
+/// Extracts a [`GraphQLBatchRequest`] from a POST `application/graphql` HTTP request.
+fn post_graphql_extractor<S>(
+    body_limit: usize,
+) -> impl Filter<Extract = (GraphQLBatchRequest<S>,), Error = Rejection> + Clone + Send
+where
+    S: ScalarValue + Send,
+{
+    warp::post()
+        .and(limited_body(body_limit))
         .and_then(async |body: Bytes| {
             let query = str::from_utf8(body.as_ref())
                 .map_err(|e| reject::custom(FilterError::NonUtf8Body(e)))?;
@@ -332,13 +399,75 @@ where
         })
 }
 
+/// Matches an HTTP request with the `application/json` content type or without a `Content-Type`
+/// header.
+///
+/// [`body::json()`] matches the same requests.
+fn json_content_type() -> impl Filter<Extract = (), Error = Rejection> + Clone + Send {
+    warp::header::optional::<String>("content-type")
+        .and_then(async |content_type: Option<String>| {
+            let is_json = content_type.is_none_or(|ct| {
+                let mime = ct.split_once(';').map_or(ct.as_str(), |(mime, _)| mime);
+                mime.trim().eq_ignore_ascii_case("application/json")
+            });
+            if is_json {
+                Ok(())
+            } else {
+                // `handle_rejects()` reports the first `FilterError` of all `.or()` branches. A
+                // `FilterError` for the content type would hide the errors of
+                // `post_graphql_extractor()`.
+                Err(reject::reject())
+            }
+        })
+        .untuple_one()
+}
+
+/// Extracts the body of an HTTP request if the body has at most `limit` bytes.
+fn limited_body(limit: usize) -> impl Filter<Extract = (Bytes,), Error = Rejection> + Clone + Send {
+    warp::header::optional::<u64>("content-length")
+        .and(body::stream())
+        .and_then(move |length, body| read_body(body, length, limit))
+}
+
+/// Reads `body` into memory if `body` has at most `limit` bytes.
+///
+/// Rejects `body` without reading it if `length` exceeds `limit`. Stops reading `body` and rejects
+/// it as soon as the read bytes exceed `limit`.
+async fn read_body<B: Buf>(
+    body: impl Stream<Item = Result<B, warp::Error>>,
+    length: Option<u64>,
+    limit: usize,
+) -> Result<Bytes, Rejection> {
+    let too_large = || reject::custom(FilterError::BodyTooLarge(limit));
+    if length.is_some_and(|len| len > u64::try_from(limit).unwrap_or(u64::MAX)) {
+        return Err(too_large());
+    }
+    let mut body = pin!(body);
+    let mut bytes = Vec::new();
+    while let Some(data) = future::poll_fn(|cx| body.as_mut().poll_next(cx)).await {
+        let mut data = data.map_err(|e| reject::custom(FilterError::UnreadableBody(e)))?;
+        if data.remaining() > limit - bytes.len() {
+            return Err(too_large());
+        }
+        while data.has_remaining() {
+            let chunk = data.chunk();
+            bytes.extend_from_slice(chunk);
+            let read = chunk.len();
+            data.advance(read);
+        }
+    }
+    Ok(bytes.into())
+}
+
 /// Handles all the [`Rejection`]s happening in [`make_graphql_filter()`] to fail fast, if required.
 async fn handle_rejects(rej: Rejection) -> Result<reply::Response, Rejection> {
     let (status, msg) = if let Some(e) = rej.find::<FilterError>() {
-        (StatusCode::BAD_REQUEST, e.to_string())
+        let status = match e {
+            FilterError::BodyTooLarge(_) => StatusCode::PAYLOAD_TOO_LARGE,
+            _ => StatusCode::BAD_REQUEST,
+        };
+        (status, e.to_string())
     } else if let Some(e) = rej.find::<warp::reject::InvalidQuery>() {
-        (StatusCode::BAD_REQUEST, e.to_string())
-    } else if let Some(e) = rej.find::<BodyDeserializeError>() {
         (StatusCode::BAD_REQUEST, e.to_string())
     } else {
         return Err(rej);
@@ -364,6 +493,18 @@ enum FilterError {
     /// POST HTTP request contains non-UTF-8 body.
     #[display("Request body is not a valid UTF-8 string: {_0}")]
     NonUtf8Body(str::Utf8Error),
+
+    /// POST HTTP request contains invalid JSON body.
+    #[display("Request body deserialize error: {_0}")]
+    InvalidJsonBody(serde_json::Error),
+
+    /// POST HTTP request contains body larger than the limit.
+    #[display("Request body exceeds the limit of {_0} bytes")]
+    BodyTooLarge(usize),
+
+    /// POST HTTP request contains body that cannot be read.
+    #[display("Failed to read request body: {_0}")]
+    UnreadableBody(warp::Error),
 }
 
 impl Reject for FilterError {}

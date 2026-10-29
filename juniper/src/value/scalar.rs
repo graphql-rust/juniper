@@ -140,6 +140,7 @@ pub trait ParseScalarValue<S = DefaultScalarValue> {
 /// }
 /// ```
 ///
+/// [`InputValue`]: crate::InputValue
 /// [`juniper`]: crate
 /// [`CompactString`]: compact_str::CompactString
 /// [`Deserialize`]: trait@serde::Deserialize
