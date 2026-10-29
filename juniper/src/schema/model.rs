@@ -113,8 +113,9 @@ where
         }
     }
 
-    /// Disables introspection for this [`RootNode`], making it to return a [`FieldError`] whenever
-    /// its `__schema` or `__type` field is resolved.
+    /// Disables introspection for this [`RootNode`].
+    ///
+    /// Validation rejects a document with a `__schema` or `__type` field.
     ///
     /// By default, all introspection queries are allowed.
     ///

@@ -44,6 +44,7 @@
 //! type U512 = ruint::Uint<512, 8>;
 //! ```
 //!
+//! [`integrations::ruint::uint_scalar`]: uint_scalar
 //! [`ScalarValue`]: trait@crate::ScalarValue
 //! [`U256`]: ruint::aliases::U256
 //! [`U128`]: ruint::aliases::U128

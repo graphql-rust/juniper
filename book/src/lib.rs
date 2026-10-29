@@ -51,6 +51,7 @@ chapters! {
     schema => "schema/index.md",
     schema_subscriptions => "schema/subscriptions.md",
     schema_introspection => "schema/introspection.md",
+    schema_limits => "schema/limits.md",
     serve => "serve/index.md",
     serve_batching => "serve/batching.md",
     advanced => "advanced/index.md",
