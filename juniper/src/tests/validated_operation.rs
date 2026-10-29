@@ -1,4 +1,4 @@
-//! Tests of [`ValidatedOperation::new()`] and [`ValidatedOperation`].
+//! Tests of [`ValidatedOperation`].
 //!
 //! [`ValidatedOperation`]: crate::ValidatedOperation
 
@@ -6,10 +6,7 @@ use std::pin::Pin;
 
 use futures::stream;
 
-use crate::{
-    Context, DefaultScalarValue, GraphQLError, RootNode, ValidatedOperation, graphql_object,
-    graphql_subscription,
-};
+use crate::{Context, DefaultScalarValue, RootNode, graphql_object, graphql_subscription};
 
 struct MyContext;
 
@@ -50,87 +47,89 @@ impl Subscription {
 
 type Schema = RootNode<Query, Mutation, Subscription, DefaultScalarValue>;
 
-fn schema() -> Schema {
-    RootNode::new(Query, Mutation, Subscription)
-}
-
-/// Returns the error of [`ValidatedOperation::new()`] for the `operation_name` operation of the
-/// `query`.
-fn error(schema: &Schema, query: &str, operation_name: Option<&str>) -> GraphQLError {
-    ValidatedOperation::new(query, operation_name, schema).expect_err("invalid operation")
-}
-
 mod operation_type {
     use crate::{ValidatedOperation, ast::OperationType};
 
-    use super::schema;
-
-    /// Returns the [`OperationType`] of the `operation_name` operation of the `query`.
-    fn operation_type(query: &str, operation_name: Option<&str>) -> OperationType {
-        ValidatedOperation::new(query, operation_name, &schema())
-            .expect("valid operation")
-            .operation_type()
-    }
+    use super::{Mutation, Query, Schema, Subscription};
 
     #[test]
     fn query() {
-        assert_eq!(operation_type("{ ping }", None), OperationType::Query);
+        let schema = Schema::new(Query, Mutation, Subscription);
+
+        let operation = ValidatedOperation::new("{ ping }", None, &schema).unwrap();
+
+        assert_eq!(operation.operation_type(), OperationType::Query);
     }
 
     #[test]
     fn mutation() {
-        assert_eq!(
-            operation_type("mutation { pong }", None),
-            OperationType::Mutation,
-        );
+        let schema = Schema::new(Query, Mutation, Subscription);
+
+        let operation = ValidatedOperation::new("mutation { pong }", None, &schema).unwrap();
+
+        assert_eq!(operation.operation_type(), OperationType::Mutation);
     }
 
     #[test]
     fn subscription() {
-        assert_eq!(
-            operation_type("subscription { tick }", None),
-            OperationType::Subscription,
-        );
+        let schema = Schema::new(Query, Mutation, Subscription);
+
+        let operation = ValidatedOperation::new("subscription { tick }", None, &schema).unwrap();
+
+        assert_eq!(operation.operation_type(), OperationType::Subscription);
     }
 
     #[test]
     fn named_operation() {
+        let schema = Schema::new(Query, Mutation, Subscription);
         let query = "query A { ping } mutation B { pong }";
 
-        assert_eq!(operation_type(query, Some("A")), OperationType::Query);
-        assert_eq!(operation_type(query, Some("B")), OperationType::Mutation);
+        let a = ValidatedOperation::new(query, Some("A"), &schema).unwrap();
+        let b = ValidatedOperation::new(query, Some("B"), &schema).unwrap();
+
+        assert_eq!(a.operation_type(), OperationType::Query);
+        assert_eq!(b.operation_type(), OperationType::Mutation);
     }
 }
 
 mod rejects {
-    use crate::{GraphQLError, parser::ParseError};
+    use crate::{GraphQLError, ValidatedOperation, parser::ParseError};
 
-    use super::{error, schema};
+    use super::{Mutation, Query, Schema, Subscription};
 
     #[test]
     fn multiple_operations_without_name() {
-        let err = error(&schema(), "query A { ping } mutation B { pong }", None);
+        let schema = Schema::new(Query, Mutation, Subscription);
+        let query = "query A { ping } mutation B { pong }";
+
+        let err = ValidatedOperation::new(query, None, &schema).unwrap_err();
 
         assert_eq!(err, GraphQLError::MultipleOperationsProvided);
     }
 
     #[test]
     fn unknown_operation_name() {
-        let err = error(&schema(), "query A { ping }", Some("B"));
+        let schema = Schema::new(Query, Mutation, Subscription);
+
+        let err = ValidatedOperation::new("query A { ping }", Some("B"), &schema).unwrap_err();
 
         assert_eq!(err, GraphQLError::UnknownOperationName);
     }
 
     #[test]
     fn invalid_syntax() {
-        let err = error(&schema(), "{ ping ", None);
+        let schema = Schema::new(Query, Mutation, Subscription);
+
+        let err = ValidatedOperation::new("{ ping ", None, &schema).unwrap_err();
 
         assert!(matches!(err, GraphQLError::ParseError(_)), "got {err:?}");
     }
 
     #[test]
     fn invalid_document() {
-        let err = error(&schema(), "{ unknownField }", None);
+        let schema = Schema::new(Query, Mutation, Subscription);
+
+        let err = ValidatedOperation::new("{ unknownField }", None, &schema).unwrap_err();
 
         assert!(
             matches!(err, GraphQLError::ValidationError(_)),
@@ -140,7 +139,9 @@ mod rejects {
 
     #[test]
     fn document_over_limit() {
-        let err = error(&schema().limit_fields(1), "{ a: ping b: ping }", None);
+        let schema = Schema::new(Query, Mutation, Subscription).limit_fields(1);
+
+        let err = ValidatedOperation::new("{ a: ping b: ping }", None, &schema).unwrap_err();
 
         assert!(
             matches!(&err, GraphQLError::ParseError(e) if e.item == ParseError::FieldLimitExceeded(1)),
@@ -150,9 +151,10 @@ mod rejects {
 
     #[test]
     fn introspection_if_disabled() {
-        let schema = schema().disable_introspection();
+        let schema = Schema::new(Query, Mutation, Subscription).disable_introspection();
+        let query = "{ __schema { queryType { name } } }";
 
-        let err = error(&schema, "{ __schema { queryType { name } } }", None);
+        let err = ValidatedOperation::new(query, None, &schema).unwrap_err();
 
         assert!(
             matches!(err, GraphQLError::ValidationError(_)),
@@ -164,7 +166,7 @@ mod rejects {
 mod execute {
     use crate::{GraphQLError, ValidatedOperation, graphql};
 
-    use super::{MyContext, schema};
+    use super::{Mutation, MyContext, Query, Schema, Subscription};
 
     /// Query with a required variable.
     const ECHO: &str = "query Echo($value: Int!) { echo(value: $value) }";
@@ -174,7 +176,7 @@ mod execute {
 
     #[test]
     fn synchronously() {
-        let schema = schema();
+        let schema = Schema::new(Query, Mutation, Subscription);
         let operation = ValidatedOperation::new("{ ping }", None, &schema).unwrap();
 
         let result = operation.execute_sync(&graphql::vars! {}, &MyContext);
@@ -184,7 +186,7 @@ mod execute {
 
     #[tokio::test]
     async fn asynchronously() {
-        let schema = schema();
+        let schema = Schema::new(Query, Mutation, Subscription);
         let operation = ValidatedOperation::new("mutation { pong }", None, &schema).unwrap();
 
         let result = operation.execute(&graphql::vars! {}, &MyContext).await;
@@ -194,7 +196,7 @@ mod execute {
 
     #[test]
     fn named_operation() {
-        let schema = schema();
+        let schema = Schema::new(Query, Mutation, Subscription);
         let query = "query A { ping } query B { echo(value: 1) }";
         let operation = ValidatedOperation::new(query, Some("B"), &schema).unwrap();
 
@@ -205,7 +207,7 @@ mod execute {
 
     #[test]
     fn fragments() {
-        let schema = schema();
+        let schema = Schema::new(Query, Mutation, Subscription);
         let query =
             "query A { ...Echo } query B { ping } fragment Echo on Query { echo(value: 1) }";
         let operation = ValidatedOperation::new(query, Some("A"), &schema).unwrap();
@@ -217,7 +219,7 @@ mod execute {
 
     #[test]
     fn default_values() {
-        let schema = schema();
+        let schema = Schema::new(Query, Mutation, Subscription);
         let operation = ValidatedOperation::new(ECHO_WITH_DEFAULT, None, &schema).unwrap();
 
         let result = operation.execute_sync(&graphql::vars! {}, &MyContext);
@@ -227,7 +229,7 @@ mod execute {
 
     #[test]
     fn provided_variables_over_default_values() {
-        let schema = schema();
+        let schema = Schema::new(Query, Mutation, Subscription);
         let operation = ValidatedOperation::new(ECHO_WITH_DEFAULT, None, &schema).unwrap();
 
         let result = operation.execute_sync(&graphql::vars! {"value": 5}, &MyContext);
@@ -237,7 +239,7 @@ mod execute {
 
     #[test]
     fn more_than_once() {
-        let schema = schema();
+        let schema = Schema::new(Query, Mutation, Subscription);
         let operation = ValidatedOperation::new(ECHO, None, &schema).unwrap();
 
         for value in [1, 2] {
@@ -249,7 +251,7 @@ mod execute {
 
     #[test]
     fn rejects_invalid_variables() {
-        let schema = schema();
+        let schema = Schema::new(Query, Mutation, Subscription);
         let operation = ValidatedOperation::new(ECHO, None, &schema).unwrap();
 
         for variables in [graphql::vars! {}, graphql::vars! {"value": "one"}] {
@@ -264,7 +266,7 @@ mod execute {
 
     #[test]
     fn rejects_subscription() {
-        let schema = schema();
+        let schema = Schema::new(Query, Mutation, Subscription);
         let operation = ValidatedOperation::new("subscription { tick }", None, &schema).unwrap();
 
         let result = operation.execute_sync(&graphql::vars! {}, &MyContext);
@@ -278,11 +280,11 @@ mod resolve_into_stream {
 
     use crate::{GraphQLError, ValidatedOperation, Value, graphql};
 
-    use super::{MyContext, schema};
+    use super::{Mutation, MyContext, Query, Schema, Subscription};
 
     #[tokio::test]
     async fn subscription() {
-        let schema = schema();
+        let schema = Schema::new(Query, Mutation, Subscription);
         let operation = ValidatedOperation::new("subscription { tick }", None, &schema).unwrap();
 
         let (value, errors) = operation
@@ -311,7 +313,7 @@ mod resolve_into_stream {
 
     #[tokio::test]
     async fn rejects_query() {
-        let schema = schema();
+        let schema = Schema::new(Query, Mutation, Subscription);
         let operation = ValidatedOperation::new("{ ping }", None, &schema).unwrap();
 
         let result = operation

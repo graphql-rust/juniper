@@ -44,13 +44,9 @@ impl User {
 
 type Schema = RootNode<Query, EmptyMutation<Context>, Subscription>;
 
-fn schema() -> Schema {
-    Schema::new(Query, EmptyMutation::new(), Subscription)
-}
-
 #[tokio::test]
 async fn executes_query() {
-    let schema = schema();
+    let schema = Schema::new(Query, EmptyMutation::new(), Subscription);
     let operation = ValidatedOperation::new("query { users { id } }", None, &schema).unwrap();
     assert_eq!(operation.operation_type(), OperationType::Query);
 
@@ -64,7 +60,7 @@ async fn executes_query() {
 
 #[tokio::test]
 async fn resolves_subscription() {
-    let schema = schema();
+    let schema = Schema::new(Query, EmptyMutation::new(), Subscription);
     let operation =
         ValidatedOperation::new("subscription { users { id } }", None, &schema).unwrap();
     assert_eq!(operation.operation_type(), OperationType::Subscription);
