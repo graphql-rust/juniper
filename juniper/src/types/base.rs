@@ -485,7 +485,10 @@ where
                 );
 
                 match field_result {
-                    Ok(Value::Null) if meta_field.field_type.is_non_null() => return false,
+                    Ok(Value::Null) if meta_field.field_type.is_non_null() => {
+                        sub_exec.push_non_null_violation_at(meta_type, f.name.item, span.start);
+                        return false;
+                    }
                     Ok(v) => merge_key_into(result, response_name, v),
                     Err(e) => {
                         sub_exec.push_error_at(e, span.start);

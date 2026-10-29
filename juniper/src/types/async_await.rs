@@ -268,7 +268,10 @@ where
                         .await;
 
                     let value = match res {
-                        Ok(Value::Null) if is_non_null => None,
+                        Ok(Value::Null) if is_non_null => {
+                            sub_exec.push_non_null_violation_at(meta_type, f.name.item, pos);
+                            None
+                        }
                         Ok(v) => Some(v),
                         Err(e) => {
                             sub_exec.push_error_at(e, pos);

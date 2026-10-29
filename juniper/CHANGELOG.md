@@ -78,6 +78,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Exponential execution time of fragments that spread the same fragment more than once. ([GHSA-36rq-8957-mjrx])
 - Quadratic validation time and memory of fields with the same response name. ([GHSA-36rq-8957-mjrx])
 - Incorrect non-nullable type of `__type` introspection field. A query for an unknown type now returns `{"__type": null}` instead of `null` data. ([#1402])
+- Missing execution errors for null values returned from non-`Null` fields. ([#1397])
 
 [#864]: /../../issues/864
 [#1055]: /../../issues/1055
@@ -98,6 +99,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1387]: /../../pull/1387
 [#1393]: /../../pull/1393
 [#1394]: /../../pull/1394
+[#1397]: /../../pull/1397
 [#1402]: /../../pull/1402
 [GHSA-34cw-x8g7-rcv5]: /../../security/advisories/GHSA-34cw-x8g7-rcv5
 [GHSA-36rq-8957-mjrx]: /../../security/advisories/GHSA-36rq-8957-mjrx
