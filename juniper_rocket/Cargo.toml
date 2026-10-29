@@ -28,7 +28,7 @@ serde_json = "1.0.18"
 # TODO: Try remove on upgrade of `rocket` crate.
 either = "1.8"
 inlinable_string = "0.1.15"
-pear = "0.2.4"
+pear = "0.3.0"
 tempfile = "3.3"
 
 [dev-dependencies]
