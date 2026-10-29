@@ -127,10 +127,10 @@ where
 
         let value = match self.operation_type() {
             OperationType::Query => self
-                .executor(root_node.schema.query_type(), &variables, context, &errors)
+                .executor(&variables, context, &errors)?
                 .resolve_into_value(&root_node.query_info, &root_node),
             OperationType::Mutation => self
-                .executor(mutation_type(root_node)?, &variables, context, &errors)
+                .executor(&variables, context, &errors)?
                 .resolve_into_value(&root_node.mutation_info, &root_node.mutation_type),
             OperationType::Subscription => return Err(GraphQLError::IsSubscription),
         };
@@ -169,12 +169,12 @@ where
 
         let value = match self.operation_type() {
             OperationType::Query => {
-                self.executor(root_node.schema.query_type(), &variables, context, &errors)
+                self.executor(&variables, context, &errors)?
                     .resolve_into_value_async(&root_node.query_info, &root_node)
                     .await
             }
             OperationType::Mutation => {
-                self.executor(mutation_type(root_node)?, &variables, context, &errors)
+                self.executor(&variables, context, &errors)?
                     .resolve_into_value_async(&root_node.mutation_info, &root_node.mutation_type)
                     .await
             }
@@ -212,16 +212,12 @@ where
         if self.operation_type() != OperationType::Subscription {
             return Err(GraphQLError::NotSubscription);
         }
-        let root_node = self.root_node;
-        let root_type = root_node
-            .schema
-            .subscription_type()
-            .ok_or(GraphQLError::NotSupported(OperationType::Subscription))?;
         let variables = self.with_default_values(variables);
         let errors = RwLock::new(Vec::new());
+        let root_node = self.root_node;
 
         let value = self
-            .executor(root_type, &variables, context, &errors)
+            .executor(&variables, context, &errors)?
             .resolve_into_stream(&root_node.subscription_info, &root_node.subscription_type)
             .await;
 
@@ -260,28 +256,51 @@ where
     }
 
     /// Creates an [`Executor`] for the root selection set of the operation.
+    ///
+    /// # Errors
+    ///
+    /// [`GraphQLError::NotSupported`] if the schema has no root type for the operation type.
     fn executor<'r, 'x>(
         &'r self,
-        root_type: TypeType<'x, S>,
         variables: &'r Variables<S>,
         context: &'x QueryT::Context,
         errors: &'r RwLock<Vec<ExecutionError<S>>>,
-    ) -> Executor<'r, 'x, QueryT::Context, S>
+    ) -> Result<Executor<'r, 'x, QueryT::Context, S>, GraphQLError>
     where
         'a: 'x,
     {
-        Executor {
+        Ok(Executor {
             fragments: &self.fragments,
             variables,
             current_selection_set: Some(&self.operation.item.selection_set),
             parent_selection_set: None,
-            current_type: root_type,
+            current_type: self.root_type()?,
             schema: &self.root_node.schema,
             context,
             errors,
             field_path: Arc::new(FieldPath::Root(self.operation.span.start)),
             serial: self.operation_type() == OperationType::Mutation,
+        })
+    }
+
+    /// Returns the root type of the operation in the schema.
+    ///
+    /// # Errors
+    ///
+    /// [`GraphQLError::NotSupported`] if the schema has no root type for the operation type. An
+    /// [`EmptyMutation`] or [`EmptySubscription`] root has no type in the schema.
+    ///
+    /// [`EmptyMutation`]: crate::EmptyMutation
+    /// [`EmptySubscription`]: crate::EmptySubscription
+    fn root_type(&self) -> Result<TypeType<'a, S>, GraphQLError> {
+        let schema = &self.root_node.schema;
+        let operation_type = self.operation_type();
+        match operation_type {
+            OperationType::Query => Some(schema.query_type()),
+            OperationType::Mutation => schema.mutation_type(),
+            OperationType::Subscription => schema.subscription_type(),
         }
+        .ok_or(GraphQLError::NotSupported(operation_type))
     }
 }
 
@@ -299,29 +318,6 @@ where
             .field("fragments", &self.fragments)
             .finish_non_exhaustive()
     }
-}
-
-/// Returns the mutation root type of the `root_node`.
-///
-/// # Errors
-///
-/// [`GraphQLError::NotSupported`] if the schema has no mutation root type. An [`EmptyMutation`]
-/// root has no type in the schema.
-///
-/// [`EmptyMutation`]: crate::EmptyMutation
-fn mutation_type<QueryT, MutationT, SubscriptionT, S>(
-    root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
-) -> Result<TypeType<'_, S>, GraphQLError>
-where
-    QueryT: GraphQLType<S>,
-    MutationT: GraphQLType<S>,
-    SubscriptionT: GraphQLType<S>,
-    S: ScalarValue,
-{
-    root_node
-        .schema
-        .mutation_type()
-        .ok_or(GraphQLError::NotSupported(OperationType::Mutation))
 }
 
 /// Returns the `errors` of an execution in the order of their positions in the document.
