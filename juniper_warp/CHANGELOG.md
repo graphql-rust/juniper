@@ -6,7 +6,7 @@ All user visible changes to `juniper_warp` crate will be documented in this file
 
 
 
-## [0.9.1] · unreleased
+## [0.9.1] · 2026-10-29
 [0.9.1]: /../../tree/juniper_warp-v0.9.1/juniper_warp
 
 [Diff](/../../compare/juniper_warp-v0.9.0...juniper_warp-v0.9.1)
