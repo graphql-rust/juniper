@@ -127,11 +127,13 @@ where
     S: ScalarValue,
 {
     Ok(parser
-        .delimited_list(
-            &Token::BracketOpen,
-            |p| parse_value_literal(p, is_const, schema, tpe),
-            &Token::BracketClose,
-        )?
+        .nested(|parser| {
+            parser.delimited_list(
+                &Token::BracketOpen,
+                |p| parse_value_literal(p, is_const, schema, tpe),
+                &Token::BracketClose,
+            )
+        })?
         .map(InputValue::parsed_list))
 }
 
@@ -145,11 +147,13 @@ where
     S: ScalarValue,
 {
     Ok(parser
-        .delimited_list(
-            &Token::CurlyOpen,
-            |p| parse_object_field(p, is_const, schema, object_tpe),
-            &Token::CurlyClose,
-        )?
+        .nested(|parser| {
+            parser.delimited_list(
+                &Token::CurlyOpen,
+                |p| parse_object_field(p, is_const, schema, object_tpe),
+                &Token::CurlyClose,
+            )
+        })?
         .map(|items| InputValue::parsed_object(items.into_iter().map(|s| s.item).collect())))
 }
 

@@ -23,6 +23,9 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Fixed `ValuesStream` to return batch of `ExecutionError`s instead of a single one. ([#1371])
 - Added `GraphQLError::NotSupported` variant. ([#1378])
 - Upgraded [`compact_str` crate] integration to [0.10 version](https://github.com/ParkMyCar/compact_str/blob/v0.10.0/CHANGELOG.md#0100). ([#1387])
+- Limited documents to 64 levels of nesting, 15,000 tokens, and 15,000 fields by default. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
+- Added `ParseError::DepthLimitExceeded`, `ParseError::TokenLimitExceeded`, and `ParseError::FieldLimitExceeded` variants. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
+- Limited validation of overlapping fields to 100,000 field comparisons and 100 reported conflicts. ([GHSA-36rq-8957-mjrx])
 
 ### Added
 
@@ -53,6 +56,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - `ruint::aliases::U128` as `U128` scalar.
     - `ruint::aliases::U256` as `U256` scalar.
     - `integrations::ruint::unit_scalar` module for declaring custom-sized `ruint::Unit` scalars.
+- `RootNode::limit_depth()`, `RootNode::limit_tokens()`, and `RootNode::limit_fields()` methods. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
 
 ### Changed
 
@@ -68,6 +72,11 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Memory leak caused by incorrect error handling in `#[graphql_subscription]` macro expansion. ([#1371])
 - Incorrect rejection of default values on non-`Null` variables. ([#1376])
 - Executing a `mutation` against a schema without a mutation type (e.g. `EmptyMutation`), or a `subscription` against one without a subscription type (e.g. `EmptySubscription`), now returns a `GraphQLError::NotSupported` error rather than panicking. ([#1378])
+- Stack overflow on deeply nested selection sets, input values, list types, and fragment spreads. ([GHSA-34cw-x8g7-rcv5])
+- Quadratic parsing time in the number of tokens. ([GHSA-36rq-8957-mjrx])
+- Exponential validation time of fragments that spread the same fragment through many paths. ([GHSA-36rq-8957-mjrx])
+- Exponential execution time of fragments that spread the same fragment more than once. ([GHSA-36rq-8957-mjrx])
+- Quadratic validation time and memory of fields with the same response name. ([GHSA-36rq-8957-mjrx])
 
 [#864]: /../../issues/864
 [#1055]: /../../issues/1055
@@ -87,6 +96,8 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1380]: /../../pull/1380
 [#1387]: /../../pull/1387
 [#1393]: /../../pull/1393
+[GHSA-34cw-x8g7-rcv5]: /../../security/advisories/GHSA-34cw-x8g7-rcv5
+[GHSA-36rq-8957-mjrx]: /../../security/advisories/GHSA-36rq-8957-mjrx
 [graphql/graphql-spec#525]: https://github.com/graphql/graphql-spec/pull/525
 [graphql/graphql-spec#687]: https://github.com/graphql/graphql-spec/issues/687
 [graphql/graphql-spec#805]: https://github.com/graphql/graphql-spec/pull/805
@@ -97,6 +108,32 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [graphql/graphql-spec#1142]: https://github.com/graphql/graphql-spec/pull/1142
 [graphql/graphql-spec#1170]: https://github.com/graphql/graphql-spec/pull/1170
 [0180-1]: https://spec.graphql.org/September2025/#sec-String-Value.Block-Strings
+
+
+
+
+## [0.17.2] · 2026-10-28
+[0.17.2]: /../../tree/juniper-v0.17.2/juniper
+
+[Diff](/../../compare/juniper-v0.17.1...juniper-v0.17.2)
+
+### BC Breaks
+
+- Limited documents to 64 levels of nesting, 15,000 tokens, and 15,000 fields by default. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
+- Limited validation of overlapping fields to 100,000 field comparisons and 100 reported conflicts. ([GHSA-36rq-8957-mjrx])
+- Added `ParseError::DepthLimitExceeded`, `ParseError::TokenLimitExceeded`, and `ParseError::FieldLimitExceeded` variants. Exhaustive `match`es on `ParseError` need a new arm. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
+
+### Added
+
+- `RootNode::limit_depth()`, `RootNode::limit_tokens()`, and `RootNode::limit_fields()` methods. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
+
+### Fixed
+
+- Stack overflow on deeply nested selection sets, input values, list types, and fragment spreads. ([GHSA-34cw-x8g7-rcv5])
+- Quadratic parsing time in the number of tokens. ([GHSA-36rq-8957-mjrx])
+- Exponential validation time of fragments that spread the same fragment through many paths. ([GHSA-36rq-8957-mjrx])
+- Exponential execution time of fragments that spread the same fragment more than once. ([GHSA-36rq-8957-mjrx])
+- Quadratic validation time and memory of fields with the same response name. ([GHSA-36rq-8957-mjrx])
 
 
 
