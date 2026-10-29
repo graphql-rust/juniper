@@ -1,4 +1,5 @@
 use std::{
+    collections::HashSet,
     mem::{self, MaybeUninit},
     ptr,
 };
@@ -215,6 +216,63 @@ where
             Self::Null => "Failed to convert into `Vec`: Value cannot be `null`".into(),
             Self::Item(s) => s.into_field_error(),
         }
+    }
+}
+
+impl<S, T> GraphQLType<S> for HashSet<T>
+where
+    T: GraphQLType<S>,
+    S: ScalarValue,
+{
+    fn name(_: &Self::TypeInfo) -> Option<&'static str> {
+        None
+    }
+
+    fn meta<'r>(info: &Self::TypeInfo, registry: &mut Registry<'r, S>) -> MetaType<'r, S>
+    where
+        S: 'r,
+    {
+        registry.build_list_type::<T>(info, None).into_meta()
+    }
+}
+
+impl<S, T> GraphQLValue<S> for HashSet<T>
+where
+    T: GraphQLValue<S>,
+    S: ScalarValue,
+{
+    type Context = T::Context;
+    type TypeInfo = T::TypeInfo;
+
+    fn type_name(&self, _: &Self::TypeInfo) -> Option<&'static str> {
+        None
+    }
+
+    fn resolve(
+        &self,
+        info: &Self::TypeInfo,
+        _: Option<&[Selection<S>]>,
+        executor: &Executor<Self::Context, S>,
+    ) -> ExecutionResult<S> {
+        resolve_into_list(executor, info, self.iter())
+    }
+}
+
+impl<S, T> GraphQLValueAsync<S> for HashSet<T>
+where
+    T: GraphQLValueAsync<S>,
+    T::TypeInfo: Sync,
+    T::Context: Sync,
+    S: ScalarValue + Send + Sync,
+{
+    fn resolve_async<'a>(
+        &'a self,
+        info: &'a Self::TypeInfo,
+        _: Option<&'a [Selection<S>]>,
+        executor: &'a Executor<Self::Context, S>,
+    ) -> crate::BoxFuture<'a, ExecutionResult<S>> {
+        let f = resolve_into_list_async(executor, info, self.iter());
+        Box::pin(f)
     }
 }
 

@@ -1,6 +1,6 @@
 //! Compile-time reflection of Rust types into GraphQL types.
 
-use std::{rc::Rc, sync::Arc};
+use std::{collections::HashSet, rc::Rc, sync::Arc};
 
 use futures::future::BoxFuture;
 
@@ -72,6 +72,10 @@ impl<S, T: BaseType<S>> BaseType<S> for Vec<T> {
     const NAME: Type = T::NAME;
 }
 
+impl<S, T: BaseType<S>> BaseType<S> for HashSet<T> {
+    const NAME: Type = T::NAME;
+}
+
 impl<S, T: BaseType<S>> BaseType<S> for [T] {
     const NAME: Type = T::NAME;
 }
@@ -130,6 +134,10 @@ impl<S, T: BaseSubTypes<S>, E> BaseSubTypes<S> for Result<T, E> {
 }
 
 impl<S, T: BaseSubTypes<S>> BaseSubTypes<S> for Vec<T> {
+    const NAMES: Types = T::NAMES;
+}
+
+impl<S, T: BaseSubTypes<S>> BaseSubTypes<S> for HashSet<T> {
     const NAMES: Types = T::NAMES;
 }
 
@@ -226,6 +234,10 @@ impl<S, T: WrappedType<S>, E> WrappedType<S> for Result<T, E> {
 }
 
 impl<S, T: WrappedType<S>> WrappedType<S> for Vec<T> {
+    const VALUE: u128 = T::VALUE * 10 + 3;
+}
+
+impl<S, T: WrappedType<S>> WrappedType<S> for HashSet<T> {
     const VALUE: u128 = T::VALUE * 10 + 3;
 }
 

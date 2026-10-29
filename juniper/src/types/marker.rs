@@ -249,6 +249,17 @@ where
     }
 }
 
+impl<S, T> IsOutputType<S> for std::collections::HashSet<T>
+where
+    T: IsOutputType<S>,
+    S: ScalarValue,
+{
+    #[inline]
+    fn mark() {
+        T::mark()
+    }
+}
+
 impl<S, T> IsOutputType<S> for [T]
 where
     T: IsOutputType<S>,
