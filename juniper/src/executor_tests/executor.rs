@@ -136,8 +136,9 @@ mod non_null_null_result {
 
     use crate::{
         BoxFuture, DefaultScalarValue, EmptyMutation, EmptySubscription, ExecutionResult, Executor,
-        FieldError, GraphQLType, GraphQLValue, GraphQLValueAsync, Registry, RootNode, Value,
-        executor::ExecutionError, graphql, parser::SourcePosition, schema::meta::MetaType,
+        FieldError, FieldResult, GraphQLType, GraphQLValue, GraphQLValueAsync, Registry, RootNode,
+        Value, executor::ExecutionError, graphql, graphql_object, macros::reflect,
+        marker::IsOutputType, parser::SourcePosition, schema::meta::MetaType,
         types::base::Arguments,
     };
 
@@ -213,6 +214,161 @@ mod non_null_null_result {
                         "Cannot return null for non-nullable field Query.critical.",
                         graphql::value!(null),
                     ),
+                )],
+            );
+        }
+    }
+
+    /// Object with a non-null `value` field that resolves to `null`.
+    struct NullValue;
+
+    impl GraphQLType<DefaultScalarValue> for NullValue {
+        fn name(_: &Self::TypeInfo) -> Option<ArcStr> {
+            Some("NullValue".into())
+        }
+
+        fn meta(
+            info: &Self::TypeInfo,
+            registry: &mut Registry<DefaultScalarValue>,
+        ) -> MetaType<DefaultScalarValue> {
+            let fields = &[registry.field::<String>("value", &())];
+            registry.build_object_type::<Self>(info, fields).into_meta()
+        }
+    }
+
+    impl GraphQLValue<DefaultScalarValue> for NullValue {
+        type Context = ();
+        type TypeInfo = ();
+
+        fn type_name(&self, info: &Self::TypeInfo) -> Option<ArcStr> {
+            <Self as GraphQLType>::name(info)
+        }
+
+        fn resolve_field(
+            &self,
+            _: &Self::TypeInfo,
+            _: &str,
+            _: &Arguments<DefaultScalarValue>,
+            _: &Executor<Self::Context>,
+        ) -> ExecutionResult {
+            Ok(Value::null())
+        }
+    }
+
+    impl GraphQLValueAsync<DefaultScalarValue> for NullValue {
+        fn resolve_field_async<'a>(
+            &'a self,
+            _: &'a Self::TypeInfo,
+            _: &'a str,
+            _: &'a Arguments<DefaultScalarValue>,
+            _: &'a Executor<Self::Context>,
+        ) -> BoxFuture<'a, ExecutionResult> {
+            Box::pin(future::ready(Ok(Value::null())))
+        }
+    }
+
+    // `#[graphql_object]` requires these traits for the types of its fields. Derived types
+    // implement the traits automatically.
+    impl IsOutputType<DefaultScalarValue> for NullValue {}
+
+    impl reflect::BaseType<DefaultScalarValue> for NullValue {
+        const NAME: reflect::Type = "NullValue";
+    }
+
+    impl reflect::BaseSubTypes<DefaultScalarValue> for NullValue {
+        const NAMES: reflect::Types = &[<Self as reflect::BaseType<DefaultScalarValue>>::NAME];
+    }
+
+    impl reflect::WrappedType<DefaultScalarValue> for NullValue {
+        const VALUE: reflect::WrappedValue = 1;
+    }
+
+    struct Nested;
+
+    #[graphql_object(scalar = DefaultScalarValue)]
+    impl Nested {
+        fn null_value() -> NullValue {
+            NullValue
+        }
+
+        fn failing() -> FieldResult<String> {
+            Err("failure".into())
+        }
+    }
+
+    struct NestedQuery;
+
+    #[graphql_object(scalar = DefaultScalarValue)]
+    impl NestedQuery {
+        fn nested() -> Option<Nested> {
+            Some(Nested)
+        }
+
+        fn non_null_nested() -> Nested {
+            Nested
+        }
+    }
+
+    /// Executes `document` against a [`NestedQuery`] schema asynchronously and synchronously.
+    async fn execute_nested(
+        document: &str,
+    ) -> [(Value, Vec<ExecutionError<DefaultScalarValue>>); 2] {
+        let schema = RootNode::new(NestedQuery, EmptyMutation::new(), EmptySubscription::new());
+        [
+            crate::execute(document, None, &schema, &graphql::vars! {}, &())
+                .await
+                .expect("async execution failed"),
+            crate::execute_sync(document, None, &schema, &graphql::vars! {}, &())
+                .expect("sync execution failed"),
+        ]
+    }
+
+    fn null_value_error(index: usize, path: &[&str]) -> ExecutionError<DefaultScalarValue> {
+        ExecutionError::new(
+            SourcePosition::new(index, 0, index),
+            path,
+            FieldError::new(
+                "Cannot return null for non-nullable field NullValue.value.",
+                graphql::value!(null),
+            ),
+        )
+    }
+
+    #[tokio::test]
+    async fn null_propagates_to_nearest_nullable_parent() {
+        for (value, errors) in execute_nested("{ nested { nullValue { value } } }").await {
+            assert_eq!(value, graphql::value!({"nested": null}));
+            assert_eq!(
+                errors,
+                [null_value_error(23, &["nested", "nullValue", "value"])],
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn non_null_parents_add_no_error_for_null_child() {
+        for (value, errors) in execute_nested("{ nonNullNested { nullValue { value } } }").await {
+            assert_eq!(value, graphql::value!(null));
+            assert_eq!(
+                errors,
+                [null_value_error(
+                    30,
+                    &["nonNullNested", "nullValue", "value"]
+                )],
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn non_null_parent_adds_no_error_for_failed_child() {
+        for (value, errors) in execute_nested("{ nonNullNested { failing } }").await {
+            assert_eq!(value, graphql::value!(null));
+            assert_eq!(
+                errors,
+                [ExecutionError::new(
+                    SourcePosition::new(18, 0, 18),
+                    &["nonNullNested", "failing"],
+                    FieldError::new("failure", graphql::value!(null)),
                 )],
             );
         }
