@@ -14,17 +14,17 @@ mod client_message;
 mod server_message;
 
 use std::{
-    collections::HashMap, convert::Infallible, error::Error, marker::PhantomPinned,
-    panic::AssertUnwindSafe, pin::Pin, sync::Arc, time::Duration,
+    collections::HashMap, convert::Infallible, error::Error, mem, panic::AssertUnwindSafe,
+    pin::Pin, sync::Arc, task::ready, time::Duration,
 };
 
 use derive_more::with_trait::From;
 use juniper::{
-    GraphQLError, RuleError, ScalarValue, Value,
+    GraphQLError, OperationType, RuleError, ScalarValue, ValidatedOperation, Value,
     futures::{
         Sink, Stream,
         channel::oneshot,
-        future::{self, BoxFuture, Either, FutureExt as _, TryFutureExt as _},
+        future::{self, BoxFuture, Either, FutureExt as _},
         stream::{self, BoxStream, SelectAll, StreamExt as _},
         task::{Context, Poll, Waker},
     },
@@ -279,39 +279,49 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
         id: String,
         params: ExecutionParams<S>,
     ) -> BoxStream<'static, Output<S::ScalarValue>> {
-        // TODO: `juniper::ValidatedOperation` could avoid parsing and validating a
-        //       subscription twice. `SubscriptionStart` would need to keep the
-        //       `ValidatedOperation` next to the execution parameters that it borrows.
-
         let params = Arc::new(params);
 
-        let fut = juniper::execute(
-            &params.subscribe_payload.query,
-            params.subscribe_payload.operation_name.as_deref(),
-            params.schema.root_node(),
-            &params.subscribe_payload.variables,
-            &params.config.context,
-        )
-        .map_ok(|(data, errors)| {
-            Output::Message(ServerMessage::Next {
-                id: id.clone(),
-                payload: NextPayload { data, errors },
-            })
-            .into_stream()
-            .left_stream()
-        })
-        .unwrap_or_else(|e| {
-            if matches!(e, GraphQLError::IsSubscription) {
-                SubscriptionStart::new(id.clone(), params.clone()).right_stream()
-            } else {
-                Output::Message(ServerMessage::Error {
+        let fut = async {
+            // SAFETY: The heap allocation of `params` neither moves nor changes. The borrows of
+            //         `operation` end in this function before `params` drops, or move into a
+            //         `SubscriptionStart` together with a clone of `params`.
+            let borrowed: &'static ExecutionParams<S> = unsafe { &*Arc::as_ptr(&params) };
+            let operation = match ValidatedOperation::new(
+                &borrowed.subscribe_payload.query,
+                borrowed.subscribe_payload.operation_name.as_deref(),
+                borrowed.schema.root_node(),
+            ) {
+                Ok(operation) => operation,
+                Err(e) => {
+                    return Output::Message(ServerMessage::Error {
+                        id: id.clone(),
+                        payload: ErrorPayload::new(Box::new(params.clone()), e),
+                    })
+                    .into_stream()
+                    .left_stream();
+                }
+            };
+            if operation.operation_type() == OperationType::Subscription {
+                // SAFETY: `operation` borrows only from the heap allocation of `params`.
+                return unsafe { SubscriptionStart::new(id.clone(), params.clone(), operation) }
+                    .right_stream();
+            }
+            match operation
+                .execute(&params.subscribe_payload.variables, &params.config.context)
+                .await
+            {
+                Ok((data, errors)) => Output::Message(ServerMessage::Next {
+                    id: id.clone(),
+                    payload: NextPayload { data, errors },
+                }),
+                Err(e) => Output::Message(ServerMessage::Error {
                     id: id.clone(),
                     payload: ErrorPayload::new(Box::new(params.clone()), e),
-                })
-                .into_stream()
-                .left_stream()
+                }),
             }
-        });
+            .into_stream()
+            .left_stream()
+        };
         if let Some(panic_handler) = params.config.panic_handler.as_ref().map(Arc::clone) {
             let stream = AssertUnwindSafe(fut)
                 .catch_unwind()
@@ -362,12 +372,9 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
     }
 }
 
-/// SubscriptionStartState is the state for a subscription operation.
+/// State of a [`SubscriptionStart`].
 enum SubscriptionStartState<S: Schema> {
-    /// Init is the start before being polled for the first time.
-    Init { id: String },
-    /// ResolvingIntoStream is the state after being polled for the first time. In this state,
-    /// we're parsing, validating, and getting the actual event stream.
+    /// Resolving the subscription into its event stream.
     ResolvingIntoStream {
         id: String,
         future: BoxFuture<
@@ -375,29 +382,62 @@ enum SubscriptionStartState<S: Schema> {
             Result<juniper_subscriptions::Connection<'static, S::ScalarValue>, GraphQLError>,
         >,
     },
-    /// Streaming is the state after we've successfully obtained the event stream for the
-    /// subscription. In this state, we're just forwarding events back to the client.
+
+    /// Forwarding the events of the stream to the client.
     Streaming {
         id: String,
         stream: juniper_subscriptions::Connection<'static, S::ScalarValue>,
     },
-    /// Terminated is the state once we're all done.
+
+    /// Done after the end of the stream or after an error.
     Terminated,
 }
 
-/// SubscriptionStart is the stream for a subscription operation.
+/// Stream of a subscription operation.
+///
+/// The `state` borrows from the heap allocation of the `params` with a `'static` lifetime. Moving a
+/// [`SubscriptionStart`] does not move that allocation. Fields drop in declaration order, so the
+/// `state` drops before the `params`.
 struct SubscriptionStart<S: Schema> {
-    params: Arc<ExecutionParams<S>>,
     state: SubscriptionStartState<S>,
-    _marker: PhantomPinned,
+    params: Arc<ExecutionParams<S>>,
 }
 
 impl<S: Schema> SubscriptionStart<S> {
-    fn new(id: String, params: Arc<ExecutionParams<S>>) -> Self {
+    /// Creates the stream of the subscription `operation`.
+    ///
+    /// # Safety
+    ///
+    /// The `operation` must borrow only from the heap allocation of the `params`.
+    unsafe fn new(
+        id: String,
+        params: Arc<ExecutionParams<S>>,
+        operation: ValidatedOperation<
+            'static,
+            S::Query,
+            S::Mutation,
+            S::Subscription,
+            S::ScalarValue,
+        >,
+    ) -> Self {
+        // SAFETY: The `state` keeps the borrows and drops before the `params`.
+        let borrowed: &'static ExecutionParams<S> = unsafe { &*Arc::as_ptr(&params) };
+        let future = async move {
+            let (stream, errors) = operation
+                .resolve_into_stream(
+                    &borrowed.subscribe_payload.variables,
+                    &borrowed.config.context,
+                )
+                .await?;
+            Ok(juniper_subscriptions::Connection::from_stream(
+                stream, errors,
+            ))
+        }
+        .boxed();
+
         Self {
+            state: SubscriptionStartState::ResolvingIntoStream { id, future },
             params,
-            state: SubscriptionStartState::Init { id },
-            _marker: PhantomPinned,
         }
     }
 }
@@ -406,77 +446,39 @@ impl<S: Schema> Stream for SubscriptionStart<S> {
     type Item = Output<S::ScalarValue>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
-        let (params, state) = unsafe {
-            // XXX: The execution parameters are referenced by state and must not be modified.
-            // Modifying state is fine though.
-            let inner = self.get_unchecked_mut();
-            (&inner.params, &mut inner.state)
-        };
-
+        let this = self.get_mut();
         loop {
-            match state {
-                SubscriptionStartState::Init { id } => {
-                    // XXX: resolve_into_stream returns a Future that references the execution
-                    // parameters, and the returned stream also references them. We can guarantee
-                    // that everything has the same lifetime in this self-referential struct.
-                    let params = Arc::as_ptr(params);
-                    *state = SubscriptionStartState::ResolvingIntoStream {
-                        id: id.clone(),
-                        future: unsafe {
-                            juniper::resolve_into_stream(
-                                &(*params).subscribe_payload.query,
-                                (*params).subscribe_payload.operation_name.as_deref(),
-                                (*params).schema.root_node(),
-                                &(*params).subscribe_payload.variables,
-                                #[expect( // required by `dangerous_implicit_autorefs` rustc lint
-                                    clippy::needless_borrow,
-                                    reason = "required by `dangerous_implicit_autorefs` rustc lint"
-                                )]
-                                &(&(*params).config).context,
-                            )
-                        }
-                        .map_ok(|(stream, errors)| {
-                            juniper_subscriptions::Connection::from_stream(stream, errors)
-                        })
-                        .boxed(),
-                    };
-                }
+            match &mut this.state {
                 SubscriptionStartState::ResolvingIntoStream { id, future } => {
-                    match future.as_mut().poll(cx) {
-                        Poll::Ready(r) => match r {
-                            Ok(stream) => {
-                                *state = SubscriptionStartState::Streaming {
-                                    id: id.clone(),
-                                    stream,
-                                }
-                            }
-                            Err(e) => {
-                                return Poll::Ready(Some(Output::Message(ServerMessage::Error {
-                                    id: id.clone(),
-                                    payload: ErrorPayload::new(Box::new(params.clone()), e),
-                                })));
-                            }
-                        },
-                        Poll::Pending => return Poll::Pending,
+                    match ready!(future.as_mut().poll(cx)) {
+                        Ok(stream) => {
+                            this.state = SubscriptionStartState::Streaming {
+                                id: mem::take(id),
+                                stream,
+                            };
+                        }
+                        Err(e) => {
+                            let id = mem::take(id);
+                            this.state = SubscriptionStartState::Terminated;
+                            return Poll::Ready(Some(Output::Message(ServerMessage::Error {
+                                id,
+                                payload: ErrorPayload::new(Box::new(this.params.clone()), e),
+                            })));
+                        }
                     }
                 }
                 SubscriptionStartState::Streaming { id, stream } => {
-                    match Pin::new(stream).poll_next(cx) {
-                        Poll::Ready(Some(output)) => {
-                            return Poll::Ready(Some(Output::Message(ServerMessage::Next {
-                                id: id.clone(),
-                                payload: NextPayload {
-                                    data: output.data,
-                                    errors: output.errors,
-                                },
-                            })));
-                        }
-                        Poll::Ready(None) => {
-                            *state = SubscriptionStartState::Terminated;
-                            return Poll::Ready(None);
-                        }
-                        Poll::Pending => return Poll::Pending,
-                    }
+                    let Some(output) = ready!(Pin::new(stream).poll_next(cx)) else {
+                        this.state = SubscriptionStartState::Terminated;
+                        return Poll::Ready(None);
+                    };
+                    return Poll::Ready(Some(Output::Message(ServerMessage::Next {
+                        id: id.clone(),
+                        payload: NextPayload {
+                            data: output.data,
+                            errors: output.errors,
+                        },
+                    })));
                 }
                 SubscriptionStartState::Terminated => return Poll::Ready(None),
             }
@@ -670,8 +672,8 @@ mod test {
     use std::{convert::Infallible, io, sync::Arc, time::Duration};
 
     use juniper::{
-        DefaultScalarValue, EmptyMutation, FieldError, FieldResult, GraphQLError, RootNode,
-        Variables,
+        DefaultScalarValue, EmptyMutation, EmptySubscription, FieldError, FieldResult,
+        GraphQLError, OperationType, RootNode, Variables,
         futures::{
             future::{self, FutureExt as _},
             sink::SinkExt,
@@ -1174,6 +1176,191 @@ mod test {
                 assert_eq!(errors.len(), 1);
             }
             msg => panic!("expected data, got: {msg:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_subscription_not_supported() {
+        let mut conn = Connection::new(
+            Arc::new(RootNode::new(
+                Query,
+                EmptyMutation::<Context>::new(),
+                EmptySubscription::<Context>::new(),
+            )),
+            ConnectionConfig::new(Context(1)).with_keep_alive_interval(Duration::from_secs(0)),
+        );
+
+        conn.send(ClientMessage::ConnectionInit {
+            payload: graphql_vars! {},
+        })
+        .await
+        .unwrap();
+
+        assert_eq!(
+            Output::Message(ServerMessage::ConnectionAck),
+            conn.next().await.unwrap()
+        );
+
+        conn.send(ClientMessage::Subscribe {
+            id: "foo".into(),
+            payload: SubscribePayload {
+                query: "subscription Foo {context}".into(),
+                variables: graphql_vars! {},
+                operation_name: None,
+                extensions: Default::default(),
+            },
+        })
+        .await
+        .unwrap();
+
+        assert_eq!(
+            Output::Message(ServerMessage::Error {
+                id: "foo".into(),
+                payload: GraphQLError::NotSupported(OperationType::Subscription).into(),
+            }),
+            conn.next().await.unwrap()
+        );
+
+        assert_eq!(
+            Output::Message(ServerMessage::Complete { id: "foo".into() }),
+            conn.next().await.unwrap()
+        );
+    }
+
+    /// Tests of the order in which a cancelled subscription drops its parts.
+    mod drop_order {
+        use std::{
+            sync::{Arc, Mutex, Weak},
+            time::Duration,
+        };
+
+        use juniper::{
+            EmptyMutation, FieldResult, RootNode,
+            futures::{
+                sink::SinkExt as _,
+                stream::{self, BoxStream, StreamExt as _},
+            },
+            graphql_object, graphql_subscription, graphql_value, graphql_vars,
+        };
+
+        use super::{
+            ClientMessage, Connection, ConnectionConfig, NextPayload, Output, ServerMessage,
+            SubscribePayload,
+        };
+
+        /// Context with a liveness token of its own for each clone.
+        struct Context {
+            /// Liveness token of this clone of the context.
+            token: Arc<()>,
+
+            /// Whether the context of the subscription stream was alive when the stream dropped.
+            alive_on_stream_drop: Arc<Mutex<Option<bool>>>,
+        }
+
+        impl Clone for Context {
+            fn clone(&self) -> Self {
+                Self {
+                    token: Arc::new(()),
+                    alive_on_stream_drop: Arc::clone(&self.alive_on_stream_drop),
+                }
+            }
+        }
+
+        impl juniper::Context for Context {}
+
+        /// Records whether the context of a subscription stream is alive when the stream drops.
+        struct DropCheck {
+            context_token: Weak<()>,
+            alive_on_drop: Arc<Mutex<Option<bool>>>,
+        }
+
+        impl Drop for DropCheck {
+            fn drop(&mut self) {
+                *self.alive_on_drop.lock().unwrap() = Some(self.context_token.upgrade().is_some());
+            }
+        }
+
+        struct Query;
+
+        #[graphql_object(context = Context)]
+        impl Query {
+            fn ping() -> bool {
+                true
+            }
+        }
+
+        struct Subscription;
+
+        #[graphql_subscription(context = Context)]
+        impl Subscription {
+            /// Emits one value and then never ends.
+            async fn once(context: &Context) -> BoxStream<'static, FieldResult<i32>> {
+                let check = DropCheck {
+                    context_token: Arc::downgrade(&context.token),
+                    alive_on_drop: Arc::clone(&context.alive_on_stream_drop),
+                };
+                stream::iter([Ok(1)])
+                    .chain(stream::pending())
+                    .inspect(move |_| _ = &check)
+                    .boxed()
+            }
+        }
+
+        #[tokio::test]
+        async fn stream_before_context() {
+            let alive_on_stream_drop = Arc::new(Mutex::new(None));
+            let context = Context {
+                token: Arc::new(()),
+                alive_on_stream_drop: Arc::clone(&alive_on_stream_drop),
+            };
+            let mut conn = Connection::new(
+                Arc::new(RootNode::new(Query, EmptyMutation::new(), Subscription)),
+                ConnectionConfig::new(context).with_keep_alive_interval(Duration::from_secs(0)),
+            );
+
+            conn.send(ClientMessage::ConnectionInit {
+                payload: graphql_vars! {},
+            })
+            .await
+            .unwrap();
+
+            assert_eq!(
+                Output::Message(ServerMessage::ConnectionAck),
+                conn.next().await.unwrap()
+            );
+
+            conn.send(ClientMessage::Subscribe {
+                id: "foo".into(),
+                payload: SubscribePayload {
+                    query: "subscription Foo {once}".into(),
+                    variables: graphql_vars! {},
+                    operation_name: None,
+                    extensions: Default::default(),
+                },
+            })
+            .await
+            .unwrap();
+
+            assert_eq!(
+                Output::Message(ServerMessage::Next {
+                    id: "foo".into(),
+                    payload: NextPayload {
+                        data: graphql_value!({"once": 1}),
+                        errors: vec![],
+                    },
+                }),
+                conn.next().await.unwrap()
+            );
+
+            conn.send(ClientMessage::Complete { id: "foo".into() })
+                .await
+                .unwrap();
+
+            assert_eq!(
+                Output::Message(ServerMessage::Complete { id: "foo".into() }),
+                conn.next().await.unwrap()
+            );
+            assert_eq!(*alive_on_stream_drop.lock().unwrap(), Some(true));
         }
     }
 }

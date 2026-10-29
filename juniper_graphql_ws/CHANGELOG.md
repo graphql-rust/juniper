@@ -23,15 +23,20 @@ All user visible changes to `juniper_graphql_ws` crate will be documented in thi
 ### Changed
 
 - Merged `graphql_transport_ws::NextPayload` and `graphql_ws::DataPayload` into a single struct. ([#1371])
+- Parsed and validated each subscription once instead of twice. ([#726], [#1392])
 
 ### Fixed
 
 - Inability to re-subscribe with the same operation `id` after subscription was completed by server. ([#1368])
+- Use of freed execution parameters by the stream of a cancelled subscription. ([#1392])
+- Panic on the next poll of a subscription after an execution error. ([#1392])
 
+[#726]: /../../issues/726
 [#1367]: /../../pull/1367
 [#1368]: /../../pull/1368
 [#1369]: /../../pull/1369
 [#1371]: /../../pull/1371
+[#1392]: /../../pull/1392
 [proto-6.0.7]: https://github.com/enisdenjo/graphql-ws/blob/v6.0.7/PROTOCOL.md
 
 
