@@ -28,6 +28,26 @@ All user visible changes to `juniper_warp` crate will be documented in this file
 
 
 
+## [0.9.1] · 2026-10-29
+[0.9.1]: /../../tree/juniper_warp-v0.9.1/juniper_warp
+
+[Diff](/../../compare/juniper_warp-v0.9.0...juniper_warp-v0.9.1)
+
+### BC Breaks
+
+- Limited request bodies in `make_graphql_filter()` and `make_graphql_filter_sync()` functions to 2 MiB by default. ([GHSA-fj3h-2jc3-973v])
+
+### Added
+
+- `make_graphql_filter_with_body_limit()` and `make_graphql_filter_sync_with_body_limit()` functions and `DEFAULT_BODY_LIMIT` constant for the size limit of request bodies. ([GHSA-fj3h-2jc3-973v])
+
+### Fixed
+
+- Unbounded memory use of request bodies in `make_graphql_filter()` and `make_graphql_filter_sync()` functions. ([GHSA-fj3h-2jc3-973v])
+
+
+
+
 ## [0.9.0] · 2025-09-08
 [0.9.0]: /../../tree/juniper_warp-v0.9.0/juniper_warp
 
