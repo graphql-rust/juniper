@@ -40,9 +40,9 @@ pub enum ParseError {
     FieldLimitExceeded(#[error(not(source))] usize),
 }
 
-/// Limits on the documents that a [`Parser`] accepts.
+/// Document limits of a [`Parser`].
 ///
-/// The limits protect a server from documents that cost too much to parse, validate, or execute.
+/// The limits bound the work of a server to parse, validate, and execute a document.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) struct Limits {
     /// Maximum nesting depth of selection sets, fragments, input values, and list types.

@@ -142,7 +142,7 @@ pub struct OverlappingFieldsCanBeMerged<'a, S: Debug + 'a> {
     named_fragments: HashMap<&'a str, &'a Fragment<'a, S>>,
     compared_fragments: RefCell<PairSet<'a>>,
 
-    /// Number of field pairs that the rule can still compare.
+    /// Remaining number of field pair comparisons.
     ///
     /// Comparing all pairs of fields with the same response name takes quadratic time. The budget
     /// bounds the time and memory of the rule for any document.
@@ -151,17 +151,17 @@ pub struct OverlappingFieldsCanBeMerged<'a, S: Debug + 'a> {
     /// Whether the rule ran out of comparisons before it checked all fields.
     out_of_comparisons: Cell<bool>,
 
-    /// Number of conflicts that the rule can still report.
+    /// Remaining number of conflict reports.
     remaining_reports: usize,
 }
 
-/// Maximum number of field pairs that the rule compares in a document.
+/// Maximum number of field pair comparisons in a document.
 ///
 /// Real documents rarely need more than a few hundred comparisons. One comparison takes at most
 /// about 300 ns. The rule thus spends at most about 30 ms on a document.
 const MAX_COMPARISONS: usize = 100_000;
 
-/// Maximum number of conflicts that the rule reports for a document.
+/// Maximum number of reported conflicts in a document.
 ///
 /// GraphQL.js stops validation after the same number of errors.
 const MAX_REPORTS: usize = 100;

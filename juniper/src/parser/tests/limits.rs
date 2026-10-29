@@ -1,4 +1,4 @@
-//! Tests of the document [`Limits`] that the parser enforces.
+//! Tests of the document [`Limits`] of the parser.
 
 use crate::{
     parser::{Limits, ParseError, Spanning, document::parse_document_source},
@@ -35,7 +35,7 @@ fn field_limit(max_fields: usize) -> Limits {
     }
 }
 
-/// Builds a document with `levels` fragments that each spread the next fragment twice.
+/// Builds a document with `levels` fragments. Each fragment spreads the next fragment twice.
 ///
 /// Following every spread of the document takes `2^levels` steps.
 fn fragment_bomb(levels: usize) -> String {
@@ -237,7 +237,7 @@ mod fields {
     }
 }
 
-/// Default [`Limits`] reject documents that would overflow the 2 MiB stack of a test thread.
+/// Default [`Limits`] reject documents deep enough to overflow the 2 MiB stack of a test thread.
 #[test]
 fn defaults_reject_deep_nesting_without_stack_overflow() {
     let depth = 5_000;
