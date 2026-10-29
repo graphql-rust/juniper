@@ -1,24 +1,18 @@
-//! Tests for [`parse_and_validate()`].
+//! Tests of [`parse_and_validate()`] and [`ValidatedOperation`].
 //!
-//! [`parse_and_validate()`] should run the same parsing and validation as
-//! [`execute()`]/[`execute_sync()`], report the same errors, and report the
-//! [`OperationType`] of the operation that would be executed.
-//!
-//! [`execute()`]: crate::execute
-//! [`execute_sync()`]: crate::execute_sync
-//! [`OperationType`]: crate::ast::OperationType
-//! [`parse_and_validate()`]: crate::parse_and_validate
+//! [`ValidatedOperation`]: crate::ValidatedOperation
 
 use std::pin::Pin;
 
-use futures::stream;
+use futures::{StreamExt as _, stream};
 
 use crate::{
-    Context, DefaultScalarValue, GraphQLError, RootNode, ast::OperationType, graphql,
-    graphql_object, graphql_subscription,
+    Context, DefaultScalarValue, GraphQLError, RootNode, Value, ast::OperationType, graphql,
+    graphql_object, graphql_subscription, parse_and_validate, parser::ParseError,
 };
 
 struct MyContext;
+
 impl Context for MyContext {}
 
 struct Query;
@@ -27,6 +21,10 @@ struct Query;
 impl Query {
     fn ping() -> bool {
         true
+    }
+
+    fn echo(value: i32) -> i32 {
+        value
     }
 }
 
@@ -56,57 +54,192 @@ fn schema() -> Schema {
     RootNode::new(Query, Mutation, Subscription)
 }
 
-#[test]
-fn reports_query_operation_type() {
-    let result = crate::parse_and_validate("{ ping }", None, &schema(), &graphql::vars! {});
-    assert_eq!(result.unwrap(), OperationType::Query);
+/// Query with a required variable.
+const ECHO: &str = "query Echo($value: Int!) { echo(value: $value) }";
+
+/// Returns the [`OperationType`] of the `operation_name` operation of the `query`.
+fn operation_type(query: &str, operation_name: Option<&str>) -> OperationType {
+    parse_and_validate(query, operation_name, &schema())
+        .expect("valid operation")
+        .operation_type()
+}
+
+/// Returns the error of [`parse_and_validate()`] for the `query`.
+fn error(schema: &Schema, query: &str, operation_name: Option<&str>) -> GraphQLError {
+    parse_and_validate(query, operation_name, schema).expect_err("invalid operation")
 }
 
 #[test]
-fn reports_mutation_operation_type() {
-    let result =
-        crate::parse_and_validate("mutation { pong }", None, &schema(), &graphql::vars! {});
-    assert_eq!(result.unwrap(), OperationType::Mutation);
-}
-
-#[test]
-fn reports_subscription_operation_type() {
-    let result =
-        crate::parse_and_validate("subscription { tick }", None, &schema(), &graphql::vars! {});
-    assert_eq!(result.unwrap(), OperationType::Subscription);
+fn reports_operation_types() {
+    assert_eq!(operation_type("{ ping }", None), OperationType::Query);
+    assert_eq!(
+        operation_type("mutation { pong }", None),
+        OperationType::Mutation,
+    );
+    assert_eq!(
+        operation_type("subscription { tick }", None),
+        OperationType::Subscription,
+    );
 }
 
 #[test]
 fn selects_named_operation() {
     let query = "query A { ping } mutation B { pong }";
-    let result = crate::parse_and_validate(query, Some("B"), &schema(), &graphql::vars! {});
-    assert_eq!(result.unwrap(), OperationType::Mutation);
+
+    assert_eq!(operation_type(query, Some("A")), OperationType::Query);
+    assert_eq!(operation_type(query, Some("B")), OperationType::Mutation);
 }
 
 #[test]
-fn multiple_operations_without_a_name_errors() {
-    let query = "query A { ping } mutation B { pong }";
-    let result = crate::parse_and_validate(query, None, &schema(), &graphql::vars! {});
+fn rejects_multiple_operations_without_name() {
+    let err = error(&schema(), "query A { ping } mutation B { pong }", None);
+
+    assert_eq!(err, GraphQLError::MultipleOperationsProvided);
+}
+
+#[test]
+fn rejects_unknown_operation_name() {
+    let err = error(&schema(), "query A { ping }", Some("B"));
+
+    assert_eq!(err, GraphQLError::UnknownOperationName);
+}
+
+#[test]
+fn rejects_invalid_syntax() {
+    let err = error(&schema(), "{ ping ", None);
+
+    assert!(matches!(err, GraphQLError::ParseError(_)), "got {err:?}");
+}
+
+#[test]
+fn rejects_invalid_document() {
+    let err = error(&schema(), "{ unknownField }", None);
+
     assert!(
-        matches!(result, Err(GraphQLError::MultipleOperationsProvided)),
-        "got {result:?}",
+        matches!(err, GraphQLError::ValidationError(_)),
+        "got {err:?}"
     );
 }
 
 #[test]
-fn validation_errors_are_reported() {
-    let result = crate::parse_and_validate("{ unknownField }", None, &schema(), &graphql::vars! {});
+fn applies_document_limits() {
+    let err = error(&schema().limit_fields(1), "{ a: ping b: ping }", None);
+
     assert!(
-        matches!(result, Err(GraphQLError::ValidationError(_))),
-        "got {result:?}",
+        matches!(&err, GraphQLError::ParseError(e) if e.item == ParseError::FieldLimitExceeded(1)),
+        "got {err:?}",
     );
 }
 
 #[test]
-fn parse_errors_are_reported() {
-    let result = crate::parse_and_validate("{ ping ", None, &schema(), &graphql::vars! {});
+fn rejects_introspection_if_disabled() {
+    let schema = schema().disable_introspection();
+
+    let err = error(&schema, "{ __schema { queryType { name } } }", None);
+
     assert!(
-        matches!(result, Err(GraphQLError::ParseError(_))),
-        "got {result:?}",
+        matches!(err, GraphQLError::ValidationError(_)),
+        "got {err:?}"
+    );
+}
+
+#[test]
+fn executes_synchronously() {
+    let schema = schema();
+    let operation = parse_and_validate("{ ping }", None, &schema).unwrap();
+
+    let result = operation.execute_sync(&graphql::vars! {}, &MyContext);
+
+    assert_eq!(result, Ok((graphql::value!({"ping": true}), vec![])));
+}
+
+#[tokio::test]
+async fn executes_asynchronously() {
+    let schema = schema();
+    let operation = parse_and_validate("mutation { pong }", None, &schema).unwrap();
+
+    let result = operation.execute(&graphql::vars! {}, &MyContext).await;
+
+    assert_eq!(result, Ok((graphql::value!({"pong": true}), vec![])));
+}
+
+#[tokio::test]
+async fn resolves_subscription_into_stream() {
+    let schema = schema();
+    let operation = parse_and_validate("subscription { tick }", None, &schema).unwrap();
+
+    let (value, errors) = operation
+        .resolve_into_stream(&graphql::vars! {}, &MyContext)
+        .await
+        .expect("subscription should resolve");
+
+    assert!(errors.is_empty(), "got {errors:?}");
+    let Value::Object(fields) = value else {
+        panic!("subscription response value should be an object");
+    };
+    let mut fields = fields.into_iter();
+    let Some((name, Value::Scalar(stream))) = fields.next() else {
+        panic!("subscription field should resolve to a stream");
+    };
+    assert_eq!(name, "tick");
+    assert!(
+        fields.next().is_none(),
+        "subscription should have one field"
+    );
+    assert_eq!(
+        stream.collect::<Vec<_>>().await,
+        [Ok(graphql::value!(true))],
+    );
+}
+
+#[test]
+fn executes_more_than_once_with_other_variables() {
+    let schema = schema();
+    let operation = parse_and_validate(ECHO, None, &schema).unwrap();
+
+    for value in [1, 2] {
+        let result = operation.execute_sync(&graphql::vars! {"value": (value)}, &MyContext);
+
+        assert_eq!(result, Ok((graphql::value!({"echo": value}), vec![])));
+    }
+}
+
+#[test]
+fn rejects_invalid_variables() {
+    let schema = schema();
+    let operation = parse_and_validate(ECHO, None, &schema).unwrap();
+
+    for variables in [graphql::vars! {}, graphql::vars! {"value": "one"}] {
+        let result = operation.execute_sync(&variables, &MyContext);
+
+        assert!(
+            matches!(result, Err(GraphQLError::ValidationError(_))),
+            "got {result:?}",
+        );
+    }
+}
+
+#[test]
+fn rejects_subscription_in_execution() {
+    let schema = schema();
+    let operation = parse_and_validate("subscription { tick }", None, &schema).unwrap();
+
+    let result = operation.execute_sync(&graphql::vars! {}, &MyContext);
+
+    assert_eq!(result, Err(GraphQLError::IsSubscription));
+}
+
+#[tokio::test]
+async fn rejects_query_in_subscription_resolution() {
+    let schema = schema();
+    let operation = parse_and_validate("{ ping }", None, &schema).unwrap();
+
+    let result = operation
+        .resolve_into_stream(&graphql::vars! {}, &MyContext)
+        .await;
+
+    assert!(
+        matches!(result, Err(GraphQLError::NotSubscription)),
+        "expected `NotSubscription`",
     );
 }

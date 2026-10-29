@@ -57,7 +57,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - `ruint::aliases::U256` as `U256` scalar.
     - `integrations::ruint::uint_scalar` module for declaring custom-sized `ruint::Uint` scalars.
 - `RootNode::limit_depth()`, `RootNode::limit_tokens()`, and `RootNode::limit_fields()` methods. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
-- `parse_and_validate()` function for parsing and validating a query without executing it, returning the `OperationType` that would be executed. ([#1392], [#726])
+- `parse_and_validate()` function and `ValidatedOperation` type to parse and validate a document once and to execute its operation later. ([#1392], [#726])
 
 ### Changed
 
