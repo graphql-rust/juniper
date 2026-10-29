@@ -12,8 +12,38 @@ All user visible changes to `juniper_warp` crate will be documented in this file
 
 - `subscriptions::*` functions now require `Clone` bound on the context type for ability to have a "fresh" context value each time a new [GraphQL] operation is started in a [WebSocket] connection. ([#1369])
   > **COMPATIBILITY**: Previously, it was `Arc`ed inside, sharing the same context value across all [GraphQL] operations of a [WebSocket] connection. To preserve the previous behavior, the `Schema::Context` type should be either wrapped into `Arc` or made `Arc`-based internally.
+- Limited request bodies in `make_graphql_filter()` and `make_graphql_filter_sync()` functions to 2 MiB by default. ([GHSA-fj3h-2jc3-973v])
+
+### Added
+
+- `make_graphql_filter_with_body_limit()` and `make_graphql_filter_sync_with_body_limit()` functions and `DEFAULT_BODY_LIMIT` constant for the size limit of request bodies. ([GHSA-fj3h-2jc3-973v])
+
+### Fixed
+
+- Unbounded memory use of request bodies in `make_graphql_filter()` and `make_graphql_filter_sync()` functions. ([GHSA-fj3h-2jc3-973v])
 
 [#1369]: /../../pull/1369
+[GHSA-fj3h-2jc3-973v]: /../../security/advisories/GHSA-fj3h-2jc3-973v
+
+
+
+
+## [0.9.1] · 2026-10-29
+[0.9.1]: /../../tree/juniper_warp-v0.9.1/juniper_warp
+
+[Diff](/../../compare/juniper_warp-v0.9.0...juniper_warp-v0.9.1)
+
+### BC Breaks
+
+- Limited request bodies in `make_graphql_filter()` and `make_graphql_filter_sync()` functions to 2 MiB by default. ([GHSA-fj3h-2jc3-973v])
+
+### Added
+
+- `make_graphql_filter_with_body_limit()` and `make_graphql_filter_sync_with_body_limit()` functions and `DEFAULT_BODY_LIMIT` constant for the size limit of request bodies. ([GHSA-fj3h-2jc3-973v])
+
+### Fixed
+
+- Unbounded memory use of request bodies in `make_graphql_filter()` and `make_graphql_filter_sync()` functions. ([GHSA-fj3h-2jc3-973v])
 
 
 
