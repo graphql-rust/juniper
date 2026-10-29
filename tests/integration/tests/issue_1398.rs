@@ -1,5 +1,5 @@
-//! Checks that the root selection set of a `mutation` operation executes serially,
-//! per [§6.3.1] of the GraphQL spec.
+//! Checks that the root selection set of a `mutation` operation executes serially, per [§6.3.1]
+//! of the GraphQL spec.
 //! See [#1398](https://github.com/graphql-rust/juniper/issues/1398) for details.
 //!
 //! [§6.3.1]: https://spec.graphql.org/September2025/#sec-Normal-and-Serial-Execution
@@ -409,5 +409,322 @@ mod execution_order {
             ["a:start", "b:start"],
             "`query` root fields resolve concurrently, which §6.3.1 permits but does not require",
         );
+    }
+}
+
+/// Root fields spread through fragments, and [`juniper::Executor::look_ahead()`] inside them.
+mod fragments {
+    use std::sync::Mutex;
+
+    use juniper::{
+        EmptySubscription, Executor, RootNode, ScalarValue, execute, execute_sync, graphql_object,
+        graphql_vars,
+    };
+
+    #[derive(Default)]
+    pub struct Context {
+        resolved: Mutex<Vec<&'static str>>,
+    }
+
+    impl juniper::Context for Context {}
+
+    impl Context {
+        fn resolve(&self, field: &'static str) -> bool {
+            self.resolved.lock().unwrap().push(field);
+            true
+        }
+
+        fn into_resolved(self) -> Vec<&'static str> {
+            self.resolved.into_inner().unwrap()
+        }
+    }
+
+    pub struct Query;
+
+    #[graphql_object(context = Context)]
+    impl Query {
+        fn some() -> bool {
+            true
+        }
+    }
+
+    pub struct Mutation;
+
+    #[graphql_object(context = Context)]
+    impl Mutation {
+        fn a(context: &Context) -> bool {
+            context.resolve("a")
+        }
+
+        fn b(context: &Context) -> bool {
+            context.resolve("b")
+        }
+
+        fn c<__S: ScalarValue>(executor: &Executor<'_, '_, Context, __S>) -> bool {
+            let lh = executor.look_ahead();
+
+            assert_eq!(lh.field_original_name(), "c");
+            assert_eq!(lh.field_alias(), Some("aliased"));
+
+            executor.context().resolve("c")
+        }
+    }
+
+    type Schema = RootNode<Query, Mutation, EmptySubscription<Context>>;
+
+    #[tokio::test]
+    async fn fragment_spread_executes_in_document_order() {
+        // language=GraphQL
+        let doc = r"
+            mutation {
+                a
+                ...F
+            }
+
+            fragment F on Mutation {
+                b
+            }
+        ";
+
+        let schema = Schema::new(Query, Mutation, EmptySubscription::new());
+
+        let ctx = Context::default();
+        let (_, errors) = execute_sync(doc, None, &schema, &graphql_vars! {}, &ctx).unwrap();
+
+        assert_eq!(errors.len(), 0);
+        assert_eq!(ctx.into_resolved(), ["a", "b"], "sync execution order");
+
+        let ctx = Context::default();
+        let (_, errors) = execute(doc, None, &schema, &graphql_vars! {}, &ctx)
+            .await
+            .unwrap();
+
+        assert_eq!(errors.len(), 0);
+        assert_eq!(ctx.into_resolved(), ["a", "b"], "async execution order");
+    }
+
+    #[tokio::test]
+    async fn typed_inline_fragment_executes_in_document_order() {
+        // language=GraphQL
+        let doc = r"
+            mutation {
+                a
+                ... on Mutation {
+                    b
+                }
+            }
+        ";
+
+        let schema = Schema::new(Query, Mutation, EmptySubscription::new());
+
+        let ctx = Context::default();
+        let (_, errors) = execute_sync(doc, None, &schema, &graphql_vars! {}, &ctx).unwrap();
+
+        assert_eq!(errors.len(), 0);
+        assert_eq!(ctx.into_resolved(), ["a", "b"], "sync execution order");
+
+        let ctx = Context::default();
+        let (_, errors) = execute(doc, None, &schema, &graphql_vars! {}, &ctx)
+            .await
+            .unwrap();
+
+        assert_eq!(errors.len(), 0);
+        assert_eq!(ctx.into_resolved(), ["a", "b"], "async execution order");
+    }
+
+    #[tokio::test]
+    async fn look_ahead_sees_field_inside_untyped_inline_fragment() {
+        // language=GraphQL
+        let doc = r"
+            mutation {
+                ... {
+                    aliased: c
+                }
+            }
+        ";
+
+        let schema = Schema::new(Query, Mutation, EmptySubscription::new());
+
+        let ctx = Context::default();
+        let (_, errors) = execute_sync(doc, None, &schema, &graphql_vars! {}, &ctx).unwrap();
+
+        assert_eq!(errors.len(), 0);
+        assert_eq!(ctx.into_resolved(), ["c"], "sync execution");
+
+        let ctx = Context::default();
+        let (_, errors) = execute(doc, None, &schema, &graphql_vars! {}, &ctx)
+            .await
+            .unwrap();
+
+        assert_eq!(errors.len(), 0);
+        assert_eq!(ctx.into_resolved(), ["c"], "async execution");
+    }
+
+    #[tokio::test]
+    async fn look_ahead_sees_field_inside_typed_inline_fragment() {
+        // language=GraphQL
+        let doc = r"
+            mutation {
+                ... on Mutation {
+                    aliased: c
+                }
+            }
+        ";
+
+        let schema = Schema::new(Query, Mutation, EmptySubscription::new());
+
+        let ctx = Context::default();
+        let (_, errors) = execute_sync(doc, None, &schema, &graphql_vars! {}, &ctx).unwrap();
+
+        assert_eq!(errors.len(), 0);
+        assert_eq!(ctx.into_resolved(), ["c"], "sync execution");
+
+        let ctx = Context::default();
+        let (_, errors) = execute(doc, None, &schema, &graphql_vars! {}, &ctx)
+            .await
+            .unwrap();
+
+        assert_eq!(errors.len(), 0);
+        assert_eq!(ctx.into_resolved(), ["c"], "async execution");
+    }
+
+    #[tokio::test]
+    async fn look_ahead_sees_field_spread_through_fragment() {
+        // language=GraphQL
+        let doc = r"
+            mutation {
+                ...F
+            }
+
+            fragment F on Mutation {
+                aliased: c
+            }
+        ";
+
+        let schema = Schema::new(Query, Mutation, EmptySubscription::new());
+
+        let ctx = Context::default();
+        let (_, errors) = execute_sync(doc, None, &schema, &graphql_vars! {}, &ctx).unwrap();
+
+        assert_eq!(errors.len(), 0);
+        assert_eq!(ctx.into_resolved(), ["c"], "sync execution");
+
+        let ctx = Context::default();
+        let (_, errors) = execute(doc, None, &schema, &graphql_vars! {}, &ctx)
+            .await
+            .unwrap();
+
+        assert_eq!(errors.len(), 0);
+        assert_eq!(ctx.into_resolved(), ["c"], "async execution");
+    }
+}
+
+/// Mutation roots behind `Box`, `Arc`, and `&` pointers.
+///
+/// The pointer types forward `resolve_async()` to their target. They do not forward
+/// `resolve_field_async()` or `concrete_type_name()`.
+mod pointer_roots {
+    use std::sync::{Arc, Mutex};
+
+    use juniper::{
+        DefaultScalarValue, EmptySubscription, GraphQLTypeAsync, RootNode, execute, graphql_object,
+        graphql_value, graphql_vars,
+    };
+
+    #[derive(Default)]
+    pub struct Context {
+        log: Mutex<Vec<&'static str>>,
+    }
+
+    impl juniper::Context for Context {}
+
+    impl Context {
+        async fn resolve(&self, start: &'static str, end: &'static str) -> bool {
+            self.log.lock().unwrap().push(start);
+            tokio::task::yield_now().await;
+            self.log.lock().unwrap().push(end);
+            true
+        }
+    }
+
+    pub struct Query;
+
+    #[graphql_object(context = Context)]
+    impl Query {
+        fn some() -> bool {
+            true
+        }
+    }
+
+    pub struct Mutation;
+
+    #[graphql_object(context = Context)]
+    impl Mutation {
+        async fn a(context: &Context) -> bool {
+            context.resolve("a:start", "a:end").await
+        }
+
+        async fn b(context: &Context) -> bool {
+            context.resolve("b:start", "b:end").await
+        }
+
+        async fn c(context: &Context) -> bool {
+            context.resolve("c:start", "c:end").await
+        }
+    }
+
+    /// Executes a mutation with `__typename`, a fragment spread, and an inline fragment against the
+    /// `mutation` root.
+    async fn execute_mutation<M>(mutation: M)
+    where
+        M: GraphQLTypeAsync<DefaultScalarValue, Context = Context, TypeInfo = ()>,
+    {
+        // language=GraphQL
+        let doc = r"
+            mutation {
+                __typename
+                a
+                ...B
+                ... on Mutation {
+                    c
+                }
+            }
+
+            fragment B on Mutation {
+                b
+            }
+        ";
+
+        let schema = RootNode::new(Query, mutation, EmptySubscription::new());
+        let ctx = Context::default();
+
+        assert_eq!(
+            execute(doc, None, &schema, &graphql_vars! {}, &ctx).await,
+            Ok((
+                graphql_value!({"__typename": "Mutation", "a": true, "b": true, "c": true}),
+                vec![],
+            )),
+        );
+        assert_eq!(
+            ctx.log.into_inner().unwrap(),
+            ["a:start", "a:end", "b:start", "b:end", "c:start", "c:end"],
+        );
+    }
+
+    #[tokio::test]
+    async fn box_root() {
+        execute_mutation(Box::new(Mutation)).await;
+    }
+
+    #[tokio::test]
+    async fn arc_root() {
+        execute_mutation(Arc::new(Mutation)).await;
+    }
+
+    #[tokio::test]
+    async fn reference_root() {
+        static MUTATION: Mutation = Mutation;
+
+        execute_mutation(&MUTATION).await;
     }
 }
