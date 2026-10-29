@@ -52,6 +52,8 @@ impl ID {
 
 impl ID {
     /// Construct a new [`ID`] from anything implementing [`Into`]`<`[`String`]`>`.
+    ///
+    /// [`String`]: std::string::String
     #[must_use]
     pub fn new<S: Into<String>>(value: S) -> Self {
         ID(value.into().into())

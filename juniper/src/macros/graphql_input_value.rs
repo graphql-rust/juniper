@@ -79,6 +79,7 @@
 /// ```
 ///
 /// [`InputValue`]: crate::InputValue
+/// [`graphql_value!`]: crate::graphql_value
 /// [`InputValue::Enum`]: crate::InputValue::Enum
 /// [`InputValue::List`]: crate::InputValue::List
 /// [`InputValue::Object`]: crate::InputValue::Object

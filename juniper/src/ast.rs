@@ -168,13 +168,13 @@ impl<N: AsRef<str>, M: AsRef<[TypeModifier]>> Type<N, M> {
 
     /// Returns the name of this [`Type`].
     ///
-    /// [`List`]s will return [`None`].
+    /// Returns [`None`] for a list.
     #[must_use]
     pub fn name(&self) -> Option<&str> {
         (!self.is_list()).then(|| self.name.as_ref())
     }
 
-    /// Returns the innermost name of this [`Type`] by unpacking [`List`]s.
+    /// Returns the innermost name of this [`Type`] by unpacking lists.
     ///
     /// All [`Type`] literals contain exactly one name.
     #[must_use]
@@ -182,13 +182,13 @@ impl<N: AsRef<str>, M: AsRef<[TypeModifier]>> Type<N, M> {
         self.name.as_ref()
     }
 
-    /// Returns the topmost [`TypeModifier`] of this [`Type`], if any.
+    /// Returns the topmost modifier of this [`Type`], if any.
     #[must_use]
     pub fn modifier(&self) -> Option<&TypeModifier> {
         self.modifiers().last()
     }
 
-    /// Returns [`TypeModifier`]s of this [`Type`], if any.
+    /// Returns the modifiers of this [`Type`], if any.
     ///
     /// The first one is the innermost one.
     #[must_use]
@@ -196,7 +196,7 @@ impl<N: AsRef<str>, M: AsRef<[TypeModifier]>> Type<N, M> {
         self.modifiers.as_ref()
     }
 
-    /// Indicates whether this [`Type`] is [`NonNull`].
+    /// Indicates whether this [`Type`] is non-`null`.
     #[must_use]
     pub fn is_non_null(&self) -> bool {
         match self.modifiers.as_ref().last() {
@@ -205,7 +205,7 @@ impl<N: AsRef<str>, M: AsRef<[TypeModifier]>> Type<N, M> {
         }
     }
 
-    /// Indicates whether this [`Type`] represents a [`List`] (either `null`able or [`NonNull`]).
+    /// Indicates whether this [`Type`] represents a list (either `null`able or non-`null`).
     #[must_use]
     pub fn is_list(&self) -> bool {
         match self.modifiers.as_ref().last() {
@@ -234,13 +234,13 @@ impl<N, M: Extend<TypeModifier>> Type<N, M> {
         self
     }
 
-    /// Wraps this [`Type`] into a [`List`] with the provided `expected_size`, if any.
+    /// Wraps this [`Type`] into a list with the provided `expected_size`, if any.
     #[must_use]
     pub fn wrap_list(self, expected_size: Option<usize>) -> Self {
         self.wrap(TypeModifier::List(expected_size))
     }
 
-    /// Wraps this [`Type`] as a [`NonNull`] one.
+    /// Wraps this [`Type`] as a non-`null` one.
     #[must_use]
     pub fn wrap_non_null(self) -> Self {
         self.wrap(TypeModifier::NonNull)
