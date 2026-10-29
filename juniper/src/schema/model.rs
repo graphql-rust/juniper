@@ -347,7 +347,7 @@ impl<S> SchemaType<S> {
         let mut meta_fields = vec![
             registry.field::<SchemaType<S>>(arcstr::literal!("__schema"), &()),
             registry
-                .field::<TypeType<S>>(arcstr::literal!("__type"), &())
+                .field::<Option<TypeType<S>>>(arcstr::literal!("__type"), &())
                 .argument(registry.arg::<String>(arcstr::literal!("name"), &())),
         ];
 

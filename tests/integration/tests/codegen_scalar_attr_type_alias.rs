@@ -157,7 +157,7 @@ mod explicit_name {
 
             assert_eq!(
                 execute(&doc, None, &schema, &graphql_vars! {}, &()).await,
-                Ok((graphql_value!(null), vec![])),
+                Ok((graphql_value!({"__type": null}), vec![])),
             );
         }
     }
