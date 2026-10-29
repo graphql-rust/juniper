@@ -36,8 +36,8 @@ use warp::{
 
 use self::response::JuniperResponse;
 
-/// Default maximum size in bytes of the request bodies that [`make_graphql_filter()`] and
-/// [`make_graphql_filter_sync()`] read.
+/// Default maximum size in bytes of a request body for [`make_graphql_filter()`] and
+/// [`make_graphql_filter_sync()`].
 ///
 /// axum and `juniper_hyper` use the same default.
 pub const DEFAULT_BODY_LIMIT: usize = 2 * 1024 * 1024;
@@ -399,9 +399,10 @@ where
         })
 }
 
-/// Matches an HTTP request with the `application/json` content type.
+/// Matches an HTTP request with the `application/json` content type or without a `Content-Type`
+/// header.
 ///
-/// A request without a `Content-Type` header also matches, the same as for [`body::json()`].
+/// [`body::json()`] matches the same requests.
 fn json_content_type() -> impl Filter<Extract = (), Error = Rejection> + Clone + Send {
     warp::header::optional::<String>("content-type")
         .and_then(async |content_type: Option<String>| {
@@ -412,6 +413,9 @@ fn json_content_type() -> impl Filter<Extract = (), Error = Rejection> + Clone +
             if is_json {
                 Ok(())
             } else {
+                // `handle_rejects()` reports the first `FilterError` of all `.or()` branches. A
+                // `FilterError` for the content type would hide the errors of
+                // `post_graphql_extractor()`.
                 Err(reject::reject())
             }
         })
@@ -427,8 +431,8 @@ fn limited_body(limit: usize) -> impl Filter<Extract = (Bytes,), Error = Rejecti
 
 /// Reads `body` into memory if `body` has at most `limit` bytes.
 ///
-/// A `length` above `limit` rejects `body` without reading it. A body without a `length` is read
-/// until its bytes exceed `limit`.
+/// Rejects `body` without reading it if `length` exceeds `limit`. Stops reading `body` and rejects
+/// it as soon as the read bytes exceed `limit`.
 async fn read_body<B: Buf>(
     body: impl Stream<Item = Result<B, warp::Error>>,
     length: Option<u64>,
@@ -441,7 +445,7 @@ async fn read_body<B: Buf>(
     let mut body = pin!(body);
     let mut bytes = Vec::new();
     while let Some(data) = future::poll_fn(|cx| body.as_mut().poll_next(cx)).await {
-        let mut data = data.map_err(|e| reject::custom(FilterError::BodyRead(e)))?;
+        let mut data = data.map_err(|e| reject::custom(FilterError::UnreadableBody(e)))?;
         if data.remaining() > limit - bytes.len() {
             return Err(too_large());
         }
@@ -500,7 +504,7 @@ enum FilterError {
 
     /// POST HTTP request contains body that cannot be read.
     #[display("Failed to read request body: {_0}")]
-    BodyRead(warp::Error),
+    UnreadableBody(warp::Error),
 }
 
 impl Reject for FilterError {}

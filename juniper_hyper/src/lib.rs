@@ -18,18 +18,17 @@ use juniper::{
 use serde_json::error::Error as SerdeError;
 use url::form_urlencoded;
 
-/// Default maximum size in bytes of the request bodies that [`graphql()`] and [`graphql_sync()`]
-/// read.
+/// Default maximum size in bytes of a request body for [`graphql()`] and [`graphql_sync()`].
 ///
 /// axum uses the same default.
 pub const DEFAULT_BODY_LIMIT: usize = 2 * 1024 * 1024;
 
-/// Maximum size in bytes of the request body that [`graphql()`] and [`graphql_sync()`] read.
+/// Maximum size in bytes of a request body for [`graphql()`] and [`graphql_sync()`].
 ///
-/// Insert a [`BodyLimit`] into the extensions of a [`Request`] to replace the
-/// [`DEFAULT_BODY_LIMIT`] for this request. A request with a larger body gets a
-/// `413 Payload Too Large` response. The handlers stop reading a body as soon as the body exceeds
-/// the limit. Large bodies thus cannot exhaust the memory of the server.
+/// A [`BodyLimit`] in the extensions of a [`Request`] replaces the [`DEFAULT_BODY_LIMIT`] for the
+/// request. A request with a larger body gets a `413 Payload Too Large` response. The handlers
+/// stop reading a body as soon as the body exceeds the limit. Large bodies thus cannot exhaust the
+/// memory of the server.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct BodyLimit(pub usize);
 
@@ -37,7 +36,7 @@ pub struct BodyLimit(pub usize);
 /// provided `context`, returning the encoded [`Response`].
 ///
 /// Reads at most [`DEFAULT_BODY_LIMIT`] bytes of the request body. A [`BodyLimit`] in the request
-/// extensions replaces this limit.
+/// extensions replaces the default limit.
 pub async fn graphql_sync<CtxT, QueryT, MutationT, SubscriptionT, S, B>(
     schema: Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
@@ -64,7 +63,7 @@ where
 /// `context`, returning the encoded [`Response`].
 ///
 /// Reads at most [`DEFAULT_BODY_LIMIT`] bytes of the request body. A [`BodyLimit`] in the request
-/// extensions replaces this limit.
+/// extensions replaces the default limit.
 pub async fn graphql<CtxT, QueryT, MutationT, SubscriptionT, S, B>(
     schema: Arc<RootNode<QueryT, MutationT, SubscriptionT, S>>,
     context: Arc<CtxT>,
@@ -197,8 +196,8 @@ pub async fn playground(
 
 /// Reads `body` into memory if `body` has at most `limit` bytes.
 ///
-/// A size hint above `limit` rejects `body` without reading it. A body without such a size hint
-/// is read until its bytes exceed `limit`.
+/// Rejects `body` without reading it if the lower bound of its size hint exceeds `limit`. Stops
+/// reading `body` and rejects it as soon as the read bytes exceed `limit`.
 async fn read_body<B: Body>(body: B, limit: usize) -> Result<Vec<u8>, GraphQLRequestError<B>> {
     if body.size_hint().lower() > u64::try_from(limit).unwrap_or(u64::MAX) {
         return Err(GraphQLRequestError::BodyTooLarge(limit));
@@ -628,8 +627,8 @@ mod tests {
             )
         }
 
-        /// Returns the status of the response to `req`. An accepted body returns
-        /// [`StatusCode::OK`].
+        /// Returns the status of the response to `req`. Returns [`StatusCode::OK`] for an accepted
+        /// body.
         async fn status<B: Body<Error: Display>>(req: Request<B>) -> StatusCode {
             match parse_req::<DefaultScalarValue, _>(req).await {
                 Ok(_) => StatusCode::OK,
