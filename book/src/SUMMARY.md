@@ -18,6 +18,7 @@
 - [Schema](schema/index.md)
     - [Subscriptions](schema/subscriptions.md)
     - [Introspection](schema/introspection.md)
+    - [Document limits](schema/limits.md)
 - [Serving](serve/index.md)
     - [Batching](serve/batching.md)
 - [Advanced Topics](advanced/index.md)

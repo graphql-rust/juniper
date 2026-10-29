@@ -90,6 +90,11 @@ exactly = 1
 search = "docs.rs/juniper/[^/]+/"
 replace = "docs.rs/juniper/{{version}}/"
 [[pre-release-replacements]]
+file = "../book/src/schema/limits.md"
+exactly = 8
+search = "docs.rs/juniper/[^/]+/"
+replace = "docs.rs/juniper/{{version}}/"
+[[pre-release-replacements]]
 file = "../book/src/schema/subscriptions.md"
 exactly = 3
 search = "docs.rs/juniper/[^/]+/"
