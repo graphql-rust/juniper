@@ -235,7 +235,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                 Err(e) => {
                     return Reaction::ServerMessage(ServerMessage::Error {
                         id: id.clone(),
-                        payload: ErrorPayload::new(Box::new(params.clone()), e),
+                        payload: e.into(),
                     })
                     .into_stream()
                     .left_stream();
@@ -256,7 +256,7 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
                 }),
                 Err(e) => Reaction::ServerMessage(ServerMessage::Error {
                     id: id.clone(),
-                    payload: ErrorPayload::new(Box::new(params.clone()), e),
+                    payload: e.into(),
                 }),
             }
             .into_stream()
@@ -329,12 +329,12 @@ enum SubscriptionStartState<S: Schema> {
 
 /// Stream of a subscription operation.
 ///
-/// The `state` borrows from the heap allocation of the `params` with a `'static` lifetime. Moving a
-/// [`SubscriptionStart`] does not move that allocation. Fields drop in declaration order, so the
-/// `state` drops before the `params`.
+/// The `state` borrows from the heap allocation of the `_params` with a `'static` lifetime. Moving
+/// a [`SubscriptionStart`] does not move that allocation. Fields drop in declaration order, so the
+/// `state` drops before the `_params`.
 struct SubscriptionStart<S: Schema> {
     state: SubscriptionStartState<S>,
-    params: Arc<ExecutionParams<S>>,
+    _params: Arc<ExecutionParams<S>>,
 }
 
 impl<S: Schema> SubscriptionStart<S> {
@@ -354,7 +354,7 @@ impl<S: Schema> SubscriptionStart<S> {
             S::ScalarValue,
         >,
     ) -> Self {
-        // SAFETY: The `state` keeps the borrows and drops before the `params`.
+        // SAFETY: The `state` keeps the borrows and drops before the `_params`.
         let borrowed: &'static ExecutionParams<S> = unsafe { &*Arc::as_ptr(&params) };
         let future = async move {
             let (stream, errors) = operation
@@ -368,7 +368,7 @@ impl<S: Schema> SubscriptionStart<S> {
 
         Self {
             state: SubscriptionStartState::ResolvingIntoStream { id, future },
-            params,
+            _params: params,
         }
     }
 }
@@ -394,7 +394,7 @@ impl<S: Schema> Stream for SubscriptionStart<S> {
                             return Poll::Ready(Some(Reaction::ServerMessage(
                                 ServerMessage::Error {
                                     id,
-                                    payload: ErrorPayload::new(Box::new(this.params.clone()), e),
+                                    payload: e.into(),
                                 },
                             )));
                         }
