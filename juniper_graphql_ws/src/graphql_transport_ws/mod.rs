@@ -279,10 +279,9 @@ impl<S: Schema, I: Init<S::ScalarValue, S::Context>> ConnectionState<S, I> {
         id: String,
         params: ExecutionParams<S>,
     ) -> BoxStream<'static, Output<S::ScalarValue>> {
-        // TODO: This could be made more efficient if `juniper` exposed
-        //       functionality to allow us to parse and validate the query,
-        //       determine whether it's a subscription, and then execute it.
-        //       For now, the query gets parsed and validated twice.
+        // TODO: `juniper::parse_and_validate()` could avoid parsing and validating a
+        //       subscription twice. `SubscriptionStart` would need to keep the
+        //       `ValidatedOperation` next to the execution parameters that it borrows.
 
         let params = Arc::new(params);
 
