@@ -1,12 +1,11 @@
+//! Tests of operations that are parsed and validated before execution.
+
 use std::pin::Pin;
 
-use futures::{Stream, StreamExt, TryFutureExt};
+use futures::{Stream, StreamExt as _, TryFutureExt as _};
 use juniper::{
-    EmptyMutation, FieldError, OperationType, RootNode,
-    executor::{execute_validated_query_async, get_operation, resolve_validated_subscription},
-    graphql_object, graphql_subscription, graphql_vars,
-    parser::parse_document_source,
-    validation::{ValidatorContext, validate_input_values, visit_all_rules},
+    EmptyMutation, FieldError, OperationType, RootNode, graphql_object, graphql_subscription,
+    graphql_vars, parse_and_validate,
 };
 
 pub struct Context;
@@ -45,54 +44,35 @@ impl User {
 
 type Schema = RootNode<Query, EmptyMutation<Context>, Subscription>;
 
+fn schema() -> Schema {
+    Schema::new(Query, EmptyMutation::new(), Subscription)
+}
+
 #[tokio::test]
-async fn query_document_can_be_pre_parsed() {
-    let root_node = &Schema::new(Query, EmptyMutation::<Context>::new(), Subscription);
+async fn executes_query() {
+    let schema = schema();
+    let operation = parse_and_validate("query { users { id } }", None, &schema).unwrap();
+    assert_eq!(operation.operation_type(), OperationType::Query);
 
-    let document_source = r#"query { users { id } }"#;
-    let document = parse_document_source(document_source, &root_node.schema).unwrap();
-
-    {
-        let mut ctx = ValidatorContext::new(&root_node.schema, &document);
-        visit_all_rules(&mut ctx, &document);
-        let errors = ctx.into_errors();
-        assert!(errors.is_empty());
-    }
-
-    let operation = get_operation(&document, None).unwrap();
-    assert!(operation.item.operation_type == OperationType::Query);
-
-    let errors = validate_input_values(&graphql_vars! {}, operation, &root_node.schema);
-    assert!(errors.is_empty());
-
-    let (_, errors) =
-        execute_validated_query_async(&document, operation, root_node, &graphql_vars! {}, &Context)
-            .await
-            .unwrap();
+    let (_, errors) = operation
+        .execute(&graphql_vars! {}, &Context)
+        .await
+        .unwrap();
 
     assert!(errors.is_empty());
 }
 
 #[tokio::test]
-async fn subscription_document_can_be_pre_parsed() {
-    let root_node = &Schema::new(Query, EmptyMutation::<Context>::new(), Subscription);
+async fn resolves_subscription() {
+    let schema = schema();
+    let operation = parse_and_validate("subscription { users { id } }", None, &schema).unwrap();
+    assert_eq!(operation.operation_type(), OperationType::Subscription);
 
-    let document_source = r#"subscription { users { id } }"#;
-    let document = parse_document_source(document_source, &root_node.schema).unwrap();
-
-    let operation = get_operation(&document, None).unwrap();
-    assert!(operation.item.operation_type == OperationType::Subscription);
-
-    let mut stream = resolve_validated_subscription(
-        &document,
-        operation,
-        root_node,
-        &graphql_vars! {},
-        &Context,
-    )
-    .map_ok(|(stream, errors)| juniper_subscriptions::Connection::from_stream(stream, errors))
-    .await
-    .unwrap();
+    let mut stream = operation
+        .resolve_into_stream(&graphql_vars! {}, &Context)
+        .map_ok(|(stream, errors)| juniper_subscriptions::Connection::from_stream(stream, errors))
+        .await
+        .unwrap();
 
     let _ = stream.next().await.unwrap();
 }

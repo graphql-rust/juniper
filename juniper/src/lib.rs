@@ -67,8 +67,6 @@ pub mod tests;
 #[cfg(test)]
 mod executor_tests;
 
-use std::{fmt, ptr};
-
 use derive_more::with_trait::{Display, From};
 use itertools::Itertools as _;
 
@@ -76,13 +74,9 @@ use itertools::Itertools as _;
 pub use crate::util::to_camel_case;
 
 use crate::{
-    executor::{execute_validated_query, get_operation},
     introspection::{INTROSPECTION_QUERY, INTROSPECTION_QUERY_WITHOUT_DESCRIPTIONS},
     parser::parse_document_source,
-    validation::{
-        MultiVisitorNil, ValidatorContext, rules, validate_input_values, visit as visit_rule,
-        visit_all_rules,
-    },
+    validation::{MultiVisitorNil, ValidatorContext, rules, visit as visit_rule, visit_all_rules},
 };
 
 pub use crate::{
@@ -94,7 +88,7 @@ pub use crate::{
         Applies, Context, ExecutionError, ExecutionResult, Executor, FieldError, FieldResult,
         FromContext, IntoFieldError, IntoResolvable, LookAheadArgument, LookAheadChildren,
         LookAheadList, LookAheadObject, LookAheadSelection, LookAheadValue, OwnedExecutor,
-        Registry, ValuesStream, Variables,
+        Registry, ValidatedOperation, ValuesStream, Variables,
     },
     introspection::IntrospectionFormat,
     macros::helper::subscription::{ExtractTypeFromStream, IntoFieldResult},
@@ -272,185 +266,7 @@ where
         }
     }
 
-    let operation = get_operation(&document, operation_name)?;
-    let operation = document
-        .iter()
-        .position(|def| matches!(def, Definition::Operation(op) if ptr::eq(op, operation)))
-        .expect("`get_operation()` returns an operation of the `document`");
-
-    Ok(ValidatedOperation {
-        document,
-        operation,
-        root_node,
-    })
-}
-
-/// GraphQL operation that passed parsing and validation.
-///
-/// [`parse_and_validate()`] returns a [`ValidatedOperation`]. The execution methods validate the
-/// variables and execute the operation. A [`ValidatedOperation`] can execute more than once. Each
-/// execution takes its own variables and context.
-pub struct ValidatedOperation<'a, QueryT, MutationT, SubscriptionT, S = DefaultScalarValue>
-where
-    QueryT: GraphQLType<S>,
-    MutationT: GraphQLType<S>,
-    SubscriptionT: GraphQLType<S>,
-    S: ScalarValue,
-{
-    /// Parsed and validated document.
-    document: ast::OwnedDocument<'a, S>,
-
-    /// Index of the operation to execute in the `document`.
-    operation: usize,
-
-    /// Schema of the `document`.
-    root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
-}
-
-impl<'a, QueryT, MutationT, SubscriptionT, S>
-    ValidatedOperation<'a, QueryT, MutationT, SubscriptionT, S>
-where
-    QueryT: GraphQLType<S>,
-    MutationT: GraphQLType<S>,
-    SubscriptionT: GraphQLType<S>,
-    S: ScalarValue,
-{
-    /// Returns the [`OperationType`] of this [`ValidatedOperation`].
-    #[must_use]
-    pub fn operation_type(&self) -> OperationType {
-        self.operation().item.operation_type
-    }
-
-    /// Executes this [`ValidatedOperation`] synchronously with the provided `variables` and
-    /// `context`.
-    ///
-    /// # Errors
-    ///
-    /// - [`GraphQLError::ValidationError`] if the `variables` do not match the variable definitions
-    ///   of the operation.
-    /// - [`GraphQLError::IsSubscription`] for a subscription.
-    /// - [`GraphQLError::NotSupported`] if the schema has no root type for the operation type.
-    pub fn execute_sync(
-        &self,
-        variables: &Variables<S>,
-        context: &QueryT::Context,
-    ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError>
-    where
-        MutationT: GraphQLType<S, Context = QueryT::Context>,
-        SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
-    {
-        self.validate_variables(variables)?;
-        execute_validated_query(
-            &self.document,
-            self.operation(),
-            self.root_node,
-            variables,
-            context,
-        )
-    }
-
-    /// Executes this [`ValidatedOperation`] asynchronously with the provided `variables` and
-    /// `context`.
-    ///
-    /// # Errors
-    ///
-    /// - [`GraphQLError::ValidationError`] if the `variables` do not match the variable definitions
-    ///   of the operation.
-    /// - [`GraphQLError::IsSubscription`] for a subscription.
-    /// - [`GraphQLError::NotSupported`] if the schema has no root type for the operation type.
-    pub async fn execute(
-        &self,
-        variables: &Variables<S>,
-        context: &QueryT::Context,
-    ) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError>
-    where
-        QueryT: GraphQLTypeAsync<S>,
-        QueryT::TypeInfo: Sync,
-        QueryT::Context: Sync,
-        MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
-        MutationT::TypeInfo: Sync,
-        SubscriptionT: GraphQLType<S, Context = QueryT::Context> + Sync,
-        SubscriptionT::TypeInfo: Sync,
-        S: Send + Sync,
-    {
-        self.validate_variables(variables)?;
-        executor::execute_validated_query_async(
-            &self.document,
-            self.operation(),
-            self.root_node,
-            variables,
-            context,
-        )
-        .await
-    }
-
-    /// Resolves this subscription [`ValidatedOperation`] into a [`ValuesStream`] with the provided
-    /// `variables` and `context`.
-    ///
-    /// # Errors
-    ///
-    /// - [`GraphQLError::ValidationError`] if the `variables` do not match the variable definitions
-    ///   of the operation.
-    /// - [`GraphQLError::NotSubscription`] for a query or a mutation.
-    /// - [`GraphQLError::NotSupported`] if the schema has no subscription root type.
-    pub async fn resolve_into_stream(
-        &self,
-        variables: &Variables<S>,
-        context: &'a QueryT::Context,
-    ) -> Result<(Value<ValuesStream<'a, S>>, Vec<ExecutionError<S>>), GraphQLError>
-    where
-        QueryT: GraphQLTypeAsync<S>,
-        QueryT::TypeInfo: Sync,
-        QueryT::Context: Sync,
-        MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
-        MutationT::TypeInfo: Sync,
-        SubscriptionT: GraphQLSubscriptionType<S, Context = QueryT::Context>,
-        SubscriptionT::TypeInfo: Sync,
-        S: Send + Sync,
-    {
-        self.validate_variables(variables)?;
-        executor::resolve_validated_subscription(
-            &self.document,
-            self.operation(),
-            self.root_node,
-            variables,
-            context,
-        )
-        .await
-    }
-
-    /// Returns the operation to execute.
-    fn operation(&self) -> &Spanning<Operation<'a, S>> {
-        match &self.document[self.operation] {
-            Definition::Operation(operation) => operation,
-            Definition::Fragment(_) => unreachable!("`ValidatedOperation` indexes an operation"),
-        }
-    }
-
-    /// Validates the `variables` against the variable definitions of the operation.
-    fn validate_variables(&self, variables: &Variables<S>) -> Result<(), GraphQLError> {
-        let errors = validate_input_values(variables, self.operation(), &self.root_node.schema);
-        if errors.is_empty() {
-            Ok(())
-        } else {
-            Err(errors.into())
-        }
-    }
-}
-
-impl<QueryT, MutationT, SubscriptionT, S> fmt::Debug
-    for ValidatedOperation<'_, QueryT, MutationT, SubscriptionT, S>
-where
-    QueryT: GraphQLType<S>,
-    MutationT: GraphQLType<S>,
-    SubscriptionT: GraphQLType<S>,
-    S: ScalarValue,
-{
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("ValidatedOperation")
-            .field("operation", self.operation())
-            .finish_non_exhaustive()
-    }
+    ValidatedOperation::new(document, operation_name, root_node)
 }
 
 /// Executes a query asynchronously in the provided schema.
