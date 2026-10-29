@@ -72,13 +72,13 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Memory leak caused by incorrect error handling in `#[graphql_subscription]` macro expansion. ([#1371])
 - Incorrect rejection of default values on non-`Null` variables. ([#1376])
 - Executing a `mutation` against a schema without a mutation type (e.g. `EmptyMutation`), or a `subscription` against one without a subscription type (e.g. `EmptySubscription`), now returns a `GraphQLError::NotSupported` error rather than panicking. ([#1378])
-- Missing execution errors for null values returned from non-`Null` fields.
 - Stack overflow on deeply nested selection sets, input values, list types, and fragment spreads. ([GHSA-34cw-x8g7-rcv5])
 - Quadratic parsing time in the number of tokens. ([GHSA-36rq-8957-mjrx])
 - Exponential validation time of fragments that spread the same fragment through many paths. ([GHSA-36rq-8957-mjrx])
 - Exponential execution time of fragments that spread the same fragment more than once. ([GHSA-36rq-8957-mjrx])
 - Quadratic validation time and memory of fields with the same response name. ([GHSA-36rq-8957-mjrx])
 - Incorrect non-nullable type of `__type` introspection field. A query for an unknown type now returns `{"__type": null}` instead of `null` data. ([#1402])
+- Missing execution errors for null values returned from non-`Null` fields. ([#1397])
 
 [#864]: /../../issues/864
 [#1055]: /../../issues/1055
@@ -99,6 +99,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1387]: /../../pull/1387
 [#1393]: /../../pull/1393
 [#1394]: /../../pull/1394
+[#1397]: /../../pull/1397
 [#1402]: /../../pull/1402
 [GHSA-34cw-x8g7-rcv5]: /../../security/advisories/GHSA-34cw-x8g7-rcv5
 [GHSA-36rq-8957-mjrx]: /../../security/advisories/GHSA-36rq-8957-mjrx
