@@ -6,7 +6,8 @@ All user visible changes to `juniper_rocket` crate will be documented in this fi
 
 
 
-## master
+## [0.11.0] · 2026-10-30
+[0.11.0]: /../../tree/juniper_rocket-v0.11.0/juniper_rocket
 
 ### BC Breaks
 
