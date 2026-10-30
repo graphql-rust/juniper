@@ -823,7 +823,7 @@ mod tests {
     where
         S: ScalarValue,
     {
-        crate::parse_document_source(
+        crate::parser::parse_document_source(
             q,
             &SchemaType::new::<QueryRoot, MutationRoot, SubscriptionRoot>(&(), &(), &()),
         )

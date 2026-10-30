@@ -15,25 +15,21 @@ use fnv::FnvHashMap;
 use futures::Stream;
 
 use crate::{
-    GraphQLError,
-    ast::{
-        Definition, Document, Fragment, FromInputValue, InputValue, Operation, OperationType,
-        Selection, ToInputValue, Type,
-    },
-    parser::{SourcePosition, Spanning},
+    ast::{Fragment, FromInputValue, InputValue, Selection, ToInputValue, Type},
+    parser::SourcePosition,
     schema::{
         meta::{
             Argument, DeprecationStatus, EnumMeta, EnumValue, Field, InputObjectMeta,
             InterfaceMeta, ListMeta, MetaType, NullableMeta, ObjectMeta, PlaceholderMeta,
             ScalarMeta, UnionMeta,
         },
-        model::{RootNode, SchemaType, TypeType},
+        model::{SchemaType, TypeType},
     },
     types::{
-        async_await::{GraphQLTypeAsync, GraphQLValueAsync},
+        async_await::GraphQLValueAsync,
         base::{GraphQLType, GraphQLValue},
         name::Name,
-        subscriptions::{GraphQLSubscriptionType, GraphQLSubscriptionValue},
+        subscriptions::GraphQLSubscriptionValue,
     },
     value::{DefaultScalarValue, ParseScalarValue, ScalarValue, Value},
 };
@@ -44,10 +40,12 @@ pub use self::{
         LookAheadSelection, LookAheadValue,
     },
     owned_executor::OwnedExecutor,
+    validated_operation::ValidatedOperation,
 };
 
 mod look_ahead;
 mod owned_executor;
+mod validated_operation;
 
 #[expect(missing_docs, reason = "self-explanatory")]
 #[derive(Clone)]
@@ -845,356 +843,6 @@ impl<S> ExecutionError<S> {
     pub fn path(&self) -> &[String] {
         &self.path
     }
-}
-
-/// Create new `Executor` and start query/mutation execution.
-/// Returns `IsSubscription` error if subscription is passed.
-pub fn execute_validated_query<'b, QueryT, MutationT, SubscriptionT, S>(
-    document: &'b Document<S>,
-    operation: &'b Spanning<Operation<S>>,
-    root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
-    variables: &Variables<S>,
-    context: &QueryT::Context,
-) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError>
-where
-    S: ScalarValue,
-    QueryT: GraphQLType<S>,
-    MutationT: GraphQLType<S, Context = QueryT::Context>,
-    SubscriptionT: GraphQLType<S, Context = QueryT::Context>,
-{
-    if operation.item.operation_type == OperationType::Subscription {
-        return Err(GraphQLError::IsSubscription);
-    }
-
-    let mut fragments = vec![];
-    for def in document.iter() {
-        if let Definition::Fragment(f) = def {
-            fragments.push(f)
-        };
-    }
-
-    let default_variable_values = operation.item.variables_definition.as_ref().map(|defs| {
-        defs.item
-            .items
-            .iter()
-            .filter_map(|(name, def)| {
-                def.default_value
-                    .as_ref()
-                    .map(|i| (name.item.into(), i.item.clone()))
-            })
-            .collect::<HashMap<String, InputValue<S>>>()
-    });
-
-    let errors = RwLock::new(Vec::new());
-    let value;
-
-    {
-        let mut all_vars;
-        let mut final_vars = variables;
-
-        if let Some(defaults) = default_variable_values {
-            all_vars = variables.clone();
-
-            for (name, value) in defaults {
-                all_vars.entry(name).or_insert(value);
-            }
-
-            final_vars = &all_vars;
-        }
-
-        let root_type = match operation.item.operation_type {
-            OperationType::Query => root_node.schema.query_type(),
-            OperationType::Mutation => match root_node.schema.mutation_type() {
-                Some(root_type) => root_type,
-                // The schema has no mutation type (e.g. `EmptyMutation`), so a
-                // mutation operation can't be executed against it. Return a
-                // request error instead of panicking.
-                None => return Err(GraphQLError::NotSupported(OperationType::Mutation)),
-            },
-            OperationType::Subscription => unreachable!(),
-        };
-
-        let executor = Executor {
-            fragments: &fragments
-                .iter()
-                .map(|f| (f.item.name.item, f.item.clone()))
-                .collect(),
-            variables: final_vars,
-            current_selection_set: Some(&operation.item.selection_set[..]),
-            parent_selection_set: None,
-            current_type: root_type,
-            schema: &root_node.schema,
-            context,
-            errors: &errors,
-            field_path: Arc::new(FieldPath::Root(operation.span.start)),
-            serial: operation.item.operation_type == OperationType::Mutation,
-        };
-
-        value = match operation.item.operation_type {
-            OperationType::Query => executor.resolve_into_value(&root_node.query_info, &root_node),
-            OperationType::Mutation => {
-                executor.resolve_into_value(&root_node.mutation_info, &root_node.mutation_type)
-            }
-            OperationType::Subscription => unreachable!(),
-        };
-    }
-
-    let mut errors = errors.into_inner().unwrap();
-    errors.sort();
-
-    Ok((value, errors))
-}
-
-/// Create new `Executor` and start asynchronous query execution.
-/// Returns `IsSubscription` error if subscription is passed.
-pub async fn execute_validated_query_async<'b, QueryT, MutationT, SubscriptionT, S>(
-    document: &'b Document<'_, S>,
-    operation: &'b Spanning<Operation<'_, S>>,
-    root_node: &RootNode<QueryT, MutationT, SubscriptionT, S>,
-    variables: &Variables<S>,
-    context: &QueryT::Context,
-) -> Result<(Value<S>, Vec<ExecutionError<S>>), GraphQLError>
-where
-    QueryT: GraphQLTypeAsync<S>,
-    QueryT::TypeInfo: Sync,
-    QueryT::Context: Sync,
-    MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
-    MutationT::TypeInfo: Sync,
-    SubscriptionT: GraphQLType<S, Context = QueryT::Context> + Sync,
-    SubscriptionT::TypeInfo: Sync,
-    S: ScalarValue + Send + Sync,
-{
-    if operation.item.operation_type == OperationType::Subscription {
-        return Err(GraphQLError::IsSubscription);
-    }
-
-    let mut fragments = vec![];
-    for def in document.iter() {
-        if let Definition::Fragment(f) = def {
-            fragments.push(f)
-        };
-    }
-
-    let default_variable_values = operation.item.variables_definition.as_ref().map(|defs| {
-        defs.item
-            .items
-            .iter()
-            .filter_map(|(name, def)| {
-                def.default_value
-                    .as_ref()
-                    .map(|i| (name.item.into(), i.item.clone()))
-            })
-            .collect::<HashMap<String, InputValue<S>>>()
-    });
-
-    let errors = RwLock::new(Vec::new());
-    let value;
-
-    {
-        let mut all_vars;
-        let mut final_vars = variables;
-
-        if let Some(defaults) = default_variable_values {
-            all_vars = variables.clone();
-
-            for (name, value) in defaults {
-                all_vars.entry(name).or_insert(value);
-            }
-
-            final_vars = &all_vars;
-        }
-
-        let root_type = match operation.item.operation_type {
-            OperationType::Query => root_node.schema.query_type(),
-            OperationType::Mutation => match root_node.schema.mutation_type() {
-                Some(root_type) => root_type,
-                // The schema has no mutation type (e.g. `EmptyMutation`), so a
-                // mutation operation can't be executed against it. Return a
-                // request error instead of panicking.
-                None => return Err(GraphQLError::NotSupported(OperationType::Mutation)),
-            },
-            OperationType::Subscription => unreachable!(),
-        };
-
-        let executor = Executor {
-            fragments: &fragments
-                .iter()
-                .map(|f| (f.item.name.item, f.item.clone()))
-                .collect(),
-            variables: final_vars,
-            current_selection_set: Some(&operation.item.selection_set[..]),
-            parent_selection_set: None,
-            current_type: root_type,
-            schema: &root_node.schema,
-            context,
-            errors: &errors,
-            field_path: Arc::new(FieldPath::Root(operation.span.start)),
-            serial: operation.item.operation_type == OperationType::Mutation,
-        };
-
-        value = match operation.item.operation_type {
-            OperationType::Query => {
-                executor
-                    .resolve_into_value_async(&root_node.query_info, &root_node)
-                    .await
-            }
-            OperationType::Mutation => {
-                executor
-                    .resolve_into_value_async(&root_node.mutation_info, &root_node.mutation_type)
-                    .await
-            }
-            OperationType::Subscription => unreachable!(),
-        };
-    }
-
-    let mut errors = errors.into_inner().unwrap();
-    errors.sort();
-
-    Ok((value, errors))
-}
-
-#[doc(hidden)]
-pub fn get_operation<'b, 'd, S>(
-    document: &'b Document<'d, S>,
-    operation_name: Option<&str>,
-) -> Result<&'b Spanning<Operation<'d, S>>, GraphQLError>
-where
-    S: ScalarValue,
-{
-    let mut operation = None;
-    for def in document {
-        if let Definition::Operation(op) = def {
-            if operation_name.is_none() && operation.is_some() {
-                return Err(GraphQLError::MultipleOperationsProvided);
-            }
-
-            let move_op =
-                operation_name.is_none() || op.item.name.as_ref().map(|s| s.item) == operation_name;
-
-            if move_op {
-                operation = Some(op);
-            }
-        };
-    }
-    let op = match operation {
-        Some(op) => op,
-        None => return Err(GraphQLError::UnknownOperationName),
-    };
-    Ok(op)
-}
-
-/// Initialize new `Executor` and start resolving subscription into stream
-/// asynchronously.
-/// Returns `NotSubscription` error if query or mutation is passed
-pub async fn resolve_validated_subscription<
-    'r,
-    'exec_ref,
-    'd,
-    'op,
-    QueryT,
-    MutationT,
-    SubscriptionT,
-    S,
->(
-    document: &Document<'d, S>,
-    operation: &Spanning<Operation<'op, S>>,
-    root_node: &'r RootNode<QueryT, MutationT, SubscriptionT, S>,
-    variables: &Variables<S>,
-    context: &'r QueryT::Context,
-) -> Result<(Value<ValuesStream<'r, S>>, Vec<ExecutionError<S>>), GraphQLError>
-where
-    'r: 'exec_ref,
-    'd: 'r,
-    'op: 'd,
-    QueryT: GraphQLTypeAsync<S>,
-    QueryT::TypeInfo: Sync,
-    QueryT::Context: Sync + 'r,
-    MutationT: GraphQLTypeAsync<S, Context = QueryT::Context>,
-    MutationT::TypeInfo: Sync,
-    SubscriptionT: GraphQLSubscriptionType<S, Context = QueryT::Context>,
-    SubscriptionT::TypeInfo: Sync,
-    S: ScalarValue + Send + Sync,
-{
-    if operation.item.operation_type != OperationType::Subscription {
-        return Err(GraphQLError::NotSubscription);
-    }
-
-    let mut fragments = vec![];
-    for def in document.iter() {
-        if let Definition::Fragment(f) = def {
-            fragments.push(f)
-        }
-    }
-
-    let default_variable_values = operation.item.variables_definition.as_ref().map(|defs| {
-        defs.item
-            .items
-            .iter()
-            .filter_map(|(name, def)| {
-                def.default_value
-                    .as_ref()
-                    .map(|i| (name.item.into(), i.item.clone()))
-            })
-            .collect::<HashMap<String, InputValue<S>>>()
-    });
-
-    let errors = RwLock::new(Vec::new());
-    let value;
-
-    {
-        let mut all_vars;
-        let mut final_vars = variables;
-
-        if let Some(defaults) = default_variable_values {
-            all_vars = variables.clone();
-
-            for (name, value) in defaults {
-                all_vars.entry(name).or_insert(value);
-            }
-
-            final_vars = &all_vars;
-        }
-
-        let root_type = match operation.item.operation_type {
-            OperationType::Subscription => match root_node.schema.subscription_type() {
-                Some(root_type) => root_type,
-                // The schema has no subscription type (e.g. `EmptySubscription`);
-                // return a request error instead of panicking.
-                None => return Err(GraphQLError::NotSupported(OperationType::Subscription)),
-            },
-            _ => unreachable!(),
-        };
-
-        let executor: Executor<'_, 'r, _, _> = Executor {
-            fragments: &fragments
-                .iter()
-                .map(|f| (f.item.name.item, f.item.clone()))
-                .collect(),
-            variables: final_vars,
-            current_selection_set: Some(&operation.item.selection_set[..]),
-            parent_selection_set: None,
-            current_type: root_type,
-            schema: &root_node.schema,
-            context,
-            errors: &errors,
-            field_path: Arc::new(FieldPath::Root(operation.span.start)),
-            serial: false,
-        };
-
-        value = match operation.item.operation_type {
-            OperationType::Subscription => {
-                executor
-                    .resolve_into_stream(&root_node.subscription_info, &root_node.subscription_type)
-                    .await
-            }
-            _ => unreachable!(),
-        };
-    }
-
-    let mut errors = errors.into_inner().unwrap();
-    errors.sort();
-
-    Ok((value, errors))
 }
 
 /// A type registry used to build schemas

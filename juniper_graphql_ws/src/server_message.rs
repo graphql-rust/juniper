@@ -1,12 +1,10 @@
 //! Common definitions regarding server messages.
 
-use std::{any::Any, marker::PhantomPinned};
-
 use derive_more::with_trait::Debug;
 #[cfg(doc)]
 use juniper::futures::Stream;
 use juniper::{ExecutionError, GraphQLError, Value};
-use serde::{Serialize, Serializer};
+use serde::Serialize;
 
 /// Payload to be send after execution of an operation.
 ///
@@ -34,53 +32,22 @@ pub struct NextPayload<S> {
 ///
 /// [`graphql_transport_ws::NextPayload`]: crate::graphql_transport_ws::NextPayload
 /// [`graphql_ws::DataPayload`]: crate::graphql_ws::DataPayload
-// XXX: Think carefully before deriving traits. This is self-referential (error references
-// _execution_params).
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Serialize)]
 #[debug("{error:?}")]
+#[serde(transparent)]
 pub struct ErrorPayload {
-    _execution_params: Option<Box<dyn Any + Send>>,
     error: GraphQLError,
-    _pinned: PhantomPinned,
 }
 
 impl ErrorPayload {
-    /// Creates a new [`ErrorPayload`] out of the provide `execution_params` and [`GraphQLError`].
-    pub(crate) fn new(execution_params: Box<dyn Any + Send>, error: GraphQLError) -> Self {
-        Self {
-            _execution_params: Some(execution_params),
-            error,
-            _pinned: PhantomPinned,
-        }
-    }
-
     /// Returns the contained [`GraphQLError`].
     pub fn graphql_error(&self) -> &GraphQLError {
         &self.error
     }
 }
 
-impl PartialEq for ErrorPayload {
-    fn eq(&self, other: &Self) -> bool {
-        self.error.eq(&other.error)
-    }
-}
-
-impl Serialize for ErrorPayload {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        self.error.serialize(serializer)
-    }
-}
-
 impl From<GraphQLError> for ErrorPayload {
     fn from(error: GraphQLError) -> Self {
-        Self {
-            _execution_params: None,
-            error,
-            _pinned: PhantomPinned,
-        }
+        Self { error }
     }
 }

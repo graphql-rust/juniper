@@ -26,6 +26,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Limited documents to 64 levels of nesting, 15,000 tokens, and 15,000 fields by default. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
 - Added `ParseError::DepthLimitExceeded`, `ParseError::TokenLimitExceeded`, and `ParseError::FieldLimitExceeded` variants. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
 - Limited validation of overlapping fields to 100,000 field comparisons and 100 reported conflicts. ([GHSA-36rq-8957-mjrx])
+- Removed `executor::execute_validated_query()`, `executor::execute_validated_query_async()`, `executor::resolve_validated_subscription()`, and `executor::get_operation()` functions. `ValidatedOperation` replaces them. ([#1392])
 
 ### Added
 
@@ -57,6 +58,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - `ruint::aliases::U256` as `U256` scalar.
     - `integrations::ruint::uint_scalar` module for declaring custom-sized `ruint::Uint` scalars.
 - `RootNode::limit_depth()`, `RootNode::limit_tokens()`, and `RootNode::limit_fields()` methods. ([GHSA-34cw-x8g7-rcv5], [GHSA-36rq-8957-mjrx])
+- `ValidatedOperation` type to parse and validate a document once and to execute its operation later. ([#1392], [#726])
 
 ### Changed
 
@@ -81,6 +83,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Missing execution errors for null values returned from non-`Null` fields. ([#1397])
 - Concurrent execution of `mutation` root fields in asynchronous execution. ([#1407], [#1398])
 
+[#726]: /../../issues/726
 [#864]: /../../issues/864
 [#1055]: /../../issues/1055
 [#1062]: /../../issues/1062
@@ -98,6 +101,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1378]: /../../pull/1378
 [#1380]: /../../pull/1380
 [#1387]: /../../pull/1387
+[#1392]: /../../pull/1392
 [#1393]: /../../pull/1393
 [#1394]: /../../pull/1394
 [#1397]: /../../pull/1397
