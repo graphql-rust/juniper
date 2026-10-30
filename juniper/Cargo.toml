@@ -59,7 +59,7 @@ graphql-parser = { version = "0.4", optional = true }
 indexmap = { version = "2.0", features = ["serde"] }
 itertools = "0.15"
 jiff = { version = "0.2", features = ["std"], default-features = false, optional = true }
-juniper_codegen = { version = "0.17.0", path = "../juniper_codegen" }
+juniper_codegen = { version = "0.18.0", path = "../juniper_codegen" }
 ref-cast = "1.0"
 ruint = { version = "1.10", optional = true }
 rust_decimal = { version = "1.20", default-features = false, optional = true }

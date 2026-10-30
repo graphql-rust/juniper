@@ -6,7 +6,8 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
 
 
 
-## master
+## [0.18.0] · 2026-10-30
+[0.18.0]: /../../tree/juniper_codegen-v0.18.0/juniper_codegen
 
 ### Added
 
