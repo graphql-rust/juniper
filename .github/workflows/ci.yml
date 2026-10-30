@@ -433,6 +433,7 @@ jobs:
             [API docs](https://docs.rs/${{ steps.tag.outputs.group2 }}/${{ steps.tag.outputs.group3 }})
             [Changelog](${{ steps.changelog.outputs.link }})
           prerelease: ${{ contains(steps.tag.outputs.group3, '-') }}
+          make_latest: ${{ steps.tag.outputs.group2 == 'juniper' }}
 
 
 

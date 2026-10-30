@@ -6,12 +6,13 @@ All user visible changes to `juniper_hyper` crate will be documented in this fil
 
 
 
-## main
+## master
 
-[Diff](/../../compare/juniper_hyper-v0.10.0...main) | [Milestone](/../../milestone/9)
+[Diff](/../../compare/juniper_hyper-v0.10.1...master) | [Milestone](/../../milestone/9)
 
 ### BC Breaks
 
+- Switched to 0.18 version of [`juniper` crate].
 - Limited request bodies in `graphql()` and `graphql_sync()` functions to 2 MiB by default. ([GHSA-pfrg-qg4f-grmv])
 
 ### Added

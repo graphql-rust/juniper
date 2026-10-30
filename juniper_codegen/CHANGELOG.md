@@ -6,7 +6,7 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
 
 
 
-## main
+## master
 
 ### Added
 

@@ -10,6 +10,8 @@ All user visible changes to `juniper_actix` crate will be documented in this fil
 
 ### BC Breaks
 
+- Switched to 0.18 version of [`juniper` crate].
+- Switched to 0.6 version of [`juniper_graphql_ws` crate].
 - Switched to 0.4 version of [`actix-ws` crate]. ([#1366])
 - Bumped up [MSRV] to 1.88 due to [`actix-ws` crate] requirements. ([#1366])
 - `subscriptions::*` functions now require `Clone` bound on the context type for ability to have a "fresh" context value each time a new [GraphQL] operation is started in a [WebSocket] connection. ([#1369])

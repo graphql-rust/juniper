@@ -6,6 +6,16 @@ All user visible changes to `juniper_rocket` crate will be documented in this fi
 
 
 
+## master
+
+### BC Breaks
+
+- Switched to 0.18 version of [`juniper` crate].
+
+
+
+
+
 ## [0.10.0] · 2025-09-08
 [0.10.0]: /../../tree/juniper_rocket-v0.10.0/juniper_rocket
 

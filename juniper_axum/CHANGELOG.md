@@ -10,6 +10,8 @@ All user visible changes to `juniper_axum` crate will be documented in this file
 
 ### BC Breaks
 
+- Switched to 0.18 version of [`juniper` crate].
+- Switched to 0.6 version of [`juniper_graphql_ws` crate].
 - `subscriptions::*` functions now require `Clone` bound on the context type for ability to have a "fresh" context value each time a new [GraphQL] operation is started in a [WebSocket] connection. ([#1369])
   > **COMPATIBILITY**: Previously, it was `Arc`ed inside, sharing the same context value across all [GraphQL] operations of a [WebSocket] connection. To preserve the previous behavior, the `Schema::Context` type should be either wrapped into `Arc` or made `Arc`-based internally.
 
