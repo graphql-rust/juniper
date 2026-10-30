@@ -75,16 +75,16 @@ Web servers also limit the size of request bodies. [`juniper_hyper`] and [`junip
 
 
 
-[`GraphQLError::ParseError`]: https://docs.rs/juniper/0.17.2/juniper/enum.GraphQLError.html#variant.ParseError
+[`GraphQLError::ParseError`]: https://docs.rs/juniper/0.18.0/juniper/enum.GraphQLError.html#variant.ParseError
 [`juniper_hyper`]: https://docs.rs/juniper_hyper
 [`juniper_warp`]: https://docs.rs/juniper_warp
-[`ParseError::DepthLimitExceeded`]: https://docs.rs/juniper/0.17.2/juniper/parser/enum.ParseError.html#variant.DepthLimitExceeded
-[`ParseError::FieldLimitExceeded`]: https://docs.rs/juniper/0.17.2/juniper/parser/enum.ParseError.html#variant.FieldLimitExceeded
-[`ParseError::TokenLimitExceeded`]: https://docs.rs/juniper/0.17.2/juniper/parser/enum.ParseError.html#variant.TokenLimitExceeded
-[`RootNode`]: https://docs.rs/juniper/0.17.2/juniper/struct.RootNode.html
-[`RootNode::limit_depth()`]: https://docs.rs/juniper/0.17.2/juniper/struct.RootNode.html#method.limit_depth
-[`RootNode::limit_fields()`]: https://docs.rs/juniper/0.17.2/juniper/struct.RootNode.html#method.limit_fields
-[`RootNode::limit_tokens()`]: https://docs.rs/juniper/0.17.2/juniper/struct.RootNode.html#method.limit_tokens
+[`ParseError::DepthLimitExceeded`]: https://docs.rs/juniper/0.18.0/juniper/parser/enum.ParseError.html#variant.DepthLimitExceeded
+[`ParseError::FieldLimitExceeded`]: https://docs.rs/juniper/0.18.0/juniper/parser/enum.ParseError.html#variant.FieldLimitExceeded
+[`ParseError::TokenLimitExceeded`]: https://docs.rs/juniper/0.18.0/juniper/parser/enum.ParseError.html#variant.TokenLimitExceeded
+[`RootNode`]: https://docs.rs/juniper/0.18.0/juniper/struct.RootNode.html
+[`RootNode::limit_depth()`]: https://docs.rs/juniper/0.18.0/juniper/struct.RootNode.html#method.limit_depth
+[`RootNode::limit_fields()`]: https://docs.rs/juniper/0.18.0/juniper/struct.RootNode.html#method.limit_fields
+[`RootNode::limit_tokens()`]: https://docs.rs/juniper/0.18.0/juniper/struct.RootNode.html#method.limit_tokens
 [Juniper]: https://docs.rs/juniper
 
 [0]: https://spec.graphql.org/October2021#sec-Document
