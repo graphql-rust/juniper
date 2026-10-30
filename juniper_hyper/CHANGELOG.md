@@ -6,9 +6,10 @@ All user visible changes to `juniper_hyper` crate will be documented in this fil
 
 
 
-## master
+## [0.11.0] · 2026-10-30
+[0.11.0]: /../../tree/juniper_hyper-v0.11.0/juniper_hyper
 
-[Diff](/../../compare/juniper_hyper-v0.10.1...master) | [Milestone](/../../milestone/9)
+[Diff](/../../compare/juniper_hyper-v0.10.1...juniper_hyper-v0.11.0) | [Milestone](/../../milestone/9)
 
 ### BC Breaks
 
