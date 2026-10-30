@@ -6,7 +6,8 @@ All user visible changes to `juniper_graphql_ws` crate will be documented in thi
 
 
 
-## master
+## [0.6.0] · 2026-10-30
+[0.6.0]: /../../tree/juniper_graphql_ws-v0.6.0/juniper_graphql_ws
 
 ### BC Breaks
 
