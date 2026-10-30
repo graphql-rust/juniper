@@ -10,6 +10,8 @@ All user visible changes to `juniper_warp` crate will be documented in this file
 
 ### BC Breaks
 
+- Switched to 0.18 version of [`juniper` crate].
+- Switched to 0.6 version of [`juniper_graphql_ws` crate].
 - `subscriptions::*` functions now require `Clone` bound on the context type for ability to have a "fresh" context value each time a new [GraphQL] operation is started in a [WebSocket] connection. ([#1369])
   > **COMPATIBILITY**: Previously, it was `Arc`ed inside, sharing the same context value across all [GraphQL] operations of a [WebSocket] connection. To preserve the previous behavior, the `Schema::Context` type should be either wrapped into `Arc` or made `Arc`-based internally.
 - Limited request bodies in `make_graphql_filter()` and `make_graphql_filter_sync()` functions to 2 MiB by default. ([GHSA-fj3h-2jc3-973v])
@@ -106,6 +108,7 @@ See [old CHANGELOG](/../../blob/juniper_warp-v0.7.0/juniper_warp/CHANGELOG.md).
 
 
 [`juniper` crate]: https://docs.rs/juniper
+[`juniper_graphql_ws` crate]: https://docs.rs/juniper_graphql_ws
 [`warp` crate]: https://docs.rs/warp
 [graphql-transport-ws]: https://github.com/enisdenjo/graphql-ws/blob/v5.14.0/PROTOCOL.md
 [graphql-ws]: https://github.com/apollographql/subscriptions-transport-ws/blob/v0.11.0/PROTOCOL.md
