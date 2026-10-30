@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-b15911d9.js";
+            window.path_to_searchindex_js = "../searchindex-421a7558.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-fcdc4e7f.js"></script>
@@ -186,9 +186,9 @@
 <tr><th>Limit</th><th>Default</th><th>Method</th><th>Error</th></tr>
 </thead>
 <tbody>
-<tr><td>Nesting depth</td><td>64 levels</td><td><a href="https://docs.rs/juniper/0.17.2/juniper/struct.RootNode.html#method.limit_depth"><code>RootNode::limit_depth()</code></a></td><td><a href="https://docs.rs/juniper/0.17.2/juniper/parser/enum.ParseError.html#variant.DepthLimitExceeded"><code>ParseError::DepthLimitExceeded</code></a></td></tr>
-<tr><td>Tokens</td><td>15,000</td><td><a href="https://docs.rs/juniper/0.17.2/juniper/struct.RootNode.html#method.limit_tokens"><code>RootNode::limit_tokens()</code></a></td><td><a href="https://docs.rs/juniper/0.17.2/juniper/parser/enum.ParseError.html#variant.TokenLimitExceeded"><code>ParseError::TokenLimitExceeded</code></a></td></tr>
-<tr><td>Fields</td><td>15,000</td><td><a href="https://docs.rs/juniper/0.17.2/juniper/struct.RootNode.html#method.limit_fields"><code>RootNode::limit_fields()</code></a></td><td><a href="https://docs.rs/juniper/0.17.2/juniper/parser/enum.ParseError.html#variant.FieldLimitExceeded"><code>ParseError::FieldLimitExceeded</code></a></td></tr>
+<tr><td>Nesting depth</td><td>64 levels</td><td><a href="https://docs.rs/juniper/0.18.0/juniper/struct.RootNode.html#method.limit_depth"><code>RootNode::limit_depth()</code></a></td><td><a href="https://docs.rs/juniper/0.18.0/juniper/parser/enum.ParseError.html#variant.DepthLimitExceeded"><code>ParseError::DepthLimitExceeded</code></a></td></tr>
+<tr><td>Tokens</td><td>15,000</td><td><a href="https://docs.rs/juniper/0.18.0/juniper/struct.RootNode.html#method.limit_tokens"><code>RootNode::limit_tokens()</code></a></td><td><a href="https://docs.rs/juniper/0.18.0/juniper/parser/enum.ParseError.html#variant.TokenLimitExceeded"><code>ParseError::TokenLimitExceeded</code></a></td></tr>
+<tr><td>Fields</td><td>15,000</td><td><a href="https://docs.rs/juniper/0.18.0/juniper/struct.RootNode.html#method.limit_fields"><code>RootNode::limit_fields()</code></a></td><td><a href="https://docs.rs/juniper/0.18.0/juniper/parser/enum.ParseError.html#variant.FieldLimitExceeded"><code>ParseError::FieldLimitExceeded</code></a></td></tr>
 </tbody>
 </table>
 </div>
@@ -198,7 +198,7 @@
 <li>The field count of an operation includes the fields of a fragment once for each spread of the fragment.</li>
 </ul>
 <h2 id="changing-the-limits"><a class="header" href="#changing-the-limits">Changing the limits</a></h2>
-<p>The <code>limit_*()</code> methods of a <a href="https://docs.rs/juniper/0.17.2/juniper/struct.RootNode.html"><code>RootNode</code></a> replace the default limits. A document over a limit fails with a <a href="https://docs.rs/juniper/0.17.2/juniper/enum.GraphQLError.html#variant.ParseError"><code>GraphQLError::ParseError</code></a>:</p>
+<p>The <code>limit_*()</code> methods of a <a href="https://docs.rs/juniper/0.18.0/juniper/struct.RootNode.html"><code>RootNode</code></a> replace the default limits. A document over a limit fails with a <a href="https://docs.rs/juniper/0.18.0/juniper/enum.GraphQLError.html#variant.ParseError"><code>GraphQLError::ParseError</code></a>:</p>
 <pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
 </span><span class="boring">use juniper::{
 </span><span class="boring">    EmptyMutation, EmptySubscription, GraphQLError, RootNode, graphql_object, graphql_vars,
