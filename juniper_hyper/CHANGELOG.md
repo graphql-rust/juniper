@@ -6,9 +6,9 @@ All user visible changes to `juniper_hyper` crate will be documented in this fil
 
 
 
-## main
+## master
 
-[Diff](/../../compare/juniper_hyper-v0.10.0...main) | [Milestone](/../../milestone/9)
+[Diff](/../../compare/juniper_hyper-v0.10.1...master) | [Milestone](/../../milestone/9)
 
 ### BC Breaks
 
