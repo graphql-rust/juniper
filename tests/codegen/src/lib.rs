@@ -9,6 +9,9 @@ mod for_codegen_tests_only {
     use futures as _;
     use juniper as _;
     use serde as _;
+    // `test_failing_compilation()` uses `trybuild` only on the stable toolchain.
+    #[rustversion::not(stable)]
+    use trybuild as _;
 }
 
 #[rustversion::stable]
