@@ -1,5 +1,5 @@
 use arcstr::ArcStr;
-use indexmap::IndexMap;
+use vecmap::VecMap;
 
 use crate::{
     FieldResult, GraphQLEnum, IntoFieldError,
@@ -67,22 +67,25 @@ pub enum TypeKind {
 }
 
 /// Field argument container
+///
+/// A [`VecMap`] stores the arguments. A lookup compares the names one by one. For the few
+/// arguments of a field, this is faster than hashing.
 #[derive(Debug)]
 pub struct Arguments<'a, S = DefaultScalarValue> {
-    args: Option<IndexMap<&'a str, Spanning<InputValue<S>>>>,
+    args: Option<VecMap<&'a str, Spanning<InputValue<S>>>>,
 }
 
 impl<'a, S> Arguments<'a, S> {
     #[doc(hidden)]
     pub fn new(
-        mut args: Option<IndexMap<&'a str, Spanning<InputValue<S>>>>,
+        mut args: Option<VecMap<&'a str, Spanning<InputValue<S>>>>,
         meta_args: &'a Option<Vec<Argument<S>>>,
     ) -> Self
     where
         S: Clone,
     {
         if meta_args.is_some() && args.is_none() {
-            args = Some(IndexMap::new());
+            args = Some(VecMap::new());
         }
 
         if let (Some(args), Some(meta_args)) = (&mut args, meta_args) {
@@ -462,7 +465,7 @@ where
 
                 let sub_exec = executor.field_sub_executor(
                     response_name,
-                    &meta_field.field_type,
+                    meta_field,
                     span.start,
                     f.selection_set.as_ref().map(|v| &v[..]),
                 );

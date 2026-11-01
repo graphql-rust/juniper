@@ -2,16 +2,19 @@ use std::{fmt, ptr};
 
 use arcstr::ArcStr;
 use derive_more::with_trait::Display;
-use fnv::FnvHashMap;
+use fnv::{FnvBuildHasher, FnvHashMap};
 #[cfg(feature = "schema-language")]
 use graphql_parser::schema::Document;
+use indexmap::IndexMap;
 
 use crate::{
     GraphQLEnum,
     ast::{Type, TypeModifier},
     executor::{Context, Registry},
     parser::Limits,
-    schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta},
+    schema::meta::{
+        Argument, Field, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta,
+    },
     types::{base::GraphQLType, name::Name},
     value::{DefaultScalarValue, ScalarValue},
 };
@@ -291,7 +294,10 @@ where
 #[derive(Debug)]
 pub struct SchemaType<S> {
     pub(crate) description: Option<ArcStr>,
-    pub(crate) types: FnvHashMap<Name, MetaType<S>>,
+    /// Named types of this schema.
+    ///
+    /// The executor finds the type of a field by its [`Field::type_index`].
+    pub(crate) types: IndexMap<Name, MetaType<S>, FnvBuildHasher>,
     pub(crate) query_type_name: String,
     pub(crate) mutation_type_name: Option<String>,
     pub(crate) subscription_type_name: Option<String>,
@@ -367,9 +373,11 @@ impl<S> SchemaType<S> {
                 panic!("Type {of_type:?} is still a placeholder type");
             }
         }
+        let mut types = registry.types.into_iter().collect();
+        set_field_type_indices(&mut types);
         SchemaType {
             description: None,
-            types: registry.types,
+            types,
             query_type_name: query_type_name.into(),
             mutation_type_name: if mutation_type_name.as_ref() != "_EmptyMutation" {
                 Some(mutation_type_name.into())
@@ -471,6 +479,17 @@ impl<S> SchemaType<S> {
     /// Get a list of concrete types.
     pub fn concrete_type_list(&self) -> Vec<&MetaType<S>> {
         self.types.values().collect()
+    }
+
+    /// Returns the [`TypeType`] of the `field` of a type in this schema.
+    pub(crate) fn field_type<'t>(&'t self, field: &'t Field<S>) -> TypeType<'t, S> {
+        match field.type_index {
+            Some(index) => TypeType {
+                concrete: &self.types[index],
+                modifiers: field.field_type.modifiers(),
+            },
+            None => self.make_type(&field.field_type),
+        }
     }
 
     /// Returns the [`TypeType`] of the `ty` literal.
@@ -836,6 +855,34 @@ pub enum DirectiveLocation {
 /// Sorts the provided [`DirectiveType`]s by name.
 fn sort_directives<S>(directives: &mut [&DirectiveType<S>]) {
     directives.sort_by(|a, b| a.name.cmp(&b.name));
+}
+
+/// Sets the [`Field::type_index`] of the fields of all objects and interfaces in `types`.
+fn set_field_type_indices<S>(types: &mut IndexMap<Name, MetaType<S>, FnvBuildHasher>) {
+    let indices = types
+        .values()
+        .map(|meta| {
+            if let MetaType::Object(ObjectMeta { fields, .. })
+            | MetaType::Interface(InterfaceMeta { fields, .. }) = meta
+            {
+                fields
+                    .iter()
+                    .map(|f| types.get_index_of(f.field_type.innermost_name()))
+                    .collect()
+            } else {
+                Vec::new()
+            }
+        })
+        .collect::<Vec<_>>();
+    for (meta, indices) in types.values_mut().zip(indices) {
+        if let MetaType::Object(ObjectMeta { fields, .. })
+        | MetaType::Interface(InterfaceMeta { fields, .. }) = meta
+        {
+            for (field, index) in fields.iter_mut().zip(indices) {
+                field.type_index = index;
+            }
+        }
+    }
 }
 
 /// Returns the position of the kind of the `concrete` type in the introspection output.

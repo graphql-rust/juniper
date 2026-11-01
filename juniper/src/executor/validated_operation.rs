@@ -1,10 +1,10 @@
 //! Execution of a GraphQL operation that passed parsing and validation.
 
-use std::{borrow::Cow, collections::HashMap, fmt, sync::RwLock};
+use std::{borrow::Cow, fmt, sync::RwLock};
 
 use crate::{
     GraphQLError,
-    ast::{Definition, Fragment, Operation, OperationType},
+    ast::{Definition, Operation, OperationType},
     parser::{Spanning, parse_document_source},
     schema::model::{RootNode, TypeType},
     types::{
@@ -17,7 +17,7 @@ use crate::{
     value::{DefaultScalarValue, ScalarValue, Value},
 };
 
-use super::{ExecutionError, Executor, FieldPath, ValuesStream, Variables};
+use super::{ExecutionError, Executor, FieldPath, Fragments, ValuesStream, Variables};
 
 /// GraphQL operation that passed parsing and validation.
 ///
@@ -35,7 +35,7 @@ where
     operation: Spanning<Operation<'a, S>>,
 
     /// Fragments of the document by name.
-    fragments: HashMap<&'a str, Fragment<'a, S>>,
+    fragments: Fragments<'a, S>,
 
     /// Schema of the document.
     root_node: &'a RootNode<QueryT, MutationT, SubscriptionT, S>,
@@ -117,7 +117,7 @@ where
         }
 
         let mut operation = None;
-        let mut fragments = HashMap::new();
+        let mut fragments = Fragments::default();
         for definition in document {
             match definition {
                 Definition::Operation(candidate) => {
