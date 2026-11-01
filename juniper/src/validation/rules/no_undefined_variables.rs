@@ -5,7 +5,7 @@ use crate::{
     validation::{RuleError, ValidatorContext, Visitor},
     value::ScalarValue,
 };
-use std::collections::{HashMap, HashSet};
+use foldhash::{HashMap, HashMapExt as _, HashSet, HashSetExt as _};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Scope<'a> {

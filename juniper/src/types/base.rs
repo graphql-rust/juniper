@@ -1,12 +1,12 @@
 use arcstr::ArcStr;
-use indexmap::IndexMap;
+use vecmap::VecMap;
 
 use crate::{
     FieldResult, GraphQLEnum, IntoFieldError,
-    ast::{Directive, FromInputValue, InputValue, Selection},
+    ast::{self, Directive, FromInputValue, InputValue, Selection},
     executor::{ExecutionResult, Executor, Registry, Variables},
     parser::Spanning,
-    schema::meta::{Argument, MetaType},
+    schema::meta::{Argument, Field, MetaType},
     value::{DefaultScalarValue, Object, ScalarValue, Value},
 };
 
@@ -67,22 +67,25 @@ pub enum TypeKind {
 }
 
 /// Field argument container
+///
+/// A [`VecMap`] stores the arguments. A lookup compares the names one by one. For the few
+/// arguments of a field, this is faster than hashing.
 #[derive(Debug)]
 pub struct Arguments<'a, S = DefaultScalarValue> {
-    args: Option<IndexMap<&'a str, Spanning<InputValue<S>>>>,
+    args: Option<VecMap<&'a str, Spanning<InputValue<S>>>>,
 }
 
 impl<'a, S> Arguments<'a, S> {
     #[doc(hidden)]
     pub fn new(
-        mut args: Option<IndexMap<&'a str, Spanning<InputValue<S>>>>,
+        mut args: Option<VecMap<&'a str, Spanning<InputValue<S>>>>,
         meta_args: &'a Option<Vec<Argument<S>>>,
     ) -> Self
     where
         S: Clone,
     {
         if meta_args.is_some() && args.is_none() {
-            args = Some(IndexMap::new());
+            args = Some(VecMap::new());
         }
 
         if let (Some(args), Some(meta_args)) = (&mut args, meta_args) {
@@ -443,7 +446,7 @@ where
 
                 if f.name.item == "__typename" {
                     result.add_field(
-                        response_name,
+                        typename_response_key(f),
                         Value::Scalar(instance.concrete_type_name(executor.context(), info).into()),
                     );
                     continue;
@@ -456,12 +459,13 @@ where
                         meta_type.name(),
                     )
                 });
+                let response_key = response_key(f, meta_field);
 
                 let exec_vars = executor.variables();
 
                 let sub_exec = executor.field_sub_executor(
                     response_name,
-                    f.name.item,
+                    meta_field,
                     span.start,
                     f.selection_set.as_ref().map(|v| &v[..]),
                 );
@@ -489,7 +493,7 @@ where
                         sub_exec.push_non_null_violation_at(meta_type, f.name.item, span.start);
                         return false;
                     }
-                    Ok(v) => merge_key_into(result, response_name, v),
+                    Ok(v) => result.merge_field(response_key, v),
                     Err(e) => {
                         sub_exec.push_error_at(e, span.start);
 
@@ -497,7 +501,7 @@ where
                             return false;
                         }
 
-                        result.add_field(response_name, Value::null());
+                        result.add_field(response_key, Value::null());
                     }
                 }
             }
@@ -533,9 +537,7 @@ where
                     );
 
                     if let Ok(Value::Object(object)) = sub_result {
-                        for (k, v) in object {
-                            merge_key_into(result, &k, v);
-                        }
+                        result.merge(object);
                     } else {
                         if let Err(e) = sub_result {
                             sub_exec.push_error_at(e, span.start);
@@ -579,9 +581,7 @@ where
                         );
 
                         if let Ok(Value::Object(object)) = sub_result {
-                            for (k, v) in object {
-                                merge_key_into(result, &k, v);
-                            }
+                            result.merge(object);
                         } else {
                             if let Err(e) = sub_result {
                                 sub_exec.push_error_at(e, span.start);
@@ -642,40 +642,21 @@ where
     false
 }
 
-/// Merges `response_name`/`value` pair into `result`
-pub(crate) fn merge_key_into<S>(result: &mut Object<S>, response_name: &str, value: Value<S>) {
-    if let Some(v) = result.get_mut_field_value(response_name) {
-        match v {
-            Value::Object(dest_obj) => {
-                if let Value::Object(src_obj) = value {
-                    merge_maps(dest_obj, src_obj);
-                }
-            }
-            Value::List(dest_list) => {
-                if let Value::List(src_list) = value {
-                    dest_list.iter_mut().zip(src_list).for_each(|(d, s)| {
-                        if let Value::Object(d_obj) = d {
-                            if let Value::Object(s_obj) = s {
-                                merge_maps(d_obj, s_obj);
-                            }
-                        }
-                    });
-                }
-            }
-            _ => {}
-        }
-        return;
+/// Returns the response key of the `field` selection with the `meta_field` schema definition.
+///
+/// A field without an alias reuses the name of the `meta_field`. Cloning the [`ArcStr`] name does
+/// not allocate.
+pub(crate) fn response_key<S>(field: &ast::Field<'_, S>, meta_field: &Field<S>) -> ArcStr {
+    match &field.alias {
+        Some(alias) => alias.item.into(),
+        None => meta_field.name.clone(),
     }
-    result.add_field(response_name, value);
 }
 
-/// Merges `src` object's fields into `dest`
-fn merge_maps<S>(dest: &mut Object<S>, src: Object<S>) {
-    for (key, value) in src {
-        if dest.contains_field(&key) {
-            merge_key_into(dest, &key, value);
-        } else {
-            dest.add_field(key, value);
-        }
+/// Returns the response key of the `__typename` meta-field selection.
+pub(crate) fn typename_response_key<S>(field: &ast::Field<'_, S>) -> ArcStr {
+    match &field.alias {
+        Some(alias) => alias.item.into(),
+        None => arcstr::literal!("__typename"),
     }
 }

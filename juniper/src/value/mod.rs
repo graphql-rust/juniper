@@ -150,7 +150,7 @@ impl<S: Clone> ToInputValue<S> for Value<S> {
                 o.iter()
                     .map(|(k, v)| {
                         (
-                            Spanning::unlocated(k.clone()),
+                            Spanning::unlocated(k.as_str().into()),
                             Spanning::unlocated(v.to_input_value()),
                         )
                     })

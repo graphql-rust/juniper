@@ -1,6 +1,7 @@
-use std::{collections::HashMap, fmt::Debug};
+use std::fmt::Debug;
 
 use arcstr::ArcStr;
+use foldhash::{HashMap, HashMapExt as _};
 
 use crate::{
     ast::{Definition, Document, FragmentSpread, InlineFragment},
