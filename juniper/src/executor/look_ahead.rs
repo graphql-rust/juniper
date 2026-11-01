@@ -1,14 +1,12 @@
-use std::collections::HashMap;
-
 use derive_more::with_trait::IntoIterator;
 
 use crate::{
-    ast::{Directive, Field, Fragment, InputValue, Selection},
+    ast::{Directive, Field, InputValue, Selection},
     parser::{Span, Spanning},
     value::ScalarValue,
 };
 
-use super::Variables;
+use super::{Fragments, Variables};
 
 /// Indication whether a field is available in all types of an interface or only in a certain
 /// subtype.
@@ -485,7 +483,7 @@ pub struct LookAheadSelection<'a, S> {
     source: SelectionSource<'a, S>,
     applies_for: Applies<'a>,
     vars: &'a Variables<S>,
-    fragments: &'a HashMap<&'a str, Fragment<'a, S>>,
+    fragments: &'a Fragments<'a, S>,
 }
 
 // Implemented manually to omit redundant `S: Clone` trait bound, imposed by `#[derive(Clone)]`.
@@ -503,7 +501,7 @@ impl<'a, S> LookAheadSelection<'a, S> {
     pub(super) fn new(
         source: SelectionSource<'a, S>,
         vars: &'a Variables<S>,
-        fragments: &'a HashMap<&'a str, Fragment<'a, S>>,
+        fragments: &'a Fragments<'a, S>,
     ) -> Self {
         Self {
             source,
@@ -660,7 +658,7 @@ impl<'a, S> LookAheadSelection<'a, S> {
 
 struct ChildrenBuilder<'a, 'f, S> {
     vars: &'a Variables<S>,
-    fragments: &'a HashMap<&'a str, Fragment<'a, S>>,
+    fragments: &'a Fragments<'a, S>,
     type_filter: Applies<'f>,
     output: Vec<LookAheadSelection<'a, S>>,
 }
@@ -806,8 +804,6 @@ impl<'a, S: ScalarValue> ChildrenBuilder<'a, '_, S> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
     use crate::{
         ast::{Document, OwnedDocument},
         graphql,
@@ -829,11 +825,11 @@ mod tests {
         )
     }
 
-    fn extract_fragments<'a, S>(doc: &'a Document<S>) -> HashMap<&'a str, Fragment<'a, S>>
+    fn extract_fragments<'a, S>(doc: &'a Document<S>) -> Fragments<'a, S>
     where
         S: Clone,
     {
-        let mut fragments = HashMap::new();
+        let mut fragments = Fragments::default();
         for d in doc {
             if let crate::ast::Definition::Fragment(ref f) = *d {
                 let f = f.item.clone();
@@ -846,7 +842,7 @@ mod tests {
     fn selection_look_ahead<'a, S: ScalarValue>(
         selection: &'a Selection<'a, S>,
         vars: &'a Variables<S>,
-        fragments: &'a HashMap<&'a str, Fragment<'a, S>>,
+        fragments: &'a Fragments<'a, S>,
     ) -> LookAheadSelection<'a, S> {
         let mut collector = ChildrenBuilder {
             vars,

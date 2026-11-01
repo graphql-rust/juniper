@@ -1,6 +1,7 @@
-use std::{collections::HashSet, fmt::Debug};
+use std::fmt::Debug;
 
 use derive_more::with_trait::{Display, Error};
+use foldhash::HashSet;
 use itertools::Itertools as _;
 
 use crate::{
