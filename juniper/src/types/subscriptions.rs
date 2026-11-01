@@ -5,7 +5,7 @@ use crate::{
     ScalarValue, Selection, Value, ValuesStream,
     http::GraphQLRequest,
     parser::Spanning,
-    types::base::{GraphQLType, GraphQLValue, is_excluded, merge_key_into},
+    types::base::{GraphQLType, GraphQLValue, is_excluded, response_key},
 };
 
 /// Represents the result of executing a GraphQL operation (after parsing and validating has been
@@ -327,7 +327,7 @@ where
                     Ok(Value::Null) if is_non_null => {
                         return Value::Null;
                     }
-                    Ok(v) => merge_key_into(&mut object, response_name, v),
+                    Ok(v) => object.merge_field(response_key(f, meta_field), v),
                     Err(e) => {
                         sub_exec.push_error_at(e, span.start);
 
@@ -361,11 +361,7 @@ where
                 match obj {
                     Ok(val) => {
                         match val {
-                            Value::Object(o) => {
-                                for (k, v) in o {
-                                    merge_key_into(&mut object, &k, v);
-                                }
-                            }
+                            Value::Object(o) => object.merge(o),
                             // since this was a wrapper of current function,
                             // we'll rather get an object or nothing
                             _ => unreachable!(),
@@ -394,9 +390,7 @@ where
                         .await;
 
                     if let Ok(Value::Object(obj)) = sub_result {
-                        for (k, v) in obj {
-                            merge_key_into(&mut object, &k, v);
-                        }
+                        object.merge(obj);
                     } else if let Err(e) = sub_result {
                         sub_exec.push_error_at(e, span.start);
                     }
@@ -406,9 +400,7 @@ where
                         .await;
 
                     if let Ok(Value::Object(obj)) = sub_result {
-                        for (k, v) in obj {
-                            merge_key_into(&mut object, &k, v);
-                        }
+                        object.merge(obj);
                     } else if let Err(e) = sub_result {
                         sub_exec.push_error_at(e, span.start);
                     }
