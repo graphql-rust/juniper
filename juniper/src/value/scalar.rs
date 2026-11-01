@@ -1,6 +1,7 @@
 use std::convert::Infallible;
 
 use arcstr::ArcStr;
+use compact_str::{CompactString, ToCompactString as _};
 use derive_more::with_trait::{Deref, Display, Error, From, TryInto};
 use ref_cast::RefCast;
 use serde::{Serialize, de::DeserializeOwned};
@@ -744,6 +745,24 @@ pub trait AnyExt: Any {
 
 impl<T: Any + ?Sized> AnyExt for T {}
 
+/// Creates a [`DefaultScalarValue::String`] from the `value` without an intermediate [`String`].
+fn string_from_displayable<T: Display + ?Sized>(value: &T) -> DefaultScalarValue {
+    DefaultScalarValue::String(value.to_compact_string())
+}
+
+// `derive_more::TryInto` converts only into the type of a variant, but `ScalarValue` also requires
+// a conversion into a `String`.
+impl TryFrom<DefaultScalarValue> for String {
+    type Error = DefaultScalarValue;
+
+    fn try_from(value: DefaultScalarValue) -> Result<Self, Self::Error> {
+        match value {
+            DefaultScalarValue::String(s) => Ok(s.into_string()),
+            other => Err(other),
+        }
+    }
+}
+
 /// The default [`ScalarValue`] representation in [`juniper`].
 ///
 /// These types closely follow the [GraphQL specification][0].
@@ -751,6 +770,7 @@ impl<T: Any + ?Sized> AnyExt for T {}
 /// [0]: https://spec.graphql.org/October2021
 #[derive(Clone, Debug, Display, From, PartialEq, ScalarValue, Serialize, TryInto)]
 #[serde(untagged)]
+#[value(from_displayable_non_static_with = string_from_displayable)]
 pub enum DefaultScalarValue {
     /// [`Int` scalar][0] as a signed 32‐bit numeric non‐fractional value.
     ///
@@ -771,10 +791,13 @@ pub enum DefaultScalarValue {
     /// [`String` scalar][0] as a textual data, represented as UTF‐8 character
     /// sequences.
     ///
+    /// A [`CompactString`] stores a string of up to 24 bytes inline. Most enum values and many
+    /// field values are this short, so they need no allocation.
+    ///
     /// [0]: https://spec.graphql.org/October2021#sec-String
-    #[from(&str, Cow<'_, str>, String)]
+    #[from(&str, Cow<'_, str>, String, CompactString)]
     #[value(as_str, to_string)]
-    String(String),
+    String(CompactString),
 
     /// [`Boolean` scalar][0] as a `true` or `false` value.
     ///
@@ -782,4 +805,56 @@ pub enum DefaultScalarValue {
     #[from]
     #[value(to_bool)]
     Boolean(bool),
+}
+
+#[cfg(test)]
+mod tests {
+    mod default_scalar_value {
+        use crate::{DefaultScalarValue, ScalarValue as _};
+
+        #[test]
+        fn stores_short_string_inline() {
+            let value = DefaultScalarValue::from_displayable("NEW_HOPE");
+
+            let DefaultScalarValue::String(string) = value else {
+                panic!("expected a string, found {value:?}");
+            };
+            assert_eq!(string, "NEW_HOPE");
+            assert!(!string.is_heap_allocated());
+        }
+
+        #[test]
+        fn stores_long_string() {
+            let text = "a string with more than twenty-four bytes";
+
+            let value = DefaultScalarValue::from_displayable(text);
+
+            assert_eq!(value.try_as_str(), Some(text));
+        }
+
+        #[test]
+        fn deserializes_short_string_inline() {
+            let value: DefaultScalarValue = serde_json::from_str(r#""text""#).unwrap();
+
+            let DefaultScalarValue::String(string) = value else {
+                panic!("expected a string, found {value:?}");
+            };
+            assert_eq!(string, "text");
+            assert!(!string.is_heap_allocated());
+        }
+
+        #[test]
+        fn converts_string_into_string() {
+            let value = DefaultScalarValue::from("text");
+
+            assert_eq!(String::try_from(value), Ok("text".to_owned()));
+        }
+
+        #[test]
+        fn does_not_convert_int_into_string() {
+            let value = DefaultScalarValue::Int(1);
+
+            assert_eq!(String::try_from(value), Err(DefaultScalarValue::Int(1)));
+        }
+    }
 }
