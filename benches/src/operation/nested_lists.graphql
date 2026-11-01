@@ -1,0 +1,14 @@
+{
+  users(first: 20) {
+    id
+    name
+    friends(first: 10) {
+      id
+      name
+      friends(first: 10) {
+        id
+        name
+      }
+    }
+  }
+}

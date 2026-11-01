@@ -10,10 +10,6 @@ extern crate core;
 extern crate self as juniper;
 
 #[cfg(test)]
-mod for_benches_only {
-    use bencher as _;
-}
-#[cfg(test)]
 mod for_feature_gated_tests_only {
     #[cfg(not(feature = "chrono"))]
     use chrono as _;

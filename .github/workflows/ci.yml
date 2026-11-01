@@ -100,7 +100,8 @@ jobs:
           toolchain: stable
           components: clippy
 
-      - run: cargo clippy -p juniper_benchmarks --benches -- -D warnings
+      - run: cargo clippy -p juniper_benchmarks --benches --tests -- -D warnings
+      - run: cargo test -p juniper_benchmarks
       - run: cargo bench -p juniper_benchmarks
 
   feature:

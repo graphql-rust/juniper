@@ -1,0 +1,10 @@
+{
+  users(first: 1000) {
+    id
+    name
+    email
+    active
+    score
+    role
+  }
+}
