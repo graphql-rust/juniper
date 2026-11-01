@@ -13,8 +13,12 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 ### BC Breaks
 
 - Made `executor::FieldPath` private. ([#1415])
+- Changed the field names of `Object` from `String` to `ArcStr`: ([#1416])
+    - `Object::add_field()` takes a name of any type that converts into `ArcStr`.
+    - `Object::iter()`, `Object::iter_mut()`, and the `IntoIterator` implementation of `Object` return `ArcStr` names.
 
 [#1415]: /../../pull/1415
+[#1416]: /../../pull/1416
 
 
 
