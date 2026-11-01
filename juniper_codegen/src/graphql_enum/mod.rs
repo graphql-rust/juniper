@@ -487,8 +487,8 @@ impl Definition {
             let name = &v.name;
 
             quote! {
-                Self::#ident => ::core::result::Result::Ok(::juniper::Value::scalar(
-                    ::std::string::String::from(#name),
+                Self::#ident => ::core::result::Result::Ok(::juniper::Value::Scalar(
+                    <#scalar as ::juniper::ScalarValue>::from_displayable(#name),
                 )),
             }
         });
@@ -625,8 +625,8 @@ impl Definition {
             let name = &v.name;
 
             quote! {
-                #ident::#var_ident => ::juniper::InputValue::<#scalar>::scalar(
-                    ::std::string::String::from(#name),
+                #ident::#var_ident => ::juniper::InputValue::<#scalar>::Scalar(
+                    <#scalar as ::juniper::ScalarValue>::from_displayable(#name),
                 ),
             }
         });

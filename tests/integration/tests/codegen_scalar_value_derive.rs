@@ -39,10 +39,11 @@ mod trivial {
                 .into_another::<DefaultScalarValue>()
                 .is_type::<f64>()
         );
-        assert!(
+        assert_eq!(
             CustomScalarValue::from("str".to_owned())
                 .into_another::<DefaultScalarValue>()
-                .is_type::<prelude::String>()
+                .try_as_str(),
+            Some("str"),
         );
         assert!(
             CustomScalarValue::from(true)
@@ -82,10 +83,11 @@ mod named_fields {
                 .into_another::<DefaultScalarValue>()
                 .is_type::<f64>()
         );
-        assert!(
+        assert_eq!(
             CustomScalarValue::from("str".to_owned())
                 .into_another::<DefaultScalarValue>()
-                .is_type::<prelude::String>()
+                .try_as_str(),
+            Some("str"),
         );
         assert!(
             CustomScalarValue::from(true)
@@ -128,10 +130,11 @@ mod custom_fn {
                 .into_another::<DefaultScalarValue>()
                 .is_type::<f64>()
         );
-        assert!(
+        assert_eq!(
             CustomScalarValue::from("str".to_owned())
                 .into_another::<DefaultScalarValue>()
-                .is_type::<prelude::String>()
+                .try_as_str(),
+            Some("str"),
         );
         assert!(
             CustomScalarValue::from(true)
@@ -174,10 +177,11 @@ mod missing_conv_attr {
                 .into_another::<DefaultScalarValue>()
                 .is_type::<f64>()
         );
-        assert!(
+        assert_eq!(
             CustomScalarValue::from("str".to_owned())
                 .into_another::<DefaultScalarValue>()
-                .is_type::<prelude::String>()
+                .try_as_str(),
+            Some("str"),
         );
         assert!(
             CustomScalarValue::from(true)

@@ -339,11 +339,11 @@ impl<'de> Deserialize<'de> for DefaultScalarValue {
             }
 
             fn visit_str<E: de::Error>(self, s: &str) -> Result<Self::Value, E> {
-                self.visit_string(s.into())
+                Ok(DefaultScalarValue::String(s.into()))
             }
 
             fn visit_string<E: de::Error>(self, s: String) -> Result<Self::Value, E> {
-                Ok(DefaultScalarValue::String(s))
+                Ok(DefaultScalarValue::String(s.into()))
             }
         }
 

@@ -20,6 +20,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Changed the `Arguments::new()` method to take a `VecMap` instead of an `IndexMap`. ([#1417])
 - Changed `GraphQLValueAsync::resolve_field_async()` to take its `arguments` and `executor` by value. ([#1418])
 - Asynchronous execution calls `GraphQLValue::resolve()` instead of `GraphQLValueAsync::resolve_async()` for values of scalars, enums, and types that resolve without awaiting. ([#1419])
+- Changed `DefaultScalarValue::String` to contain a `CompactString` instead of a `String`. ([#1420])
 
 ### Added
 
@@ -40,6 +41,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1417]: /../../pull/1417
 [#1418]: /../../pull/1418
 [#1419]: /../../pull/1419
+[#1420]: /../../pull/1420
 
 
 
