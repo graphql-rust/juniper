@@ -7,7 +7,7 @@ use std::{
     fmt::{Debug, Display},
     mem,
     pin::Pin,
-    sync::{Arc, RwLock},
+    sync::RwLock,
 };
 
 use arcstr::ArcStr;
@@ -47,11 +47,34 @@ mod look_ahead;
 mod owned_executor;
 mod validated_operation;
 
-#[expect(missing_docs, reason = "self-explanatory")]
-#[derive(Clone)]
-pub enum FieldPath<'a> {
+/// Fragments of a document by name.
+///
+/// Fragment spreads look up fragments by name during execution. The names come from the document,
+/// so the map uses the randomly seeded `foldhash`. It resists hash flooding and hashes short names
+/// faster than the default SipHash.
+pub(crate) type Fragments<'a, S> = foldhash::HashMap<&'a str, Fragment<'a, S>>;
+
+/// Path from the root of an operation to the current field of an [`Executor`].
+///
+/// Execution errors take their path and location from the field path. A field path borrows the
+/// path of the parent [`Executor`], so a sub-executor does not allocate.
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum FieldPath<'r, 'a> {
+    /// Root of the operation at the location of the operation.
     Root(SourcePosition),
-    Field(&'a str, SourcePosition, Arc<FieldPath<'a>>),
+
+    /// Field under the path of its parent field.
+    Field {
+        response_name: &'a str,
+        location: SourcePosition,
+        parent: &'r FieldPath<'r, 'a>,
+    },
+
+    /// Response names from the root to the field, and the location of the field.
+    ///
+    /// An [`OwnedExecutor`] has no parent [`Executor`] to borrow a path from, so it stores the
+    /// response names itself.
+    Owned(&'r [&'a str], SourcePosition),
 }
 
 /// Query execution engine
@@ -63,7 +86,7 @@ where
     CtxT: 'a,
     S: 'a,
 {
-    fragments: &'r HashMap<&'a str, Fragment<'a, S>>,
+    fragments: &'r Fragments<'a, S>,
     variables: &'r Variables<S>,
     current_selection_set: Option<&'r [Selection<'a, S>]>,
     parent_selection_set: Option<&'r [Selection<'a, S>]>,
@@ -71,7 +94,7 @@ where
     schema: &'a SchemaType<S>,
     context: &'a CtxT,
     errors: &'r RwLock<Vec<ExecutionError<S>>>,
-    field_path: Arc<FieldPath<'a>>,
+    field_path: FieldPath<'r, 'a>,
 
     /// Serial execution of the fields in the current selection set.
     ///
@@ -82,6 +105,15 @@ where
     /// See <https://spec.graphql.org/September2025#sec-Normal-and-Serial-Execution>.
     serial: bool,
 }
+
+// `#[derive(Clone, Copy)]` would require `CtxT: Copy` and `S: Copy`.
+impl<CtxT, S> Clone for Executor<'_, '_, CtxT, S> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<CtxT, S> Copy for Executor<'_, '_, CtxT, S> {}
 
 /// Error type for errors that occur during query execution
 ///
@@ -560,20 +592,20 @@ where
             variables: self.variables,
             current_selection_set: self.current_selection_set,
             parent_selection_set: self.parent_selection_set,
-            current_type: self.current_type.clone(),
+            current_type: self.current_type,
             schema: self.schema,
             context: ctx,
             errors: self.errors,
-            field_path: self.field_path.clone(),
+            field_path: self.field_path,
             serial: self.serial,
         }
     }
 
-    #[doc(hidden)]
-    pub fn field_sub_executor<'s>(
+    /// Creates an [`Executor`] for the `field` with the `field_alias` response name.
+    pub(crate) fn field_sub_executor<'s>(
         &'s self,
         field_alias: &'a str,
-        field_name: &'s str,
+        field: &'a Field<S>,
         location: SourcePosition,
         selection_set: Option<&'s [Selection<'a, S>]>,
     ) -> Executor<'s, 'a, CtxT, S> {
@@ -582,28 +614,21 @@ where
             variables: self.variables,
             current_selection_set: selection_set,
             parent_selection_set: self.current_selection_set,
-            current_type: self.schema.make_type(
-                &self
-                    .current_type
-                    .innermost_concrete()
-                    .field_by_name(field_name)
-                    .expect("Field not found on inner type")
-                    .field_type,
-            ),
+            current_type: self.schema.field_type(field),
             schema: self.schema,
             context: self.context,
             errors: self.errors,
-            field_path: Arc::new(FieldPath::Field(
-                field_alias,
+            field_path: FieldPath::Field {
+                response_name: field_alias,
                 location,
-                Arc::clone(&self.field_path),
-            )),
+                parent: &self.field_path,
+            },
             serial: false,
         }
     }
 
-    #[doc(hidden)]
-    pub fn type_sub_executor<'s>(
+    /// Creates an [`Executor`] for a fragment with the `type_name` type condition.
+    pub(crate) fn type_sub_executor<'s>(
         &'s self,
         type_name: Option<&'s str>,
         selection_set: Option<&'s [Selection<'a, S>]>,
@@ -615,12 +640,12 @@ where
             parent_selection_set: self.current_selection_set,
             current_type: match type_name {
                 Some(type_name) => self.schema.type_by_name(type_name).expect("Type not found"),
-                None => self.current_type.clone(),
+                None => self.current_type,
             },
             schema: self.schema,
             context: self.context,
             errors: self.errors,
-            field_path: self.field_path.clone(),
+            field_path: self.field_path,
             serial: self.serial,
         }
     }
@@ -675,8 +700,7 @@ where
 
     /// Add an error to the execution engine at a specific location
     pub fn push_error_at(&self, error: FieldError<S>, location: SourcePosition) {
-        let mut path = Vec::new();
-        self.field_path.construct_path(&mut path);
+        let path = self.field_path.construct_path();
 
         let mut errors = self.errors.write().unwrap();
 
@@ -698,8 +722,7 @@ where
         field_name: &str,
         location: SourcePosition,
     ) {
-        let mut path = Vec::new();
-        self.field_path.construct_path(&mut path);
+        let path = self.field_path.construct_path();
 
         let mut errors = self.errors.write().unwrap();
         if errors.iter().any(|e| e.path.starts_with(&path)) {
@@ -717,8 +740,7 @@ where
 
     /// Returns new [`ExecutionError`] at current location
     pub fn new_error(&self, error: FieldError<S>) -> ExecutionError<S> {
-        let mut path = Vec::new();
-        self.field_path.construct_path(&mut path);
+        let path = self.field_path.construct_path();
 
         ExecutionError {
             location: *self.location(),
@@ -738,10 +760,10 @@ where
     /// This allows seeing the whole selection and perform operations
     /// affecting the children.
     pub fn look_ahead(&'a self) -> LookAheadSelection<'a, S> {
-        let field_name = match *self.field_path {
-            FieldPath::Field(x, ..) => x,
-            FieldPath::Root(_) => unreachable!(),
-        };
+        let field_name = self
+            .field_path
+            .response_name()
+            .expect("`Executor::look_ahead()` called for the root of an operation");
         self.parent_selection_set
             .and_then(|p| {
                 // Search the parent's fields to find this field within the selection set.
@@ -787,34 +809,61 @@ where
     /// in OwnedExecutor as existing errors will be returned in
     /// `execute_query`/`execute_mutation`/`resolve_into_stream`/etc.
     pub fn as_owned_executor(&self) -> OwnedExecutor<'a, CtxT, S> {
+        let mut field_path = Vec::new();
+        self.field_path.collect_response_names(&mut field_path);
         OwnedExecutor {
             fragments: self.fragments.clone(),
             variables: self.variables.clone(),
             current_selection_set: self.current_selection_set.map(|x| x.to_vec()),
             parent_selection_set: self.parent_selection_set.map(|x| x.to_vec()),
-            current_type: self.current_type.clone(),
+            current_type: self.current_type,
             schema: self.schema,
             context: self.context,
             errors: RwLock::new(vec![]),
-            field_path: Arc::clone(&self.field_path),
+            field_path,
+            location: *self.location(),
         }
     }
 }
 
-impl FieldPath<'_> {
-    fn construct_path(&self, acc: &mut Vec<String>) {
+impl<'a> FieldPath<'_, 'a> {
+    /// Appends the response names from the root to this field to `names`.
+    fn collect_response_names(&self, names: &mut Vec<&'a str>) {
         match self {
-            FieldPath::Root(_) => (),
-            FieldPath::Field(name, _, parent) => {
-                parent.construct_path(acc);
-                acc.push((*name).into());
+            Self::Root(_) => {}
+            Self::Field {
+                response_name,
+                parent,
+                ..
+            } => {
+                parent.collect_response_names(names);
+                names.push(response_name);
             }
+            Self::Owned(path, _) => names.extend_from_slice(path),
+        }
+    }
+
+    /// Returns the response names from the root to this field.
+    fn construct_path(&self) -> Vec<String> {
+        let mut names = Vec::new();
+        self.collect_response_names(&mut names);
+        names.into_iter().map(Into::into).collect()
+    }
+
+    /// Returns the response name of this field, or [`None`] for the root.
+    fn response_name(&self) -> Option<&'a str> {
+        match self {
+            Self::Root(_) => None,
+            Self::Field { response_name, .. } => Some(response_name),
+            Self::Owned(path, _) => path.last().copied(),
         }
     }
 
     fn location(&self) -> &SourcePosition {
-        match *self {
-            FieldPath::Root(ref pos) | FieldPath::Field(_, ref pos, _) => pos,
+        match self {
+            Self::Root(location) | Self::Field { location, .. } | Self::Owned(_, location) => {
+                location
+            }
         }
     }
 }
@@ -898,6 +947,7 @@ impl<S> Registry<S> {
             arguments: None,
             field_type: self.get_type::<T>(info),
             deprecation_status: DeprecationStatus::Current,
+            type_index: None,
         }
     }
 
@@ -917,6 +967,7 @@ impl<S> Registry<S> {
             arguments: None,
             field_type: self.get_type::<I>(info),
             deprecation_status: DeprecationStatus::Current,
+            type_index: None,
         }
     }
 

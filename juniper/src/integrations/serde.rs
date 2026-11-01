@@ -271,7 +271,7 @@ impl<T: Serialize> Serialize for Object<T> {
     fn serialize<S: Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
         let mut map = ser.serialize_map(Some(self.field_count()))?;
         for (f, v) in self.iter() {
-            map.serialize_key(f)?;
+            map.serialize_key(f.as_str())?;
             map.serialize_value(v)?;
         }
         map.end()

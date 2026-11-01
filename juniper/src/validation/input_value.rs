@@ -1,9 +1,8 @@
-use std::collections::HashSet;
-
 use derive_more::with_trait::Display;
+use foldhash::HashSet;
 
 use crate::{
-    ast::{InputValue, Operation, VariablesDefinition},
+    ast::{InputValue, Operation, TypeModifier, VariablesDefinition},
     executor::Variables,
     parser::{SourcePosition, Spanning},
     schema::{
@@ -103,8 +102,8 @@ where
 {
     let mut errors: Vec<RuleError> = vec![];
 
-    match *meta_type {
-        TypeType::NonNull(ref inner) => {
+    match meta_type.split_modifier() {
+        Some((TypeModifier::NonNull, inner)) => {
             if value.is_null() {
                 errors.push(unification_error(
                     var_name,
@@ -114,19 +113,19 @@ where
                 ));
             } else {
                 errors.append(&mut unify_value(
-                    var_name, var_pos, value, inner, schema, path,
+                    var_name, var_pos, value, &inner, schema, path,
                 ));
             }
         }
 
-        TypeType::List(ref inner, expected_size) => {
+        Some((TypeModifier::List(expected_size), inner)) => {
             if value.is_null() {
                 return errors;
             }
 
             match value.to_list_value() {
                 Some(l) => {
-                    if let Some(expected) = expected_size {
+                    if let Some(expected) = *expected_size {
                         if l.len() != expected {
                             errors.push(unification_error(
                                 var_name,
@@ -145,19 +144,20 @@ where
                             var_name,
                             var_pos,
                             v,
-                            inner,
+                            &inner,
                             schema,
                             Path::ArrayElement(i, &path),
                         ));
                     }
                 }
                 _ => errors.append(&mut unify_value(
-                    var_name, var_pos, value, inner, schema, path,
+                    var_name, var_pos, value, &inner, schema, path,
                 )),
             }
         }
 
-        TypeType::Concrete(mt) => {
+        None => {
+            let mt = meta_type.innermost_concrete();
             if value.is_null() {
                 return errors;
             }

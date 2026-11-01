@@ -327,7 +327,7 @@ impl Definition {
                 .as_ref()
                 .unwrap()
                 .iter()
-                .map(|arg| arg.method_resolve_field_tokens(scalar, false));
+                .map(|arg| arg.method_resolve_field_tokens(scalar));
 
             let rcv = self.has_receiver.then(|| {
                 quote! { self, }
@@ -359,7 +359,7 @@ impl Definition {
                                     ::core::option::Option::Some((ctx, r)),
                                 ) => {
                                     let sub = ex.replaced_context(ctx);
-                                    let val = sub.resolve_with_ctx_async(&(), &r)
+                                    let val = sub.resolve_async(&(), &r)
                                         .await
                                         .map_err(|e| ::std::vec![ex.new_error(e)])?;
                                     let errs = sub.take_errors();

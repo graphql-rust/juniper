@@ -1,7 +1,6 @@
-use std::{
-    borrow::Cow,
-    collections::{HashMap, HashSet},
-};
+use std::borrow::Cow;
+
+use foldhash::{HashMap, HashMapExt as _, HashSet, HashSetExt as _};
 
 use crate::{
     ast::{

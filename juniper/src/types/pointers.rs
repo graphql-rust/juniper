@@ -196,8 +196,8 @@ where
         &'b self,
         info: &'b Self::TypeInfo,
         field_name: &'b str,
-        arguments: &'b Arguments<S>,
-        executor: &'b Executor<Self::Context, S>,
+        arguments: Arguments<'b, S>,
+        executor: Executor<'b, 'b, Self::Context, S>,
     ) -> BoxFuture<'b, ExecutionResult<S>> {
         (**self).resolve_field_async(info, field_name, arguments, executor)
     }

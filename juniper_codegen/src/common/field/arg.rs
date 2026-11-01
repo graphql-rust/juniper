@@ -376,11 +376,7 @@ impl OnMethod {
     ///
     /// [`GraphQLValue::resolve_field`]: juniper::GraphQLValue::resolve_field
     #[must_use]
-    pub(crate) fn method_resolve_field_tokens(
-        &self,
-        scalar: &scalar::Type,
-        for_async: bool,
-    ) -> TokenStream {
+    pub(crate) fn method_resolve_field_tokens(&self, scalar: &scalar::Type) -> TokenStream {
         match self {
             Self::Regular(arg) => {
                 let (name, ty) = (&arg.name, &arg.ty);
@@ -395,18 +391,7 @@ impl OnMethod {
                             })
                     }, ::core::result::Result::Ok))
                 };
-                if for_async {
-                    quote! {
-                        match #arg {
-                            ::core::result::Result::Ok(v) => v,
-                            ::core::result::Result::Err(e) => return ::std::boxed::Box::pin(async {
-                                ::core::result::Result::Err(e)
-                            }),
-                        }
-                    }
-                } else {
-                    quote! { #arg? }
-                }
+                quote! { #arg? }
             }
 
             Self::Context(_) => quote! {

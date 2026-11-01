@@ -418,6 +418,14 @@ pub struct Field<S> {
     pub field_type: Type,
     #[doc(hidden)]
     pub deprecation_status: DeprecationStatus,
+
+    /// Index of the innermost named type of this field in the types of its [`SchemaType`].
+    ///
+    /// [`SchemaType`] sets the index when it builds the schema. The executor then finds the type
+    /// of the field without hashing the type name.
+    ///
+    /// [`SchemaType`]: crate::SchemaType
+    pub(crate) type_index: Option<usize>,
 }
 
 impl<S> Field<S> {

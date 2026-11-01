@@ -391,8 +391,8 @@ pub trait AsyncField<S, const N: FieldName>: FieldMeta<S, N> {
     fn call<'b>(
         &'b self,
         info: &'b Self::TypeInfo,
-        args: &'b FieldArguments<S>,
-        executor: &'b Executor<Self::Context, S>,
+        args: FieldArguments<'b, S>,
+        executor: Executor<'b, 'b, Self::Context, S>,
     ) -> BoxFuture<'b, ExecutionResult<S>>;
 }
 
