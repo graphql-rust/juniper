@@ -1,5 +1,6 @@
 use std::{future, ops::ControlFlow};
 
+use arcstr::ArcStr;
 use auto_enums::enum_derive;
 use futures::stream::{FuturesOrdered, StreamExt as _};
 
@@ -12,7 +13,9 @@ use crate::{
 
 use crate::BoxFuture;
 
-use super::base::{Arguments, GraphQLType, GraphQLValue, is_excluded, merge_key_into};
+use super::base::{
+    Arguments, GraphQLType, GraphQLValue, is_excluded, response_key, typename_response_key,
+};
 
 /// Extension of [`GraphQLValue`] trait with asynchronous queries/mutations resolvers.
 ///
@@ -162,7 +165,7 @@ where
 
 #[derive(Debug)]
 struct AsyncField<S> {
-    name: String,
+    name: ArcStr,
     value: Option<Value<S>>,
 }
 
@@ -220,7 +223,7 @@ where
 
                 if f.name.item == "__typename" {
                     object.add_field(
-                        response_name,
+                        typename_response_key(f),
                         Value::Scalar(instance.concrete_type_name(executor.context(), info).into()),
                     );
                     continue;
@@ -238,7 +241,7 @@ where
 
                 let sub_exec = executor.field_sub_executor(
                     response_name,
-                    f.name.item,
+                    &meta_field.field_type,
                     span.start,
                     f.selection_set.as_ref().map(|v| &v[..]),
                 );
@@ -258,7 +261,7 @@ where
                 let pos = span.start;
                 let is_non_null = meta_field.field_type.is_non_null();
 
-                let response_name = response_name.to_string();
+                let response_key = response_key(f, meta_field);
                 async_values.push_back(AsyncValueFuture::Field1(async move {
                     // TODO: implement custom future type instead of
                     //       two-level boxing.
@@ -283,7 +286,7 @@ where
                         }
                     };
                     AsyncValue::Field(AsyncField {
-                        name: response_name,
+                        name: response_key,
                         value,
                     })
                 }));
@@ -344,7 +347,7 @@ where
                         //       a `Value::Null`.
                         async_values.push_back(AsyncValueFuture::Field2(future::ready(
                             AsyncValue::Field(AsyncField {
-                                name: String::new(), // doesn't matter here
+                                name: ArcStr::new(), // doesn't matter here
                                 value: None,
                             }),
                         )));
@@ -403,7 +406,7 @@ where
                             //       a `Value::Null`.
                             async_values.push_back(AsyncValueFuture::Field2(future::ready(
                                 AsyncValue::Field(AsyncField {
-                                    name: String::new(), // doesn't matter here
+                                    name: ArcStr::new(), // doesn't matter here
                                     value: None,
                                 }),
                             )));
@@ -460,15 +463,11 @@ where
             AsyncValue::Field(AsyncField {
                 name,
                 value: Some(value),
-            }) => merge_key_into(object, &name, value),
+            }) => object.merge_field(name, value),
             AsyncValue::Field(AsyncField { value: None, .. }) | AsyncValue::Nested(Value::Null) => {
                 return ControlFlow::Break(());
             }
-            AsyncValue::Nested(Value::Object(nested)) => {
-                for (name, value) in nested {
-                    merge_key_into(object, &name, value);
-                }
-            }
+            AsyncValue::Nested(Value::Object(nested)) => object.merge(nested),
             AsyncValue::Nested(_) => unreachable!(),
         }
     }
