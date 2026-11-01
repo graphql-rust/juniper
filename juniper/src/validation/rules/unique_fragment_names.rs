@@ -1,4 +1,6 @@
-use std::collections::hash_map::{Entry, HashMap};
+use std::collections::hash_map::Entry;
+
+use foldhash::{HashMap, HashMapExt as _};
 
 use crate::{
     ast::Fragment,
