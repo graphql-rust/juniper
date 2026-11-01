@@ -1,16 +1,18 @@
 use std::{
     mem::{self, MaybeUninit},
     ptr,
+    task::Poll,
 };
 
 use arcstr::ArcStr;
+use futures::stream::{FuturesUnordered, StreamExt as _};
 
 use crate::{
     ast::{FromInputValue, InputValue, Selection, ToInputValue},
     executor::{ExecutionResult, Executor, FieldError, IntoFieldError, Registry},
     schema::meta::MetaType,
     types::{
-        async_await::GraphQLValueAsync,
+        async_await::{GraphQLValueAsync, poll_once},
         base::{GraphQLType, GraphQLValue},
     },
     value::{ScalarValue, Value},
@@ -545,6 +547,10 @@ where
     Ok(Value::list(result))
 }
 
+/// Resolves the `items` of a list into a list value.
+///
+/// The future of each item is polled once when it is created. Most items complete at that point.
+/// The items that are still pending then complete concurrently.
 async fn resolve_into_list_async<'a, 't, S, T, I>(
     executor: &'a Executor<'a, 'a, T::Context, S>,
     info: &'a T::TypeInfo,
@@ -557,27 +563,52 @@ where
     T::Context: Sync,
     S: ScalarValue + Send + Sync,
 {
-    use futures::stream::{FuturesOrdered, StreamExt as _};
-
     let stop_on_null = executor
         .current_type()
         .list_contents()
         .expect("Current type is not a list type")
         .is_non_null();
+    let value_or_null = |result: ExecutionResult<S>| {
+        result.unwrap_or_else(|error| {
+            executor.push_error(error);
+            Value::null()
+        })
+    };
 
-    let mut futures = items
-        .map(async |it| executor.resolve_into_value_async(info, it).await)
-        .collect::<FuturesOrdered<_>>();
-
-    let mut values = Vec::with_capacity(futures.len());
-    while let Some(value) = futures.next().await {
-        if stop_on_null && value.is_null() {
-            return Ok(value);
+    let mut values = Vec::with_capacity(items.len());
+    let mut pending = FuturesUnordered::new();
+    let mut has_null_item = false;
+    for item in items {
+        let mut future = item.resolve_async(info, executor.current_selection_set(), executor);
+        match poll_once(&mut future).await {
+            Poll::Ready(result) => {
+                let value = value_or_null(result);
+                if stop_on_null && value.is_null() {
+                    // A `null` item makes the whole list `null`, so the remaining items do not
+                    // start.
+                    has_null_item = true;
+                    break;
+                }
+                values.push(value);
+            }
+            Poll::Pending => {
+                let index = values.len();
+                values.push(Value::null());
+                pending.push(async move { (index, future.await) });
+            }
         }
-        values.push(value);
+    }
+    while let Some((index, result)) = pending.next().await {
+        let value = value_or_null(result);
+        has_null_item |= stop_on_null && value.is_null();
+        values[index] = value;
     }
 
-    Ok(Value::list(values))
+    Ok(if has_null_item {
+        Value::null()
+    } else {
+        Value::list(values)
+    })
 }
 
 #[cfg(test)]
