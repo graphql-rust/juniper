@@ -522,6 +522,9 @@ where
     }
 
     /// Resolve a single arbitrary value into an `ExecutionResult`
+    ///
+    /// Resolves the `value` with [`GraphQLValue::resolve()`] if values of the current type resolve
+    /// without awaiting. This avoids the cost of futures.
     pub async fn resolve_async<T>(&self, info: &T::TypeInfo, value: &T) -> ExecutionResult<S>
     where
         T: GraphQLValueAsync<S, Context = CtxT> + ?Sized,
@@ -529,9 +532,13 @@ where
         CtxT: Sync,
         S: Send + Sync,
     {
-        value
-            .resolve_async(info, self.current_selection_set, self)
-            .await
+        if self.current_type.innermost_concrete().is_synchronous() {
+            value.resolve(info, self.current_selection_set, self)
+        } else {
+            value
+                .resolve_async(info, self.current_selection_set, self)
+                .await
+        }
     }
 
     /// Resolve a single arbitrary value, mapping the context to a new type
@@ -947,6 +954,7 @@ impl<S> Registry<S> {
             arguments: None,
             field_type: self.get_type::<T>(info),
             deprecation_status: DeprecationStatus::Current,
+            synchronous: false,
             type_index: None,
         }
     }
@@ -967,6 +975,7 @@ impl<S> Registry<S> {
             arguments: None,
             field_type: self.get_type::<I>(info),
             deprecation_status: DeprecationStatus::Current,
+            synchronous: false,
             type_index: None,
         }
     }
@@ -993,6 +1002,17 @@ impl<S> Registry<S> {
     {
         self.arg::<T>(name, info)
             .default_value(value.to_input_value())
+    }
+
+    /// Creates the `__typename` meta-field of objects and interfaces.
+    ///
+    /// The executor resolves `__typename` without a resolver, so the field is synchronous.
+    fn typename_field(&mut self) -> Field<S>
+    where
+        S: ScalarValue,
+    {
+        self.field::<String>(arcstr::literal!("__typename"), &())
+            .synchronous()
     }
 
     fn insert_placeholder(&mut self, name: Name, of_type: Type) {
@@ -1049,7 +1069,7 @@ impl<S> Registry<S> {
         let name = T::name(info).expect("Object types must be named. Implement name()");
 
         let mut v = fields.to_vec();
-        v.push(self.field::<String>(arcstr::literal!("__typename"), &()));
+        v.push(self.typename_field());
         ObjectMeta::new(name, &v)
     }
 
@@ -1078,7 +1098,7 @@ impl<S> Registry<S> {
         let name = T::name(info).expect("Interface types must be named. Implement name()");
 
         let mut v = fields.to_vec();
-        v.push(self.field::<String>(arcstr::literal!("__typename"), &()));
+        v.push(self.typename_field());
         InterfaceMeta::new(name, &v)
     }
 

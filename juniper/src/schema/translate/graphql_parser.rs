@@ -183,6 +183,7 @@ impl GraphQLParserTranslator {
                 name,
                 description,
                 of_type_names,
+                synchronous: _,
             }) => schema::TypeDefinition::Union(schema::UnionType {
                 position: Pos::default(),
                 description: description.as_deref().map(Into::into),
@@ -195,6 +196,7 @@ impl GraphQLParserTranslator {
                 description,
                 fields,
                 interface_names,
+                synchronous: _,
             }) => schema::TypeDefinition::Interface(schema::InterfaceType {
                 position: Pos::default(),
                 description: description.as_deref().map(Into::into),
@@ -231,6 +233,7 @@ impl GraphQLParserTranslator {
                 description,
                 fields,
                 interface_names,
+                synchronous: _,
             }) => schema::TypeDefinition::Object(schema::ObjectType {
                 position: Pos::default(),
                 description: description.as_deref().map(Into::into),
@@ -277,6 +280,7 @@ impl GraphQLParserTranslator {
             arguments,
             field_type,
             deprecation_status,
+            synchronous: _,
             type_index: _,
         } = input;
         schema::Field {
