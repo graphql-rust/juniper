@@ -6,6 +6,17 @@ All user visible changes to `juniper_codegen` crate will be documented in this f
 
 
 
+## master
+
+[Diff](/../../compare/juniper_codegen-v0.18.0...master)
+
+### Changed
+
+- Marked the fields without an `async` resolver as synchronous in the metadata of `#[graphql_object]` and `#[derive(GraphQLObject)]` types.
+
+
+
+
 ## [0.18.0] · 2026-10-30
 [0.18.0]: /../../tree/juniper_codegen-v0.18.0/juniper_codegen
 

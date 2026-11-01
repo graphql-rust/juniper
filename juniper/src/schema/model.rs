@@ -12,8 +12,9 @@ use crate::{
     ast::{Type, TypeModifier},
     executor::{Context, Registry},
     parser::Limits,
-    schema::meta::{
-        Argument, Field, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta,
+    schema::{
+        meta::{Argument, Field, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta},
+        synchronous::mark_synchronous_types,
     },
     types::{base::GraphQLType, name::Name},
     value::{DefaultScalarValue, ScalarValue},
@@ -352,10 +353,13 @@ impl<S> SchemaType<S> {
         directives.insert(one_of_directive.name.clone(), one_of_directive);
 
         let mut meta_fields = vec![
-            registry.field::<SchemaType<S>>(arcstr::literal!("__schema"), &()),
+            registry
+                .field::<SchemaType<S>>(arcstr::literal!("__schema"), &())
+                .synchronous(),
             registry
                 .field::<Option<TypeType<S>>>(arcstr::literal!("__type"), &())
-                .argument(registry.arg::<String>(arcstr::literal!("name"), &())),
+                .argument(registry.arg::<String>(arcstr::literal!("name"), &()))
+                .synchronous(),
         ];
 
         if let Some(root_type) = registry.types.get_mut(query_type_name.as_ref()) {
@@ -373,6 +377,7 @@ impl<S> SchemaType<S> {
                 panic!("Type {of_type:?} is still a placeholder type");
             }
         }
+        mark_synchronous_types(&mut registry.types);
         let mut types = registry.types.into_iter().collect();
         set_field_type_indices(&mut types);
         SchemaType {

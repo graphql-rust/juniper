@@ -422,25 +422,41 @@ where
                     let response_key = response_key(f, meta_field);
                     let location = span.start;
 
-                    let mut resolver =
-                        instance.resolve_field_async(info, f.name.item, args, sub_exec);
-                    match poll_once(&mut resolver).await {
-                        Poll::Ready(result) => object.push_resolved(ResolvedSelection::Field {
+                    if meta_field.synchronous
+                        && sub_exec
+                            .current_type()
+                            .innermost_concrete()
+                            .is_synchronous()
+                    {
+                        // The field resolves without awaiting, so it needs no future.
+                        let result = instance.resolve_field(info, f.name.item, &args, &sub_exec);
+                        object.push_resolved(ResolvedSelection::Field {
                             response_key,
                             value: complete_field(
                                 result, &sub_exec, meta_type, meta_field, location,
                             ),
-                        }),
-                        Poll::Pending => {
-                            object.push_pending(SelectionFuture::Field(PendingField {
-                                resolver,
-                                executor: sub_exec,
-                                parent_type: meta_type,
-                                meta_field,
+                        })
+                    } else {
+                        let mut resolver =
+                            instance.resolve_field_async(info, f.name.item, args, sub_exec);
+                        match poll_once(&mut resolver).await {
+                            Poll::Ready(result) => object.push_resolved(ResolvedSelection::Field {
                                 response_key,
-                                location,
-                            }));
-                            ControlFlow::Continue(())
+                                value: complete_field(
+                                    result, &sub_exec, meta_type, meta_field, location,
+                                ),
+                            }),
+                            Poll::Pending => {
+                                object.push_pending(SelectionFuture::Field(PendingField {
+                                    resolver,
+                                    executor: sub_exec,
+                                    parent_type: meta_type,
+                                    meta_field,
+                                    response_key,
+                                    location,
+                                }));
+                                ControlFlow::Continue(())
+                            }
                         }
                     }
                 }
