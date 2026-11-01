@@ -1,0 +1,53 @@
+type Query {
+  hello: String!
+  users(first: Int!): [User!]!
+  hero(episode: Episode): Character!
+  humans: [Human!]!
+  droids: [Droid!]!
+}
+
+type User {
+  id: Int!
+  name: String!
+  email: String!
+  active: Boolean!
+  score: Float!
+  role: Role!
+  friends(first: Int!): [User!]!
+}
+
+enum Role {
+  ADMIN
+  MODERATOR
+  MEMBER
+  GUEST
+}
+
+interface Character {
+  id: String!
+  name: String!
+  friends: [Character!]!
+  appearsIn: [Episode!]!
+}
+
+type Human implements Character {
+  id: String!
+  name: String!
+  friends: [Character!]!
+  appearsIn: [Episode!]!
+  homePlanet: String
+}
+
+type Droid implements Character {
+  id: String!
+  name: String!
+  friends: [Character!]!
+  appearsIn: [Episode!]!
+  primaryFunction: String!
+}
+
+enum Episode {
+  NEW_HOPE
+  EMPIRE
+  JEDI
+}
