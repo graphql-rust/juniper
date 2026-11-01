@@ -287,22 +287,19 @@ where
 
                 let response_name = f.alias.as_ref().unwrap_or(&f.name).item;
 
-                let meta_field = meta_type
-                    .field_by_name(f.name.item)
-                    .unwrap_or_else(|| {
-                        panic!(
-                            "Field {} not found on type {:?}",
-                            f.name.item,
-                            meta_type.name(),
-                        )
-                    })
-                    .clone();
+                let meta_field = meta_type.field_by_name(f.name.item).unwrap_or_else(|| {
+                    panic!(
+                        "Field {} not found on type {:?}",
+                        f.name.item,
+                        meta_type.name(),
+                    )
+                });
 
                 let exec_vars = executor.variables();
 
                 let sub_exec = executor.field_sub_executor(
                     response_name,
-                    f.name.item,
+                    &meta_field.field_type,
                     span.start,
                     f.selection_set.as_ref().map(|x| &x[..]),
                 );

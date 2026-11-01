@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use itertools::Itertools as _;
 
 use crate::{
-    ast::InputValue,
+    ast::{InputValue, TypeModifier},
     schema::{
         meta::{Argument, EnumMeta, InputObjectMeta, MetaType},
         model::{SchemaType, TypeType},
@@ -96,36 +96,37 @@ pub fn validate_literal_value<S>(
 where
     S: ScalarValue,
 {
-    match *arg_type {
-        TypeType::NonNull(ref inner) => {
+    match arg_type.split_modifier() {
+        Some((TypeModifier::NonNull, inner)) => {
             if arg_value.is_null() {
                 Some(error::non_null(arg_type))
             } else {
-                validate_literal_value(schema, inner, arg_value)
+                validate_literal_value(schema, &inner, arg_value)
             }
         }
-        TypeType::List(ref inner, expected_size) => match *arg_value {
+        Some((TypeModifier::List(expected_size), inner)) => match *arg_value {
             InputValue::Null | InputValue::Variable(_) => None,
             InputValue::List(ref items) => {
-                if let Some(expected) = expected_size {
+                if let Some(expected) = *expected_size {
                     if items.len() != expected {
                         return Some(error::invalid_list_length(arg_value, items.len(), expected));
                     }
                 }
                 items
                     .iter()
-                    .find_map(|i| validate_literal_value(schema, inner, &i.item))
+                    .find_map(|i| validate_literal_value(schema, &inner, &i.item))
             }
             ref v => {
-                if let Some(expected) = expected_size {
+                if let Some(expected) = *expected_size {
                     if expected != 1 {
                         return Some(error::invalid_list_length(arg_value, 1, expected));
                     }
                 }
-                validate_literal_value(schema, inner, v)
+                validate_literal_value(schema, &inner, v)
             }
         },
-        TypeType::Concrete(t) => {
+        None => {
+            let t = arg_type.innermost_concrete();
             // Even though `InputValue::String` can be parsed into an enum, they are not valid as
             // enum *literals* in a GraphQL query.
             if let (&InputValue::Scalar(_), Some(&MetaType::Enum(EnumMeta { .. }))) =

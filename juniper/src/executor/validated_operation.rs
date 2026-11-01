@@ -1,11 +1,6 @@
 //! Execution of a GraphQL operation that passed parsing and validation.
 
-use std::{
-    borrow::Cow,
-    collections::HashMap,
-    fmt,
-    sync::{Arc, RwLock},
-};
+use std::{borrow::Cow, collections::HashMap, fmt, sync::RwLock};
 
 use crate::{
     GraphQLError,
@@ -330,7 +325,7 @@ where
             schema: &self.root_node.schema,
             context,
             errors,
-            field_path: Arc::new(FieldPath::Root(self.operation.span.start)),
+            field_path: FieldPath::Root(self.operation.span.start),
             serial: self.operation_type() == OperationType::Mutation,
         })
     }
