@@ -461,7 +461,7 @@ where
 
                 let sub_exec = executor.field_sub_executor(
                     response_name,
-                    f.name.item,
+                    &meta_field.field_type,
                     span.start,
                     f.selection_set.as_ref().map(|v| &v[..]),
                 );

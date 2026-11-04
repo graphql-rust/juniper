@@ -6,6 +6,17 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 
 
+## master
+
+[Diff](/../../compare/juniper-v0.18.0...master)
+
+### BC Breaks
+
+- Made `executor::FieldPath` private.
+
+
+
+
 ## [0.18.0] · 2026-10-30
 [0.18.0]: /../../tree/juniper-v0.18.0/juniper
 
