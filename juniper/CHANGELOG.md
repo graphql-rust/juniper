@@ -6,6 +6,38 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 
 
 
+## master
+
+[Diff](/../../compare/juniper-v0.18.0...master)
+
+### BC Breaks
+
+- Made `executor::FieldPath` private.
+- Changed the field names of `Object` from `String` to `ArcStr`:
+    - `Object::add_field()` takes a name of any type that converts into `ArcStr`.
+    - `Object::iter()`, `Object::iter_mut()`, and the `IntoIterator` implementation of `Object` return `ArcStr` names.
+- Added private fields to `meta::Field`, `meta::ObjectMeta`, `meta::InterfaceMeta`, and `meta::UnionMeta`. Only their constructors can create them now.
+- Changed the `Arguments::new()` method to take a `VecMap` instead of an `IndexMap`.
+- Changed `GraphQLValueAsync::resolve_field_async()` to take its `arguments` and `executor` by value.
+- Asynchronous execution calls `GraphQLValue::resolve()` instead of `GraphQLValueAsync::resolve_async()` for values of scalars, enums, and types that resolve without awaiting.
+
+### Added
+
+- `meta::Field::synchronous()` method. It marks a field with a synchronous resolver, so asynchronous execution resolves the field without a future.
+- `Clone` and `Copy` implementations for `Executor`.
+
+### Changed
+
+- Asynchronous execution resolves a field without futures if the resolver of the field and all resolvers below it are synchronous. The macros mark all fields without an `async` resolver as synchronous.
+- Sped up execution. On the operations of the `juniper_benchmarks` crate, synchronous execution takes 17 to 69% less time than in 0.18.0, and asynchronous execution takes 20 to 87% less time.
+
+### Fixed
+
+- Incorrect order of a `__typename` field after a pending field in asynchronous execution.
+
+
+
+
 ## [0.18.0] · 2026-10-30
 [0.18.0]: /../../tree/juniper-v0.18.0/juniper
 

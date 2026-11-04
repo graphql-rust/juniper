@@ -1,17 +1,21 @@
-use std::ptr;
+use std::{fmt, ptr};
 
 use arcstr::ArcStr;
 use derive_more::with_trait::Display;
-use fnv::FnvHashMap;
+use fnv::{FnvBuildHasher, FnvHashMap};
 #[cfg(feature = "schema-language")]
 use graphql_parser::schema::Document;
+use indexmap::IndexMap;
 
 use crate::{
     GraphQLEnum,
     ast::{Type, TypeModifier},
     executor::{Context, Registry},
     parser::Limits,
-    schema::meta::{Argument, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta},
+    schema::{
+        meta::{Argument, Field, InterfaceMeta, MetaType, ObjectMeta, PlaceholderMeta, UnionMeta},
+        synchronous::mark_synchronous_types,
+    },
     types::{base::GraphQLType, name::Name},
     value::{DefaultScalarValue, ScalarValue},
 };
@@ -291,7 +295,10 @@ where
 #[derive(Debug)]
 pub struct SchemaType<S> {
     pub(crate) description: Option<ArcStr>,
-    pub(crate) types: FnvHashMap<Name, MetaType<S>>,
+    /// Named types of this schema.
+    ///
+    /// The executor finds the type of a field by its [`Field::type_index`].
+    pub(crate) types: IndexMap<Name, MetaType<S>, FnvBuildHasher>,
     pub(crate) query_type_name: String,
     pub(crate) mutation_type_name: Option<String>,
     pub(crate) subscription_type_name: Option<String>,
@@ -346,10 +353,13 @@ impl<S> SchemaType<S> {
         directives.insert(one_of_directive.name.clone(), one_of_directive);
 
         let mut meta_fields = vec![
-            registry.field::<SchemaType<S>>(arcstr::literal!("__schema"), &()),
+            registry
+                .field::<SchemaType<S>>(arcstr::literal!("__schema"), &())
+                .synchronous(),
             registry
                 .field::<Option<TypeType<S>>>(arcstr::literal!("__type"), &())
-                .argument(registry.arg::<String>(arcstr::literal!("name"), &())),
+                .argument(registry.arg::<String>(arcstr::literal!("name"), &()))
+                .synchronous(),
         ];
 
         if let Some(root_type) = registry.types.get_mut(query_type_name.as_ref()) {
@@ -367,9 +377,12 @@ impl<S> SchemaType<S> {
                 panic!("Type {of_type:?} is still a placeholder type");
             }
         }
+        mark_synchronous_types(&mut registry.types);
+        let mut types = registry.types.into_iter().collect();
+        set_field_type_indices(&mut types);
         SchemaType {
             description: None,
-            types: registry.types,
+            types,
             query_type_name: query_type_name.into(),
             mutation_type_name: if mutation_type_name.as_ref() != "_EmptyMutation" {
                 Some(mutation_type_name.into())
@@ -398,7 +411,7 @@ impl<S> SchemaType<S> {
 
     /// Get a type by name.
     pub fn type_by_name(&self, name: impl AsRef<str>) -> Option<TypeType<'_, S>> {
-        self.types.get(name.as_ref()).map(|t| TypeType::Concrete(t))
+        self.types.get(name.as_ref()).map(TypeType::from)
     }
 
     /// Get a concrete type by name.
@@ -419,11 +432,7 @@ impl<S> SchemaType<S> {
 
     /// Get the query type from the schema.
     pub fn query_type(&self) -> TypeType<'_, S> {
-        TypeType::Concrete(
-            self.types
-                .get(self.query_type_name.as_str())
-                .expect("Query type does not exist in schema"),
-        )
+        self.concrete_query_type().into()
     }
 
     /// Get the concrete query type from the schema.
@@ -467,13 +476,9 @@ impl<S> SchemaType<S> {
 
     /// Get a list of types.
     pub fn type_list(&self) -> Vec<TypeType<'_, S>> {
-        let mut types = self
-            .types
-            .values()
-            .map(|t| TypeType::Concrete(t))
-            .collect::<Vec<_>>();
-        sort_concrete_types(&mut types);
-        types
+        let mut types = self.concrete_type_list();
+        types.sort_by_key(|t| (concrete_type_order(t), t.name()));
+        types.into_iter().map(TypeType::from).collect()
     }
 
     /// Get a list of concrete types.
@@ -481,21 +486,32 @@ impl<S> SchemaType<S> {
         self.types.values().collect()
     }
 
-    /// Make a type.
-    pub fn make_type(
-        &self,
-        ty: &Type<impl AsRef<str>, impl AsRef<[TypeModifier]>>,
-    ) -> TypeType<'_, S> {
-        let mut out = self
-            .type_by_name(ty.innermost_name())
-            .expect("Type not found in schema");
-        for m in ty.modifiers() {
-            out = match m {
-                TypeModifier::NonNull => TypeType::NonNull(out.into()),
-                TypeModifier::List(expected_size) => TypeType::List(out.into(), *expected_size),
-            };
+    /// Returns the [`TypeType`] of the `field` of a type in this schema.
+    pub(crate) fn field_type<'t>(&'t self, field: &'t Field<S>) -> TypeType<'t, S> {
+        match field.type_index {
+            Some(index) => TypeType {
+                concrete: &self.types[index],
+                modifiers: field.field_type.modifiers(),
+            },
+            None => self.make_type(&field.field_type),
         }
-        out
+    }
+
+    /// Returns the [`TypeType`] of the `ty` literal.
+    ///
+    /// # Panics
+    ///
+    /// If this schema has no type with the innermost name of `ty`.
+    pub fn make_type<'t>(
+        &'t self,
+        ty: &'t Type<impl AsRef<str>, impl AsRef<[TypeModifier]>>,
+    ) -> TypeType<'t, S> {
+        TypeType {
+            concrete: self
+                .concrete_type_by_name(ty.innermost_name())
+                .expect("Type not found in schema"),
+            modifiers: ty.modifiers(),
+        }
     }
 
     /// Get a list of directives.
@@ -606,41 +622,84 @@ impl<S> SchemaType<S> {
     }
 }
 
-#[derive(Clone, Display)]
-pub enum TypeType<'a, S: 'a> {
-    #[display("{}", _0.name().unwrap())]
-    Concrete(&'a MetaType<S>),
-    #[display("{}!", **_0)]
-    NonNull(Box<TypeType<'a, S>>),
-    #[display("[{}]", **_0)]
-    List(Box<TypeType<'a, S>>, Option<usize>),
+/// Named type of a [`SchemaType`] with list and non-`null` modifiers.
+///
+/// Introspection exposes this type as `__Type`.
+pub struct TypeType<'a, S> {
+    /// Innermost named type.
+    concrete: &'a MetaType<S>,
+
+    /// List and non-`null` modifiers, from the innermost to the outermost.
+    modifiers: &'a [TypeModifier],
+}
+
+// `#[derive(Clone, Copy)]` would require `S: Copy`.
+impl<S> Clone for TypeType<'_, S> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<S> Copy for TypeType<'_, S> {}
+
+impl<'a, S> From<&'a MetaType<S>> for TypeType<'a, S> {
+    fn from(concrete: &'a MetaType<S>) -> Self {
+        Self {
+            concrete,
+            modifiers: &[],
+        }
+    }
 }
 
 impl<'a, S> TypeType<'a, S> {
-    pub fn to_concrete(&self) -> Option<&'a MetaType<S>> {
-        match self {
-            Self::Concrete(t) => Some(t),
-            Self::List(..) | Self::NonNull(..) => None,
+    /// Returns the named type if this type has no modifiers.
+    pub fn to_concrete(self) -> Option<&'a MetaType<S>> {
+        self.modifiers.is_empty().then_some(self.concrete)
+    }
+
+    /// Returns the innermost named type.
+    pub fn innermost_concrete(self) -> &'a MetaType<S> {
+        self.concrete
+    }
+
+    /// Splits this type into its outermost modifier and the wrapped type.
+    ///
+    /// Returns [`None`] for a named type.
+    pub fn split_modifier(self) -> Option<(&'a TypeModifier, Self)> {
+        let (modifier, modifiers) = self.modifiers.split_last()?;
+        Some((
+            modifier,
+            Self {
+                concrete: self.concrete,
+                modifiers,
+            },
+        ))
+    }
+
+    /// Returns the item type if this type is a list or a non-`null` list.
+    pub fn list_contents(self) -> Option<Self> {
+        match self.split_modifier()? {
+            (TypeModifier::NonNull, inner) => inner.list_contents(),
+            (TypeModifier::List(..), inner) => Some(inner),
         }
     }
 
-    pub fn innermost_concrete(&self) -> &'a MetaType<S> {
-        match self {
-            Self::Concrete(t) => t,
-            Self::NonNull(n) | Self::List(n, ..) => n.innermost_concrete(),
-        }
+    /// Indicates whether this type is non-`null`.
+    pub fn is_non_null(self) -> bool {
+        matches!(self.modifiers.last(), Some(TypeModifier::NonNull))
     }
+}
 
-    pub fn list_contents(&self) -> Option<&Self> {
-        match self {
-            Self::List(n, ..) => Some(n),
-            Self::NonNull(n) => n.list_contents(),
-            Self::Concrete(..) => None,
+impl<S> fmt::Display for TypeType<'_, S> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.split_modifier() {
+            None => {
+                let name = self.concrete.name().expect("named type");
+                write!(f, "{name}")
+            }
+            Some((TypeModifier::NonNull, inner)) => write!(f, "{inner}!"),
+            Some((TypeModifier::List(..), inner)) => write!(f, "[{inner}]"),
         }
-    }
-
-    pub fn is_non_null(&self) -> bool {
-        matches!(self, TypeType::NonNull(..))
     }
 }
 
@@ -798,63 +857,52 @@ pub enum DirectiveLocation {
     InputFieldDefinition,
 }
 
-/// Sorts the provided [`TypeType`]s in the "type-then-name" manner.
-fn sort_concrete_types<S>(types: &mut [TypeType<S>]) {
-    types.sort_by(|a, b| {
-        concrete_type_sort::by_type(a)
-            .cmp(&concrete_type_sort::by_type(b))
-            .then_with(|| concrete_type_sort::by_name(a).cmp(&concrete_type_sort::by_name(b)))
-    });
-}
-
 /// Sorts the provided [`DirectiveType`]s by name.
 fn sort_directives<S>(directives: &mut [&DirectiveType<S>]) {
     directives.sort_by(|a, b| a.name.cmp(&b.name));
 }
 
-/// Evaluation of a [`TypeType`] weights for sorting (for concrete types only).
-///
-/// Used for deterministic introspection output.
-mod concrete_type_sort {
-    use crate::meta::MetaType;
-
-    use super::TypeType;
-
-    /// Returns a [`TypeType`] sorting weight by its type.
-    pub fn by_type<S>(t: &TypeType<S>) -> u8 {
-        match t {
-            TypeType::Concrete(MetaType::Enum(..)) => 0,
-            TypeType::Concrete(MetaType::InputObject(..)) => 1,
-            TypeType::Concrete(MetaType::Interface(..)) => 2,
-            TypeType::Concrete(MetaType::Scalar(..)) => 3,
-            TypeType::Concrete(MetaType::Object(..)) => 4,
-            TypeType::Concrete(MetaType::Union(..)) => 5,
-            // NOTE: The following types are not part of the introspected types.
-            TypeType::Concrete(
-                MetaType::List(..) | MetaType::Nullable(..) | MetaType::Placeholder(..),
-            ) => 6,
-            // NOTE: Other variants will not appear since we're only sorting concrete types.
-            TypeType::List(..) | TypeType::NonNull(..) => 7,
+/// Sets the [`Field::type_index`] of the fields of all objects and interfaces in `types`.
+fn set_field_type_indices<S>(types: &mut IndexMap<Name, MetaType<S>, FnvBuildHasher>) {
+    let indices = types
+        .values()
+        .map(|meta| {
+            if let MetaType::Object(ObjectMeta { fields, .. })
+            | MetaType::Interface(InterfaceMeta { fields, .. }) = meta
+            {
+                fields
+                    .iter()
+                    .map(|f| types.get_index_of(f.field_type.innermost_name()))
+                    .collect()
+            } else {
+                Vec::new()
+            }
+        })
+        .collect::<Vec<_>>();
+    for (meta, indices) in types.values_mut().zip(indices) {
+        if let MetaType::Object(ObjectMeta { fields, .. })
+        | MetaType::Interface(InterfaceMeta { fields, .. }) = meta
+        {
+            for (field, index) in fields.iter_mut().zip(indices) {
+                field.type_index = index;
+            }
         }
     }
+}
 
-    /// Returns a [`TypeType`] sorting weight by its name.
-    pub fn by_name<'a, S>(t: &'a TypeType<'a, S>) -> Option<&'a str> {
-        match t {
-            TypeType::Concrete(MetaType::Enum(meta)) => Some(&meta.name),
-            TypeType::Concrete(MetaType::InputObject(meta)) => Some(&meta.name),
-            TypeType::Concrete(MetaType::Interface(meta)) => Some(&meta.name),
-            TypeType::Concrete(MetaType::Scalar(meta)) => Some(&meta.name),
-            TypeType::Concrete(MetaType::Object(meta)) => Some(&meta.name),
-            TypeType::Concrete(MetaType::Union(meta)) => Some(&meta.name),
-            TypeType::Concrete(
-                // NOTE: The following types are not part of the introspected types.
-                MetaType::List(..) | MetaType::Nullable(..) | MetaType::Placeholder(..),
-            )
-            // NOTE: Other variants will not appear since we're only sorting concrete types.
-            | TypeType::List(..)
-            | TypeType::NonNull(..) => None,
-        }
+/// Returns the position of the kind of the `concrete` type in the introspection output.
+///
+/// Introspection lists types by kind and then by name, so the output is deterministic.
+fn concrete_type_order<S>(concrete: &MetaType<S>) -> u8 {
+    match concrete {
+        MetaType::Enum(..) => 0,
+        MetaType::InputObject(..) => 1,
+        MetaType::Interface(..) => 2,
+        MetaType::Scalar(..) => 3,
+        MetaType::Object(..) => 4,
+        MetaType::Union(..) => 5,
+        // Introspection does not list these types.
+        MetaType::List(..) | MetaType::Nullable(..) | MetaType::Placeholder(..) => 6,
     }
 }
 

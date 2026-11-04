@@ -1,7 +1,6 @@
-use std::{
-    collections::{HashMap, HashSet},
-    fmt,
-};
+use std::fmt;
+
+use foldhash::{HashMap, HashMapExt as _, HashSet, HashSetExt as _};
 
 use crate::{
     Span,

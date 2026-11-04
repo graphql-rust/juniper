@@ -182,8 +182,8 @@ mod non_null_null_result {
             &'a self,
             _: &'a Self::TypeInfo,
             _: &'a str,
-            _: &'a Arguments<DefaultScalarValue>,
-            _: &'a Executor<Self::Context>,
+            _: Arguments<'a, DefaultScalarValue>,
+            _: Executor<'a, 'a, Self::Context>,
         ) -> BoxFuture<'a, ExecutionResult> {
             Box::pin(future::ready(Ok(Value::null())))
         }
@@ -260,8 +260,8 @@ mod non_null_null_result {
             &'a self,
             _: &'a Self::TypeInfo,
             _: &'a str,
-            _: &'a Arguments<DefaultScalarValue>,
-            _: &'a Executor<Self::Context>,
+            _: Arguments<'a, DefaultScalarValue>,
+            _: Executor<'a, 'a, Self::Context>,
         ) -> BoxFuture<'a, ExecutionResult> {
             Box::pin(future::ready(Ok(Value::null())))
         }

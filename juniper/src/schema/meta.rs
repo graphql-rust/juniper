@@ -163,6 +163,13 @@ pub struct ObjectMeta<S> {
     pub fields: Vec<Field<S>>,
     #[doc(hidden)]
     pub interface_names: Vec<ArcStr>,
+
+    /// Indicates whether values of this type resolve without awaiting.
+    ///
+    /// [`SchemaType`] computes this flag when it builds the schema.
+    ///
+    /// [`SchemaType`]: crate::SchemaType
+    pub(crate) synchronous: bool,
 }
 
 impl<S> ObjectMeta<S> {
@@ -176,6 +183,7 @@ impl<S> ObjectMeta<S> {
             description: None,
             fields: fields.to_vec(),
             interface_names: vec![],
+            synchronous: false,
         }
     }
 
@@ -260,6 +268,13 @@ pub struct InterfaceMeta<S> {
     pub fields: Vec<Field<S>>,
     #[doc(hidden)]
     pub interface_names: Vec<ArcStr>,
+
+    /// Indicates whether values of this type resolve without awaiting.
+    ///
+    /// [`SchemaType`] computes this flag when it builds the schema.
+    ///
+    /// [`SchemaType`]: crate::SchemaType
+    pub(crate) synchronous: bool,
 }
 
 impl<S> InterfaceMeta<S> {
@@ -273,6 +288,7 @@ impl<S> InterfaceMeta<S> {
             description: None,
             fields: fields.to_vec(),
             interface_names: Vec::new(),
+            synchronous: false,
         }
     }
 
@@ -312,6 +328,13 @@ pub struct UnionMeta {
     pub description: Option<ArcStr>,
     #[doc(hidden)]
     pub of_type_names: Vec<ArcStr>,
+
+    /// Indicates whether values of this type resolve without awaiting.
+    ///
+    /// [`SchemaType`] computes this flag when it builds the schema.
+    ///
+    /// [`SchemaType`]: crate::SchemaType
+    pub(crate) synchronous: bool,
 }
 
 impl UnionMeta {
@@ -321,6 +344,7 @@ impl UnionMeta {
             name: name.into(),
             description: None,
             of_type_names: of_types.iter().map(|t| t.innermost_name().into()).collect(),
+            synchronous: false,
         }
     }
 
@@ -418,6 +442,22 @@ pub struct Field<S> {
     pub field_type: Type,
     #[doc(hidden)]
     pub deprecation_status: DeprecationStatus,
+
+    /// Indicates whether the resolver of this field returns the value without awaiting.
+    ///
+    /// [`SchemaType`] computes this flag for the fields of interfaces. An interface field is
+    /// synchronous if the field is synchronous in all implementers of the interface.
+    ///
+    /// [`SchemaType`]: crate::SchemaType
+    pub(crate) synchronous: bool,
+
+    /// Index of the innermost named type of this field in the types of its [`SchemaType`].
+    ///
+    /// [`SchemaType`] sets the index when it builds the schema. The executor then finds the type
+    /// of the field without hashing the type name.
+    ///
+    /// [`SchemaType`]: crate::SchemaType
+    pub(crate) type_index: Option<usize>,
 }
 
 impl<S> Field<S> {
@@ -459,6 +499,24 @@ impl<S> Field<S> {
     #[must_use]
     pub fn deprecated(mut self, reason: Option<impl Into<ArcStr>>) -> Self {
         self.deprecation_status = DeprecationStatus::Deprecated(reason.map(Into::into));
+        self
+    }
+
+    /// Marks the resolver of this [`Field`] as synchronous.
+    ///
+    /// A synchronous resolver returns the value of the field without awaiting. The asynchronous
+    /// executor resolves such a field with [`GraphQLValue::resolve_field()`] if the type of the
+    /// field also resolves without awaiting. This saves the cost of a future for each field.
+    ///
+    /// Mark a field only if [`GraphQLValue::resolve_field()`] and
+    /// [`GraphQLValueAsync::resolve_field_async()`] return the same value for it. The macros of
+    /// this crate mark all fields without an `async` resolver.
+    ///
+    /// [`GraphQLValue::resolve_field()`]: crate::GraphQLValue::resolve_field
+    /// [`GraphQLValueAsync::resolve_field_async()`]: crate::GraphQLValueAsync::resolve_field_async
+    #[must_use]
+    pub fn synchronous(mut self) -> Self {
+        self.synchronous = true;
         self
     }
 }
@@ -756,6 +814,25 @@ impl<S> MetaType<S> {
     /// Only [enums][`EnumMeta`] and [scalars][`ScalarMeta`] are leaf types.
     pub fn is_leaf(&self) -> bool {
         matches!(self, Self::Enum(..) | Self::Scalar(..))
+    }
+
+    /// Indicates whether values of the represented type resolve without awaiting.
+    ///
+    /// [Scalars][`ScalarMeta`] and [enums][`EnumMeta`] always resolve synchronously.
+    /// [`SchemaType`] computes the flag of [objects][`ObjectMeta`], [interfaces][`InterfaceMeta`],
+    /// and [unions][`UnionMeta`].
+    ///
+    /// [`SchemaType`]: crate::SchemaType
+    pub(crate) fn is_synchronous(&self) -> bool {
+        match self {
+            Self::Enum(..) | Self::Scalar(..) => true,
+            Self::Interface(InterfaceMeta { synchronous, .. })
+            | Self::Object(ObjectMeta { synchronous, .. })
+            | Self::Union(UnionMeta { synchronous, .. }) => *synchronous,
+            Self::InputObject(..) | Self::List(..) | Self::Nullable(..) | Self::Placeholder(..) => {
+                false
+            }
+        }
     }
 
     /// Indicates whether the represented type is abstract.

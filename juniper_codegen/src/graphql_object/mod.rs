@@ -444,10 +444,15 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
         let description = &self.description;
 
         let extract_stream_type = TypeId::of::<Operation>() != TypeId::of::<Query>();
-        let fields_meta = self
-            .fields
-            .iter()
-            .map(|f| f.method_meta_tokens(extract_stream_type.then_some(scalar)));
+        let fields_meta = self.fields.iter().map(|f| {
+            let meta = f.method_meta_tokens(extract_stream_type.then_some(scalar));
+            // Subscription fields resolve into streams, so they never resolve synchronously.
+            if f.is_async || extract_stream_type {
+                meta
+            } else {
+                quote! { #meta.synchronous() }
+            }
+        });
 
         // Sorting is required to preserve/guarantee the order of interfaces registered in schema.
         let mut interface_tys: Vec<_> = self.interfaces.iter().collect();
@@ -647,7 +652,7 @@ impl Definition<Query> {
                             .as_ref()
                             .unwrap()
                             .iter()
-                            .map(|arg| arg.method_resolve_field_tokens(scalar, false));
+                            .map(|arg| arg.method_resolve_field_tokens(scalar));
 
                         let rcv = field.has_receiver.then(|| {
                             quote! { self, }
@@ -711,7 +716,7 @@ impl Definition<Query> {
                         .as_ref()
                         .unwrap()
                         .iter()
-                        .map(|arg| arg.method_resolve_field_tokens(scalar, true));
+                        .map(|arg| arg.method_resolve_field_tokens(scalar));
 
                     let rcv = field.has_receiver.then(|| {
                         quote! { self, }
@@ -722,11 +727,9 @@ impl Definition<Query> {
                     res_ty = parse_quote! { _ };
                     quote! { &self.#ident }
                 };
-                if !field.is_async {
-                    res = quote! { ::juniper::futures::future::ready(#res) };
+                if field.is_async {
+                    res = quote! { #res.await };
                 }
-
-                let resolving_code = generate::async_resolving_code(Some(&res_ty));
 
                 quote! {
                     #[allow(deprecated, non_snake_case)]
@@ -740,11 +743,23 @@ impl Definition<Query> {
                         fn call<'b>(
                             &'b self,
                             info: &'b Self::TypeInfo,
-                            args: &'b ::juniper::Arguments<'_, #scalar>,
-                            executor: &'b ::juniper::Executor<'_, '_, Self::Context, #scalar>,
+                            args: ::juniper::Arguments<'b, #scalar>,
+                            executor: ::juniper::Executor<'b, 'b, Self::Context, #scalar>,
                         ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
-                            let fut = #res;
-                            #resolving_code
+                            ::std::boxed::Box::pin(async move {
+                                let res: #res_ty = #res;
+                                match ::juniper::IntoResolvable::into_resolvable(
+                                    res,
+                                    executor.context(),
+                                )? {
+                                    ::core::option::Option::Some((ctx, r)) => {
+                                        executor.replaced_context(ctx).resolve_async(info, &r).await
+                                    }
+                                    ::core::option::Option::None => {
+                                        ::core::result::Result::Ok(::juniper::Value::null())
+                                    }
+                                }
+                            })
                         }
                     }
                 }
@@ -859,8 +874,8 @@ impl Definition<Query> {
                     &'b self,
                     info: &'b Self::TypeInfo,
                     field: &'b ::core::primitive::str,
-                    args: &'b ::juniper::Arguments<'_, #scalar>,
-                    executor: &'b ::juniper::Executor<'_, '_, Self::Context, #scalar>,
+                    args: ::juniper::Arguments<'b, #scalar>,
+                    executor: ::juniper::Executor<'b, 'b, Self::Context, #scalar>,
                 ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                     match field {
                         #( #fields_resolvers )*

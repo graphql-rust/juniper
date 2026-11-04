@@ -1,13 +1,13 @@
 use std::{
     borrow::Borrow,
     cell::{Cell, RefCell},
-    collections::{HashMap, HashSet},
     fmt::Debug,
     hash::Hash,
 };
 
 use arcstr::ArcStr;
 use derive_more::with_trait::Display;
+use foldhash::{HashMap, HashMapExt as _, HashSet};
 use itertools::Itertools as _;
 
 use crate::{
@@ -323,7 +323,7 @@ impl<'a, S: Debug> OverlappingFieldsCanBeMerged<'a, S> {
         // The loop compares `field_map` with each fragment once. Fragments can reach the same
         // fragment through many paths. A comparison for each path would take exponential time.
         // GraphQL.js memoizes the same pairs of fields and fragments.
-        let mut compared_fragments = HashSet::from([fragment_name]);
+        let mut compared_fragments = HashSet::from_iter([fragment_name]);
         while let Some(fragment_name) = to_check.pop() {
             if !compared_fragments.insert(fragment_name) {
                 continue;

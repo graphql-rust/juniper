@@ -37,6 +37,36 @@ impl House {
 > **NOTE**: To access global data such as database connections or authentication information, a _context_ is used. To learn more about this, see the ["Context" chapter](context.md).
 
 
+### Asynchronous fields
+
+A method can be `async`, so its [field][4] can await a database query or another asynchronous operation:
+```rust
+# extern crate juniper;
+# use juniper::graphql_object;
+#
+# async fn fetch_temperature(city: &str) -> f64 {
+#     if city.is_empty() { 0.0 } else { 21.5 }
+# }
+#
+struct Weather;
+
+#[graphql_object]
+impl Weather {
+    async fn temperature(city: String) -> f64 {
+        fetch_temperature(&city).await
+    }
+
+    fn unit() -> &'static str {
+        "celsius"
+    }
+}
+#
+# fn main() {}
+```
+
+> **TIP**: Keep a method synchronous if it awaits nothing. If the method of a [field][4] and the methods of all [fields][4] below it are synchronous, asynchronous execution resolves the [field][4] without a future. This saves an allocation and a poll for each [field][4] of the result.
+
+
 ### Default arguments
 
 Though [Rust] doesn't have the notion of default arguments, [GraphQL arguments][4] are able to have default values. These default values are used when a GraphQL operation doesn't specify the argument explicitly. In [Juniper], defining a default value for a [GraphQL argument][4] is enabled by the `#[graphql(default)]` attribute:
