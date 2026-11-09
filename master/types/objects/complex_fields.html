@@ -35,7 +35,7 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-421a7558.js";
+            window.path_to_searchindex_js = "../../searchindex-19d62d2b.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-fcdc4e7f.js"></script>
@@ -212,6 +212,32 @@ impl House {
 </span><span class="boring">fn main() {}</span></code></pre>
 <blockquote>
 <p><strong>NOTE</strong>: To access global data such as database connections or authentication information, a <em>context</em> is used. To learn more about this, see the <a href="context.html">“Context” chapter</a>.</p>
+</blockquote>
+<h3 id="asynchronous-fields"><a class="header" href="#asynchronous-fields">Asynchronous fields</a></h3>
+<p>A method can be <code>async</code>, so its <a href="https://spec.graphql.org/October2021#sec-Language.Fields">field</a> can await a database query or another asynchronous operation:</p>
+<pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate juniper;
+</span><span class="boring">use juniper::graphql_object;
+</span><span class="boring">
+</span><span class="boring">async fn fetch_temperature(city: &amp;str) -&gt; f64 {
+</span><span class="boring">    if city.is_empty() { 0.0 } else { 21.5 }
+</span><span class="boring">}
+</span><span class="boring">
+</span>struct Weather;
+
+#[graphql_object]
+impl Weather {
+    async fn temperature(city: String) -&gt; f64 {
+        fetch_temperature(&amp;city).await
+    }
+
+    fn unit() -&gt; &amp;'static str {
+        "celsius"
+    }
+}
+<span class="boring">
+</span><span class="boring">fn main() {}</span></code></pre>
+<blockquote>
+<p><strong>TIP</strong>: Keep a method synchronous if it awaits nothing. If the method of a <a href="https://spec.graphql.org/October2021#sec-Language.Fields">field</a> and the methods of all <a href="https://spec.graphql.org/October2021#sec-Language.Fields">fields</a> below it are synchronous, asynchronous execution resolves the <a href="https://spec.graphql.org/October2021#sec-Language.Fields">field</a> without a future. This saves an allocation and a poll for each <a href="https://spec.graphql.org/October2021#sec-Language.Fields">field</a> of the result.</p>
 </blockquote>
 <h3 id="default-arguments"><a class="header" href="#default-arguments">Default arguments</a></h3>
 <p>Though <a href="https://www.rust-lang.org">Rust</a> doesn’t have the notion of default arguments, <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL arguments</a> are able to have default values. These default values are used when a GraphQL operation doesn’t specify the argument explicitly. In <a href="https://docs.rs/juniper">Juniper</a>, defining a default value for a <a href="https://spec.graphql.org/October2021#sec-Language.Fields">GraphQL argument</a> is enabled by the <code>#[graphql(default)]</code> attribute:</p>
