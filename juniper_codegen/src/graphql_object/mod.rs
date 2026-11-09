@@ -444,10 +444,15 @@ impl<Operation: ?Sized + 'static> Definition<Operation> {
         let description = &self.description;
 
         let extract_stream_type = TypeId::of::<Operation>() != TypeId::of::<Query>();
-        let fields_meta = self
-            .fields
-            .iter()
-            .map(|f| f.method_meta_tokens(extract_stream_type.then_some(scalar)));
+        let fields_meta = self.fields.iter().map(|f| {
+            let meta = f.method_meta_tokens(extract_stream_type.then_some(scalar));
+            // Subscription fields resolve into streams, so they never resolve synchronously.
+            if f.is_async || extract_stream_type {
+                meta
+            } else {
+                quote! { #meta.synchronous() }
+            }
+        });
 
         // Sorting is required to preserve/guarantee the order of interfaces registered in schema.
         let mut interface_tys: Vec<_> = self.interfaces.iter().collect();

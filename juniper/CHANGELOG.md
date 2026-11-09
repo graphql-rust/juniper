@@ -16,13 +16,20 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Changed the field names of `Object` from `String` to `ArcStr`: ([#1416])
     - `Object::add_field()` takes a name of any type that converts into `ArcStr`.
     - `Object::iter()`, `Object::iter_mut()`, and the `IntoIterator` implementation of `Object` return `ArcStr` names.
-- Added a private field to `meta::Field`. Only its constructors can create it now. ([#1417])
+- Added private fields to `meta::Field`, `meta::ObjectMeta`, `meta::InterfaceMeta`, and `meta::UnionMeta`. Only their constructors can create them now. ([#1417], [#1419])
 - Changed the `Arguments::new()` method to take a `VecMap` instead of an `IndexMap`. ([#1417])
 - Changed `GraphQLValueAsync::resolve_field_async()` to take its `arguments` and `executor` by value. ([#1418])
+- Asynchronous execution calls `GraphQLValue::resolve()` instead of `GraphQLValueAsync::resolve_async()` for values of scalars, enums, and types that resolve without awaiting. ([#1419])
 
 ### Added
 
+- `meta::Field::synchronous()` method. It marks a field with a synchronous resolver, so asynchronous execution resolves the field without a future. ([#1419])
 - `Clone` and `Copy` implementations for `Executor`. ([#1418])
+
+### Changed
+
+- Asynchronous execution resolves a field without futures if the resolver of the field and all resolvers below it are synchronous. The macros mark all fields without an `async` resolver as synchronous. ([#1419])
+- Sped up execution. On the operations of the `juniper_benchmarks` crate, synchronous execution takes 17 to 69% less time than in 0.18.0, and asynchronous execution takes 20 to 87% less time. ([#1415], [#1416], [#1417], [#1418], [#1419])
 
 ### Fixed
 
@@ -32,6 +39,7 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 [#1416]: /../../pull/1416
 [#1417]: /../../pull/1417
 [#1418]: /../../pull/1418
+[#1419]: /../../pull/1419
 
 
 

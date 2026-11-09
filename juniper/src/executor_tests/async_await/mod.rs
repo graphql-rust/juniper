@@ -1,5 +1,6 @@
 mod lists;
 mod order;
+mod synchronous;
 
 use crate::{
     EmptyMutation, EmptySubscription, GraphQLEnum, RootNode, Value, graphql, graphql_object,
