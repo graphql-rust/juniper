@@ -277,6 +277,7 @@ impl GraphQLParserTranslator {
             arguments,
             field_type,
             deprecation_status,
+            type_index: _,
         } = input;
         schema::Field {
             position: Pos::default(),

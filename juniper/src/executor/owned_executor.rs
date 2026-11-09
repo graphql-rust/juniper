@@ -1,9 +1,8 @@
-use std::{collections::HashMap, sync::RwLock};
+use std::sync::RwLock;
 
 use crate::{
     ExecutionError, Executor, Selection, Variables,
-    ast::Fragment,
-    executor::FieldPath,
+    executor::{FieldPath, Fragments},
     parser::SourcePosition,
     schema::model::{SchemaType, TypeType},
 };
@@ -11,7 +10,7 @@ use crate::{
 /// [`Executor`] owning all its variables. Can be used after [`Executor`] was
 /// destroyed.
 pub struct OwnedExecutor<'a, CtxT, S> {
-    pub(super) fragments: HashMap<&'a str, Fragment<'a, S>>,
+    pub(super) fragments: Fragments<'a, S>,
     pub(super) variables: Variables<S>,
     pub(super) current_selection_set: Option<Vec<Selection<'a, S>>>,
     pub(super) parent_selection_set: Option<Vec<Selection<'a, S>>>,

@@ -47,6 +47,13 @@ mod look_ahead;
 mod owned_executor;
 mod validated_operation;
 
+/// Fragments of a document by name.
+///
+/// Fragment spreads look up fragments by name during execution. The names come from the document,
+/// so the map uses the randomly seeded `foldhash`. It resists hash flooding and hashes short names
+/// faster than the default SipHash.
+pub(crate) type Fragments<'a, S> = foldhash::HashMap<&'a str, Fragment<'a, S>>;
+
 /// Path from the root of an operation to the current field of an [`Executor`].
 ///
 /// Execution errors take their path and location from the field path. A field path borrows the
@@ -79,7 +86,7 @@ where
     CtxT: 'a,
     S: 'a,
 {
-    fragments: &'r HashMap<&'a str, Fragment<'a, S>>,
+    fragments: &'r Fragments<'a, S>,
     variables: &'r Variables<S>,
     current_selection_set: Option<&'r [Selection<'a, S>]>,
     parent_selection_set: Option<&'r [Selection<'a, S>]>,
@@ -585,12 +592,11 @@ where
         }
     }
 
-    /// Creates an [`Executor`] for the field with the `field_alias` response name and the
-    /// `field_type`.
+    /// Creates an [`Executor`] for the `field` with the `field_alias` response name.
     pub(crate) fn field_sub_executor<'s>(
         &'s self,
         field_alias: &'a str,
-        field_type: &'a Type,
+        field: &'a Field<S>,
         location: SourcePosition,
         selection_set: Option<&'s [Selection<'a, S>]>,
     ) -> Executor<'s, 'a, CtxT, S> {
@@ -599,7 +605,7 @@ where
             variables: self.variables,
             current_selection_set: selection_set,
             parent_selection_set: self.current_selection_set,
-            current_type: self.schema.make_type(field_type),
+            current_type: self.schema.field_type(field),
             schema: self.schema,
             context: self.context,
             errors: self.errors,
@@ -932,6 +938,7 @@ impl<S> Registry<S> {
             arguments: None,
             field_type: self.get_type::<T>(info),
             deprecation_status: DeprecationStatus::Current,
+            type_index: None,
         }
     }
 
@@ -951,6 +958,7 @@ impl<S> Registry<S> {
             arguments: None,
             field_type: self.get_type::<I>(info),
             deprecation_status: DeprecationStatus::Current,
+            type_index: None,
         }
     }
 

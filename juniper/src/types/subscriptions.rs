@@ -299,7 +299,7 @@ where
 
                 let sub_exec = executor.field_sub_executor(
                     response_name,
-                    &meta_field.field_type,
+                    meta_field,
                     span.start,
                     f.selection_set.as_ref().map(|x| &x[..]),
                 );

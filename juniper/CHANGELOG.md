@@ -16,9 +16,12 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
 - Changed the field names of `Object` from `String` to `ArcStr`: ([#1416])
     - `Object::add_field()` takes a name of any type that converts into `ArcStr`.
     - `Object::iter()`, `Object::iter_mut()`, and the `IntoIterator` implementation of `Object` return `ArcStr` names.
+- Added a private field to `meta::Field`. Only its constructors can create it now. ([#1417])
+- Changed the `Arguments::new()` method to take a `VecMap` instead of an `IndexMap`. ([#1417])
 
 [#1415]: /../../pull/1415
 [#1416]: /../../pull/1416
+[#1417]: /../../pull/1417
 
 
 

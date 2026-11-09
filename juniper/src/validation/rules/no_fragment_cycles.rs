@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use foldhash::{HashMap, HashMapExt as _, HashSet, HashSetExt as _};
 
 use crate::{
     Span,

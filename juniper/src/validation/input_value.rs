@@ -1,6 +1,5 @@
-use std::collections::HashSet;
-
 use derive_more::with_trait::Display;
+use foldhash::HashSet;
 
 use crate::{
     ast::{InputValue, Operation, TypeModifier, VariablesDefinition},
