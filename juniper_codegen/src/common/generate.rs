@@ -14,7 +14,7 @@ pub(crate) fn sync_resolving_code() -> TokenStream {
         ::juniper::IntoResolvable::into_resolvable(res, executor.context())
             .and_then(|res| match res {
                 ::core::option::Option::Some((ctx, r)) => {
-                    executor.replaced_context(ctx).resolve_with_ctx(info, &r)
+                    executor.replaced_context(ctx).resolve(info, &r)
                 }
                 ::core::option::Option::None => {
                     ::core::result::Result::Ok(::juniper::Value::null())
@@ -40,7 +40,7 @@ pub(crate) fn async_resolving_code(ty: Option<&syn::Type>) -> TokenStream {
             match ::juniper::IntoResolvable::into_resolvable(res, executor.context())? {
                 ::core::option::Option::Some((ctx, r)) => {
                     let subexec = executor.replaced_context(ctx);
-                    subexec.resolve_with_ctx_async(info, &r).await
+                    subexec.resolve_async(info, &r).await
                 }
                 ::core::option::Option::None => {
                     ::core::result::Result::Ok(::juniper::Value::null())
