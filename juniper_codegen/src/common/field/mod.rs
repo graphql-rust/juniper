@@ -327,7 +327,7 @@ impl Definition {
                 .as_ref()
                 .unwrap()
                 .iter()
-                .map(|arg| arg.method_resolve_field_tokens(scalar, false));
+                .map(|arg| arg.method_resolve_field_tokens(scalar));
 
             let rcv = self.has_receiver.then(|| {
                 quote! { self, }

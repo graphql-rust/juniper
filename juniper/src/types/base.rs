@@ -5,7 +5,7 @@ use crate::{
     FieldResult, GraphQLEnum, IntoFieldError,
     ast::{self, Directive, FromInputValue, InputValue, Selection},
     executor::{ExecutionResult, Executor, Registry, Variables},
-    parser::Spanning,
+    parser::{SourcePosition, Spanning},
     schema::meta::{Argument, Field, MetaType},
     value::{DefaultScalarValue, Object, ScalarValue, Value},
 };
@@ -488,22 +488,12 @@ where
                     &sub_exec,
                 );
 
-                match field_result {
-                    Ok(Value::Null) if meta_field.field_type.is_non_null() => {
-                        sub_exec.push_non_null_violation_at(meta_type, f.name.item, span.start);
-                        return false;
-                    }
-                    Ok(v) => result.merge_field(response_key, v),
-                    Err(e) => {
-                        sub_exec.push_error_at(e, span.start);
-
-                        if meta_field.field_type.is_non_null() {
-                            return false;
-                        }
-
-                        result.add_field(response_key, Value::null());
-                    }
-                }
+                let Some(value) =
+                    complete_field(field_result, &sub_exec, meta_type, meta_field, span.start)
+                else {
+                    return false;
+                };
+                result.merge_field(response_key, value);
             }
             Selection::FragmentSpread(Spanning {
                 item: ref spread,
@@ -640,6 +630,37 @@ where
         }
     }
     false
+}
+
+/// Completes the `result` of the `meta_field` resolver of the `parent_type` at the `location`.
+///
+/// Pushes the error of a failed resolver to the `executor`. A failed nullable field completes
+/// as `null`. A `null` value of a non-`null` field is an error too.
+///
+/// Returns [`None`] if a non-`null` field has no value. The `null` then propagates to the parent
+/// object.
+pub(crate) fn complete_field<CtxT, S>(
+    result: ExecutionResult<S>,
+    executor: &Executor<'_, '_, CtxT, S>,
+    parent_type: &MetaType<S>,
+    meta_field: &Field<S>,
+    location: SourcePosition,
+) -> Option<Value<S>>
+where
+    S: ScalarValue,
+{
+    let is_non_null = meta_field.field_type.is_non_null();
+    match result {
+        Ok(Value::Null) if is_non_null => {
+            executor.push_non_null_violation_at(parent_type, &meta_field.name, location);
+            None
+        }
+        Ok(value) => Some(value),
+        Err(error) => {
+            executor.push_error_at(error, location);
+            (!is_non_null).then(Value::null)
+        }
+    }
 }
 
 /// Returns the response key of the `field` selection with the `meta_field` schema definition.

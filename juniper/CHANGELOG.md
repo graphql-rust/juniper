@@ -18,10 +18,20 @@ All user visible changes to `juniper` crate will be documented in this file. Thi
     - `Object::iter()`, `Object::iter_mut()`, and the `IntoIterator` implementation of `Object` return `ArcStr` names.
 - Added a private field to `meta::Field`. Only its constructors can create it now. ([#1417])
 - Changed the `Arguments::new()` method to take a `VecMap` instead of an `IndexMap`. ([#1417])
+- Changed `GraphQLValueAsync::resolve_field_async()` to take its `arguments` and `executor` by value. ([#1418])
+
+### Added
+
+- `Clone` and `Copy` implementations for `Executor`. ([#1418])
+
+### Fixed
+
+- Incorrect order of a `__typename` field after a pending field in asynchronous execution. ([#1418])
 
 [#1415]: /../../pull/1415
 [#1416]: /../../pull/1416
 [#1417]: /../../pull/1417
+[#1418]: /../../pull/1418
 
 
 

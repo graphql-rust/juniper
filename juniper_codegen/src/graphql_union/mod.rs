@@ -733,7 +733,7 @@ impl VariantDefinition {
         let ty = &self.ty;
         let ty_name = ty.to_token_stream().to_string();
         let expr = &self.resolver_code;
-        let resolving_code = generate::async_resolving_code(None);
+        let resolving_code = generate::async_resolving_code();
 
         quote! {
             match <#ty as ::juniper::GraphQLType<#scalar>>::name(info) {

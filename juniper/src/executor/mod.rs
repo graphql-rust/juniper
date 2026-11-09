@@ -106,6 +106,15 @@ where
     serial: bool,
 }
 
+// `#[derive(Clone, Copy)]` would require `CtxT: Copy` and `S: Copy`.
+impl<CtxT, S> Clone for Executor<'_, '_, CtxT, S> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<CtxT, S> Copy for Executor<'_, '_, CtxT, S> {}
+
 /// Error type for errors that occur during query execution
 ///
 /// All execution errors contain the source position in the query of the field

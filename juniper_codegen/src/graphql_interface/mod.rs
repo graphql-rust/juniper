@@ -874,8 +874,8 @@ impl Definition {
                     &'b self,
                     info: &'b Self::TypeInfo,
                     field: &'b ::core::primitive::str,
-                    args: &'b ::juniper::Arguments<'_, #scalar>,
-                    executor: &'b ::juniper::Executor<'_, '_, Self::Context, #scalar>,
+                    args: ::juniper::Arguments<'b, #scalar>,
+                    executor: ::juniper::Executor<'b, 'b, Self::Context, #scalar>,
                 ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                     match field {
                         #( #fields_resolvers )*
@@ -1159,8 +1159,8 @@ impl Definition {
                         fn call<'b>(
                             &'b self,
                             info: &'b Self::TypeInfo,
-                            args: &'b ::juniper::Arguments<'_, #scalar>,
-                            executor: &'b ::juniper::Executor<'_, '_, Self::Context, #scalar>,
+                            args: ::juniper::Arguments<'b, #scalar>,
+                            executor: ::juniper::Executor<'b, 'b, Self::Context, #scalar>,
                         ) -> ::juniper::BoxFuture<'b, ::juniper::ExecutionResult<#scalar>> {
                             match self {
                                 #( #ty::#implemented_for_idents(v) => {
@@ -1229,7 +1229,7 @@ impl Definition {
     /// [1]: Self::implementers
     #[must_use]
     fn method_resolve_into_type_async_tokens(&self) -> TokenStream {
-        let resolving_code = generate::async_resolving_code(None);
+        let resolving_code = generate::async_resolving_code();
 
         let match_arms = self.implemented_for.iter().filter_map(|ty| {
             ty.path.segments.last().map(|ident| {
