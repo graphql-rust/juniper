@@ -1,0 +1,24 @@
+query Hero($episode: Episode, $withFriends: Boolean!) {
+  hero(episode: $episode) {
+    ...CharacterFields
+    ... on Human {
+      homePlanet
+    }
+    ... on Droid {
+      primaryFunction
+    }
+    friends @include(if: $withFriends) {
+      ...CharacterFields
+      friends {
+        ...CharacterFields
+      }
+    }
+  }
+}
+
+fragment CharacterFields on Character {
+  __typename
+  id
+  name
+  appearsIn
+}

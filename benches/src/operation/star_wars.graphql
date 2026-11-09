@@ -1,0 +1,30 @@
+{
+  humans {
+    id
+    name
+    friends {
+      id
+      name
+      friends {
+        id
+        name
+      }
+    }
+    appearsIn
+    homePlanet
+  }
+  droids {
+    id
+    name
+    friends {
+      id
+      name
+      friends {
+        id
+        name
+      }
+    }
+    appearsIn
+    primaryFunction
+  }
+}

@@ -83,7 +83,6 @@ void = { version = "1.0.2", optional = true }
 
 [dev-dependencies]
 arcstr = { version = "1.1", features = ["serde"] }
-bencher = "0.1.2"
 chrono = { version = "0.4.30", features = ["alloc"], default-features = false }
 compact_str = { version = "0.10", features = ["serde"] }
 jiff = { version = "0.2", features = ["tzdb-bundle-always"], default-features = false }
@@ -103,9 +102,3 @@ missing_docs = "warn"
 non_ascii_idents = "forbid"
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(nightly)'] }
 unused_crate_dependencies = "warn"
-
-[[bench]]
-name = "bench"
-harness = false
-path = "benches/bench.rs"
-required-features = ["expose-test-schema"]
