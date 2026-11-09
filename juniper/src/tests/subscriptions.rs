@@ -115,7 +115,7 @@ fn create_and_execute(query: String) -> Result<(Vec<String>, Vec<StreamItems>), 
         let Value::Scalar(stream) = value else {
             panic!("subscription field `{name}` should resolve to a stream");
         };
-        names.push(name);
+        names.push(name.to_string());
         items.push(run(stream.collect::<Vec<_>>()));
     }
     Ok((names, items))
