@@ -251,6 +251,21 @@ impl<CtxT, S: ScalarValue> Future for PendingField<'_, CtxT, S> {
     }
 }
 
+/// Fragment with a pending resolver future.
+struct PendingFragment<'a, S> {
+    future: BoxFuture<'a, Value<S>>,
+}
+
+impl<S> Future for PendingFragment<'_, S> {
+    type Output = ResolvedSelection<S>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.get_mut();
+        let value = ready!(this.future.as_mut().poll(cx));
+        Poll::Ready(ResolvedSelection::Fragment(value.into_object()))
+    }
+}
+
 /// Pending future of a selection with the position of the selection in the queue of a
 /// [`PartialObject`].
 struct QueuedFuture<F> {
@@ -534,20 +549,18 @@ where
                         ControlFlow::Continue(())
                     }
                 } else {
-                    let mut fields = Box::pin(async move {
-                        let value = resolve_selection_set_into_async_boxed(
+                    let mut pending_fragment = PendingFragment {
+                        future: resolve_selection_set_into_async_boxed(
                             instance,
                             info,
                             &fragment.selection_set,
                             &sub_exec,
-                        )
-                        .await;
-                        ResolvedSelection::Fragment(value.into_object())
-                    });
-                    match poll_once(&mut fields).await {
+                        ),
+                    };
+                    match poll_once(&mut pending_fragment).await {
                         Poll::Ready(selection) => object.push_resolved(selection),
                         Poll::Pending => {
-                            object.push_pending(SelectionFuture::Fragment(fields));
+                            object.push_pending(SelectionFuture::Fragment(pending_fragment));
                             ControlFlow::Continue(())
                         }
                     }
