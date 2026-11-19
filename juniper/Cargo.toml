@@ -59,7 +59,7 @@ futures = { version = "0.3.22", features = ["alloc"], default-features = false }
 graphql-parser = { version = "0.4", optional = true }
 indexmap = { version = "2.0", features = ["serde"] }
 itertools = "0.15"
-jiff = { version = "0.2", features = ["std"], default-features = false, optional = true }
+jiff = { version = "1.0", features = ["std"], default-features = false, optional = true }
 juniper_codegen = { version = "0.18.0", path = "../juniper_codegen" }
 ref-cast = "1.0"
 ruint = { version = "1.10", optional = true }
@@ -86,7 +86,7 @@ void = { version = "1.0.2", optional = true }
 [dev-dependencies]
 arcstr = { version = "1.1", features = ["serde"] }
 chrono = { version = "0.4.30", features = ["alloc"], default-features = false }
-jiff = { version = "0.2", features = ["tzdb-bundle-always"], default-features = false }
+jiff = { version = "1.0", features = ["tzdb-bundle-always"], default-features = false }
 pretty_assertions = "1.0.0"
 serde_json = "1.0.18"
 serial_test = "4.0"
